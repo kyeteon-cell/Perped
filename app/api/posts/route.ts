@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { MAX_LEVERAGE, MAX_POSITION_USD } from "@/lib/config";
@@ -10,6 +10,8 @@ export async function GET(req: Request) {
   const limit = Math.min(50, Number(url.searchParams.get("limit") ?? 30));
   const cursor = Number(url.searchParams.get("cursor") ?? 0);
   const handle = url.searchParams.get("handle");
+  const coin = url.searchParams.get("coin");
+  const status = url.searchParams.get("status");
 
   const rows = await db
     .select({
@@ -22,13 +24,12 @@ export async function GET(req: Request) {
     .from(schema.posts)
     .innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
     .where(
-      handle
-        ? cursor
-          ? sql`${schema.users.handle} = ${handle} and ${schema.posts.id} < ${cursor}`
-          : eq(schema.users.handle, handle)
-        : cursor
-          ? sql`${schema.posts.id} < ${cursor}`
-          : undefined,
+      and(
+        handle ? eq(schema.users.handle, handle) : undefined,
+        coin ? eq(schema.posts.coin, coin.toUpperCase()) : undefined,
+        status === "open" || status === "closed" ? eq(schema.posts.status, status) : undefined,
+        cursor ? sql`${schema.posts.id} < ${cursor}` : undefined,
+      ),
     )
     .orderBy(desc(schema.posts.id))
     .limit(limit);

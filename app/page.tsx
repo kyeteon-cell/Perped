@@ -26,7 +26,7 @@ export default function FeedPage() {
         <div className="panel p-6 text-center">
           <p className="text-lg font-bold">Nobody&apos;s perped yet.</p>
           <p className="muted mt-1 text-sm">Open the first position and it shows up here for everyone to copy, cheer or roast.</p>
-          <Link href="/trade" className="btn btn-accent mt-4">Place the first trade</Link>
+          <Link href="/markets" className="btn btn-accent mt-4">Place the first trade</Link>
         </div>
       )}
 

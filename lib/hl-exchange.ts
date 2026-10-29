@@ -45,6 +45,12 @@ export type MarketOrderInput = {
   reduceOnly?: boolean;
   /** Override size (used when closing). */
   size?: number;
+  /** "market" (IOC at mid ± slippage) or "limit" (GTC at limitPx). */
+  orderType?: "market" | "limit";
+  limitPx?: number;
+  /** Optional take-profit / stop-loss trigger prices; placed with the entry as a normalTpsl group. */
+  takeProfitPx?: number;
+  stopLossPx?: number;
 };
 
 export type OrderResult = {
@@ -61,7 +67,7 @@ export type OrderResult = {
  * Attaches the builder code when the app has one configured.
  */
 export async function placeMarketOrder(client: hl.ExchangeClient, input: MarketOrderInput): Promise<OrderResult> {
-  const { asset, side, usd, mid, leverage, slippage = 0.03, reduceOnly = false } = input;
+  const { asset, side, usd, mid, leverage, slippage = 0.03, reduceOnly = false, orderType = "market", limitPx, takeProfitPx, stopLossPx } = input;
   const isBuy = side === "long";
 
   // Set leverage first (cross). Ignore failures — the order still goes through at current leverage.
@@ -75,18 +81,32 @@ export async function placeMarketOrder(client: hl.ExchangeClient, input: MarketO
   const sz = roundSize(rawSize, asset.szDecimals);
   if (sz <= 0) return { ok: false, error: `Size too small for ${asset.name} (min step ${1 / 10 ** asset.szDecimals})` };
 
-  const limitPx = isBuy ? mid * (1 + slippage) : mid * (1 - slippage);
+  const px = orderType === "limit" && limitPx ? limitPx : isBuy ? mid * (1 + slippage) : mid * (1 - slippage);
+  const sizeStr = fmtSize(sz, asset.szDecimals);
 
-  const order = {
+  const entry = {
     a: asset.index,
     b: isBuy,
-    p: fmtPx(limitPx, asset.szDecimals),
-    s: fmtSize(sz, asset.szDecimals),
+    p: fmtPx(px, asset.szDecimals),
+    s: sizeStr,
     r: reduceOnly,
-    t: { limit: { tif: "Ioc" as const } },
+    t: { limit: { tif: (orderType === "limit" ? "Gtc" : "Ioc") as "Gtc" | "Ioc" } },
   };
 
-  const params: Record<string, unknown> = { orders: [order], grouping: "na" };
+  // TP/SL are reduce-only trigger orders on the opposite side, executed as market orders when hit.
+  const exits: Record<string, unknown>[] = [];
+  const trigger = (triggerPx: number, tpsl: "tp" | "sl") => ({
+    a: asset.index,
+    b: !isBuy,
+    p: fmtPx(isBuy ? triggerPx * (1 - 0.05) : triggerPx * (1 + 0.05), asset.szDecimals), // worst acceptable fill
+    s: sizeStr,
+    r: true,
+    t: { trigger: { isMarket: true, triggerPx: fmtPx(triggerPx, asset.szDecimals), tpsl } },
+  });
+  if (!reduceOnly && takeProfitPx && takeProfitPx > 0) exits.push(trigger(takeProfitPx, "tp"));
+  if (!reduceOnly && stopLossPx && stopLossPx > 0) exits.push(trigger(stopLossPx, "sl"));
+
+  const params: Record<string, unknown> = { orders: [entry, ...exits], grouping: exits.length ? "normalTpsl" : "na" };
   if (BUILDER_CONFIGURED && BUILDER_FEE_TENTHS_BPS > 0) {
     params.builder = { b: BUILDER_ADDRESS.toLowerCase(), f: BUILDER_FEE_TENTHS_BPS };
   }

@@ -24,7 +24,7 @@ export function HandlePicker() {
   return (
     <form onSubmit={submit} className="panel space-y-3 p-4">
       <h2 className="text-lg font-bold">Pick your handle</h2>
-      <p className="muted text-sm">This is how you&apos;ll show up in the feed and on the leaderboard. Your trading wallet is ready: <span className="font-mono text-xs">{address?.slice(0, 6)}…{address?.slice(-4)}</span></p>
+      <p className="muted text-sm">This is your name in the feed and on the leaderboard. Your trading wallet is ready: <span className="font-mono text-xs">{address?.slice(0, 6)}…{address?.slice(-4)}</span></p>
       <div className="flex items-center gap-2">
         <span className="muted">@</span>
         <input className="input" placeholder="yourname" value={handle} onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))} maxLength={20} autoFocus />

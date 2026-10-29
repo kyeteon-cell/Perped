@@ -48,20 +48,20 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
     mutateFeed();
   };
 
-  if (!data) return (<><Header title={`@${handle}`} /><p className="muted text-sm">Loading…</p></>);
+  if (!data) return (<><Header title={handle} /><p className="muted text-sm">Loading…</p></>);
   if ("error" in (data as unknown as Record<string, unknown>)) return (<><Header title="Not found" /><p className="muted">No trader with that handle.</p></>);
 
   return (
     <>
-      <Header title={`@${data.user.handle}`} />
+      <Header title={data.user.handle} />
 
       <section className="panel p-4">
         <div className="flex items-center gap-3">
-          <div className="grid size-14 place-items-center rounded-full text-xl font-black" style={{ background: "var(--panel-2)" }}>{data.user.handle.slice(0, 2).toUpperCase()}</div>
+          <div className="muted grid size-14 place-items-center rounded-full text-base font-semibold" style={{ background: "var(--panel-2)" }}>{data.user.handle.slice(0, 2).toUpperCase()}</div>
           <div className="flex-1">
             <div className="muted text-xs">{data.followers} followers · {data.following} following</div>
             {data.user.bio && <p className="mt-1 text-sm">{data.user.bio}</p>}
-            <p className="muted mt-1 font-mono text-[11px]">{data.user.address.slice(0, 8)}…{data.user.address.slice(-6)} · verified on-chain ✓</p>
+            <p className="faint mt-1 font-mono text-[11px]">{data.user.address.slice(0, 8)}…{data.user.address.slice(-6)} · verified on-chain</p>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
@@ -74,7 +74,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
       {data.positions.length > 0 && (
         <section className="mt-3 space-y-2">
-          <h2 className="muted text-xs font-semibold uppercase tracking-wide">Open positions</h2>
+          <h2 className="eyebrow">Open positions</h2>
           {data.positions.map((p) => {
             const szi = Number(p.szi);
             const mid = mids[p.coin];
@@ -82,7 +82,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
             return (
               <div key={p.coin} className="panel flex items-center justify-between p-3">
                 <div>
-                  <div className="font-bold"><span className={szi > 0 ? "green" : "red"}>{szi > 0 ? "▲" : "▼"}</span> {p.coin} <span className="muted text-xs">{p.leverage.value}×</span></div>
+                  <div className="font-semibold">{p.coin} <span className={`pill ml-1 !px-1.5 !py-0.5 !text-[11px] ${szi > 0 ? "pill-long" : "pill-short"}`}>{szi > 0 ? "Long" : "Short"} {p.leverage.value}×</span></div>
                   <div className="muted text-xs">{Math.abs(szi)} @ {p.entryPx ? `$${Number(p.entryPx).toLocaleString()}` : "—"} · mark {mid ? `$${mid.toLocaleString()}` : "…"}</div>
                 </div>
                 <div className="text-right">
@@ -97,7 +97,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
       )}
 
       <section className="mt-4 space-y-3">
-        <h2 className="muted text-xs font-semibold uppercase tracking-wide">Trades</h2>
+        <h2 className="eyebrow">History</h2>
         {(feed?.posts ?? []).length === 0 && <p className="muted text-sm">No trades posted yet.</p>}
         {(feed?.posts ?? []).map((item) => <FeedPost key={item.post.id} item={item} mid={mids[item.post.coin]} onChanged={() => mutateFeed()} />)}
       </section>

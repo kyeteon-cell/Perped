@@ -1,0 +1,337 @@
+<title>Perped Preview</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  /* Layout: one phone frame, bottom tabs switch screens. Light, neutral, one ink accent; long/short are the only strong colours. */
+  :root {
+    --bg: #f6f6f4; --panel: #ffffff; --panel-2: #f1f1ee; --line: #e4e4df;
+    --text: #15171a; --muted: #70737a; --faint: #a3a6ad;
+    --green: #0f9d6a; --green-bg: #e6f6ef; --red: #d93a4a; --red-bg: #fbe9eb;
+    --ink: #15171a; --ink-fg: #ffffff;
+    --display: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #101113; --panel: #17181b; --panel-2: #1f2024; --line: #2a2b30;
+    --text: #f2f2f0; --muted: #9a9ca3; --faint: #5f6168;
+    --green: #2fc98a; --green-bg: #132a21; --red: #ff6b78; --red-bg: #311b1f;
+    --ink: #f2f2f0; --ink-fg: #101113; color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --bg: #101113; --panel: #17181b; --panel-2: #1f2024; --line: #2a2b30;
+    --text: #f2f2f0; --muted: #9a9ca3; --faint: #5f6168;
+    --green: #2fc98a; --green-bg: #132a21; --red: #ff6b78; --red-bg: #311b1f;
+    --ink: #f2f2f0; --ink-fg: #101113; color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--display); font-size: 14px; line-height: 1.45; padding-block: 16px 24px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 420px; margin: 0 auto; }
+  .note { color: var(--muted); font-size: 12px; text-align: center; margin: 0 0 12px; }
+  .note b { color: var(--text); font-weight: 600; }
+  .phone { position: relative; border: 1px solid var(--line); border-radius: 24px; overflow: hidden; background: var(--bg); height: 780px; max-height: 88dvh; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 40px -20px rgba(0,0,0,.25); }
+  .screen { flex: 1; overflow-y: auto; padding: 18px 16px 92px; }
+  .screen[hidden] { display: none !important; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+  .hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; min-height: 36px; }
+  .tag { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; vertical-align: middle; margin-left: 8px; }
+  .chip { border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; background: var(--panel-2); color: var(--text); border: 0; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .chip.on { background: var(--ink); color: var(--ink-fg); }
+  .chip.long { background: var(--green-bg); color: var(--green); } .chip.short { background: var(--red-bg); color: var(--red); }
+  .muted { color: var(--muted); } .faint { color: var(--faint); } .green { color: var(--green); } .red { color: var(--red); }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .between { justify-content: space-between; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--panel-2); display: grid; place-items: center; font-weight: 600; font-size: 12px; color: var(--muted); }
+  .coin { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  .pnl { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .bar { height: 4px; border-radius: 999px; background: var(--panel-2); overflow: hidden; margin-top: 12px; }
+  .bar i { display: block; height: 100%; border-radius: 999px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; padding: 12px 16px; font-weight: 600; border: 1px solid transparent; font-family: inherit; font-size: 15px; cursor: pointer; color: var(--text); background: var(--panel-2); }
+  .btn-long { background: var(--green); color: #fff; } .btn-short { background: var(--red); color: #fff; }
+  .btn-ink { background: var(--ink); color: var(--ink-fg); }
+  .btn-outline { background: transparent; border-color: var(--line); }
+  .btn.sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .input { width: 100%; border-radius: 10px; padding: 11px 12px; background: var(--panel); border: 1px solid var(--line); color: var(--text); font-family: inherit; font-size: 14px; }
+  .stat { background: var(--panel-2); border-radius: 10px; padding: 10px 8px; text-align: center; }
+  .stat small { display: block; color: var(--muted); font-size: 11px; margin-bottom: 2px; }
+  .range { width: 100%; accent-color: var(--ink); }
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; background: var(--panel); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 0 10px; }
+  .nav button { background: none; border: 0; color: var(--muted); font-family: inherit; font-size: 11px; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 0; }
+  .nav button svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .nav button.on { color: var(--text); }
+  .lb { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .lb:first-child { border-top: 0; padding-top: 0; } .lb:last-child { padding-bottom: 0; }
+  .rank { width: 22px; text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 18px 0 8px; }
+  .cap { font-size: 14px; margin: 12px 0 0; color: var(--text); }
+  .meta { display: flex; gap: 14px; margin-top: 12px; font-size: 12px; color: var(--muted); align-items: center; }
+  .meta svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; vertical-align: -2px; margin-right: 4px; }
+  .meta button { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 0; }
+  .mkrow { display: grid; grid-template-columns: 1fr 60px auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .mkrow:first-child { border-top: 0; }
+  .spark { width: 60px; height: 20px; } .spark polyline { fill: none; stroke-width: 1.6; stroke-linejoin: round; }
+  .hdr .chip { background: transparent; padding-left: 0; font-size: 14px; color: var(--muted); }
+  .divider { height: 1px; background: var(--line); margin: 12px 0; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: no-preference) { .bar i { transition: width .4s ease; } }
+</style>
+
+<div class="wrap">
+  <p class="note"><b>Perped</b> · preview of the four screens. Example data, not real trades.</p>
+
+  <div class="phone">
+
+    <!-- FEED -->
+    <section class="screen" id="s-feed">
+      <div class="hdr">
+        <h1>Perped<span class="tag">Testnet</span></h1>
+        <span class="muted" style="font-size:12px"><span class="green">●</span> Live</span>
+      </div>
+      <div class="stack">
+
+        <article class="panel">
+          <div class="row between" style="margin-bottom:14px">
+            <div class="row"><div class="avatar">KY</div><div><div style="font-weight:600">kiloklips</div><div class="muted" style="font-size:12px">4 min ago</div></div></div>
+            <span class="chip long">Long · 5×</span>
+          </div>
+          <div class="row between" style="align-items:flex-end">
+            <div>
+              <div class="coin">SOL</div>
+              <div class="muted mono" style="font-size:12px;margin-top:2px">$250 · entry 187.42</div>
+            </div>
+            <div style="text-align:right">
+              <div class="mono pnl green">+8.3%</div>
+              <div class="mono green" style="font-size:13px">+$20.75</div>
+            </div>
+          </div>
+          <div class="bar"><i style="width:8.3%;background:var(--green)"></i></div>
+          <p class="cap">NY open bounce. Stop at 182, out at 195.</p>
+          <div class="meta">
+            <button><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>14</button>
+            <button><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>6</button>
+            <span><svg viewBox="0 0 24 24"><path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/></svg>3 copied</span>
+            <button class="btn btn-ink sm" style="margin-left:auto">Copy trade</button>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="row between" style="margin-bottom:14px">
+            <div class="row"><div class="avatar">DG</div><div><div style="font-weight:600">degenmaxi</div><div class="muted" style="font-size:12px">19 min ago · copied kiloklips</div></div></div>
+            <span class="chip short">Short · 3×</span>
+          </div>
+          <div class="row between" style="align-items:flex-end">
+            <div>
+              <div class="coin">ETH</div>
+              <div class="muted mono" style="font-size:12px;margin-top:2px">$1,500 · entry 3,412.00</div>
+            </div>
+            <div style="text-align:right">
+              <div class="mono pnl red">−2.1%</div>
+              <div class="mono red" style="font-size:13px">−$31.50</div>
+            </div>
+          </div>
+          <div class="bar"><i style="width:2.1%;background:var(--red)"></i></div>
+          <div class="meta">
+            <button><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>3</button>
+            <button><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>11</button>
+            <span><svg viewBox="0 0 24 24"><path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/></svg>1 copied</span>
+            <button class="btn btn-ink sm" style="margin-left:auto">Copy trade</button>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="row between" style="margin-bottom:14px">
+            <div class="row"><div class="avatar">SA</div><div><div style="font-weight:600">samui_sam</div><div class="muted" style="font-size:12px">2 h ago · closed</div></div></div>
+            <span class="chip">Long · 2×</span>
+          </div>
+          <div class="row between" style="align-items:flex-end">
+            <div>
+              <div class="coin">HYPE</div>
+              <div class="muted mono" style="font-size:12px;margin-top:2px">$80 · 41.10 → 46.28</div>
+            </div>
+            <div style="text-align:right">
+              <div class="mono pnl green">+12.6%</div>
+              <div class="mono green" style="font-size:13px">+$10.08 realised</div>
+            </div>
+          </div>
+          <div class="bar"><i style="width:12.6%;background:var(--green)"></i></div>
+          <p class="cap">Banked. Never going broke taking a win.</p>
+          <div class="meta">
+            <button><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>22</button>
+            <button><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>4</button>
+            <span><svg viewBox="0 0 24 24"><path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/></svg>7 copied</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+
+    <!-- MARKETS -->
+    <section class="screen" id="s-markets" hidden>
+      <div class="hdr"><h1>Markets<span class="tag">Testnet</span></h1><span class="muted" style="font-size:12px">142 perps</span></div>
+      <input class="input" placeholder="Search" style="margin-bottom:10px" id="mk-search">
+      <div class="row" style="margin-bottom:10px;gap:6px"><span class="chip on">Top</span><span class="chip">Gainers</span><span class="chip">Losers</span><span class="chip">New</span><span class="chip">Hot on Perped</span></div>
+      <div class="panel" style="padding:4px 16px">
+        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">BTC</div><div class="muted" style="font-size:11px">Vol $2.1B · OI $980M · 50×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,14 8,12 16,13 24,9 32,10 40,6 48,7 60,4" style="stroke:var(--green)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">98,412</div><div class="mono green" style="font-size:12px">+1.8%</div></div></div>
+        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">ETH</div><div class="muted" style="font-size:11px">Vol $1.4B · OI $610M · 50×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,6 8,8 16,7 24,11 32,10 40,13 48,12 60,15" style="stroke:var(--red)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">3,412.00</div><div class="mono red" style="font-size:12px">−2.4%</div></div></div>
+        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">SOL <span class="chip" style="padding:1px 6px;font-size:10px;margin-left:4px">12 live</span></div><div class="muted" style="font-size:11px">Vol $640M · OI $220M · 20×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,16 8,13 16,14 24,10 32,11 40,7 48,8 60,3" style="stroke:var(--green)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">187.42</div><div class="mono green" style="font-size:12px">+5.1%</div></div></div>
+        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">HYPE</div><div class="muted" style="font-size:11px">Vol $310M · OI $140M · 10×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,12 8,10 16,11 24,8 32,9 40,5 48,6 60,2" style="stroke:var(--green)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">46.28</div><div class="mono green" style="font-size:12px">+9.7%</div></div></div>
+        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">XRP</div><div class="muted" style="font-size:11px">Vol $280M · OI $120M · 20×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,9 8,9 16,10 24,8 32,9 40,9 48,10 60,9" style="stroke:var(--muted)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">2.14</div><div class="mono muted" style="font-size:12px">+0.2%</div></div></div>
+        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">DOGE</div><div class="muted" style="font-size:11px">Vol $190M · OI $90M · 10×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,5 8,7 16,6 24,9 32,8 40,12 48,11 60,16" style="stroke:var(--red)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">0.2008</div><div class="mono red" style="font-size:12px">−4.0%</div></div></div>
+      </div>
+    </section>
+
+    <!-- TRADE -->
+    <section class="screen" id="s-trade" hidden>
+      <div class="hdr"><button class="chip" data-go="markets">‹ Markets</button><span class="muted mono" style="font-size:12px">Balance $1,284.10</span></div>
+      <div class="stack">
+        <div class="panel">
+          <div class="row between" style="align-items:flex-start">
+            <div><div class="coin">SOL <span class="muted" style="font-size:12px;font-weight:500">SOL-USD perp</span></div><div class="mono" style="font-size:26px;font-weight:600;letter-spacing:-.02em;margin-top:2px">187.42 <span class="green" style="font-size:13px;font-weight:500">+5.1%</span></div></div>
+            <div class="row" style="gap:4px"><span class="chip on" style="padding:3px 8px;font-size:11px">1H</span><span class="chip" style="padding:3px 8px;font-size:11px">1D</span><span class="chip" style="padding:3px 8px;font-size:11px">1W</span></div>
+          </div>
+          <svg viewBox="0 0 320 90" style="width:100%;height:90px;margin-top:8px" aria-label="SOL price, last hour">
+            <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--green)" stop-opacity=".25"/><stop offset="1" stop-color="var(--green)" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0 70 L30 62 L60 66 L90 50 L120 54 L150 40 L180 44 L210 30 L240 34 L270 18 L300 22 L320 12 L320 90 L0 90 Z" fill="url(#g)"/>
+            <path d="M0 70 L30 62 L60 66 L90 50 L120 54 L150 40 L180 44 L210 30 L240 34 L270 18 L300 22 L320 12" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linejoin="round"/>
+            <circle cx="320" cy="12" r="3" fill="var(--green)"/>
+          </svg>
+          <div class="grid3" style="font-size:11px;color:var(--muted);margin-top:6px">
+            <div>24h volume<br><span class="mono" style="color:var(--text);font-size:13px">$640M</span></div>
+            <div>Open interest<br><span class="mono" style="color:var(--text);font-size:13px">$220M</span></div>
+            <div>Funding / 8h<br><span class="mono" style="color:var(--text);font-size:13px">+0.012%</span></div>
+          </div>
+          <div class="divider"></div>
+          <div class="row between muted" style="font-size:12px"><span>12 Perped traders live · 8 long, 4 short</span><span class="green">67% long</span></div>
+        </div>
+        <div class="muted" style="font-size:12px">Copying <b style="color:var(--text);font-weight:600">kiloklips</b> · Long SOL</div>
+        <div class="grid2">
+          <button class="btn btn-long" id="b-long">Long</button>
+          <button class="btn btn-outline" id="b-short">Short</button>
+        </div>
+        <div class="panel stack">
+          <div class="row" style="gap:6px"><button class="chip on" id="ot-market" style="flex:1;justify-content:center">Market</button><button class="chip" id="ot-limit" style="flex:1;justify-content:center">Limit</button></div>
+          <div class="row between" id="limit-row" hidden><span class="muted" style="font-size:12px">Limit price</span><input class="input mono" value="186.50" style="width:120px;padding:6px 10px;text-align:right"></div>
+          <div class="row between muted" style="font-size:12px"><span>Margin (USDC)</span><span>Max $500 during beta</span></div>
+          <div class="row" style="gap:6px">
+            <button class="chip" style="flex:1;justify-content:center">25</button><button class="chip on" style="flex:1;justify-content:center">50</button><button class="chip" style="flex:1;justify-content:center">100</button><button class="chip" style="flex:1;justify-content:center">250</button>
+          </div>
+          <input class="input mono" id="margin" value="50" inputmode="decimal">
+          <div class="row between" style="font-size:12px"><span class="muted">Leverage</span><span class="mono" style="font-weight:600" id="lev-lbl">5×</span></div>
+          <input type="range" class="range" id="lev" min="1" max="5" value="5">
+          <div class="grid3" style="font-size:11px;color:var(--muted)">
+            <div>Position<br><span class="mono" style="color:var(--text);font-size:13px" id="pos">$250.00</span></div>
+            <div>Size<br><span class="mono" style="color:var(--text);font-size:13px" id="sz">1.33 SOL</span></div>
+            <div>Liq. distance<br><span class="mono" style="color:var(--text);font-size:13px" id="liq">≈18%</span></div>
+          </div>
+        </div>
+        <div class="panel stack" style="gap:8px">
+          <div class="row between"><span style="font-weight:600;font-size:13px">Take profit / stop loss</span><button class="chip on" id="tpsl-toggle" style="padding:3px 10px;font-size:11px">On</button></div>
+          <div class="grid2" id="tpsl">
+            <div><div class="muted" style="font-size:11px;margin-bottom:4px">Take profit</div><input class="input mono" value="195.00" style="padding:8px 10px"><div class="green" style="font-size:11px;margin-top:4px">+4.0% · +$10.10</div></div>
+            <div><div class="muted" style="font-size:11px;margin-bottom:4px">Stop loss</div><input class="input mono" value="182.00" style="padding:8px 10px"><div class="red" style="font-size:11px;margin-top:4px">−2.9% · −$7.23</div></div>
+          </div>
+          <p class="faint" style="font-size:11px;margin:0">Both are placed on Hyperliquid with the order and trigger as market orders. Est. liquidation 153.20.</p>
+        </div>
+        <input class="input" id="caption" placeholder="Add a note (optional)">
+        <button class="btn btn-long" id="go" style="font-size:15px">Long SOL 5× · $250.00</button>
+        <p class="faint" style="font-size:11px;text-align:center;margin:0">Market order, up to 3% slippage. You can lose your margin. Not financial advice.</p>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="screen" id="s-profile" hidden>
+      <div class="hdr"><h1>kiloklips</h1><button class="btn btn-outline sm">Log out</button></div>
+      <div class="panel">
+        <div class="row" style="gap:12px">
+          <div class="avatar" style="width:52px;height:52px;font-size:16px">KY</div>
+          <div style="flex:1;min-width:0">
+            <div class="muted" style="font-size:12px">312 followers · 41 following</div>
+            <p style="margin:4px 0 0">Koh Samui. Size small, take profits, post the losses too.</p>
+            <p class="faint mono" style="font-size:11px;margin:6px 0 0">0x7c2a9f…e41b · verified on-chain</p>
+          </div>
+        </div>
+        <div class="grid3" style="margin-top:14px">
+          <div class="stat"><small>PnL 7d</small><span class="mono green" style="font-weight:600">+$412</span></div>
+          <div class="stat"><small>PnL all time</small><span class="mono green" style="font-weight:600">+$1,904</span></div>
+          <div class="stat"><small>Win rate</small><span class="mono" style="font-weight:600">58%</span></div>
+        </div>
+      </div>
+      <div class="eyebrow">Open positions</div>
+      <div class="panel row between" style="padding:12px 16px">
+        <div><div style="font-weight:600">SOL <span class="chip long" style="padding:2px 6px;font-size:11px;margin-left:4px">Long 5×</span></div><div class="muted mono" style="font-size:12px;margin-top:2px">1.33 @ 187.42 · mark 189.11</div></div>
+        <div style="text-align:right"><div class="mono green" style="font-weight:600">+$2.25</div><button class="btn btn-outline sm" style="margin-top:6px">Close</button></div>
+      </div>
+      <div class="eyebrow">History</div>
+      <article class="panel">
+        <div class="row between" style="margin-bottom:14px"><div class="row"><div class="avatar">KY</div><div><div style="font-weight:600">kiloklips</div><div class="muted" style="font-size:12px">Yesterday · closed</div></div></div><span class="chip">Short · 3×</span></div>
+        <div class="row between" style="align-items:flex-end">
+          <div><div class="coin">DOGE</div><div class="muted mono" style="font-size:12px;margin-top:2px">$150 · 0.1842 → 0.2008</div></div>
+          <div style="text-align:right"><div class="mono pnl red">−9.0%</div><div class="mono red" style="font-size:13px">−$13.50 realised</div></div>
+        </div>
+        <div class="bar"><i style="width:9%;background:var(--red)"></i></div>
+        <p class="cap">Got perped. Doge does what doge wants.</p>
+      </article>
+    </section>
+
+    <!-- BOARD -->
+    <section class="screen" id="s-board" hidden>
+      <div class="hdr"><h1>Leaderboard</h1></div>
+      <div class="row" style="margin-bottom:10px;gap:6px"><span class="chip on">7 days</span><span class="chip">30 days</span><span class="chip">All time</span></div>
+      <p class="muted" style="font-size:12px;margin:0 0 12px">Realised PnL from Hyperliquid fills. Chain data only, no screenshots.</p>
+      <div class="panel" style="padding:14px 16px">
+        <div class="lb"><span class="rank">1</span><div style="flex:1;min-width:0"><div style="font-weight:600">samui_sam</div><div class="muted" style="font-size:12px">23 closed · 70% win · $48.2K volume</div></div><div class="mono green" style="font-weight:600">+$2,104</div></div>
+        <div class="lb"><span class="rank">2</span><div style="flex:1;min-width:0"><div style="font-weight:600">kiloklips</div><div class="muted" style="font-size:12px">31 closed · 58% win · $61.0K volume</div></div><div class="mono green" style="font-weight:600">+$412</div></div>
+        <div class="lb"><span class="rank">3</span><div style="flex:1;min-width:0"><div style="font-weight:600">wickhunter</div><div class="muted" style="font-size:12px">9 closed · 67% win · $12.4K volume</div></div><div class="mono green" style="font-weight:600">+$188</div></div>
+        <div class="lb"><span class="rank">4</span><div style="flex:1;min-width:0"><div style="font-weight:600">degenmaxi</div><div class="muted" style="font-size:12px">44 closed · 41% win · $190K volume</div></div><div class="mono red" style="font-weight:600">−$640</div></div>
+      </div>
+    </section>
+
+    <nav class="nav" aria-label="Tabs">
+      <button data-tab="feed" class="on"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Feed</button>
+      <button data-tab="markets"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Trade</button>
+      <button data-tab="board"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 6h3a3 3 0 0 1-3 3M7 6H4a3 3 0 0 0 3 3"/></svg>Board</button>
+      <button data-tab="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Me</button>
+    </nav>
+  </div>
+</div>
+
+<script>
+  const tabs = ["feed", "markets", "trade", "board", "profile"];
+  function show(t) {
+    if (!tabs.includes(t)) t = "feed";
+    tabs.forEach(x => { document.getElementById("s-" + x).hidden = x !== t; });
+    const navTab = t === "trade" ? "markets" : t;
+    document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === navTab));
+    document.querySelector(".screen:not([hidden])")?.scrollTo(0, 0);
+  }
+  document.querySelectorAll("[data-go]").forEach(el => el.addEventListener("click", () => { location.hash = el.dataset.go; show(el.dataset.go); }));
+  document.querySelectorAll(".nav button").forEach(b => b.addEventListener("click", () => { location.hash = b.dataset.tab; show(b.dataset.tab); }));
+  window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+  show(location.hash.slice(1));
+
+  const mid = 187.42, m = document.getElementById("margin"), lev = document.getElementById("lev"), go = document.getElementById("go");
+  let side = "long";
+  function recalc() {
+    const usd = Math.max(0, Number(m.value) || 0), l = Number(lev.value), notional = usd * l;
+    document.getElementById("lev-lbl").textContent = l + "×";
+    document.getElementById("pos").textContent = "$" + notional.toFixed(2);
+    document.getElementById("sz").textContent = (notional / mid).toFixed(2) + " SOL";
+    document.getElementById("liq").textContent = "≈" + Math.round((100 / l) * 0.9) + "%";
+    go.textContent = (side === "long" ? "Long" : "Short") + " SOL " + l + "× · $" + notional.toFixed(2);
+    go.className = "btn " + (side === "long" ? "btn-long" : "btn-short");
+  }
+  const otM = document.getElementById("ot-market"), otL = document.getElementById("ot-limit"), lr = document.getElementById("limit-row");
+  otM.addEventListener("click", () => { otM.className = "chip on"; otL.className = "chip"; lr.hidden = true; });
+  otL.addEventListener("click", () => { otL.className = "chip on"; otM.className = "chip"; lr.hidden = false; });
+  const tt = document.getElementById("tpsl-toggle"), tp = document.getElementById("tpsl");
+  tt.addEventListener("click", () => { const on = tt.classList.toggle("on"); tt.textContent = on ? "On" : "Off"; tp.hidden = !on; });
+  m.addEventListener("input", recalc); lev.addEventListener("input", recalc);
+  document.getElementById("b-long").addEventListener("click", () => { side = "long"; document.getElementById("b-long").className = "btn btn-long"; document.getElementById("b-short").className = "btn btn-outline"; recalc(); });
+  document.getElementById("b-short").addEventListener("click", () => { side = "short"; document.getElementById("b-short").className = "btn btn-short"; document.getElementById("b-long").className = "btn btn-outline"; recalc(); });
+  recalc();
+</script>

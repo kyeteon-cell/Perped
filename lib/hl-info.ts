@@ -138,3 +138,59 @@ export function summariseFills(fills: Fill[]) {
     trades: fills.length,
   };
 }
+
+/** Per-asset market context: 24h volume, open interest, funding, mark, previous-day price. */
+export type AssetCtx = {
+  dayNtlVlm: string;
+  openInterest: string;
+  funding: string;
+  markPx: string;
+  midPx: string | null;
+  prevDayPx: string;
+  oraclePx: string;
+};
+
+export type MarketRow = PerpAsset & {
+  mid: number;
+  mark: number;
+  change24h: number; // percent
+  volume24h: number; // USD notional
+  openInterest: number; // USD
+  funding8h: number; // percent per 8h
+};
+
+/** Universe + live context in one call (metaAndAssetCtxs). */
+export async function getMarkets(): Promise<MarketRow[]> {
+  const [meta, ctxs] = await info<[{ universe: { name: string; szDecimals: number; maxLeverage: number; onlyIsolated?: boolean; isDelisted?: boolean }[] }, AssetCtx[]]>(
+    { type: "metaAndAssetCtxs" },
+  );
+  return meta.universe
+    .map((u, index) => {
+      const c = ctxs[index];
+      const mark = Number(c?.markPx ?? 0);
+      const mid = Number(c?.midPx ?? mark);
+      const prev = Number(c?.prevDayPx ?? 0);
+      return {
+        ...u,
+        index,
+        mid,
+        mark,
+        change24h: prev > 0 ? ((mark - prev) / prev) * 100 : 0,
+        volume24h: Number(c?.dayNtlVlm ?? 0),
+        openInterest: Number(c?.openInterest ?? 0) * mark,
+        funding8h: Number(c?.funding ?? 0) * 100,
+      };
+    })
+    .filter((m) => !m.isDelisted && m.mark > 0);
+}
+
+export type Candle = { t: number; o: number; h: number; l: number; c: number; v: number };
+
+/** Candles for a coin. interval: "1m" | "5m" | "15m" | "1h" | "4h" | "1d". */
+export async function getCandles(coin: string, interval: string, startTime: number, endTime = Date.now()): Promise<Candle[]> {
+  const raw = await info<{ t: number; o: string; h: string; l: string; c: string; v: string }[]>({
+    type: "candleSnapshot",
+    req: { coin, interval, startTime, endTime },
+  });
+  return raw.map((k) => ({ t: k.t, o: Number(k.o), h: Number(k.h), l: Number(k.l), c: Number(k.c), v: Number(k.v) }));
+}

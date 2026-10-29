@@ -8,9 +8,9 @@ export function Header({ title, right }: { title?: string; right?: React.ReactNo
   return (
     <header className="mb-4 flex items-center justify-between">
       <div>
-        <h1 className="text-xl font-black tracking-tight">
+        <h1 className="text-[22px] font-bold tracking-tight">
           {title ?? APP_NAME}
-          {HL_NETWORK === "testnet" && <span className="pill ml-2 align-middle" style={{ background: "var(--accent)", color: "#1a1200" }}>testnet</span>}
+          {HL_NETWORK === "testnet" && <span className="tag">Testnet</span>}
         </h1>
       </div>
       <div className="flex items-center gap-2">

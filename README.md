@@ -9,7 +9,10 @@ Mobile-first web app (installable PWA). Trades execute directly on Hyperliquid f
 | Area | Status |
 |---|---|
 | Login + silent embedded wallet (Privy: email / Google / X / wallet) | ✅ |
-| One-tap market orders on Hyperliquid (long/short, leverage, guardrails) | ✅ |
+| Markets page: every perp with price, 24h change, volume, open interest, funding, sparkline | ✅ |
+| Market page with price chart (1h/1d/1w) and live Perped long/short sentiment | ✅ |
+| Market and limit orders (long/short, leverage, guardrails) | ✅ |
+| Take-profit / stop-loss placed with the entry (Hyperliquid normalTpsl group) | ✅ |
 | Builder-code fee attached to every order, one-time user approval flow | ✅ |
 | Live feed: every trade is a post with running P&L from the Hyperliquid WebSocket | ✅ |
 | Copy trade (one tap, pre-filled ticket, attribution tracked) | ✅ |
@@ -75,11 +78,11 @@ See `.env.example`. Key ones:
 ## Project layout
 
 ```
-app/                 pages (feed, trade, leaderboard, profile) + API routes
-components/          TradeTicket, FeedPost, BuilderApproval, HandlePicker, Nav, Header
+app/                 pages (feed, markets, market detail, trade, leaderboard, profile) + API routes
+components/          TradeTicket, FeedPost, PriceChart, Sparkline, BuilderApproval, HandlePicker, Nav, Header
 lib/config.ts        env → typed config (network, builder fee, guardrails)
-lib/hl-info.ts       Hyperliquid read-only API (meta, mids, state, fills) + stats summariser
-lib/hl-exchange.ts   signed actions: market order with builder code, close, approve fee
+lib/hl-info.ts       Hyperliquid read-only API (markets, candles, mids, state, fills) + stats summariser
+lib/hl-exchange.ts   signed actions: market/limit order with TP/SL + builder code, close, approve fee
 lib/schema.ts        Drizzle schema: users, posts, comments, reactions, follows, stats
 lib/hooks/           useSession (Privy + viem), useMids (WebSocket), useMarkets
 ```

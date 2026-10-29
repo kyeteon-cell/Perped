@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Post } from "@/lib/schema";
-import { fmtUsd, fmtPct, pnlForPosition, timeAgo, sizeTier } from "@/lib/format";
+import { fmtUsd, fmtPct, pnlForPosition, timeAgo } from "@/lib/format";
 import { useSession } from "@/lib/hooks/useSession";
+
+const Ico = ({ d }: { d: string }) => (
+  <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+);
 
 export type FeedItem = {
   post: Post;
@@ -14,7 +18,6 @@ export type FeedItem = {
   copyCount: number;
 };
 
-const TIER_EMOJI: Record<string, string> = { whale: "🐋", large: "🦈", mid: "🐟", small: "🦐" };
 
 export function FeedPost({ item, mid, onChanged }: { item: FeedItem; mid?: number; onChanged?: () => void }) {
   const { post, author } = item;
@@ -31,7 +34,6 @@ export function FeedPost({ item, mid, onChanged }: { item: FeedItem; mid?: numbe
   const { pnl, pct } = pnlForPosition(post.side, entry, markPx, size);
   const roi = pct * post.leverage;
   const pos = pnl >= 0;
-  const tier = sizeTier(Number(post.notionalUsd));
 
   const loadComments = async () => {
     setOpen((o) => !o);
@@ -64,48 +66,46 @@ export function FeedPost({ item, mid, onChanged }: { item: FeedItem; mid?: numbe
     <article className="panel p-4">
       <header className="mb-3 flex items-center justify-between">
         <Link href={`/u/${author.handle}`} className="flex items-center gap-2">
-          <div className="grid size-9 place-items-center rounded-full text-sm font-bold" style={{ background: "var(--panel-2)" }}>
+          <div className="muted grid size-9 place-items-center rounded-full text-xs font-semibold" style={{ background: "var(--panel-2)" }}>
             {author.handle.slice(0, 2).toUpperCase()}
           </div>
           <div className="leading-tight">
-            <div className="font-semibold">@{author.handle}</div>
-            <div className="muted text-xs">{timeAgo(post.createdAt)} ago {post.copiedFromId ? "· copied" : ""}</div>
+            <div className="font-semibold">{author.handle}</div>
+            <div className="muted text-xs">{timeAgo(post.createdAt)} ago{post.copiedFromId ? " · copied" : ""}{!isOpen ? " · closed" : ""}</div>
           </div>
         </Link>
-        <span className={`pill ${isOpen ? "" : "muted"}`} style={{ background: "var(--panel-2)" }}>{isOpen ? "LIVE" : "CLOSED"}</span>
+        <span className={`pill ${isOpen ? (post.side === "long" ? "pill-long" : "pill-short") : "muted"}`}>{post.side === "long" ? "Long" : "Short"} · {post.leverage}×</span>
       </header>
 
       <div className="flex items-end justify-between">
         <div>
-          <div className="text-2xl font-black">
-            <span className={post.side === "long" ? "green" : "red"}>{post.side === "long" ? "▲ LONG" : "▼ SHORT"}</span> {post.coin}
-            <span className="muted ml-2 text-base font-semibold">{post.leverage}×</span>
-          </div>
-          <div className="muted mt-1 text-sm">
-            {TIER_EMOJI[tier]} {fmtUsd(Number(post.notionalUsd), { compact: true })} @ ${entry.toLocaleString("en-US", { maximumFractionDigits: 6 })}
+          <div className="text-xl font-bold tracking-tight">{post.coin}</div>
+          <div className="muted mono mt-0.5 text-xs">
+            {fmtUsd(Number(post.notionalUsd), { compact: true })} · entry {entry.toLocaleString("en-US", { maximumFractionDigits: 6 })}
+            {!isOpen && post.exitPx ? ` → ${Number(post.exitPx).toLocaleString("en-US", { maximumFractionDigits: 6 })}` : ""}
           </div>
         </div>
         <div className="text-right">
-          <div className={`font-mono text-2xl font-black ${pos ? "green" : "red"}`}>{fmtPct(roi, 1)}</div>
-          <div className={`font-mono text-sm ${pos ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</div>
+          <div className={`font-mono text-xl font-semibold ${pos ? "green" : "red"}`}>{fmtPct(roi, 1)}</div>
+          <div className={`font-mono text-[13px] ${pos ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}{isOpen ? "" : " realised"}</div>
         </div>
       </div>
 
       {/* P&L bar */}
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--panel-2)" }}>
+      <div className="mt-3 h-1 w-full overflow-hidden rounded-full" style={{ background: "var(--panel-2)" }}>
         <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, Math.abs(roi))}%`, background: pos ? "var(--green)" : "var(--red)" }} />
       </div>
 
       {post.caption && <p className="mt-3 text-sm">{post.caption}</p>}
 
-      <footer className="mt-3 flex items-center gap-2 text-sm">
-        <button onClick={() => react("fire")} className="pill" style={{ background: "var(--panel-2)" }}>🔥 {item.reactionCount + reacted}</button>
-        <button onClick={loadComments} className="pill" style={{ background: "var(--panel-2)" }}>💬 {item.commentCount + (comments?.length ?? 0) - (comments ? item.commentCount : 0)}</button>
-        <span className="pill muted" style={{ background: "var(--panel-2)" }}>📋 {item.copyCount} copies</span>
+      <footer className="muted mt-3 flex items-center gap-4 text-xs">
+        <button onClick={() => react("fire")} className="flex items-center gap-1"><Ico d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" />{item.reactionCount + reacted}</button>
+        <button onClick={loadComments} className="flex items-center gap-1"><Ico d="M4 5h16v11H9l-5 4z" />{comments ? comments.length : item.commentCount}</button>
+        <span className="flex items-center gap-1"><Ico d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z" />{item.copyCount} copied</span>
         {isOpen && (
           <Link
             href={`/trade?coin=${post.coin}&side=${post.side}&lev=${post.leverage}&copy=${post.id}&from=${author.handle}`}
-            className="btn btn-accent ml-auto !px-3 !py-1.5 text-xs"
+            className="btn btn-accent ml-auto !rounded-lg !px-3 !py-1.5 text-xs"
           >
             Copy trade
           </Link>
