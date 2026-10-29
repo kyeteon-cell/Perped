@@ -1,0 +1,40 @@
+{
+  "name": "perped",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Perped — social perps on Hyperliquid. Every trade is a post.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@nktkas/hyperliquid": "^0.24.0",
+    "@privy-io/react-auth": "^2.0.0",
+    "@privy-io/server-auth": "^1.18.0",
+    "drizzle-orm": "^0.44.0",
+    "next": "^15.3.0",
+    "postgres": "^3.4.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "swr": "^2.3.3",
+    "viem": "^2.30.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "drizzle-kit": "^0.31.0",
+    "eslint": "^9.27.0",
+    "eslint-config-next": "^15.3.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.8.0"
+  }
+}

@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0b0d12;
+  --panel: #12151d;
+  --panel-2: #181c26;
+  --line: #242938;
+  --text: #e8eaf0;
+  --muted: #8b93a7;
+  --green: #22d37a;
+  --red: #ff4d6d;
+  --accent: #ffb020;
+}
+
+html, body { background: var(--bg); color: var(--text); }
+body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif; -webkit-tap-highlight-color: transparent; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; }
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100; }
+.btn-long { background: var(--green); color: #04130b; }
+.btn-short { background: var(--red); color: #1a0509; }
+.btn-ghost { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
+.btn-accent { background: var(--accent); color: #1a1200; }
+.pill { @apply rounded-full px-2.5 py-1 text-xs font-semibold; }
+.input { @apply w-full rounded-xl px-3 py-3 outline-none; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); }
+.input:focus { border-color: var(--accent); }
+.muted { color: var(--muted); }
+.green { color: var(--green); }
+.red { color: var(--red); }
+::-webkit-scrollbar { width: 0; height: 0; }
