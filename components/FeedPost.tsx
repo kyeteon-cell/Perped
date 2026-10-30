@@ -101,6 +101,7 @@ function Acts({ item, onChanged, children, mid, challenge, manage }: { item: Fee
       <button className={commenting ? "on" : ""} onClick={() => setCommenting((v) => !v)} aria-label="Comment"><Icon d={I.comment} size={18} />{commentCount}</button>
       <button onClick={() => setShare(true)} aria-label="Share"><Icon d={I.share} size={18} /></button>
       {children}
+      {manage && <PinButton item={item} />}
       {manage && <button className="fade ml-auto" onClick={() => setManaging(true)}>Manage</button>}
       {challenge && <button className={manage ? "copy" : "copy ml-auto"} onClick={() => setShare(true)}>Challenge</button>}
       {share && <ShareSheet item={item} mid={mid} onClose={() => setShare(false)} />}
@@ -154,13 +155,13 @@ function useSwipeToAct(onCopy: () => void, onFade: () => void, enabled: boolean)
   return { armed, refs: { fg, bgCopy, bgFade }, handlers: { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel: onTouchEnd } };
 }
 
-/** Pin / unpin one of your own closed trades to the top of your profile. Updates every profile list on the page. */
+/** Pin / unpin one of your own trades (live or closed) to the top of your profile. */
 function PinButton({ item }: { item: FeedRow }) {
   const { authedFetch, profile } = useSession();
   const { mutate } = useSWRConfig();
   const [on, setOn] = useState(!!item.post.pinned);
   const [busy, setBusy] = useState(false);
-  if (!profile || item.author?.id !== profile.id || item.post.kind !== "trade" || item.post.status !== "closed") return null;
+  if (!profile || item.author?.id !== profile.id || item.post.kind !== "trade") return null;
   const toggle = async () => {
     setBusy(true); setOn((v) => !v);
     const r = await authedFetch(`/api/posts/${item.post.id}/pin`, { method: "POST" });

@@ -538,3 +538,15 @@ html { scroll-behavior: smooth; }
 .pincard.won { box-shadow: inset 0 0 0 1.5px var(--gold); }
 .pin-battle { font-size: 10px; font-weight: 800; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .post.row { cursor: pointer; }
+
+/* ---------- Activity feed ---------- */
+.act { padding: 4px 0 12px; }
+.act-day { padding: 12px 20px 4px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.act-row { display: flex; align-items: center; gap: 10px; padding: 9px 20px; text-decoration: none; color: inherit; }
+.act-row:active { background: var(--surface); }
+.act-ic { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--surface); color: var(--muted); }
+.act-ic.green { background: var(--green-soft); color: var(--green); } .act-ic.red { background: var(--red-soft); color: var(--red); }
+.act-ic.gold { background: var(--gold-soft); color: var(--gold); } .act-ic.blue { background: var(--blue-soft); color: var(--blue); }
+.act-ic.violet { background: var(--violet-soft); color: var(--violet); } .act-ic.brand { background: var(--brand-soft); color: var(--brand); }
+.pinbtn { margin-left: auto; }
+.pinbtn + .fade { margin-left: 0 !important; }

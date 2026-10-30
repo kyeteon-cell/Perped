@@ -11,6 +11,7 @@ import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/com
 import { RankCard } from "@/components/RankCard";
 import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
 import { FollowButton } from "@/components/FollowButton";
+import { ActivityFeed } from "@/components/ActivityFeed";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
@@ -21,7 +22,8 @@ import type { AssetPosition } from "@/lib/hl-info";
 import type { FeedRow } from "@/lib/feed";
 
 type ProfileRes = { user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
-type Tab = "posts" | "trades" | "followers" | "following";
+type Tab = "activity" | "trades" | "posts" | "people";
+type People = "followers" | "following";
 
 export default function ProfilePage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = use(params);
@@ -29,7 +31,8 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const { authedFetch, walletClient, authenticated, login, fee } = useSession();
   const { mids } = useMids();
   const { markets } = useMarkets();
-  const [tab, setTab] = useState<Tab>("posts");
+  const [tab, setTab] = useState<Tab>("activity");
+  const [people, setPeopleDir] = useState<People>("followers");
   const [tradeTab, setTradeTab] = useState<"open" | "closed">("open");
   const [sheet, setSheet] = useState<"deposit" | "withdraw" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,17 +42,17 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const postsKey = tab === "posts" ? `/api/posts?handle=${handle}&kind=text` : tab === "trades" ? `/api/posts?handle=${handle}&kind=trade&status=${tradeTab}` : null;
   const { data: feed, mutate: mutateFeed } = useSWR<{ posts: FeedRow[] }>(postsKey);
   const { data: calls } = useSWR<{ posts: FeedRow[] }>(tab === "posts" ? `/api/posts?handle=${handle}&kind=call&limit=10` : null);
-  const { data: pinned, mutate: mutatePinned } = useSWR<{ posts: FeedRow[] }>(`/api/posts?handle=${handle}&kind=trade&status=closed&limit=50`);
-  const { data: people } = useSWR<{ users: { handle: string; avatarUrl: string | null; pnl7d: string | null; winRate: string | null }[] }>(tab === "followers" || tab === "following" ? `/api/follows?handle=${handle}&dir=${tab}` : null);
+  const { data: pinned, mutate: mutatePinned } = useSWR<{ posts: FeedRow[] }>(`/api/posts?handle=${handle}&kind=trade&limit=60`);
+  const { data: peopleList } = useSWR<{ users: { handle: string; avatarUrl: string | null; pnl7d: string | null; winRate: string | null }[] }>(tab === "people" ? `/api/follows?handle=${handle}&dir=${people}` : null);
 
   const demoEq = useDemoEquity(data?.user.isDemo ? data.user.handle : null, Number(data?.user.demoBalance ?? 0), mids);
   if (!data) return <SkeletonList n={2} />;
   if ("error" in (data as unknown as Record<string, unknown>)) return <div className="p-5"><p className="muted">No trader with that handle.</p></div>;
   const { user, stats: s, isMe } = data;
-  const roiOf = (p: FeedRow) => ((Number(p.post.exitPx) - Number(p.post.entryPx)) / Number(p.post.entryPx)) * 100 * (p.post.side === "long" ? 1 : -1) * (p.post.leverage ?? 1);
+  const roiOf = (p: FeedRow) => { const entry = Number(p.post.entryPx); const mark = p.post.status === "open" ? (mids[p.post.coin ?? ""] ?? entry) : Number(p.post.exitPx ?? entry); return ((mark - entry) / entry) * 100 * (p.post.side === "long" ? 1 : -1) * (p.post.leverage ?? 1); };
   const wonBattle = (p: FeedRow) => (p.post.meta as { battle?: { won: boolean | null } } | null)?.battle?.won === true;
-  const closedAll = pinned?.posts ?? [];
-  const pinsOnly = closedAll.filter((p) => p.post.pinned);
+  const closedAll = (pinned?.posts ?? []).filter((p) => p.post.status === "closed");
+  const pinsOnly = (pinned?.posts ?? []).filter((p) => p.post.pinned);
   // Always something in view: pinned trades if they've chosen any, otherwise their best results (battle wins first).
   const pins = pinsOnly.length ? pinsOnly : [...closedAll].sort((a, b) => Number(wonBattle(b)) - Number(wonBattle(a)) || roiOf(b) - roiOf(a)).slice(0, 6);
   const showingTop = pinsOnly.length === 0;
@@ -86,8 +89,8 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
             <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1">✓</span>}<RankChip xp={user.xp} compact />{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
             <div className="mono when text-xs">{user.isDemo ? "practice account · simulated fills" : `${user.address.slice(0, 6)}…${user.address.slice(-4)} · verified on-chain`}</div>
             <div className="mt-2.5 flex gap-4 text-sm">
-              <button className="muted" onClick={() => setTab("followers")}><b style={{ color: "var(--text)" }}>{data.followers}</b> followers</button>
-              <button className="muted" onClick={() => setTab("following")}><b style={{ color: "var(--text)" }}>{data.following}</b> following</button>
+              <button className="muted" onClick={() => { setPeopleDir("followers"); setTab("people"); }}><b style={{ color: "var(--text)" }}>{data.followers}</b> followers</button>
+              <button className="muted" onClick={() => { setPeopleDir("following"); setTab("people"); }}><b style={{ color: "var(--text)" }}>{data.following}</b> following</button>
             </div>
           </div>
         </div>
@@ -103,13 +106,13 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           <div className="flex items-center justify-between"><span className="eyebrow">{showingTop ? "Top trades" : "Pinned"}</span>{isMe && <span className="when">{showingTop ? "pin your own picks from Trades → Closed" : "your picks"}</span>}</div>
           <div className="hstrip mt-3" style={{ margin: "12px -20px 0", padding: "0 20px 6px" }}>
             {pins.map((p) => {
-              const roi = ((Number(p.post.exitPx) - Number(p.post.entryPx)) / Number(p.post.entryPx)) * 100 * (p.post.side === "long" ? 1 : -1) * (p.post.leverage ?? 1);
+              const roi = roiOf(p); const live = p.post.status === "open";
               return (
                 <Link key={p.post.id} href={`/post/${p.post.id}`} className={`pincard ${(p.post.meta as { battle?: { won: boolean | null } } | null)?.battle?.won === true ? "won" : ""}`}>
                   {(p.post.meta as { battle?: { won: boolean | null; vs?: string } } | null)?.battle && <div className={`pin-battle ${(p.post.meta as { battle: { won: boolean | null } }).battle.won === true ? "green" : (p.post.meta as { battle: { won: boolean | null } }).battle.won === false ? "red" : "muted"}`}>⚡ {(p.post.meta as { battle: { won: boolean | null; vs?: string } }).battle.won === true ? "Perped" : (p.post.meta as { battle: { won: boolean | null } }).battle.won === false ? "Perped by" : "Drew with"} {(p.post.meta as { battle: { vs?: string } }).battle.vs}</div>}
                   <div className="flex items-center gap-2"><CoinMark coin={p.post.coin!} size="sm" /><b>{ticker(p.post.coin!)}</b><span className={`ml-auto text-[11px] font-bold ${p.post.side === "long" ? "green" : "red"}`}>{p.post.side === "long" ? "Long" : "Short"} {p.post.leverage}×</span></div>
                   <div className={`mono mt-2 text-[26px] font-bold leading-none ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 0)}</div>
-                  <div className="when mt-1.5 text-[11px]">{new Date(p.post.closedAt ?? p.post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {fmtUsd(Number(p.post.notionalUsd) / (p.post.leverage ?? 1), { compact: true })} margin</div>
+                  <div className="when mt-1.5 text-[11px]">{live ? <span className="green font-bold">● LIVE</span> : new Date(p.post.closedAt ?? p.post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {fmtUsd(Number(p.post.notionalUsd) / (p.post.leverage ?? 1), { compact: true })} margin</div>
                 </Link>
               );
             })}
@@ -150,8 +153,10 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
       <PerformanceCard handle={handle} stats={s} />
 
       <div className="tabs" style={{ gridTemplateColumns: "repeat(4, 1fr)", top: 0 }}>
-        {(["posts", "trades", "followers", "following"] as Tab[]).map((t) => <button key={t} className={`capitalize ${tab === t ? "on" : ""}`} onClick={() => setTab(t)}>{t}</button>)}
+        {(["activity", "trades", "posts", "people"] as Tab[]).map((t) => <button key={t} className={`capitalize ${tab === t ? "on" : ""}`} onClick={() => setTab(t)}>{t}</button>)}
       </div>
+
+      {tab === "activity" && <ActivityFeed handle={handle} />}
 
       {tab === "posts" && (
         <>
@@ -187,12 +192,13 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         </>
       )}
 
-      {(tab === "followers" || tab === "following") && (
+      {tab === "people" && (
         <>
-          {(people?.users ?? []).map((u) => (
+          <div className="seg px-5 pb-1 pt-3.5">{(["followers", "following"] as People[]).map((d) => <button key={d} className={`chip capitalize ${people === d ? "on" : ""}`} onClick={() => setPeopleDir(d)}>{d} · {d === "followers" ? data.followers : data.following}</button>)}</div>
+          {(peopleList?.users ?? []).map((u) => (
             <Link key={u.handle} href={`/u/${u.handle}`} className="lb"><Avatar handle={u.handle} url={u.avatarUrl} size={44} link={false} /><FollowButton handle={u.handle} compact className="order-last" /><div className="min-w-0 flex-1"><div className="name">{u.handle}</div><div className="when">{fmtUsd(Number(u.pnl7d ?? 0), { sign: true, compact: true })} · 7 days · {fmtPct(Number(u.winRate ?? 0), 0)} win</div></div></Link>
           ))}
-          {(people?.users.length ?? 0) === 0 && <p className="muted p-5 text-sm">Nobody here yet.</p>}
+          {(peopleList?.users.length ?? 0) === 0 && <p className="muted p-5 text-sm">Nobody here yet.</p>}
         </>
       )}
 
