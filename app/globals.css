@@ -387,8 +387,11 @@ button:active { transform: scale(.97); }
 
 
 /* ---------- Avatar pins over the chart ---------- */
-.pins { position: absolute; inset: 0; pointer-events: none; }
-.pin { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; border-radius: 50%; padding: 2px; background: var(--bg); box-shadow: 0 0 0 2px var(--green), 0 4px 10px -4px rgba(0,0,0,.6); transition: transform .15s; }
+.pins { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+.pin-n { position: absolute; right: -6px; top: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 10px; line-height: 16px; text-align: center; font-weight: 800; }
+.pin-toggle { position: absolute; left: 6px; top: 6px; pointer-events: auto; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--muted); background: color-mix(in srgb, var(--bg) 85%, transparent); border: 1px solid var(--line); }
+.pin-toggle.on { color: var(--text); border-color: var(--text); }
+.pin { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; touch-action: manipulation; display: block; border-radius: 50%; padding: 2px; background: var(--bg); box-shadow: 0 0 0 2px var(--green), 0 4px 10px -4px rgba(0,0,0,.6); transition: transform .15s; }
 .pin.short { box-shadow: 0 0 0 2px var(--red), 0 4px 10px -4px rgba(0,0,0,.6); }
 .pin.muted { opacity: .45; filter: saturate(0); }
 .pin.hot { box-shadow: 0 0 0 2px var(--gold), 0 0 0 5px rgba(245,181,10,.25), 0 4px 10px -4px rgba(0,0,0,.6); }

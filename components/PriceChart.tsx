@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
-import { createChart, ColorType, CrosshairMode, type IChartApi, type ISeriesApi, type UTCTimestamp, type SeriesMarker, type Time } from "lightweight-charts";
+import { createChart, ColorType, CrosshairMode, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
 import type { Candle } from "@/lib/hl-info";
 import Link from "next/link";
 import { Avatar } from "./ui";
@@ -34,7 +34,9 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
   const vol = useRef<ISeriesApi<"Histogram"> | null>(null);
   const lastRef = useRef<Candle | null>(null);
   const clickRef = useRef(onMarkerClick); clickRef.current = onMarkerClick;
-  const [pins, setPins] = useState<{ id: string; x: number; y: number; m: ChartMarker }[]>([]);
+  const [showPins, setShowPins] = useState<boolean>(() => { try { return localStorage.getItem("perped-chart-pins") !== "0"; } catch { return true; } });
+  const showPinsRef = useRef(showPins); showPinsRef.current = showPins;
+  const [pins, setPins] = useState<{ id: string; x: number; y: number; n: number; m: ChartMarker }[]>([]);
   const markersRef = useRef<ChartMarker[]>(markers); markersRef.current = markers;
   const candlesRef = useRef<Candle[]>([]);
 
@@ -100,14 +102,21 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
     const ch = chart.current, s = main.current, el = box.current; if (!ch || !s || !el) return setPins([]);
     const times = candlesRef.current.map((c) => c.t); if (!times.length) return setPins([]);
     const snap = (t: number) => { let lo = times[0]; for (const x of times) { if (x <= t) lo = x; else break; } return lo; };
-    const out: { id: string; x: number; y: number; m: ChartMarker }[] = [];
-    for (const m of markersRef.current) {
-      if (m.t < times[0] - 60_000) continue;
+    if (!showPinsRef.current) return setPins([]);
+    // One pin per trader (their latest open trade), newest first; closed trades stay off the chart.
+    const seen = new Set<string>();
+    const rows = [...markersRef.current].filter((m) => !m.muted && m.t >= times[0] - 60_000).sort((a, b) => b.t - a.t).filter((m) => { const k = m.handle ?? m.id; if (seen.has(k)) return false; seen.add(k); return true; });
+    const out: { id: string; x: number; y: number; n: number; m: ChartMarker }[] = [];
+    for (const m of rows) {
       const x = ch.timeScale().timeToCoordinate((snap(m.t) / 1000) as UTCTimestamp);
       const y = m.price ? s.priceToCoordinate(m.price) : null;
       if (x == null || y == null) continue;
       if (x < -10 || x > el.clientWidth - 40) continue;
-      out.push({ id: m.id, x, y, m });
+      // Cluster bubbles that would overlap; the badge shows how many sit there.
+      const near = out.find((o) => Math.abs(o.x - x) < 26 && Math.abs(o.y - y) < 26);
+      if (near) { near.n += 1; continue; }
+      if (out.length >= 24) break;
+      out.push({ id: m.id, x, y, n: 1, m });
     }
     setPins(out);
   };
@@ -115,14 +124,10 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
     const s = main.current; if (!s || !candles.length) return;
     const times = candles.map((c) => c.t);
     const snap = (t: number) => { let lo = times[0]; for (const x of times) { if (x <= t) lo = x; else break; } return lo; };
-    const ms: SeriesMarker<Time>[] = markers
-      .filter((m) => m.t >= times[0] - 60_000)
-      .map((m): SeriesMarker<Time> => ({ id: m.id, time: (snap(m.t) / 1000) as UTCTimestamp, position: m.side === "long" ? ("belowBar" as const) : ("aboveBar" as const), shape: m.side === "long" ? ("arrowUp" as const) : ("arrowDown" as const), color: m.muted ? "#8b8b8b" : m.side === "long" ? cssVar("--green", "#16a34a") : cssVar("--red", "#dc2626"), text: m.hot ? "⚔" : undefined, size: m.hot ? 1.5 : 0.8 }))
-      .sort((a, b) => (a.time as number) - (b.time as number));
-    s.setMarkers(ms);
+    s.setMarkers([]);
     candlesRef.current = candles;
     placePins();
-  }, [markers, candles, mode]);
+  }, [markers, candles, mode, showPins]);
 
   useEffect(() => {
     const ch = chart.current; if (!ch) return;
@@ -166,12 +171,18 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
       )}
       <div className="relative mt-1.5">
         <div ref={box} className="w-full" style={{ height: 260 }} />
-        <div className="pins" aria-hidden={false}>
+        <div className="pins">
           {pins.map((p) => (
-            <Link key={p.id} href={p.m.href ?? "#"} className={`pin ${p.m.side} ${p.m.muted ? "muted" : ""} ${p.m.hot ? "hot" : ""}`} style={{ left: p.x, top: p.y }} title={p.m.label} onClick={() => onMarkerClick?.(p.id)}>
+            <Link key={p.id} href={p.m.href ?? "#"} className={`pin ${p.m.side} ${p.m.hot ? "hot" : ""}`} style={{ left: p.x, top: p.y }} title={p.m.label} onClick={() => onMarkerClick?.(p.id)}>
               <Avatar handle={p.m.handle ?? "?"} url={p.m.avatarUrl ?? undefined} size={22} />
+              {p.n > 1 && <b className="pin-n">{p.n}</b>}
             </Link>
           ))}
+          {markers.length > 0 && (
+            <button type="button" className={`pin-toggle ${showPins ? "on" : ""}`} onClick={() => { const v = !showPins; setShowPins(v); try { localStorage.setItem("perped-chart-pins", v ? "1" : "0"); } catch {} }}>
+              {showPins ? `Traders · ${pins.reduce((a, p) => a + p.n, 0)}` : "Traders off"}
+            </button>
+          )}
         </div>
         {!candles.length && <p className="muted absolute inset-0 grid place-items-center text-sm">Loading chart…</p>}
       </div>
