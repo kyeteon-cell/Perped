@@ -56,7 +56,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
     <div className={`bside ${left ? "l" : "r"}`}>
       <Link href={`/u/${u.handle}`}><div className={`avring ${(left ? faderLeads : !faderLeads) && live ? "lead" : live ? "losing" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={64} link={false} /></div></Link>
       <div className="name mt-2 truncate">{u.handle}{u.verified && <span className="vbadge">✓</span>}</div>
-      <div className="mt-1 flex items-center justify-center gap-1"><RankChip xp={u.xp} />{u.isDemo ? <span className="demo-tag">Demo</span> : <span className="real-tag">Real</span>}</div>
+      <div className="mt-1 flex items-center justify-center gap-1.5"><RankChip xp={u.xp} compact size={20} />{u.isDemo ? <span className="demo-tag">Demo</span> : <span className="real-tag">Real</span>}</div>
       <span className={`lbl ${p.side} mt-2`}><i />{p.side === "long" ? "Long" : "Short"} {p.leverage}×</span>
       <div className={`mono mt-2 text-[30px] font-bold leading-none ${r.roi >= 0 ? "green" : "red"}`}>{fmtPct(r.roi, 1)}</div>
       <div className={`mono text-[13px] ${r.pnl >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl, { sign: true })}</div>
@@ -86,7 +86,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         <div className="tug mt-5" style={{ height: 10 }}><i style={{ width: `${share}%` }} /></div>
         <div className="when mt-2 text-center">{live ? `${faderLeads ? fader.user.handle : tu.user.handle} is ahead by ${fmtPct(Math.abs(a.roi - b.roi), 1)}` : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
         {live && profile && (profile.id === fader.user.id || profile.id === tu.user.id) && (
-          <button className="btn ink mt-4" style={{ padding: 11, fontSize: 13 }} onClick={() => setManage(profile.id === fader.user.id ? fade : target)}>Manage my position · close, stop loss, add</button>
+          <button className="btn ink mt-4" style={{ padding: 11, fontSize: 13 }} onClick={() => setManage(profile.id === fader.user.id ? fade : target)}>Manage trade</button>
         )}
         {manage && <ManageTrade post={manage} mid={mid || undefined} onChanged={() => mutate()} onClose={() => setManage(null)} />}
         {live && profile && profile.id !== fader.user.id && profile.id !== tu.user.id && (
@@ -97,15 +97,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         )}
       </section>
 
-      <section className="block">
-        <div className="eyebrow">How a battle is won</div>
-        <ul className="muted mt-2 flex flex-col gap-1 text-[13px]">
-          <li>• Both close → higher <b>leverage-adjusted ROI</b> wins. Under 0.5% apart is a draw.</li>
-          <li>• Get liquidated → you lose on the spot, whatever the other side does.</li>
-          <li>• One side closes and the other sits for 24h → the open side is marked at the live price.</li>
-          <li>• Winner +60 XP (+30 for a 20%+ margin, +40 for beating a higher rank). Loser +10, draw +20, liquidated loser 0. From Knife Catcher up, losing costs XP (−15 per rank above Wick Hunter for a battle, −25 for a liquidation) and you can drop a rank.</li>
-        </ul>
-      </section>
+      <div className="px-5 py-2 text-right"><Link href="/how-it-works#battles" className="when underline">How a battle is won →</Link></div>
 
       <section className="block">
         <div className="flex items-center justify-between"><span className="eyebrow">Head to head</span><span className="when">{record.fader + record.target ? `record ${record.fader}–${record.target}` : "first meeting"}</span></div>
