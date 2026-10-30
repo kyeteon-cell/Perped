@@ -13,6 +13,14 @@ export function fmtUsd(n: number | string | null | undefined, opts: { compact?: 
   return `${sign}$${abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+/** Margin / stake amounts: "$250", "$1,250", "$87.50" — no trailing .00 on round numbers. */
+export function fmtStake(n: number | string | null | undefined) {
+  const v = typeof n === "string" ? Number(n) : n ?? 0;
+  if (!Number.isFinite(v)) return "$0";
+  const abs = Math.abs(v), whole = Math.abs(abs - Math.round(abs)) < 0.005;
+  return `$${abs.toLocaleString("en-US", { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 })}`;
+}
+
 export function fmtPct(n: number | null | undefined, digits = 2) {
   if (n == null || !Number.isFinite(n)) return "—";
   const sign = n > 0 ? "+" : "";

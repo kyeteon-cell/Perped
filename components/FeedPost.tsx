@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
-import { fmtUsd, fmtPct, pnlForPosition, timeAgo, fmtPrice } from "@/lib/format";
+import { fmtPct, fmtPrice, fmtStake, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
 import { useSession } from "@/lib/hooks/useSession";
 import { Avatar, CoinMark, Icon, I, ticker } from "./ui";
 import { Sparkline } from "./Sparkline";
@@ -136,7 +136,7 @@ function TradePost({ item, mid, onChanged }: Props) {
     prev.current = mark;
   }, [mark, isOpen]);
 
-  const labels = [[fmtPct(pct, 1), fmtUsd(pnl, { sign: true })], [fmtUsd(pnl, { sign: true }), fmtPct(pct, 1)], [`${fmtPct(roi, 1)} ROI`, `${fmtUsd(pnl, { sign: true })} on ${fmtUsd(Number(post.notionalUsd) / lev, { compact: true })}`]][mode];
+  const labels = [[fmtPct(pct, 1), fmtUsd(pnl, { sign: true })], [fmtUsd(pnl, { sign: true }), fmtPct(pct, 1)], [`${fmtPct(roi, 1)} ROI`, `${fmtUsd(pnl, { sign: true })} on ${fmtStake(Number(post.notionalUsd) / lev)}`]][mode];
   const showSize = author?.showSizes !== false;
   const camps = item.copyCount + item.fadeCount;
   const canAct = isOpen && !!author && author.id !== profile?.id;
@@ -176,7 +176,7 @@ function TradePost({ item, mid, onChanged }: Props) {
           <div>
             <Link href={`/markets/${post.coin}`} className="coin">{ticker(post.coin!, true)}</Link>
             <div className="mono when mt-2">
-              {showSize ? `${fmtUsd(Number(post.notionalUsd), { compact: true })} · ` : ""}in at {fmtPrice(entry)}
+              {showSize ? `${fmtStake(Number(post.notionalUsd) / lev)} × ${lev} · ` : ""}in at {fmtPrice(entry)}
             </div>
           </div>
         </div>
