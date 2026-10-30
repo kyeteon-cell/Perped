@@ -16,8 +16,9 @@ export function SignInOptions({ compact = false, onDark = false }: { compact?: b
   const { login, startGuest, loginError, refreshMe } = useSession();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [guestError, setGuestError] = useState<string | null>(null);
   const go = (m: Method) => login({ loginMethods: [m] });
-  const demo = async () => { setBusy(true); try { await startGuest(); await refreshMe(); router.push("/"); } catch {} setBusy(false); };
+  const demo = async () => { setBusy(true); setGuestError(null); try { await startGuest(); await refreshMe(); router.push("/"); } catch (e) { setGuestError(`Guest sign-in failed: ${e instanceof Error ? e.message : String(e)}`); } setBusy(false); };
   const cls = onDark ? "sio dark" : "sio";
   return (
     <div className={`${cls} ${compact ? "compact" : ""}`}>
@@ -36,7 +37,7 @@ export function SignInOptions({ compact = false, onDark = false }: { compact?: b
           <button className="primary" onClick={() => go("wallet")}><Icon d={I.wallet} size={16} />Connect a wallet · trade real money</button>
         </div>
       </div>
-      {loginError && <p className="red mt-2 text-xs">{loginError}</p>}
+      {(loginError || guestError) && <p className="red mt-2 text-xs">{loginError ?? guestError}</p>}
     </div>
   );
 }
