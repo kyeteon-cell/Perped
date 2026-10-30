@@ -3,6 +3,9 @@ import { db, schema, ensureSchema } from "@/lib/db";
 import { getMids } from "@/lib/hl-info";
 import { notify, systemPost } from "@/lib/feed";
 import { closeTradePost } from "@/lib/trades";
+import { backfillBattles, settleBattles } from "@/lib/battles";
+import { awardXp } from "@/lib/xp";
+import { XP } from "@/lib/rank";
 import { demoLiqPx } from "@/lib/format";
 
 /**
@@ -61,6 +64,7 @@ export async function GET(req: Request) {
       // "Told you so": name the dislikers who were wrong, likers who were right.
       const disagreed = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(schema.votes).where(and(eq(schema.votes.postId, c.id), eq(schema.votes.value, -1)));
       await db.insert(schema.comments).values({ postId: c.id, userId: c.userId, body: outcome === "hit" ? `✓ HIT at ${p}. ${disagreed[0]?.n ?? 0} people disagreed.` : `✗ MISSED. Target ${target}, ended ${p}.` });
+      await awardXp(c.userId, outcome === "hit" ? XP.callHit : XP.callMiss, outcome === "hit" ? "call_hit" : "call_miss", `call:${c.id}`);
       if (outcome === "hit") hit++; else missed++;
       void u;
     }
@@ -92,11 +96,19 @@ export async function GET(req: Request) {
       db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, challengerWins ? d.opponentId : d.challengerId)).limit(1),
     ]);
     await systemPost("duel_settled", `${w[0]?.handle} beat ${l[0]?.handle} on ${d.coin}. ${start} → ${p}.`, { duelId: d.id, winner: w[0]?.handle, loser: l[0]?.handle, coin: d.coin, start, end: p }, d.coin);
-    for (const uid of [d.challengerId, d.opponentId]) await notify(uid, "duel", uid === winnerId ? "You won the duel" : "You lost the duel", `${d.coin} · ${start} → ${p}`, `/duels/${d.id}`);
+    for (const uid of [d.challengerId, d.opponentId]) {
+      const won = uid === winnerId;
+      await awardXp(uid, won ? XP.duelWin : XP.duelLoss, won ? "duel_win" : "duel_loss", `duel:${d.id}`);
+      await notify(uid, "duel", won ? "You won the duel" : "You lost the duel", `${d.coin} · ${start} → ${p} · +${won ? XP.duelWin : XP.duelLoss} XP`, `/duels/${d.id}`);
+    }
     duelsSettled++;
   }
 
-  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, at: now.toISOString() });
+  // Battles (fades): make sure every fade has one, then settle the decided ones.
+  await backfillBattles().catch(() => 0);
+  const battles = await settleBattles(mids).catch(() => 0);
+
+  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, battles, at: now.toISOString() });
 }
 
 // keep isNull imported for future invalidation-by-candle checks

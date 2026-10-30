@@ -15,6 +15,7 @@ export const users = pgTable(
     isDemo: boolean("is_demo").default(false).notNull(),
     demoBalance: numeric("demo_balance").default("10000").notNull(),
     isBot: boolean("is_bot").default(false).notNull(),
+    xp: integer("xp").default(0).notNull(),
     // Settings (consent-based heat)
     showLiquidations: boolean("show_liquidations").default(true).notNull(),
     showSizes: boolean("show_sizes").default(true).notNull(),
@@ -151,6 +152,46 @@ export const duels = pgTable("duels", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+/**
+ * A battle: one trader faded another on the same coin. Settles when both positions are closed (or 24h after
+ * the first one closes, marking the other at the live price). Winner = higher ROI; a liquidation loses outright.
+ */
+export const battles = pgTable(
+  "battles",
+  {
+    id: serial("id").primaryKey(),
+    faderPostId: integer("fader_post_id").notNull().unique(),
+    targetPostId: integer("target_post_id").notNull(),
+    faderId: text("fader_id").notNull().references(() => users.id),
+    targetId: text("target_id").notNull().references(() => users.id),
+    coin: text("coin").notNull(),
+    status: text("status", { enum: ["open", "settled"] }).default("open").notNull(),
+    winnerId: text("winner_id"), // null when settled = draw
+    faderRoi: numeric("fader_roi"),
+    targetRoi: numeric("target_roi"),
+    reason: text("reason"), // both_closed | timeout | liquidation
+    xpFader: integer("xp_fader"),
+    xpTarget: integer("xp_target"),
+    settledAt: timestamp("settled_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("battles_status_idx").on(t.status), index("battles_fader_idx").on(t.faderId), index("battles_target_idx").on(t.targetId)],
+);
+
+/** Every XP change, so profiles can show how a rank was earned. */
+export const xpLog = pgTable(
+  "xp_log",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id),
+    delta: integer("delta").notNull(),
+    reason: text("reason").notNull(), // battle_win | battle_loss | battle_draw | duel_win | duel_loss | call_hit | call_miss | trade_win | trade_loss | liquidation
+    ref: text("ref"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("xp_log_user_idx").on(t.userId, t.createdAt)],
+);
+
 export const notifications = pgTable(
   "notifications",
   {
@@ -185,6 +226,8 @@ export const stats = pgTable("stats", {
   fadedCount: integer("faded_count").default(0).notNull(),
   // Position on the 30-day PnL board among real (non-demo, non-bot) traders; null = unranked. Drives the top fee tier.
   rank30d: integer("rank_30d"),
+  battlesWon: integer("battles_won").default(0).notNull(),
+  battlesLost: integer("battles_lost").default(0).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -231,3 +274,5 @@ export type Duel = typeof duels.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type ReferralEarning = typeof referralEarnings.$inferSelect;
 export type ReferralPayout = typeof referralPayouts.$inferSelect;
+
+export type Battle = typeof battles.$inferSelect;

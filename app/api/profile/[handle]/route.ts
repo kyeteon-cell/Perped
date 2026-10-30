@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { getClearinghouseState } from "@/lib/hl-info";
@@ -48,5 +48,6 @@ export async function GET(req: Request, ctx: { params: Promise<{ handle: string 
   } catch {
     /* Hyperliquid unreachable */
   }
-  return Response.json({ user, stats: row.stats, followers: row.followers, following: row.following, rivalries: row.rivalries, isFollowing, isMe, positions, accountValue, withdrawable });
+  const xpRecent = await db.select({ delta: schema.xpLog.delta, reason: schema.xpLog.reason, ref: schema.xpLog.ref, createdAt: schema.xpLog.createdAt }).from(schema.xpLog).where(eq(schema.xpLog.userId, user.id)).orderBy(desc(schema.xpLog.createdAt)).limit(8);
+  return Response.json({ user, stats: row.stats, followers: row.followers, following: row.following, rivalries: row.rivalries, isFollowing, isMe, positions, accountValue, withdrawable, xpRecent });
 }

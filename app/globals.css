@@ -435,3 +435,16 @@ html { scroll-behavior: smooth; }
 .hw a { color: var(--brand); text-decoration: underline; }
 .verify { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--muted); text-decoration: none; }
 .verify.real { color: var(--green); }
+
+/* ---------- Ranks ---------- */
+.rank-chip { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .02em; vertical-align: middle; background: var(--surface); color: var(--muted); border: 1px solid var(--line); }
+.rank-chip.lv2 { color: var(--text); }
+.rank-chip.lv3 { color: var(--blue); border-color: var(--blue); }
+.rank-chip.lv4 { color: var(--violet); border-color: var(--violet); }
+.rank-chip.lv5 { color: var(--green); border-color: var(--green); }
+.rank-chip.lv6 { color: var(--red); border-color: var(--red); }
+.rank-chip.lv7, .rank-chip.lv8 { color: var(--gold); border-color: var(--gold); background: var(--gold-soft); }
+.xpbar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.xpbar i { display: block; height: 100%; border-radius: 999px; background: var(--text); transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.xpbar i.lv3 { background: var(--blue); } .xpbar i.lv4 { background: var(--violet); } .xpbar i.lv5 { background: var(--green); } .xpbar i.lv6 { background: var(--red); } .xpbar i.lv7, .xpbar i.lv8 { background: var(--gold); }
+.verdict { padding: 14px; border-radius: 14px; background: var(--gold-soft); border: 1px solid var(--gold); }

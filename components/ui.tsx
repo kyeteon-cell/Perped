@@ -109,3 +109,9 @@ export function SkeletonList({ n = 3, card = true }: { n?: number; card?: boolea
     </div>
   );
 }
+
+/** Small level badge: "L3 · Wick Hunter" (or just "L3" when compact). */
+export function RankChip({ xp, compact = false }: { xp?: number | null; compact?: boolean }) {
+  const r = rankFor(xp ?? 0);
+  return <span className={`rank-chip lv${r.level}`} title={`${r.title} · ${r.xp} XP`}>{compact ? `L${r.level}` : `L${r.level} · ${r.title}`}</span>;
+}

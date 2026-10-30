@@ -7,14 +7,15 @@ import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { ManageTrade } from "@/components/ManageTrade";
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
-import { Avatar, CoinMark, Icon, I, ticker, SkeletonList } from "@/components/ui";
+import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/components/ui";
 import type { Post, Stats } from "@/lib/schema";
 
-type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null };
+type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null; xp?: number };
 type Res = {
   fade: Post; target: Post; fader: { user: U; stats: Stats | null }; targetUser: { user: U; stats: Stats | null };
   history: { id: number; userId: string; coin: string; pnl: string | null; closedAt: string | null; side: "long" | "short"; leverage: number | null; entryPx: string; exitPx: string | null }[];
   record: { fader: number; target: number }; camps: { copied: number; faded: number }; error?: string;
+  battle: { id: number; status: "open" | "settled"; winnerId: string | null; faderRoi: string | null; targetRoi: string | null; reason: string | null; xpFader: number | null; xpTarget: number | null; settledAt: string | null } | null;
 };
 
 function roi(p: Post, mid: number) {
@@ -32,7 +33,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const { profile } = useSession();
   if (!data) return <SkeletonList n={2} />;
   if (data.error) return <p className="muted p-5 text-sm">That isn&apos;t a fade.</p>;
-  const { fade, target, fader, targetUser: tu, history, record, camps } = data;
+  const { fade, target, fader, targetUser: tu, history, record, camps, battle } = data;
   const coin = fade.coin!; const mid = mids[coin] ?? 0;
   const a = roi(fade, mid), b = roi(target, mid);
   const live = fade.status === "open" && target.status === "open";
@@ -54,7 +55,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
     <div className={`bside ${left ? "l" : "r"}`}>
       <Link href={`/u/${u.handle}`}><div className={`avring ${(left ? faderLeads : !faderLeads) && live ? "lead" : live ? "losing" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={64} /></div></Link>
       <div className="name mt-2 truncate">{u.handle}{u.verified && <span className="vbadge">✓</span>}</div>
-      <div className="mt-1">{u.isDemo ? <span className="demo-tag">Demo</span> : <span className="real-tag">Real</span>}</div>
+      <div className="mt-1 flex items-center justify-center gap-1"><RankChip xp={u.xp} />{u.isDemo ? <span className="demo-tag">Demo</span> : <span className="real-tag">Real</span>}</div>
       <span className={`lbl ${p.side} mt-2`}><i />{p.side === "long" ? "Long" : "Short"} {p.leverage}×</span>
       <div className={`mono mt-2 text-[30px] font-bold leading-none ${r.roi >= 0 ? "green" : "red"}`}>{fmtPct(r.roi, 1)}</div>
       <div className={`mono text-[13px] ${r.pnl >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl, { sign: true })}</div>
@@ -73,6 +74,14 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
           <div className="bmid"><div className="vs">VS</div><div className="when text-[11px] mt-1">{fader.user.handle} faded</div></div>
           <Side u={tu.user} p={target} r={b} left={false} />
         </div>
+        {battle?.status === "settled" && (
+          <div className="verdict mt-4">
+            <div className="eyebrow">{battle.winnerId ? "Verdict" : "Draw"}</div>
+            <div className="mt-1 text-[17px] font-extrabold">{battle.winnerId ? `${battle.winnerId === fader.user.id ? fader.user.handle : tu.user.handle} perped ${battle.winnerId === fader.user.id ? tu.user.handle : fader.user.handle}` : "Too close to call"}</div>
+            <div className="mono when mt-1">{fader.user.handle} {fmtPct(Number(battle.faderRoi), 1)} · {tu.user.handle} {fmtPct(Number(battle.targetRoi), 1)}{battle.reason === "liquidation" ? " · decided by liquidation" : battle.reason === "timeout" ? " · marked 24h after the first close" : ""}</div>
+            <div className="mt-2 flex gap-2 text-[12px]"><span className="chip">{fader.user.handle} +{battle.xpFader ?? 0} XP</span><span className="chip">{tu.user.handle} +{battle.xpTarget ?? 0} XP</span></div>
+          </div>
+        )}
         <div className="tug mt-5" style={{ height: 10 }}><i style={{ width: `${share}%` }} /></div>
         <div className="when mt-2 text-center">{live ? `${faderLeads ? fader.user.handle : tu.user.handle} is ahead by ${fmtPct(Math.abs(a.roi - b.roi), 1)}` : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
         {live && profile && (profile.id === fader.user.id || profile.id === tu.user.id) && (
@@ -85,6 +94,16 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
             <Link href={`/trade?copy=${target.id}`} className="btn" style={{ padding: 11, fontSize: 13 }}>Side with {tu.user.handle}</Link>
           </div>
         )}
+      </section>
+
+      <section className="block">
+        <div className="eyebrow">How a battle is won</div>
+        <ul className="muted mt-2 flex flex-col gap-1 text-[13px]">
+          <li>• Both close → higher <b>leverage-adjusted ROI</b> wins. Under 0.5% apart is a draw.</li>
+          <li>• Get liquidated → you lose on the spot, whatever the other side does.</li>
+          <li>• One side closes and the other sits for 24h → the open side is marked at the live price.</li>
+          <li>• Winner +120 XP (+60 for a 20%+ margin, +80 for beating a higher rank). Loser +25. Liquidated loser 0.</li>
+        </ul>
       </section>
 
       <section className="block">

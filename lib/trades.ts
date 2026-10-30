@@ -3,6 +3,8 @@ import { db, schema } from "./db";
 import { pnlForPosition } from "./format";
 import { systemPost, notify } from "./feed";
 import { getMids } from "./hl-info";
+import { awardXp } from "./xp";
+import { XP } from "./rank";
 
 export type CloseReason = "manual" | "tp" | "sl" | "liquidation";
 
@@ -51,6 +53,7 @@ export async function closeTradePost(postId: number, userId: string, opts: { exi
     .set({ status: "closed", exitPx: String(exitPx), realizedPnl: total.toFixed(4), closedAt: new Date(), meta: { ...meta, closeReason: reason } })
     .where(eq(schema.posts.id, post.id)).returning();
 
+  await awardXp(userId, reason === "liquidation" ? XP.liquidation : total > 0 ? XP.tradeWin : XP.tradeLoss, reason === "liquidation" ? "liquidation" : total > 0 ? "trade_win" : "trade_loss", `post:${post.id}`);
   const [me] = await db.select({ handle: schema.users.handle, showLiquidations: schema.users.showLiquidations }).from(schema.users).where(eq(schema.users.id, userId)).limit(1);
   const roi = pct * lev;
   if (reason === "liquidation" && me?.showLiquidations) {

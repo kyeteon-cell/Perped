@@ -4,7 +4,7 @@ import { db, schema } from "./db";
 /** The shape every feed consumer gets. Counts are computed in SQL so the feed is one query. */
 export const feedSelect = {
   post: schema.posts,
-  author: { id: schema.users.id, handle: schema.users.handle, address: schema.users.address, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified, showSizes: schema.users.showSizes, allowCopy: schema.users.allowCopy, allowFade: schema.users.allowFade, isDemo: schema.users.isDemo, isBot: schema.users.isBot },
+  author: { id: schema.users.id, handle: schema.users.handle, address: schema.users.address, xp: schema.users.xp, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified, showSizes: schema.users.showSizes, allowCopy: schema.users.allowCopy, allowFade: schema.users.allowFade, isDemo: schema.users.isDemo, isBot: schema.users.isBot },
   likes: sql<number>`(select count(*) from votes v where v.post_id = ${schema.posts.id} and v.value = 1)`.mapWith(Number),
   dislikes: sql<number>`(select count(*) from votes v where v.post_id = ${schema.posts.id} and v.value = -1)`.mapWith(Number),
   commentCount: sql<number>`(select count(*) from comments c where c.post_id = ${schema.posts.id})`.mapWith(Number),
@@ -15,7 +15,7 @@ export const feedSelect = {
 
 export type FeedRow = {
   post: typeof schema.posts.$inferSelect;
-  author: { id: string; handle: string; address?: string | null; avatarUrl: string | null; verified: boolean; showSizes: boolean; allowCopy?: boolean; allowFade?: boolean; isDemo: boolean; isBot: boolean } | null;
+  author: { id: string; handle: string; address?: string | null; xp?: number; avatarUrl: string | null; verified: boolean; showSizes: boolean; allowCopy?: boolean; allowFade?: boolean; isDemo: boolean; isBot: boolean } | null;
   likes: number;
   dislikes: number;
   commentCount: number;

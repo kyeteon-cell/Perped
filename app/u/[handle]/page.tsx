@@ -7,7 +7,8 @@ import { FeedPost } from "@/components/FeedPost";
 import { DepositSheet } from "@/components/DepositSheet";
 import { ChallengeSheet } from "@/components/ChallengeSheet";
 import { PerformanceCard } from "@/components/Performance";
-import { Avatar, CoinMark, Icon, I, ticker, SkeletonList } from "@/components/ui";
+import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/components/ui";
+import { RankCard } from "@/components/RankCard";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
@@ -17,7 +18,7 @@ import type { User, Stats } from "@/lib/schema";
 import type { AssetPosition } from "@/lib/hl-info";
 import type { FeedRow } from "@/lib/feed";
 
-type ProfileRes = { user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null };
+type ProfileRes = { user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
 type Tab = "posts" | "trades" | "followers" | "following";
 
 export default function ProfilePage({ params }: { params: Promise<{ handle: string }> }) {
@@ -77,7 +78,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         <div className="flex items-center gap-4">
           <div className="rounded-full" style={{ border: "4px solid var(--bg)" }}><Avatar handle={user.handle} url={user.avatarUrl} size={84} /></div>
           <div className="min-w-0 flex-1 pt-[46px]">
-            <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1">✓</span>}{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
+            <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1">✓</span>}<RankChip xp={user.xp} compact />{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
             <div className="mono when text-xs">{user.isDemo ? "practice account · simulated fills" : `${user.address.slice(0, 6)}…${user.address.slice(-4)} · verified on-chain`}</div>
             <div className="mt-2.5 flex gap-4 text-sm">
               <button className="muted" onClick={() => setTab("followers")}><b style={{ color: "var(--text)" }}>{data.followers}</b> followers</button>
@@ -91,6 +92,8 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           {isMe ? <Link href="/settings" className="btn" style={{ padding: 12, fontSize: 14 }}>Edit profile</Link> : <Link href={`/compose?mode=call`} className="btn" style={{ padding: 12, fontSize: 14 }}>Challenge</Link>}
         </div>
       </section>
+
+      <RankCard xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} recent={data.xpRecent ?? []} />
 
       {isMe && user.isDemo && (
         <section className="block">

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtPrice, fmtStake, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
 import { useSession } from "@/lib/hooks/useSession";
-import { Avatar, CoinMark, Icon, I, ticker } from "./ui";
+import { Avatar, CoinMark, Icon, I, ticker, RankChip } from "./ui";
 import { Sparkline } from "./Sparkline";
 import { ShareSheet } from "./ShareSheet";
 import { ManageTrade } from "./ManageTrade";
@@ -53,7 +53,7 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
         <Link href={`/u/${author.handle}`} className="flex items-center gap-3">
           <Avatar handle={author.handle} url={author.avatarUrl} />
           <div>
-            <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</div>
+            <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}<RankChip xp={author.xp} compact />{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</div>
             <div className="when">{timeAgo(post.createdAt)} ago{post.copiedFromId ? " · copied" : ""}{post.fadedFromId ? " · faded" : ""}{post.kind === "trade" && post.status === "closed" ? " · closed" : ""}</div>
           </div>
         </Link>
@@ -338,6 +338,24 @@ function SystemPost({ item, onChanged }: Props) {
         </div>
         <Acts item={item} onChanged={onChanged}>
           <Link href={`/u/${winner}`} className="chip ml-auto">Challenge {winner}</Link>
+        </Acts>
+      </article>
+    );
+  }
+
+  if (t === "battle_settled") {
+    const winner = String(meta.winner ?? "?"), loser = String(meta.loser ?? "?");
+    const wr = Number(meta.winnerRoi ?? 0), lr = Number(meta.loserRoi ?? 0);
+    return (
+      <article className="post duel">
+        <div className="duel-head"><span className="lbl gold">⚡ Battle settled</span><span className="when">{post.coin ?? ""} · {timeAgo(post.createdAt)} ago</span></div>
+        <div className="duel-body">
+          <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} /></Link><div className="name mt-1.5">{winner}</div><span className="mono green text-[13px] font-bold">{fmtPct(wr, 1)}</span></div>
+          <div className="duel-mid"><div className="mono muted text-xs">perped</div><div className="duel-bar"><i style={{ width: "100%" }} /></div><div className="when">{meta.reason === "liquidation" ? "by liquidation" : `${fmtPct(Math.abs(wr - lr), 1)} gap`}</div></div>
+          <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} /></Link><div className="name mt-1.5">{loser}</div><span className="mono red text-[13px] font-bold">{fmtPct(lr, 1)}</span></div>
+        </div>
+        <Acts item={item} onChanged={onChanged}>
+          {typeof meta.faderPostId === "number" && <Link href={`/battle/${meta.faderPostId}`} className="chip ml-auto">See the battle</Link>}
         </Acts>
       </article>
     );

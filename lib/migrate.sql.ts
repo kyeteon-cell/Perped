@@ -28,6 +28,7 @@ alter table users alter column demo_balance set default 10000;
 update users set demo_balance = 10000 where is_demo and demo_balance = 1000;
 alter table users add column if not exists is_bot boolean not null default false;
 alter table users add column if not exists referred_by text;
+alter table users add column if not exists xp integer not null default 0;
 alter table users add column if not exists referred_at timestamptz;
 create index if not exists users_referred_by_idx on users (referred_by);
 create unique index if not exists users_handle_idx on users (handle);
@@ -157,6 +158,39 @@ create table if not exists stats (
   updated_at timestamptz not null default now()
 );
 alter table stats add column if not exists rank_30d integer;
+alter table stats add column if not exists battles_won integer not null default 0;
+alter table stats add column if not exists battles_lost integer not null default 0;
+
+create table if not exists battles (
+  id serial primary key,
+  fader_post_id integer not null unique,
+  target_post_id integer not null,
+  fader_id text not null references users(id),
+  target_id text not null references users(id),
+  coin text not null,
+  status text not null default 'open',
+  winner_id text,
+  fader_roi numeric,
+  target_roi numeric,
+  reason text,
+  xp_fader integer,
+  xp_target integer,
+  settled_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists battles_status_idx on battles (status);
+create index if not exists battles_fader_idx on battles (fader_id);
+create index if not exists battles_target_idx on battles (target_id);
+
+create table if not exists xp_log (
+  id serial primary key,
+  user_id text not null references users(id),
+  delta integer not null,
+  reason text not null,
+  ref text,
+  created_at timestamptz not null default now()
+);
+create index if not exists xp_log_user_idx on xp_log (user_id, created_at);
 
 create table if not exists referral_earnings (
   id serial primary key,

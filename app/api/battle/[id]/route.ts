@@ -16,7 +16,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!target) return Response.json({ error: "not found" }, { status: 404 });
 
   const who = (uid: string) =>
-    db.select({ user: { id: schema.users.id, handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified, isDemo: schema.users.isDemo, bio: schema.users.bio }, stats: schema.stats })
+    db.select({ user: { id: schema.users.id, handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified, isDemo: schema.users.isDemo, bio: schema.users.bio, xp: schema.users.xp }, stats: schema.stats })
       .from(schema.users).leftJoin(schema.stats, eq(schema.stats.userId, schema.users.id)).where(eq(schema.users.id, uid)).limit(1);
   const [[f], [t]] = await Promise.all([who(fade.userId!), who(target.userId!)]);
 
@@ -40,5 +40,6 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     faded: sql<number>`count(*) filter (where faded_from_id = ${target.id})`.mapWith(Number),
   }).from(schema.posts);
 
-  return Response.json({ fade, target, fader: f, targetUser: t, history: hist, record, camps });
+  const [battle] = await db.select().from(schema.battles).where(eq(schema.battles.faderPostId, fade.id)).limit(1);
+  return Response.json({ fade, target, fader: f, targetUser: t, history: hist, record, camps, battle: battle ?? null });
 }

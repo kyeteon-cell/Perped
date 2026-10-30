@@ -1,0 +1,111 @@
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { db, schema } from "./db";
+import { notify, systemPost } from "./feed";
+import { pnlForPosition } from "./format";
+import { rankFor, XP } from "./rank";
+import { awardXp } from "./xp";
+
+const DAY = 24 * 60 * 60 * 1000;
+
+/** Record a battle when someone fades a trade. Safe to call twice. */
+export async function ensureBattle(faderPostId: number) {
+  const [fade] = await db.select().from(schema.posts).where(eq(schema.posts.id, faderPostId)).limit(1);
+  if (!fade || !fade.fadedFromId || !fade.userId || fade.kind !== "trade") return null;
+  const [target] = await db.select().from(schema.posts).where(eq(schema.posts.id, fade.fadedFromId)).limit(1);
+  if (!target || !target.userId || target.userId === fade.userId) return null;
+  const [row] = await db.insert(schema.battles)
+    .values({ faderPostId: fade.id, targetPostId: target.id, faderId: fade.userId, targetId: target.userId, coin: fade.coin ?? target.coin ?? "?" })
+    .onConflictDoNothing().returning();
+  return row ?? null;
+}
+
+/** Create battle rows for any fades that predate the battles table. */
+export async function backfillBattles(limit = 200) {
+  const missing = await db.select({ id: schema.posts.id }).from(schema.posts)
+    .leftJoin(schema.battles, eq(schema.battles.faderPostId, schema.posts.id))
+    .where(and(eq(schema.posts.kind, "trade"), sql`${schema.posts.fadedFromId} is not null`, isNull(schema.battles.id))).limit(limit);
+  for (const m of missing) await ensureBattle(m.id);
+  return missing.length;
+}
+
+type P = typeof schema.posts.$inferSelect;
+function roiOf(p: P, mid: number) {
+  const entry = Number(p.entryPx), lev = p.leverage ?? 1;
+  const mark = p.status === "closed" ? Number(p.exitPx ?? entry) : mid || entry;
+  const pct = pnlForPosition(p.side as "long" | "short", entry, mark, Number(p.size)).pct;
+  const liq = p.status === "closed" && (p.meta as { closeReason?: string } | null)?.closeReason === "liquidation";
+  return { roi: liq ? -100 : pct * lev, liq };
+}
+
+/**
+ * Settle battles that are decided:
+ *  - both positions closed → compare realised ROI (leverage-adjusted);
+ *  - one side liquidated → they lose immediately;
+ *  - one side closed for 24h and the other still open → the open side is marked at the live price.
+ * A gap under 0.5% ROI is a draw.
+ */
+export async function settleBattles(mids: Record<string, string | number>) {
+  const open = await db.select().from(schema.battles).where(eq(schema.battles.status, "open"));
+  let settled = 0;
+  for (const b of open) {
+    const [[f], [t]] = await Promise.all([
+      db.select().from(schema.posts).where(eq(schema.posts.id, b.faderPostId)).limit(1),
+      db.select().from(schema.posts).where(eq(schema.posts.id, b.targetPostId)).limit(1),
+    ]);
+    if (!f || !t) continue;
+    const mid = Number(mids[b.coin] ?? 0);
+    const fr = roiOf(f, mid), tr = roiOf(t, mid);
+    const bothClosed = f.status === "closed" && t.status === "closed";
+    const firstClose = [f.closedAt, t.closedAt].filter(Boolean).map((d) => new Date(d as Date).getTime()).sort()[0];
+    const timedOut = !bothClosed && !!firstClose && Date.now() - firstClose > DAY && mid > 0;
+    const liquidated = fr.liq || tr.liq;
+    if (!bothClosed && !timedOut && !liquidated) continue;
+    const reason = liquidated ? "liquidation" : bothClosed ? "both_closed" : "timeout";
+
+    const gap = fr.roi - tr.roi;
+    const winnerId = fr.liq && !tr.liq ? b.targetId : tr.liq && !fr.liq ? b.faderId : Math.abs(gap) < 0.5 ? null : gap > 0 ? b.faderId : b.targetId;
+    const loserId = winnerId ? (winnerId === b.faderId ? b.targetId : b.faderId) : null;
+
+    // XP: win pays; a big margin and beating a higher rank pay more; a liquidated loser gets nothing.
+    const [[fu], [tu]] = await Promise.all([
+      db.select({ handle: schema.users.handle, xp: schema.users.xp }).from(schema.users).where(eq(schema.users.id, b.faderId)).limit(1),
+      db.select({ handle: schema.users.handle, xp: schema.users.xp }).from(schema.users).where(eq(schema.users.id, b.targetId)).limit(1),
+    ]);
+    const xpFor = (id: string) => {
+      const me = id === b.faderId ? fu : tu, them = id === b.faderId ? tu : fu;
+      const myRoi = id === b.faderId ? fr : tr;
+      if (!winnerId) return XP.battleDraw;
+      if (id === winnerId) {
+        let x: number = XP.battleWin;
+        if (Math.abs(gap) >= 20) x += XP.battleWinBigMargin;
+        if (rankFor(them?.xp ?? 0).level - rankFor(me?.xp ?? 0).level >= 2) x += XP.upsetBonus;
+        return x;
+      }
+      return myRoi.liq ? XP.battleLiquidatedLoss : XP.battleLoss;
+    };
+    const xpF = xpFor(b.faderId), xpT = xpFor(b.targetId);
+
+    await db.update(schema.battles).set({ status: "settled", winnerId, faderRoi: fr.roi.toFixed(2), targetRoi: tr.roi.toFixed(2), reason, xpFader: xpF, xpTarget: xpT, settledAt: new Date() }).where(eq(schema.battles.id, b.id));
+    await awardXp(b.faderId, xpF, winnerId ? (winnerId === b.faderId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
+    await awardXp(b.targetId, xpT, winnerId ? (winnerId === b.targetId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
+    if (winnerId && loserId) {
+      await db.update(schema.stats).set({ battlesWon: sql`${schema.stats.battlesWon} + 1` }).where(eq(schema.stats.userId, winnerId));
+      await db.update(schema.stats).set({ battlesLost: sql`${schema.stats.battlesLost} + 1` }).where(eq(schema.stats.userId, loserId));
+    }
+
+    const href = `/battle/${b.faderPostId}`;
+    const fmt = (r: number) => `${r >= 0 ? "+" : "−"}${Math.abs(r).toFixed(1)}%`;
+    const line = `${fu?.handle} ${fmt(fr.roi)} vs ${tu?.handle} ${fmt(tr.roi)}`;
+    if (!winnerId) {
+      for (const id of [b.faderId, b.targetId]) await notify(id, "battle", `Battle drawn on ${b.coin}`, `${line} · +${XP.battleDraw} XP`, href);
+    } else {
+      const wh = winnerId === b.faderId ? fu?.handle : tu?.handle, lh = winnerId === b.faderId ? tu?.handle : fu?.handle;
+      const wx = winnerId === b.faderId ? xpF : xpT, lx = winnerId === b.faderId ? xpT : xpF;
+      await notify(winnerId, "battle", `You won the battle vs ${lh}`, `${b.coin} · ${line} · +${wx} XP${reason === "liquidation" ? " · they got liquidated" : ""}`, href);
+      await notify(loserId!, "battle", `You got perped by ${wh}`, `${b.coin} · ${line}${lx ? ` · +${lx} XP for showing up` : " · liquidated, no XP"}`, href);
+      await systemPost("battle_settled", `${wh} perped ${lh} on ${b.coin}. ${line}.`, { battleId: b.id, faderPostId: b.faderPostId, winner: wh, loser: lh, coin: b.coin, winnerRoi: winnerId === b.faderId ? fr.roi : tr.roi, loserRoi: winnerId === b.faderId ? tr.roi : fr.roi, reason }, b.coin);
+    }
+    settled++;
+  }
+  return settled;
+}
