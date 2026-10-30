@@ -13,7 +13,7 @@ export const users = pgTable(
     verified: boolean("verified").default(false).notNull(), // 10+ closed trades and a linked X account
     // Demo mode: trades are simulated at live prices against a virtual USDC balance. No wallet funding needed.
     isDemo: boolean("is_demo").default(false).notNull(),
-    demoBalance: numeric("demo_balance").default("1000").notNull(),
+    demoBalance: numeric("demo_balance").default("10000").notNull(),
     isBot: boolean("is_bot").default(false).notNull(),
     // Settings (consent-based heat)
     showLiquidations: boolean("show_liquidations").default(true).notNull(),

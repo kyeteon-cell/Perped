@@ -17,12 +17,15 @@ create table if not exists users (
   default_leverage integer not null default 3,
   pnl_display text not null default 'pct',
   is_demo boolean not null default false,
-  demo_balance numeric not null default 1000,
+  demo_balance numeric not null default 10000,
   is_bot boolean not null default false,
   created_at timestamptz not null default now()
 );
 alter table users add column if not exists is_demo boolean not null default false;
-alter table users add column if not exists demo_balance numeric not null default 1000;
+alter table users add column if not exists demo_balance numeric not null default 10000;
+alter table users alter column demo_balance set default 10000;
+-- demo balance bump: accounts that never traded (still exactly 1000) move to the new starting balance
+update users set demo_balance = 10000 where is_demo and demo_balance = 1000;
 alter table users add column if not exists is_bot boolean not null default false;
 alter table users add column if not exists referred_by text;
 alter table users add column if not exists referred_at timestamptz;

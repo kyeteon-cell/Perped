@@ -159,7 +159,7 @@ export default function OnboardingPage() {
               </>
             ) : (
               <>
-                <p className="muted mt-2.5">You&apos;re in <b>demo mode</b> with $1,000 of practice money. Fills are simulated at live Hyperliquid prices and tagged Demo in the feed. Nothing is at risk.</p>
+                <p className="muted mt-2.5">You&apos;re in <b>demo mode</b> with $10,000 of practice money. Fills are simulated at live Hyperliquid prices and tagged Demo in the feed. Nothing is at risk.</p>
                 <button className="card mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" style={{ border: "1.5px solid var(--brand)" }} onClick={isGuest ? login : linkWallet}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}><Icon d={I.wallet} /></div><div><b>{isGuest ? "Sign in to keep your account or trade real money" : "Connect a wallet to trade real money"}</b><p className="muted mt-1 text-[13px]">{isGuest ? "Guest demo lives on this device only. Sign in with X to keep your record, or connect a wallet to trade for real." : "MetaMask, Rabby, Rainbow or WalletConnect. Your wallet becomes your Hyperliquid account. You can do this any time from Settings."}</p></div></button>
                 {linkError && <p className="red mt-2 text-sm">{linkError}</p>}
               </>

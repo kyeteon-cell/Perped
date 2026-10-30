@@ -20,7 +20,7 @@ export function SignInOptions({ compact = false, onDark = false }: { compact?: b
   return (
     <div className={`${cls} ${compact ? "compact" : ""}`}>
       <div className="sio-group">
-        <div className="sio-head"><span className="demo-tag">Demo</span><span>Practice with $1,000. No wallet needed.</span></div>
+        <div className="sio-head"><span className="demo-tag">Demo</span><span>Practice with $10,000. No wallet needed.</span></div>
         <div className="sio-row">
           <button onClick={() => go("twitter")}><Icon d={I.x} size={16} />X</button>
           <button onClick={() => go("google")}><span className="g">G</span>Google</button>

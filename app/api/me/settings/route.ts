@@ -30,7 +30,7 @@ export async function PATCH(req: Request) {
     if (!auth.hasExternalWallet) return Response.json({ error: "connect a wallet first to trade real money" }, { status: 400 });
     if (auth.address) set.address = auth.address; // their connected wallet becomes the Hyperliquid account
   }
-  if (resetDemo) set.demoBalance = "1000";
+  if (resetDemo) set.demoBalance = "10000";
   const [row] = await db.update(schema.users).set(set).where(eq(schema.users.id, auth.privyId)).returning();
   return Response.json({ profile: row });
 }

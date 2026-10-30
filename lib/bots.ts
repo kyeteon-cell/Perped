@@ -59,7 +59,7 @@ const hours = (h: number) => h * 3_600_000;
 
 export async function ensureBots() {
   for (const b of BOTS) {
-    await db.insert(schema.users).values({ id: b.id, address: `0xdemo${b.handle.padEnd(35, "0").slice(0, 35)}`, handle: b.handle, bio: b.bio, isDemo: true, isBot: true, demoBalance: "1000", verified: false })
+    await db.insert(schema.users).values({ id: b.id, address: `0xdemo${b.handle.padEnd(35, "0").slice(0, 35)}`, handle: b.handle, bio: b.bio, isDemo: true, isBot: true, demoBalance: "10000", verified: false })
       .onConflictDoNothing();
     await db.insert(schema.stats).values({ userId: b.id }).onConflictDoNothing();
   }
@@ -85,7 +85,7 @@ export async function seedHistory() {
       const move = rnd(0.5, 6) / 100 * (win ? 1 : -1) * (side === "long" ? 1 : -1);
       const entry = mid / (1 + move * rnd(0.8, 1.2));
       const exit = mid * (1 + rnd(-0.004, 0.004));
-      const margin = pick([25, 50, 80, 100, 150, 250]);
+      const margin = pick([100, 250, 500, 750, 1000, 2000]);
       const notional = margin * lev, size = notional / entry;
       const pnl = (side === "long" ? exit - entry : entry - exit) * size;
       const [p] = await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(size), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "closed", exitPx: String(exit), realizedPnl: pnl.toFixed(4), closedAt: new Date(openedAt + hold), paper: true, body: pick(NOTES_OPEN), createdAt: new Date(openedAt), meta: { closeReason: !win && lev >= 4 && Math.random() < 0.3 ? "liquidation" : "manual" } }).returning({ id: schema.posts.id });
@@ -98,7 +98,7 @@ export async function seedHistory() {
       const side = Math.random() < b.bias ? "long" : "short";
       const lev = pickLev(b, coin, maxMap);
       const entry = mid * (1 + rnd(-0.02, 0.02));
-      const margin = pick([25, 50, 100, 150]);
+      const margin = pick([100, 250, 500, 1000]);
       const notional = margin * lev;
       const [p] = await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(notional / entry), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "open", paper: true, body: Math.random() < b.chatty ? pick(NOTES_OPEN) : null, createdAt: new Date(now - hours(rnd(0.2, 10))), slPx: String(side === "long" ? entry * 0.95 : entry * 1.05) }).returning({ id: schema.posts.id });
       created.push(p.id);
@@ -166,7 +166,7 @@ export async function botTick() {
           const fade = b.fader ? Math.random() < 0.7 : Math.random() < 0.25;
           const side = fade ? (hp.side === "long" ? "short" : "long") : hp.side;
           const lev = b.style === "degen" || b.style === "high" ? pickLev(b, hp.coin!, maxMap) : Math.min(hp.leverage ?? 2, Math.max(2, maxMap[hp.coin!] ?? 20));
-          const margin = pick([25, 50, 100]);
+          const margin = pick([100, 250, 500]);
           await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin: hp.coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, copiedFromId: fade ? undefined : hp.id, fadedFromId: fade ? hp.id : undefined, body: fade ? pick(["Fading this. Sorry not sorry.", "Other side of this one.", "Respectfully, no."]) : pick(["Copied. Let's ride.", "In with you.", "Copied at market."]) });
           if (hp.userId) await notify(hp.userId, fade ? "faded" : "copied", `${b.handle} ${fade ? "faded" : "copied"} your ${hp.coin} trade`, `$${margin * lev} at ${mid}`, `/post/${hp.id}`);
           log.push(`${b.handle} ${fade ? "faded" : "copied"} ${hp.coin}`);

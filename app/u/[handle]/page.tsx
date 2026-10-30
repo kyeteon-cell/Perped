@@ -97,7 +97,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           <div className="flex items-center justify-between"><span className="eyebrow">Demo balance</span><span className="when">practice USDC</span></div>
           <div className="mono mt-2 text-[36px] font-semibold tracking-tight">{fmtUsd(Number(user.demoBalance))}</div>
           <p className="muted mt-2 text-[13px]">Simulated fills at live prices. When you&apos;re ready for real trades, turn demo off in Settings and deposit.</p>
-          <div className="mt-3.5 grid grid-cols-2 gap-2.5"><Link href="/settings" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Go live</Link><button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ resetDemo: true }) }); mutate(); }}>Reset to $1,000</button></div>
+          <div className="mt-3.5 grid grid-cols-2 gap-2.5"><Link href="/settings" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Go live</Link><button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ resetDemo: true }) }); mutate(); }}>Reset to $10,000</button></div>
         </section>
       )}
       {isMe && !user.isDemo && (
