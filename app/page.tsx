@@ -53,6 +53,7 @@ export default function HomePage() {
       </div>
 
       {tab === "foryou" && <Hero onDeposit={() => setDeposit(true)} />}
+      {tab !== "following" && <Pulse mids={mids} />}
 
       {isLoading && <p className="muted px-5 py-6 text-sm">Loading…</p>}
       {!isLoading && posts.length === 0 && (
