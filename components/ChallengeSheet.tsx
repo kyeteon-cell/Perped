@@ -1,5 +1,7 @@
 "use client";
 
+import { Sheet } from "./Sheet";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/hooks/useSession";
@@ -30,10 +32,7 @@ export function ChallengeSheet({ handle, onClose }: { handle: string; onClose: (
   };
 
   return (
-    <>
-      <div className="sheet-bg" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label="Challenge to a duel">
-        <div className="grab" />
+    <Sheet label="Challenge to a duel" onClose={onClose}>
         <div className="px-5 pb-6">
           <div className="flex items-center justify-between"><b className="text-lg">⚔ Challenge {handle}</b><span className="when">{hours}h · ${stake} each</span></div>
           <p className="muted mt-1 text-sm">You take one side, they take the other. Whoever is further ahead when the clock runs out wins. Stakes are your own positions; nothing is pooled.</p>
@@ -48,7 +47,6 @@ export function ChallengeSheet({ handle, onClose }: { handle: string; onClose: (
           {err && <p className="red mt-3 text-sm">{err}</p>}
           <button className="btn brand mt-5" onClick={go} disabled={busy}>{busy ? "Creating…" : `Send challenge · then open your ${side}`}</button>
         </div>
-      </div>
-    </>
+    </Sheet>
   );
 }

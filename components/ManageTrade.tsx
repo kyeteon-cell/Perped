@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { createPortal } from "react-dom";
+import { Sheet } from "./Sheet";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
@@ -72,14 +72,10 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
 
   const Preset = ({ r, set }: { r: number; set: (v: string) => void }) => <button className="chip" style={{ padding: "5px 9px", fontSize: 11 }} onClick={() => set(pxForRoi(r).toFixed(dec))}>{r > 0 ? "+" : ""}{r}%</button>;
 
-  if (typeof document === "undefined") return null;
-  return createPortal(
-    <>
-      <div className="sheet-bg" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label="Manage trade">
-        <div className="grab" />
+  return (
+    <Sheet label="Manage trade" onClose={onClose}>
         <div className="px-5 pb-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" data-sheet-handle>
             <CoinMark coin={post.coin!} />
             <div className="flex-1">
               <div className="text-lg font-extrabold">{ticker(post.coin!, true)} <span className={`lbl ${side}`} style={{ padding: "2px 8px", fontSize: 11 }}><i />{side === "long" ? "Long" : "Short"} {lev}×</span></div>
@@ -117,8 +113,6 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
           {err && <p className="red mt-3 text-center text-xs">{err}</p>}
           {done && !err && <p className="green mt-3 text-center text-xs">{done}</p>}
         </div>
-      </div>
-    </>,
-    document.body,
+    </Sheet>
   );
 }

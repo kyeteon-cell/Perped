@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import { Sheet } from "./Sheet";
 import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtUsd, fmtPrice, pnlForPosition } from "@/lib/format";
 import { APP_URL } from "@/lib/config";
@@ -161,12 +161,8 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
   const copyLink = async () => { try { await navigator.clipboard.writeText(data.url); setMsg(challengeable ? "Challenge link copied" : "Link copied"); setTimeout(() => setMsg(null), 1500); } catch {} };
   const shareX = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(data.url)}`;
 
-  if (typeof document === "undefined") return null;
-  return createPortal(
-    <>
-      <div className="sheet-bg" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label="Share">
-        <div className="grab" />
+  return (
+    <Sheet label="Share" onClose={onClose}>
         <div className="flex flex-col items-center gap-3.5 px-5 pb-5">
           {img ? <img src={img} alt="Share card preview" className="share-prev" /> : <div className="share-prev" />}
           <div className="themes">
@@ -180,8 +176,6 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
           </div>
           <p className="faint text-center text-xs">{challengeable ? (profile ? "Your link is an invite: anyone who joins through it gets reduced fees, and you earn a cut of every fee they ever pay." : "Cards show the real numbers. Losses too.") : "Cards show the real numbers. Losses too. Nobody edits a receipt."}</p>
         </div>
-      </div>
-    </>,
-    document.body,
+    </Sheet>
   );
 }

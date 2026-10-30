@@ -1,5 +1,7 @@
 "use client";
 
+import { Sheet } from "./Sheet";
+
 import { useState } from "react";
 import { useSession } from "@/lib/hooks/useSession";
 import { HL_NETWORK } from "@/lib/config";
@@ -25,10 +27,7 @@ export function DepositSheet({ onClose, initial = "deposit" }: { onClose: () => 
   };
 
   return (
-    <>
-      <div className="sheet-bg" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label="Deposit or withdraw">
-        <div className="grab" />
+    <Sheet label="Deposit or withdraw" onClose={onClose}>
         {(!hasExternalWallet || profile?.isDemo) && (
           <div className="block"><div className="card p-4" style={{ border: "1.5px solid var(--brand)" }}>
             <div className="font-bold">Connect a wallet to trade real money</div>
@@ -82,7 +81,6 @@ export function DepositSheet({ onClose, initial = "deposit" }: { onClose: () => 
           </div>
         )}
         </>}
-      </div>
-    </>
+    </Sheet>
   );
 }
