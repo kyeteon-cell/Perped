@@ -5,6 +5,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost, RankStrip } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
+import { Pulse } from "@/components/Pulse";
 import { DepositSheet } from "@/components/DepositSheet";
 import { Avatar, Icon, I } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
