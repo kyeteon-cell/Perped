@@ -182,7 +182,7 @@ export async function botTick() {
       const entry = Number(t.entryPx), roi = ((mid - entry) / entry) * (t.side === "long" ? 1 : -1) * (t.leverage ?? 1) * 100;
       const age = now - new Date(t.createdAt).getTime();
       const stopHit = t.slPx && (t.side === "long" ? mid <= Number(t.slPx) : mid >= Number(t.slPx));
-      const shouldClose = stopHit || roi > rnd(6, 20) || roi < -rnd(8, 25) || age > hours(rnd(b.holdH[0], b.holdH[1]));
+      const shouldClose = stopHit || roi > rnd(4, 15) || roi < -rnd(6, 20) || age > hours(rnd(b.holdH[0], b.holdH[1]) * 0.6);
       if (!shouldClose) continue;
       const pnl = (t.side === "long" ? mid - entry : entry - mid) * Number(t.size);
       const liq = roi <= -90;
@@ -197,12 +197,14 @@ export async function botTick() {
 
     // 3. Maybe open something new (keep 1–3 open)
     const openCount = open.length;
-    if (openCount < 3 && Math.random() < (openCount === 0 ? 0.7 : 0.3)) {
+    // Bots never run dry: top up the practice balance so volume keeps flowing.
+    if (Number(me.demoBalance) < 5000) { await db.update(schema.users).set({ demoBalance: "50000" }).where(eq(schema.users.id, b.id)); me.demoBalance = "50000"; }
+    if (openCount < 5 && Math.random() < (openCount === 0 ? 0.9 : 0.55)) {
       const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
       if (mid && Number(me.demoBalance) > 30) {
         const side = Math.random() < b.bias ? "long" : "short";
         const lev = pickLev(b, coin, maxMap);
-        const margin = Math.min(pick([25, 50, 100, 150]), Number(me.demoBalance) * 0.3);
+        const margin = Math.min(pick([100, 250, 250, 500, 750, 1000, 2000]), Number(me.demoBalance) * 0.3);
         await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, body: Math.random() < b.chatty ? pick(NOTES_OPEN) : null, slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
         await db.update(schema.users).set({ demoBalance: (Number(me.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, b.id));
         log.push(`${b.handle} opened ${side} ${coin}`);
@@ -362,4 +364,39 @@ export async function seedRanks() {
     n++;
   }
   return n;
+}
+
+
+/**
+ * Volume boost: top every bot up to ~40 closed trades over the last 30 days with bigger tickets, so the
+ * P&L, volume and win-rate boards have something to rank. Idempotent: only tops up bots below the target.
+ */
+export async function boostHistory(target = 40) {
+  const mids = await getMids();
+  const maxMap = await maxLevMap();
+  const now = Date.now();
+  let added = 0;
+  for (const b of BOTS) {
+    const [c] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "closed")));
+    const need = target - (c?.n ?? 0);
+    for (let i = 0; i < need; i++) {
+      const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
+      if (!mid) continue;
+      const side = Math.random() < b.bias ? "long" : "short";
+      const lev = pickLev(b, coin, maxMap);
+      const openedAt = now - hours(rnd(2, 24 * 30));
+      const hold = hours(rnd(b.holdH[0], b.holdH[1]));
+      const win = Math.random() < b.winSkew;
+      const move = (rnd(0.3, 5) / 100) * (win ? 1 : -1) * (side === "long" ? 1 : -1);
+      const entry = mid * (1 + rnd(-0.08, 0.08));
+      const exit = entry * (1 + move);
+      const margin = pick([250, 500, 500, 1000, 1500, 2000, 3000, 5000]);
+      const notional = margin * lev, size = notional / entry;
+      const liq = !win && Math.random() < 0.08;
+      const pnl = liq ? -margin : (side === "long" ? exit - entry : entry - exit) * size;
+      await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(size), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "closed", exitPx: String(liq ? (side === "long" ? entry * (1 - 1 / lev) : entry * (1 + 1 / lev)) : exit), realizedPnl: pnl.toFixed(4), closedAt: new Date(Math.min(now - 60_000, openedAt + hold)), paper: true, body: Math.random() < b.chatty * 0.5 ? pick(NOTES_OPEN) : null, createdAt: new Date(openedAt), meta: { closeReason: liq ? "liquidation" : "manual" } });
+      added++;
+    }
+  }
+  return added;
 }
