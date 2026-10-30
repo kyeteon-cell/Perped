@@ -12,7 +12,7 @@ Mobile-first web app (installable PWA). Trades execute directly on Hyperliquid f
 
 **Post types** — trade, text, call (coin, up/down, target, invalidation, deadline, optional "backed" trade), poll (verified users; optional price settlement), system (liquidation, milestone, settled, duel settled).
 
-**Markets** — totals, 24h movers, sort by volume / gainers / losers / OI / funding / hot on Perped, rows with sparkline, funding and Perped long/short split. Market page with a TradingView lightweight-charts chart (candles/line, 1m–1d intervals, volume, pinch-zoom/pan, crosshair OHLC, live last candle), stats, sentiment and the ticket.
+**Markets** — totals, 24h movers, sort by volume / gainers / losers / OI / funding / hot on Perped, rows with sparkline, funding and Perped long/short split. Market page with a **sentiment ribbon** (long % for Following · Top 10 · Everyone), **trade pins on the chart** (followed / top / all traders' entries as green/red arrows with handle and leverage, ⚔ when 3+ people are fading it, grey once closed; tap a pin to highlight it in the tape), a **live tape** under the chart (filter Following / Top 10 / Everyone, live ROI, copy / fade / thread / battle on tap; defaults to Top 10 until you follow someone; `/api/markets/:coin/traders`), and a TradingView lightweight-charts chart (candles/line, 1m–1d intervals, volume, pinch-zoom/pan, crosshair OHLC, live last candle), stats, sentiment and the ticket.
 
 **Ticket** — market or limit, margin presets, leverage slider with caps, TP/SL placed with the entry as a Hyperliquid `normalTpsl` group, builder-fee approval inline, copy mode, fade mode (auto 5% stop, 2× cap for accounts under 10 trades, public warning).
 

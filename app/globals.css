@@ -371,3 +371,16 @@ button:active { transform: scale(.97); }
 .sio-row button:active { transform: scale(.98); }
 .sio-row .g { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #fff; color: #4285f4; font-size: 11px; font-weight: 900; }
 .sio.compact .sio-row button { padding: 9px 6px; font-size: 12px; }
+
+
+/* ---------- Market: sentiment ribbon + trader tape ---------- */
+.ribbon { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.rb { background: var(--surface); border-radius: 12px; padding: 8px 10px; }
+.tape { margin-top: 14px; }
+.trow { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 6px; border-bottom: 1px solid var(--line); flex-wrap: wrap; cursor: pointer; border-radius: 10px; transition: background .15s; }
+.trow.sel { background: var(--surface); }
+.trow.closed { opacity: .55; }
+.trow-acts { flex-basis: 100%; display: flex; gap: 8px; padding: 4px 0 2px 40px; animation: fade .18s ease; }
+.pill { font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; background: var(--surface); color: var(--muted); }
+.pill.gold { background: var(--gold-soft); color: var(--gold); }
+.pill.hot { background: var(--red-soft); color: var(--red); text-decoration: none; }

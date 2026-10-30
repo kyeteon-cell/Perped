@@ -1,9 +1,10 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { PriceChart } from "@/components/PriceChart";
+import { MarketTape, SentimentRibbon, useMarketTraders, pick, toMarkers, type Lens } from "@/components/MarketTape";
 import { TradeTicket } from "@/components/TradeTicket";
 import { FeedPost } from "@/components/FeedPost";
 import { CoinMark, Icon, I, ticker } from "@/components/ui";
@@ -26,6 +27,15 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
   const live = (feed?.posts ?? []).filter((p) => p.post.kind === "trade" && p.post.status === "open");
   const longs = live.filter((p) => p.post.side === "long").length;
 
+  // Social overlay: who's in this market (followed / top / everyone), as chart pins + a live tape.
+  const { traders, followingAny, loaded } = useMarketTraders(coin);
+  const [lens, setLens] = useState<Lens>(() => { try { return (localStorage.getItem("perped:lens") as Lens) || "following"; } catch { return "following"; } });
+  useEffect(() => { try { localStorage.setItem("perped:lens", lens); } catch {} }, [lens]);
+  // Default to Top 10 for people who don't follow anyone yet.
+  useEffect(() => { if (loaded && !followingAny && lens === "following") setLens("top"); }, [loaded, followingAny, lens]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const markers = useMemo(() => toMarkers(pick(traders, lens)), [traders, lens]);
+
   return (
     <div data-tint="blue" className="fade-in">
       <header className="flex items-center justify-between px-4 py-3">
@@ -40,7 +50,9 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
             <div className="mono mt-2.5 text-[22px] font-semibold">{px ? fmtPrice(px) : "…"}{m && <span className={`ml-2 text-sm font-semibold ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</span>}</div>
           </div>
         </div>
-        <div className="mt-3.5"><PriceChart coin={coin} livePx={px || undefined} /></div>
+        <div className="mt-3"><SentimentRibbon traders={traders} followingAny={followingAny} /></div>
+        <div className="mt-3"><PriceChart coin={coin} livePx={px || undefined} markers={markers} onMarkerClick={(id) => setSelected(id)} /></div>
+        <MarketTape coin={coin} traders={traders} lens={lens} setLens={setLens} followingAny={followingAny} mid={px} selected={selected} onSelect={setSelected} meId={profile?.id} />
         {m && (
           <div className="mt-3.5 grid grid-cols-3 gap-2.5">
             <div className="stat"><small>24h volume</small><div className="v mono">{fmtUsd(m.volume24h, { compact: true })}</div></div>

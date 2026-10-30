@@ -2,11 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
-import { createChart, ColorType, CrosshairMode, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
+import { createChart, ColorType, CrosshairMode, type IChartApi, type ISeriesApi, type UTCTimestamp, type SeriesMarker, type Time } from "lightweight-charts";
 import type { Candle } from "@/lib/hl-info";
 import { fmtPrice } from "@/lib/format";
 
 type Interval = "1m" | "5m" | "15m" | "1h" | "4h" | "1d";
+
+/** A trade to pin on the chart. */
+export type ChartMarker = { id: string; t: number; side: "long" | "short"; label: string; hot?: boolean; muted?: boolean };
 type Mode = "candles" | "line";
 const INTERVALS: Interval[] = ["1m", "5m", "15m", "1h", "4h", "1d"];
 
@@ -19,7 +22,7 @@ function cssVar(name: string, fallback: string) {
  * Trading-grade chart (TradingView lightweight-charts): candles or line, volume, six intervals,
  * pinch-zoom and drag to pan, crosshair with OHLC, live last candle from the WebSocket mid.
  */
-export function PriceChart({ coin, livePx }: { coin: string; livePx?: number }) {
+export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin: string; livePx?: number; markers?: ChartMarker[]; onMarkerClick?: (id: string) => void }) {
   const [interval, setInterval_] = useState<Interval>(() => { try { return (localStorage.getItem("perped-chart-iv") as Interval) || "15m"; } catch { return "15m"; } });
   const [mode, setMode] = useState<Mode>(() => { try { return (localStorage.getItem("perped-chart") as Mode) || "candles"; } catch { return "candles"; } });
   const [legend, setLegend] = useState<Candle | null>(null);
@@ -28,6 +31,7 @@ export function PriceChart({ coin, livePx }: { coin: string; livePx?: number }) 
   const main = useRef<ISeriesApi<"Candlestick"> | ISeriesApi<"Area"> | null>(null);
   const vol = useRef<ISeriesApi<"Histogram"> | null>(null);
   const lastRef = useRef<Candle | null>(null);
+  const clickRef = useRef(onMarkerClick); clickRef.current = onMarkerClick;
 
   const { data } = useSWR<{ candles: Candle[] }>(`/api/markets/${coin}/candles?interval=${interval}&limit=500`, {
     refreshInterval: interval === "1m" ? 15_000 : interval === "5m" ? 30_000 : 60_000,
@@ -64,6 +68,7 @@ export function PriceChart({ coin, livePx }: { coin: string; livePx?: number }) 
       const t = (p.time as number) * 1000;
       setLegend({ t, o: d.open ?? d.value ?? 0, h: d.high ?? d.value ?? 0, l: d.low ?? d.value ?? 0, c: d.close ?? d.value ?? 0, v: vd?.value ?? 0 });
     });
+    ch.subscribeClick((p) => { const id = p.hoveredObjectId as string | undefined; if (id && clickRef.current) clickRef.current(id); });
     const ro = new ResizeObserver(() => ch.applyOptions({ width: el.clientWidth }));
     ro.observe(el);
     return () => { ro.disconnect(); ch.remove(); chart.current = null; main.current = null; vol.current = null; };
@@ -83,6 +88,18 @@ export function PriceChart({ coin, livePx }: { coin: string; livePx?: number }) 
     lastRef.current = candles[candles.length - 1];
     setLegend((l) => l ?? lastRef.current);
   }, [candles, mode, up]);
+
+  // Trade pins: snap each to the candle it happened in, sort by time (the library requires it).
+  useEffect(() => {
+    const s = main.current; if (!s || !candles.length) return;
+    const times = candles.map((c) => c.t);
+    const snap = (t: number) => { let lo = times[0]; for (const x of times) { if (x <= t) lo = x; else break; } return lo; };
+    const ms: SeriesMarker<Time>[] = markers
+      .filter((m) => m.t >= times[0] - 60_000)
+      .map((m) => ({ id: m.id, time: (snap(m.t) / 1000) as UTCTimestamp, position: m.side === "long" ? "belowBar" : "aboveBar", shape: m.side === "long" ? "arrowUp" : "arrowDown", color: m.muted ? "#8b8b8b" : m.side === "long" ? cssVar("--green", "#16a34a") : cssVar("--red", "#dc2626"), text: `${m.hot ? "⚔ " : ""}${m.label}`, size: m.hot ? 2 : 1 }))
+      .sort((a, b) => (a.time as number) - (b.time as number));
+    s.setMarkers(ms);
+  }, [markers, candles, mode]);
 
   // Live tick: move the last candle with the WebSocket mid.
   useEffect(() => {
