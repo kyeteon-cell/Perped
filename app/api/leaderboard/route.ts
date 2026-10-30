@@ -10,7 +10,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   await ensureSchema();
   const url = new URL(req.url);
-  const mode = url.searchParams.get("mode") === "calls" ? "calls" : "trades";
+  const m = url.searchParams.get("mode");
+  const mode = m === "calls" ? "calls" : m === "ranks" ? "ranks" : "trades";
   const demo = url.searchParams.get("demo") === "1";
   const realOnly = eq(schema.users.isDemo, demo);
   const period = url.searchParams.get("period") ?? "7d";
@@ -27,7 +28,14 @@ export async function GET(req: Request) {
     callAvgMove: schema.stats.callAvgMove,
     callStreak: schema.stats.callStreak,
     isDemo: schema.users.isDemo,
+    xp: schema.users.xp,
+    battlesWon: schema.stats.battlesWon,
+    battlesLost: schema.stats.battlesLost,
   };
+  if (mode === "ranks") {
+    const rows = await db.select(base).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(realOnly).orderBy(desc(schema.users.xp), desc(schema.stats.battlesWon)).limit(50);
+    return Response.json({ mode, rows });
+  }
   if (mode === "calls") {
     const rows = await db
       .select({ ...base, hitRate: sql<number>`case when ${schema.stats.callsResolved} > 0 then ${schema.stats.callsHit}::numeric / ${schema.stats.callsResolved} * 100 else 0 end`.mapWith(Number) })

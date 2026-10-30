@@ -14,3 +14,19 @@ export const HERO_BACKGROUNDS = [
   { key: "hero-fightnight", name: "Fight night", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131121_3bf994e3-0ac8-4fd5-92b3-e218bd132082.png" },
   { key: "hero-chrome", name: "Liquid chrome", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131121_865ca019-fe8e-4e99-a79d-c6bb2155fb3f.png" },
 ];
+
+/** Rank emblems (1:1, black background) and leaderboard medals / banner. Same proxy. */
+export const ART = [
+  { key: "rank-1", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174100_b34f5b2e-547a-40df-89e8-10fb9bcfed21.png" },
+  { key: "rank-2", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174052_c749b817-137a-4861-8bc1-5e1b56468a49.png" },
+  { key: "rank-3", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174054_20546eec-5edc-4852-9d4e-47c63674b0ef.png" },
+  { key: "rank-4", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174059_2b2217df-ec21-4bb2-90a8-7fb341f59298.png" },
+  { key: "rank-5", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174058_a4547118-8308-47bc-82d5-c0b2f3cbb2c9.png" },
+  { key: "rank-6", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174056_8b44cd74-3cb8-4258-9e0b-bf85ecaad9e5.png" },
+  { key: "rank-7", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174056_06ab6526-c811-4eb0-a131-ac40bb52575c.png" },
+  { key: "rank-8", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174057_ce1660dc-1a86-4e8a-8a35-f740168c4976.png" },
+  { key: "medal-1", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174100_afbab611-2b09-423a-b13b-c28322434d84.png" },
+  { key: "medal-2", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174059_6379c01a-cf07-49c1-91d2-c9db5914f448.png" },
+  { key: "medal-3", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174056_7aa61e38-f543-448e-a9e8-4cf2f09bb0af.png" },
+  { key: "arena", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174059_b1ab2049-9324-4976-a4ae-37ce0915009b.png" },
+];

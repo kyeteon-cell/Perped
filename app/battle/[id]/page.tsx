@@ -7,7 +7,8 @@ import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { ManageTrade } from "@/components/ManageTrade";
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
-import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/components/ui";
+import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
+import { rankFor } from "@/lib/rank";
 import type { Post, Stats } from "@/lib/schema";
 
 type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null; xp?: number };
@@ -76,7 +77,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         </div>
         {battle?.status === "settled" && (
           <div className="verdict mt-4">
-            <div className="eyebrow">{battle.winnerId ? "Verdict" : "Draw"}</div>
+            <div className="flex items-center justify-between"><div className="eyebrow">{battle.winnerId ? "Verdict" : "Draw"}</div>{battle.winnerId && <RankEmblem level={rankFor((battle.winnerId === fader.user.id ? fader.user.xp : tu.user.xp) ?? 0).level} size={40} />}</div>
             <div className="mt-1 text-[17px] font-extrabold">{battle.winnerId ? `${battle.winnerId === fader.user.id ? fader.user.handle : tu.user.handle} perped ${battle.winnerId === fader.user.id ? tu.user.handle : fader.user.handle}` : "Too close to call"}</div>
             <div className="mono when mt-1">{fader.user.handle} {fmtPct(Number(battle.faderRoi), 1)} · {tu.user.handle} {fmtPct(Number(battle.targetRoi), 1)}{battle.reason === "liquidation" ? " · decided by liquidation" : battle.reason === "timeout" ? " · marked 24h after the first close" : ""}</div>
             <div className="mt-2 flex gap-2 text-[12px]"><span className="chip">{fader.user.handle} +{battle.xpFader ?? 0} XP</span><span className="chip">{tu.user.handle} +{battle.xpTarget ?? 0} XP</span></div>

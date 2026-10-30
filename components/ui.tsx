@@ -112,8 +112,19 @@ export function SkeletonList({ n = 3, card = true }: { n?: number; card?: boolea
   );
 }
 
-/** Small level badge: "L3 · Wick Hunter" (or just "L3" when compact). */
-export function RankChip({ xp, compact = false }: { xp?: number | null; compact?: boolean }) {
+/** Rank emblem. Compact = just the emblem (next to names); full = emblem + title. */
+export function RankChip({ xp, compact = false, size }: { xp?: number | null; compact?: boolean; size?: number }) {
   const r = rankFor(xp ?? 0);
-  return <span className={`rank-chip lv${r.level}`} title={`${r.title} · ${r.xp} XP`}>{compact ? `L${r.level}` : `L${r.level} · ${r.title}`}</span>;
+  const px = size ?? (compact ? 18 : 22);
+  return (
+    <span className={`rank-chip lv${r.level} ${compact ? "compact" : ""}`} title={`${r.title} · ${r.xp} XP`}>
+      <img src={`/api/share-bg/rank-${r.level}`} alt="" className="rank-em" style={{ width: px, height: px }} />
+      {!compact && <span>{r.title}</span>}
+    </span>
+  );
+}
+
+/** Big emblem for cards and headers. */
+export function RankEmblem({ level, size = 72 }: { level: number; size?: number }) {
+  return <img src={`/api/share-bg/rank-${level}`} alt="" className={`rank-big lv${level}`} style={{ width: size, height: size }} />;
 }

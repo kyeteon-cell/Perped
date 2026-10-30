@@ -3,24 +3,25 @@
 import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { Avatar, SkeletonList } from "@/components/ui";
+import { Avatar, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
+import { rankFor } from "@/lib/rank";
 import { fmtUsd, fmtPct } from "@/lib/format";
 
-type Row = { handle: string; avatarUrl: string | null; pnl?: number; winRate: string; closedTrades: number; volume30d: string; liquidations: number; fadedCount: number; callsResolved: number; callsHit: number; callAvgMove: string; callStreak: number; hitRate?: number };
+type Row = { handle: string; avatarUrl: string | null; pnl?: number; winRate: string; closedTrades: number; volume30d: string; liquidations: number; fadedCount: number; callsResolved: number; callsHit: number; callAvgMove: string; callStreak: number; hitRate?: number; xp?: number; battlesWon?: number; battlesLost?: number };
 
 export default function LeaderboardPage() {
-  const [mode, setMode] = useState<"trades" | "calls">("trades");
+  const [mode, setMode] = useState<"trades" | "calls" | "ranks">("trades");
   const [period, setPeriod] = useState<"7d" | "30d" | "all">("7d");
   const [demo, setDemo] = useState(false);
   const { data, isLoading } = useSWR<{ rows: Row[]; bottom?: Row[] }>(`/api/leaderboard?mode=${mode}&period=${period}&demo=${demo ? 1 : 0}`);
   const rows = data?.rows ?? [];
-  const podium = mode === "trades" ? rows.slice(0, 3) : [];
+  const podium = mode !== "calls" ? rows.slice(0, 3) : [];
 
   return (
     <div data-tint="gold" className="fade-in">
-      <header className="px-5 pt-4"><h1 className="h1 dot">Leaders</h1><div className="when">{mode === "trades" ? "Realised PnL from Hyperliquid fills" : "Public predictions, scored against the chart"}</div></header>
+      <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/arena)" }}><h1 className="h1" style={{ color: "#fff" }}>Leaders</h1><div className="text-[12px]" style={{ color: "rgba(255,255,255,.8)" }}>{mode === "trades" ? "Realised PnL from Hyperliquid fills" : mode === "calls" ? "Public predictions, scored against the chart" : "XP from battles, duels, calls and trades"}</div></header>
       <div className="px-5 pb-3 pt-4">
-        <div className="modes"><button className={mode === "trades" ? "on" : ""} onClick={() => setMode("trades")}>Trades</button><button className={mode === "calls" ? "on" : ""} onClick={() => setMode("calls")}>Calls</button></div>
+        <div className="modes"><button className={mode === "trades" ? "on" : ""} onClick={() => setMode("trades")}>Trades</button><button className={mode === "calls" ? "on" : ""} onClick={() => setMode("calls")}>Calls</button><button className={mode === "ranks" ? "on" : ""} onClick={() => setMode("ranks")}>Ranks</button></div>
         <div className="seg mt-3">
           {mode === "trades" && (["7d", "30d", "all"] as const).map((p) => <button key={p} className={`chip ${p === period ? "on" : ""}`} onClick={() => setPeriod(p)}>{p === "all" ? "All time" : p === "7d" ? "7 days" : "30 days"}</button>)}
           <button className={`chip ${demo ? "on" : ""}`} style={{ marginLeft: "auto" }} onClick={() => setDemo((v) => !v)}>{demo ? "Demo accounts" : "Real accounts"}</button>
@@ -36,11 +37,14 @@ export default function LeaderboardPage() {
             const place = i === 1 ? 1 : i === 0 ? 2 : 3;
             return (
               <Link key={r.handle} href={`/u/${r.handle}`} className="card relative p-3.5 text-center" style={{ background: place === 1 ? "var(--gold-soft)" : undefined, paddingTop: place === 1 ? 18 : 14 }}>
-                <span className="absolute -top-2.5 left-1/2 grid h-[22px] w-[22px] -translate-x-1/2 place-items-center rounded-full text-[11px] font-extrabold text-white" style={{ background: place === 1 ? "var(--gold)" : place === 2 ? "#9aa3b2" : "#c98a5a" }}>{place}</span>
+                <img src={`/api/share-bg/medal-${place}`} alt="" className="medal" style={{ width: place === 1 ? 44 : 36, height: place === 1 ? 44 : 36 }} />
                 <div className="flex justify-center"><Avatar handle={r.handle} url={r.avatarUrl} size={place === 1 ? 60 : 48} /></div>
                 <div className="mt-2 text-[13px] font-bold">{r.handle}</div>
-                <div className={`mono text-[15px] font-semibold ${(r.pnl ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div>
-                {place === 1 && <div className="when">{fmtPct(Number(r.winRate), 0)} win</div>}
+                {mode === "ranks" ? (
+                  <><div className="mt-1 flex justify-center"><RankEmblem level={rankFor(r.xp ?? 0).level} size={place === 1 ? 40 : 32} /></div><div className="when mt-1">{rankFor(r.xp ?? 0).title}</div><div className="mono text-[14px] font-semibold">{(r.xp ?? 0).toLocaleString()} XP</div></>
+                ) : (
+                  <><div className={`mono text-[15px] font-semibold ${(r.pnl ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div>{place === 1 && <div className="when">{fmtPct(Number(r.winRate), 0)} win</div>}</>
+                )}
               </Link>
             );
           })}
@@ -52,10 +56,10 @@ export default function LeaderboardPage() {
           <span className="rank">{i + 1}</span>
           <Avatar handle={r.handle} url={r.avatarUrl} size={44} />
           <div className="min-w-0 flex-1">
-            <div className="name">{r.handle}</div>
-            <div className="when truncate">{mode === "trades" ? `${r.closedTrades} trades · ${fmtPct(Number(r.winRate), 0)} win · ${fmtUsd(Number(r.volume30d), { compact: true })} volume` : `${r.callsResolved} calls · ${r.callsHit} hit · avg ${fmtPct(Number(r.callAvgMove), 1)}${r.callStreak > 1 ? ` · 🔥 ${r.callStreak}` : ""} · trades ${fmtPct(Number(r.winRate), 0)} win`}</div>
+            <div className="name">{r.handle}<RankChip xp={r.xp} compact /></div>
+            <div className="when truncate">{mode === "ranks" ? `${rankFor(r.xp ?? 0).title} · battles ${r.battlesWon ?? 0}–${r.battlesLost ?? 0} · ${fmtPct(Number(r.winRate), 0)} win` : mode === "trades" ? `${r.closedTrades} trades · ${fmtPct(Number(r.winRate), 0)} win · ${fmtUsd(Number(r.volume30d), { compact: true })} volume` : `${r.callsResolved} calls · ${r.callsHit} hit · avg ${fmtPct(Number(r.callAvgMove), 1)}${r.callStreak > 1 ? ` · 🔥 ${r.callStreak}` : ""} · trades ${fmtPct(Number(r.winRate), 0)} win`}</div>
           </div>
-          {mode === "trades" ? <div className={`mono text-[17px] font-bold ${(r.pnl ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div> : <div className="text-right"><div className="mono text-[17px] font-bold">{Math.round(r.hitRate ?? 0)}%</div><div className="when">hit rate</div></div>}
+          {mode === "ranks" ? <div className="text-right"><div className="mono text-[17px] font-bold">{(r.xp ?? 0).toLocaleString()}</div><div className="when">XP</div></div> : mode === "trades" ? <div className={`mono text-[17px] font-bold ${(r.pnl ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div> : <div className="text-right"><div className="mono text-[17px] font-bold">{Math.round(r.hitRate ?? 0)}%</div><div className="when">hit rate</div></div>}
         </Link>
       ))}
 
