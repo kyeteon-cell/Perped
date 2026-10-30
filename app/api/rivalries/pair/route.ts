@@ -22,9 +22,14 @@ export async function GET(req: Request) {
   if (!r) return Response.json({ error: "not found" }, { status: 404 });
   const flip = r.userA !== A.id; // the row stores ids sorted; present it as A vs B as requested
 
-  const between = (x: typeof schema.battles.faderId, y: typeof schema.battles.targetId) => or(and(eq(x, A.id), eq(y, B.id)), and(eq(x, B.id), eq(y, A.id)));
-  const battles = await db.select().from(schema.battles).where(and(eq(schema.battles.status, "settled"), between(schema.battles.faderId, schema.battles.targetId))).orderBy(desc(schema.battles.settledAt)).limit(100);
-  const duels = await db.select().from(schema.duels).where(and(eq(schema.duels.status, "settled"), between(schema.duels.challengerId, schema.duels.opponentId))).orderBy(desc(schema.duels.settlesAt)).limit(100);
+  const battles = await db.select().from(schema.battles).where(and(eq(schema.battles.status, "settled"), or(
+    and(eq(schema.battles.faderId, A.id), eq(schema.battles.targetId, B.id)),
+    and(eq(schema.battles.faderId, B.id), eq(schema.battles.targetId, A.id)),
+  ))).orderBy(desc(schema.battles.settledAt)).limit(100);
+  const duels = await db.select().from(schema.duels).where(and(eq(schema.duels.status, "settled"), or(
+    and(eq(schema.duels.challengerId, A.id), eq(schema.duels.opponentId, B.id)),
+    and(eq(schema.duels.challengerId, B.id), eq(schema.duels.opponentId, A.id)),
+  ))).orderBy(desc(schema.duels.settlesAt)).limit(100);
   const postIds = battles.flatMap((b) => [b.faderPostId, b.targetPostId]);
   const posts = postIds.length ? await db.select({ id: schema.posts.id, userId: schema.posts.userId, side: schema.posts.side, entryPx: schema.posts.entryPx, exitPx: schema.posts.exitPx, size: schema.posts.size, realizedPnl: schema.posts.realizedPnl }).from(schema.posts).where(inArray(schema.posts.id, postIds)) : [];
   const pnlOf = (id: number) => { const p = posts.find((x) => x.id === id); if (!p) return 0; if (p.realizedPnl != null) return Number(p.realizedPnl); const e = Number(p.entryPx), x = Number(p.exitPx ?? e); return pnlForPosition(p.side as "long" | "short", e, x, Number(p.size)).pnl; };
