@@ -48,7 +48,12 @@ export function MarketTape({ coin, traders, lens, setLens, followingAny, mid, se
 }) {
   const rows = useMemo(() => pick(traders, lens).sort((a, b) => (a.status === b.status ? new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime() : a.status === "open" ? -1 : 1)), [traders, lens]);
   const [showClosed, setShowClosed] = useState(false);
-  const shown = rows.filter((r) => showClosed || r.status === "open").slice(0, 25);
+  const [expanded, setExpanded] = useState(false);
+  const all = rows.filter((r) => showClosed || r.status === "open");
+  const shown = all.slice(0, expanded ? 50 : 3);
+  // A pin tap on a row that's hidden behind "show more" expands the list so it can scroll into view.
+  useEffect(() => { if (selected && !expanded && all.findIndex((r) => String(r.postId) === selected) >= 3) setExpanded(true); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
   useEffect(() => { if (selected) document.getElementById(`tape-${selected}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [selected]);
   void meId;
   return (
@@ -88,6 +93,11 @@ export function MarketTape({ coin, traders, lens, setLens, followingAny, mid, se
           );
         })}
       </div>
+      {all.length > 3 && (
+        <button type="button" className="chip mt-2 w-full" style={{ padding: "9px 12px", fontSize: 12 }} onClick={() => setExpanded((v) => !v)}>
+          {expanded ? "Show less" : `Show ${Math.min(all.length, 50) - 3} more trade${all.length - 3 === 1 ? "" : "s"}`}
+        </button>
+      )}
     </section>
   );
 }
