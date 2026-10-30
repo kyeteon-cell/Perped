@@ -1,15 +1,20 @@
 import { PrivyClient } from "@privy-io/server-auth";
 import { eq } from "drizzle-orm";
 import { db, schema, ensureSchema } from "./db";
+import { guestAddress, verifyGuestToken } from "./guest";
 
 const privy = new PrivyClient(process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "", process.env.PRIVY_APP_SECRET ?? "");
 
-export type AuthedUser = { privyId: string; address: string | null; hasExternalWallet: boolean };
+export type AuthedUser = { privyId: string; address: string | null; hasExternalWallet: boolean; guest?: boolean };
 
-/** Verify the Privy access token sent as `Authorization: Bearer <token>`. */
+/** Verify `Authorization: Bearer <privy token>` or `Authorization: Guest <guest token>` (demo-only accounts). */
 export async function getAuth(req: Request): Promise<AuthedUser | null> {
   await ensureSchema();
   const header = req.headers.get("authorization") ?? "";
+  if (header.startsWith("Guest ")) {
+    const id = verifyGuestToken(header.slice(6));
+    return id ? { privyId: id, address: guestAddress(id), hasExternalWallet: false, guest: true } : null;
+  }
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) return null;
   try {

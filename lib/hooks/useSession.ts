@@ -13,7 +13,26 @@ const chain = HL_NETWORK === "mainnet" ? arbitrum : arbitrumSepolia;
 
 /** Everything a page needs about the logged-in user: wallet, viem client, profile, authed fetch. */
 export function useSession() {
-  const { ready, authenticated, logout, getAccessToken, user } = usePrivy();
+  const { ready: privyReady, authenticated: privyAuthed, logout: privyLogout, getAccessToken, user } = usePrivy();
+  // Guest demo: a signed token in localStorage, no third-party login.
+  const [guestToken, setGuestToken] = useState<string | null>(null);
+  const [guestReady, setGuestReady] = useState(false);
+  useEffect(() => { try { setGuestToken(localStorage.getItem("perped:guest")); } catch {} setGuestReady(true); }, []);
+  const isGuest = !privyAuthed && !!guestToken;
+  const authenticated = privyAuthed || isGuest;
+  const ready = privyReady && guestReady;
+  const startGuest = useCallback(async () => {
+    const r = await fetch("/api/guest", { method: "POST" });
+    const j = await r.json();
+    if (!r.ok || !j.token) throw new Error(j.error ?? "Couldn't start demo");
+    try { localStorage.setItem("perped:guest", j.token); } catch {}
+    setGuestToken(j.token);
+  }, []);
+  const logout = useCallback(async () => {
+    try { localStorage.removeItem("perped:guest"); } catch {}
+    setGuestToken(null);
+    if (privyAuthed) await privyLogout();
+  }, [privyAuthed, privyLogout]);
   const [loginError, setLoginError] = useState<string | null>(null);
   const { login } = useLogin({
     onComplete: () => setLoginError(null),
@@ -56,18 +75,22 @@ export function useSession() {
   /** fetch() with the Privy token + wallet address attached, for our own API routes. */
   const authedFetch = useCallback(
     async (input: string, init: RequestInit = {}) => {
-      const token = await getAccessToken();
       const headers = new Headers(init.headers);
-      if (token) headers.set("authorization", `Bearer ${token}`);
-      if (address) headers.set("x-wallet-address", address);
+      if (privyAuthed) {
+        const token = await getAccessToken();
+        if (token) headers.set("authorization", `Bearer ${token}`);
+        if (address) headers.set("x-wallet-address", address);
+      } else if (guestToken) {
+        headers.set("authorization", `Guest ${guestToken}`);
+      }
       if (init.body && !headers.has("content-type")) headers.set("content-type", "application/json");
       return fetch(input, { ...init, headers });
     },
-    [getAccessToken, address],
+    [getAccessToken, address, privyAuthed, guestToken],
   );
 
-  const { data: me, mutate: refreshMe, isLoading: meLoading } = useSWR<{ profile: User | null; unread: number; fee?: FeeInfo }>(
-    authenticated && address ? ["/api/me", address] : null,
+  const { data: me, mutate: refreshMe, isLoading: meLoading } = useSWR<{ profile: User | null; unread: number; fee?: FeeInfo; address?: string | null; guest?: boolean }>(
+    (privyAuthed && address) || isGuest ? ["/api/me", address ?? guestToken] : null,
     async () => (await authedFetch("/api/me")).json(),
     { refreshInterval: 30_000 },
   );
@@ -79,8 +102,12 @@ export function useSession() {
     logout,
     user,
     wallet,
-    address,
+    /** Wallet address; for guests, the server-assigned demo placeholder. */
+    address: address ?? (isGuest ? (me?.address as `0x${string}` | undefined) ?? null : null),
     walletClient,
+    isGuest,
+    /** Start a no-login demo account. */
+    startGuest,
     authedFetch,
     profile: me?.profile ?? null,
     profileLoading: meLoading,

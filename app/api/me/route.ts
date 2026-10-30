@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     unread = r?.n ?? 0;
     fee = await getFeeInfo(profile.id, profile.referredBy);
   }
-  return Response.json({ profile, address: auth.address, unread, fee });
+  return Response.json({ profile, address: auth.address, unread, fee, guest: !!auth.guest });
 }
 
 const Body = z.object({
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   // Signed up with X only (no wallet connected) → demo until they connect one. Wallet signups start live.
-  const isDemo = !auth.hasExternalWallet;
+  const isDemo = !auth.hasExternalWallet || !!auth.guest;
   const [row] = await db
     .insert(schema.users)
     .values({ id: auth.privyId, address: auth.address, handle, bio, avatarUrl, referredBy, referredAt: referredBy ? new Date() : null, isDemo })

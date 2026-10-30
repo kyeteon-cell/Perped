@@ -12,7 +12,7 @@ type Mode = "deposit" | "withdraw";
  * Withdrawals are signed on Hyperliquid by the user's wallet (withdraw3 action) — stubbed here until wired.
  */
 export function DepositSheet({ onClose, initial = "deposit" }: { onClose: () => void; initial?: Mode }) {
-  const { address, hasExternalWallet, linkWallet, profile } = useSession();
+  const { address, hasExternalWallet, linkWallet, profile, isGuest, login } = useSession();
   const [mode, setMode] = useState<Mode>(initial);
   const [route, setRoute] = useState<"card" | "transfer">("card");
   const [thb, setThb] = useState(3500);
@@ -33,7 +33,7 @@ export function DepositSheet({ onClose, initial = "deposit" }: { onClose: () => 
           <div className="block"><div className="card p-4" style={{ border: "1.5px solid var(--brand)" }}>
             <div className="font-bold">Connect a wallet to trade real money</div>
             <p className="muted mt-1 text-sm">{profile?.isDemo ? "You're in demo mode. " : ""}Connect MetaMask, Rabby, Rainbow or any WalletConnect wallet; it becomes your Hyperliquid account and you deposit to it directly.</p>
-            <div className="mt-3 flex gap-2"><button className="btn brand" style={{ padding: 12, fontSize: 14 }} onClick={linkWallet}>Connect wallet</button><button className="btn ghost" style={{ padding: 12, fontSize: 14 }} onClick={onClose}>Not now</button></div>
+            <div className="mt-3 flex gap-2"><button className="btn brand" style={{ padding: 12, fontSize: 14 }} onClick={isGuest ? login : linkWallet}>{isGuest ? "Sign in" : "Connect wallet"}</button><button className="btn ghost" style={{ padding: 12, fontSize: 14 }} onClick={onClose}>Not now</button></div>
           </div></div>
         )}
         {hasExternalWallet && !profile?.isDemo && <>

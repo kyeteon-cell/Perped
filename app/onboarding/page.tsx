@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/hooks/useSession";
 import { makeExchangeClient, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
-import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, BUILDER_MAX_FEE_TENTHS_BPS, HL_NETWORK, REFERRAL_SHARE_PCT } from "@/lib/config";
+import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, BUILDER_MAX_FEE_TENTHS_BPS, DEMO_ENABLED, HL_NETWORK, REFERRAL_SHARE_PCT } from "@/lib/config";
 import { normaliseReferralCode, referralLink } from "@/lib/fees";
 import { Icon, I } from "@/components/ui";
 
@@ -15,7 +15,9 @@ import { Icon, I } from "@/components/ui";
  */
 export default function OnboardingPage() {
   const router = useRouter();
-  const { ready, authenticated, login, address, walletClient, profile, profileLoading, authedFetch, refreshMe, fee, loginError, hasExternalWallet, linkWallet, linkError } = useSession();
+  const { ready, authenticated, login, address, walletClient, profile, profileLoading, authedFetch, refreshMe, fee, loginError, hasExternalWallet, linkWallet, linkError, isGuest, startGuest } = useSession();
+  const [guestErr, setGuestErr] = useState<string | null>(null);
+  const tryDemo = async () => { setBusy(true); setGuestErr(null); try { await startGuest(); } catch (e) { setGuestErr(e instanceof Error ? e.message : String(e)); } setBusy(false); };
   const [step, setStep] = useState(1);
   const [handle, setHandle] = useState("");
   const [bio, setBio] = useState("");
@@ -80,7 +82,9 @@ export default function OnboardingPage() {
           <div className="flex flex-col gap-2.5 px-6 pb-8 pt-3">
             <button className="btn ink" onClick={login}><Icon d={I.x} size={18} />Continue with X</button>
             <button className="btn" onClick={login}><Icon d={I.wallet} size={18} />Connect a wallet</button>
-            <p className="faint mt-1.5 text-center text-xs">X gets you a demo account with $1,000 to practise. Connect a wallet when you want to trade real money.</p>
+            {DEMO_ENABLED && <button className="btn ghost" onClick={tryDemo} disabled={busy}><Icon d={I.bolt} size={18} />{busy ? "Starting…" : "Try the demo, no sign-up"}</button>}
+            <p className="faint mt-1.5 text-center text-xs">X or the demo gets you $1,000 of practice money. Connect a wallet when you want to trade real money.</p>
+            {guestErr && <p className="red mt-2 text-center text-xs">{guestErr}</p>}
             {loginError && <p className="red mt-2 text-center text-xs">{loginError}</p>}
             {authenticated && !address && ready && <p className="muted mt-2 text-center text-xs">Logged in — creating your wallet…</p>}
           </div>
@@ -162,7 +166,7 @@ export default function OnboardingPage() {
             ) : (
               <>
                 <p className="muted mt-2.5">You&apos;re in <b>demo mode</b> with $1,000 of practice money. Fills are simulated at live Hyperliquid prices and tagged Demo in the feed. Nothing is at risk.</p>
-                <button className="card mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" style={{ border: "1.5px solid var(--brand)" }} onClick={linkWallet}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}><Icon d={I.wallet} /></div><div><b>Connect a wallet to trade real money</b><p className="muted mt-1 text-[13px]">MetaMask, Rabby, Rainbow or WalletConnect. Your wallet becomes your Hyperliquid account. You can do this any time from Settings.</p></div></button>
+                <button className="card mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" style={{ border: "1.5px solid var(--brand)" }} onClick={isGuest ? login : linkWallet}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}><Icon d={I.wallet} /></div><div><b>{isGuest ? "Sign in to keep your account or trade real money" : "Connect a wallet to trade real money"}</b><p className="muted mt-1 text-[13px]">{isGuest ? "Guest demo lives on this device only. Sign in with X to keep your record, or connect a wallet to trade for real." : "MetaMask, Rabby, Rainbow or WalletConnect. Your wallet becomes your Hyperliquid account. You can do this any time from Settings."}</p></div></button>
                 {linkError && <p className="red mt-2 text-sm">{linkError}</p>}
               </>
             )}

@@ -26,6 +26,7 @@ export async function PATCH(req: Request) {
   const { resetDemo, ...patch } = parsed.data;
   const set: Record<string, unknown> = { ...patch };
   if (patch.isDemo === false) {
+    if (auth.guest) return Response.json({ error: "guest accounts are demo only; sign in with X or a wallet to go live" }, { status: 400 });
     if (!auth.hasExternalWallet) return Response.json({ error: "connect a wallet first to trade real money" }, { status: 400 });
     if (auth.address) set.address = auth.address; // their connected wallet becomes the Hyperliquid account
   }
