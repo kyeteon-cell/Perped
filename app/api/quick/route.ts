@@ -7,7 +7,7 @@ import { getMids } from "@/lib/hl-info";
 export const dynamic = "force-dynamic";
 
 const HOUR = 60 * 60 * 1000;
-export const QUICK_COINS = ["BTC", "ETH", "SOL"] as const;
+const QUICK_COINS = ["BTC", "ETH", "SOL"] as const;
 
 /**
  * Quick calls: "Where's BTC in an hour — higher or lower?" One tap, settles at the deadline against the
