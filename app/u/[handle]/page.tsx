@@ -9,6 +9,7 @@ import { ChallengeSheet } from "@/components/ChallengeSheet";
 import { PerformanceCard } from "@/components/Performance";
 import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/components/ui";
 import { RankCard } from "@/components/RankCard";
+import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
@@ -40,6 +41,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const { data: pinned } = useSWR<{ posts: FeedRow[] }>(`/api/posts?handle=${handle}&kind=trade&status=closed&limit=20`);
   const { data: people } = useSWR<{ users: { handle: string; avatarUrl: string | null; pnl7d: string | null; winRate: string | null }[] }>(tab === "followers" || tab === "following" ? `/api/follows?handle=${handle}&dir=${tab}` : null);
 
+  const demoEq = useDemoEquity(data?.user.isDemo ? data.user.handle : null, Number(data?.user.demoBalance ?? 0), mids);
   if (!data) return <SkeletonList n={2} />;
   if ("error" in (data as unknown as Record<string, unknown>)) return <div className="p-5"><p className="muted">No trader with that handle.</p></div>;
   const { user, stats: s, isMe } = data;
@@ -99,8 +101,13 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
       {isMe && user.isDemo && (
         <section className="block">
-          <div className="flex items-center justify-between"><span className="eyebrow">Demo balance</span><span className="when">practice USDC</span></div>
-          <div className="mono mt-2 text-[36px] font-semibold tracking-tight">{fmtUsd(Number(user.demoBalance))}</div>
+          <div className="flex items-center justify-between"><span className="eyebrow">Demo account</span><span className="when">live · practice USDC</span></div>
+          <div className="mono mt-2 text-[36px] font-semibold tracking-tight">{fmtUsd(demoEq.equity)}</div>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="stat"><small>Available</small><div className="v mono">{fmtUsd(demoEq.cash)}</div></div>
+            <div className="stat"><small>In trades</small><div className="v mono">{fmtUsd(demoEq.margin)}</div></div>
+            <div className="stat"><small>Unrealised</small><div className={`v mono ${demoEq.upnl >= 0 ? "green" : "red"}`}>{fmtUsd(demoEq.upnl, { sign: true })}</div></div>
+          </div>
           <p className="muted mt-2 text-[13px]">Simulated fills at live prices. When you&apos;re ready for real trades, turn demo off in Settings and deposit.</p>
           <div className="mt-3.5 grid grid-cols-2 gap-2.5"><Link href="/settings" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Go live</Link><button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ resetDemo: true }) }); mutate(); }}>Reset to $10,000</button></div>
         </section>

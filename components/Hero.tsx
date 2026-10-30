@@ -5,6 +5,8 @@ import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { fmtUsd } from "@/lib/format";
 import { SignInOptions } from "./SignInOptions";
+import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
+import { useMids } from "@/lib/hooks/useMids";
 
 /** The "your day" card at the top of Home. Shows a generic welcome for logged-out visitors. */
 export function Hero({ onDeposit }: { onDeposit: () => void }) {
@@ -13,6 +15,8 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
     profile ? `/api/profile/${profile.handle}` : null,
     { refreshInterval: 30_000 },
   );
+  const { mids } = useMids();
+  const demo = useDemoEquity(profile?.isDemo ? profile.handle : null, Number(profile?.demoBalance ?? 0), mids);
   const hour = new Date().getHours();
   const greet = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
@@ -27,12 +31,19 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
       </div>
     );
   }
-  const bal = profile.isDemo ? Number(profile.demoBalance) : (data?.accountValue ?? 0);
-  const openN = data?.positions?.length ?? 0;
+  const bal = profile.isDemo ? demo.equity : (data?.accountValue ?? 0);
+  const openN = profile.isDemo ? demo.openCount : (data?.positions?.length ?? 0);
   return (
     <div className="hero photo" style={{ backgroundImage: "url(/api/share-bg/hero-droplets)" }}>
       <div className="k">{greet}, {profile.handle}{profile.isDemo ? " · demo" : ""}</div>
       <div className="big mono">{fmtUsd(bal)}</div>
+      {profile.isDemo && demo.openCount > 0 && (
+        <div className="mt-1 flex flex-wrap gap-x-4 text-[12px] opacity-90">
+          <span>Available <b className="mono">{fmtUsd(demo.cash)}</b></span>
+          <span>In trades <b className="mono">{fmtUsd(demo.margin)}</b></span>
+          <span>Unrealised <b className={`mono ${demo.upnl >= 0 ? "" : ""}`}>{fmtUsd(demo.upnl, { sign: true })}</b></span>
+        </div>
+      )}
       <div className="mt-2.5 flex gap-4 text-[13px] opacity-95">
         <span>7 days <b className="mono">{fmtUsd(Number(data?.stats?.realizedPnl7d ?? 0), { sign: true })}</b></span>
         <span>Open <b className="mono">{openN}</b></span>

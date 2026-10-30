@@ -176,7 +176,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       </div>
 
       <div className="block">
-        <div className="flex items-center justify-between text-sm"><span className="muted">Margin ({isDemo ? "demo USDC" : "USDC"})</span><span className="when">{isDemo ? `Balance ${fmtUsd(Number(profile?.demoBalance ?? 0))}` : "Hyperliquid minimum $10 notional"}</span></div>
+        <div className="flex items-center justify-between text-sm"><span className="muted">Margin ({isDemo ? "demo USDC" : "USDC"})</span><span className="when">{isDemo ? `Available ${fmtUsd(Number(profile?.demoBalance ?? 0))}` : "Hyperliquid minimum $10 notional"}</span></div>
         <div className="mono my-2 text-[40px] font-semibold tracking-tight"><span className="muted text-2xl align-top">$</span><input type="number" inputMode="decimal" className="mono inline-block w-40 border-0 bg-transparent p-0 text-[40px] font-semibold tracking-tight outline-none" value={usd} min={1} onChange={(e) => setUsd(Math.max(0, Number(e.target.value)))} /></div>
         <div className="seg">{QUICK.map((q) => <button key={q} className={`chip ${usd === q ? "on" : ""}`} onClick={() => setUsd(q)}>{q}</button>)}</div>
         <div className="mt-4 flex items-center justify-between text-sm"><span className="muted">Leverage</span><span className="mono font-bold">{lev}×<span className="when ml-2">Hyperliquid max {maxLev}×</span></span></div>
