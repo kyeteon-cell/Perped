@@ -483,3 +483,13 @@ html { scroll-behavior: smooth; }
 
 .grab-zone { padding: 6px 0 10px; touch-action: none; }
 .grab-zone .grab { margin: 0 auto; }
+
+/* Banked ticker pills: nothing inside may wrap or escape the pill. */
+.bk { white-space: nowrap; flex: none; max-width: none; line-height: 1.2; }
+.bk > * { flex: none; }
+.bk .when { font-size: 11px; color: var(--muted); }
+.bk .demo-tag { font-size: 9px; padding: 1px 5px; }
+.bk .av { flex: none; }
+/* Closed-trade rows: the detail line truncates instead of spilling over the P&L. */
+.post.row .when { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.post.row > .text-right { flex: none; }
