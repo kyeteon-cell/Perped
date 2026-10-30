@@ -13,7 +13,7 @@ export default function LeaderboardPage() {
   const [mode, setMode] = useState<"trades" | "calls" | "ranks">("trades");
   const [period, setPeriod] = useState<"7d" | "30d" | "all">("7d");
   const [demo, setDemo] = useState(false);
-  const { data, isLoading } = useSWR<{ rows: Row[]; bottom?: Row[] }>(`/api/leaderboard?mode=${mode}&period=${period}&demo=${demo ? 1 : 0}`);
+  const { data, isLoading, error } = useSWR<{ rows: Row[]; bottom?: Row[]; fellBack?: boolean; error?: string }>(`/api/leaderboard?mode=${mode}&period=${period}&demo=${demo ? 1 : 0}`);
   const rows = data?.rows ?? [];
   const podium = mode !== "calls" ? rows.slice(0, 3) : [];
 
@@ -28,8 +28,10 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
+      {data?.fellBack && !demo && <p className="when px-5 pb-2 text-[12px]">No real-money traders ranked yet — showing demo accounts.</p>}
+      {(error || data?.error) && <div className="block text-center red text-sm">Leaderboard failed to load: {String(data?.error ?? error?.message ?? error)}</div>}
       {isLoading && rows.length === 0 && <SkeletonList n={5} card={false} />}
-      {!isLoading && rows.length === 0 && <div className="block text-center muted">{mode === "trades" ? "No closed trades yet this period." : "Nobody has 5 resolved calls yet. Make some calls."}</div>}
+      {!isLoading && !error && !data?.error && rows.length === 0 && <div className="block text-center muted">{mode === "trades" ? "No closed trades yet this period." : mode === "calls" ? "Nobody has 5 resolved calls yet. Make some calls." : "Nobody ranked yet."}</div>}
 
       {podium.length === 3 && (
         <div className="grid grid-cols-[1fr_1.15fr_1fr] items-end gap-2.5 px-5 pb-4">

@@ -54,7 +54,8 @@ export async function GET(req: Request) {
       const [any] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.isBot, true)).limit(1);
       if (!any) { await ensureBots(); bots = { seeded: true, posts: await seedHistory() }; }
       await seedRanks().catch(() => 0);
-      await boostHistory().catch(() => 0);
+      const boosted = await boostHistory().catch(() => 0);
+      if (boosted > 0) await fetch(new URL("/api/cron/stats", req.url), { headers: { authorization: `Bearer ${process.env.CRON_SECRET ?? ""}` } }).catch(() => null);
     }
     // Smoke-test the feed query and count posts/bots so an empty Home can be diagnosed from here.
     let feed: unknown;

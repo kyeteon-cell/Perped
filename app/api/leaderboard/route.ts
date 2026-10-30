@@ -8,11 +8,25 @@ import { db, schema, ensureSchema } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  try {
+    const first = await board(req);
+    // Nothing real on the board yet → show demo accounts so the page is never empty, and say so.
+    if (first.rows.length === 0 && !first.demo) {
+      const alt = await board(req, true);
+      return Response.json({ ...alt, fellBack: true });
+    }
+    return Response.json(first);
+  } catch (e) {
+    return Response.json({ rows: [], error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
+}
+
+async function board(req: Request, forceDemo = false): Promise<{ mode: string; demo: boolean; period?: string; rows: unknown[]; bottom?: unknown[] }> {
   await ensureSchema();
   const url = new URL(req.url);
   const m = url.searchParams.get("mode");
   const mode = m === "calls" ? "calls" : m === "ranks" ? "ranks" : "trades";
-  const demo = url.searchParams.get("demo") === "1";
+  const demo = forceDemo || url.searchParams.get("demo") === "1";
   const realOnly = eq(schema.users.isDemo, demo);
   const period = url.searchParams.get("period") ?? "7d";
   const base = {
@@ -34,7 +48,7 @@ export async function GET(req: Request) {
   };
   if (mode === "ranks") {
     const rows = await db.select(base).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(realOnly).orderBy(desc(schema.users.xp), desc(schema.stats.battlesWon)).limit(50);
-    return Response.json({ mode, rows });
+    return { mode, demo, rows };
   }
   if (mode === "calls") {
     const rows = await db
@@ -44,7 +58,7 @@ export async function GET(req: Request) {
       .where(and(gte(schema.stats.callsResolved, 5), realOnly))
       .orderBy(desc(sql`${schema.stats.callsHit}::numeric / ${schema.stats.callsResolved}`), desc(schema.stats.callsResolved))
       .limit(50);
-    return Response.json({ mode, rows });
+    return { mode, demo, rows };
   }
   const col = period === "30d" ? schema.stats.realizedPnl30d : period === "all" ? schema.stats.realizedPnlAll : schema.stats.realizedPnl7d;
   const sel = { ...base, pnl: sql<number>`${col}`.mapWith(Number) };
@@ -52,5 +66,5 @@ export async function GET(req: Request) {
     db.select(sel).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(realOnly).orderBy(desc(col)).limit(50),
     db.select(sel).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(and(eq(schema.users.showBottomBoard, true), realOnly)).orderBy(asc(col)).limit(5),
   ]);
-  return Response.json({ mode, period, rows: top, bottom: bottom.filter((b) => b.pnl < 0) });
+  return { mode, demo, period, rows: top, bottom: bottom.filter((b) => b.pnl < 0) };
 }

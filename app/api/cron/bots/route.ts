@@ -21,6 +21,7 @@ export async function GET(req: Request) {
   }
   const ranked = await seedRanks().catch(() => 0);
   const boosted = await boostHistory().catch(() => 0);
+  if (boosted > 0 || ranked > 0) await fetch(new URL("/api/cron/stats", req.url), { headers: { authorization: `Bearer ${secret ?? ""}` } }).catch(() => null);
   const log = await botTick();
   const stories = await marketStories().catch(() => 0);
   return Response.json({ ok: true, actions: log, stories, ranked, boosted });
