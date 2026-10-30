@@ -4,10 +4,11 @@ import Link from "next/link";
 import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { fmtUsd } from "@/lib/format";
+import { SignInOptions } from "./SignInOptions";
 
 /** The "your day" card at the top of Home. Shows a generic welcome for logged-out visitors. */
 export function Hero({ onDeposit }: { onDeposit: () => void }) {
-  const { authenticated, login, profile } = useSession();
+  const { authenticated, profile } = useSession();
   const { data } = useSWR<{ accountValue: number | null; stats: { realizedPnl7d: string; callStreak: number } | null; positions: unknown[] }>(
     profile ? `/api/profile/${profile.handle}` : null,
     { refreshInterval: 30_000 },
@@ -21,7 +22,8 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
         <div className="k">Perped · PvP perps</div>
         <div className="big" style={{ fontSize: 26, lineHeight: 1.1 }}>Trade in public.<br />Get perped or get paid.</div>
         <div className="mt-2.5 text-[13px] opacity-95">Post your position. Someone will copy it, someone will fade it, and the chain decides who was right.</div>
-        <div className="hero-actions"><button className="solid" onClick={login}>Enter the arena</button><Link href="/markets">Browse markets</Link></div>
+        <div className="mt-4"><SignInOptions compact onDark /></div>
+        <div className="hero-actions" style={{ marginTop: 10 }}><Link href="/markets">Browse markets first</Link></div>
       </div>
     );
   }

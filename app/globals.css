@@ -356,3 +356,18 @@ button:active { transform: scale(.97); }
 .battle.photo .name, .battle.photo .vs, .battle.photo .mono.muted { color: #fff; }
 .battle.photo .btn { background: rgba(255,255,255,.14); color: #fff; }
 .battle.photo .pc-tag.violet { color: #c4b5fd; }
+
+
+/* ---------- Sign-in options: demo vs real ---------- */
+.sio { display: flex; flex-direction: column; gap: 10px; }
+.sio-group { background: var(--surface); border-radius: 14px; padding: 10px 12px; }
+.sio.dark .sio-group { background: rgba(255,255,255,.1); backdrop-filter: blur(6px); }
+.sio-head { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.sio.dark .sio-head { color: rgba(255,255,255,.8); }
+.sio-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.sio-row button { flex: 1 1 0; min-width: 70px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.sio.dark .sio-row button { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.18); color: #fff; }
+.sio-row button.primary { flex: 1 1 100%; background: var(--green); color: #fff; border-color: transparent; }
+.sio-row button:active { transform: scale(.98); }
+.sio-row .g { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #fff; color: #4285f4; font-size: 11px; font-weight: 900; }
+.sio.compact .sio-row button { padding: 9px 6px; font-size: 12px; }

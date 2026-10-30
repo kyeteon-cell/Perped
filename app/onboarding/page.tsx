@@ -8,6 +8,7 @@ import { getMaxBuilderFee } from "@/lib/hl-info";
 import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, BUILDER_MAX_FEE_TENTHS_BPS, DEMO_ENABLED, HL_NETWORK, REFERRAL_SHARE_PCT } from "@/lib/config";
 import { normaliseReferralCode, referralLink } from "@/lib/fees";
 import { Icon, I } from "@/components/ui";
+import { SignInOptions } from "@/components/SignInOptions";
 
 /**
  * Five steps: welcome/login → handle → how it works → fee approval (skippable) → funded or explore.
@@ -16,8 +17,6 @@ import { Icon, I } from "@/components/ui";
 export default function OnboardingPage() {
   const router = useRouter();
   const { ready, authenticated, login, address, walletClient, profile, profileLoading, authedFetch, refreshMe, fee, loginError, hasExternalWallet, linkWallet, linkError, isGuest, startGuest } = useSession();
-  const [guestErr, setGuestErr] = useState<string | null>(null);
-  const tryDemo = async () => { setBusy(true); setGuestErr(null); try { await startGuest(); } catch (e) { setGuestErr(e instanceof Error ? e.message : String(e)); } setBusy(false); };
   const [step, setStep] = useState(1);
   const [handle, setHandle] = useState("");
   const [bio, setBio] = useState("");
@@ -75,17 +74,12 @@ export default function OnboardingPage() {
         <>
           <div className="flex-1 px-6 pb-5 pt-12" style={{ background: "linear-gradient(180deg, var(--brand-soft) 0%, var(--bg) 100%)" }}>
             <div className="grid h-14 w-14 place-items-center rounded-2xl text-[28px] font-extrabold" style={{ background: "var(--brand)", color: "var(--brand-fg)" }}>P</div>
-            <h2 className="mt-5 text-[30px] font-bold leading-[1.1] tracking-tight">Trade in public.<br />Copy the best.</h2>
-            <p className="muted mt-3 max-w-[32ch]">Perped is the social home for perps. Every trade is a post, every trader has a verified track record, and your money stays on Hyperliquid.</p>
+            <h2 className="mt-5 text-[30px] font-bold leading-[1.1] tracking-tight">Trade in public.<br />Get perped or get paid.</h2>
+            <p className="muted mt-3 max-w-[32ch]">Post your position. Someone will copy it, someone will fade it, and the chain decides who was right.</p>
             <div className="mt-5 flex flex-wrap gap-2"><span className="lbl long"><i />kiloklips · SOL +8.3%</span><span className="lbl short"><i />degenmaxi · ETH −2.1%</span><span className="lbl long"><i />samui_sam · HYPE +12.6%</span></div>
           </div>
           <div className="flex flex-col gap-2.5 px-6 pb-8 pt-3">
-            <button className="btn ink" onClick={login}><Icon d={I.x} size={18} />Continue with X</button>
-            <button className="btn" onClick={login}><Icon d={I.wallet} size={18} />Connect a wallet</button>
-            {DEMO_ENABLED && <button className="btn ghost" onClick={tryDemo} disabled={busy}><Icon d={I.bolt} size={18} />{busy ? "Starting…" : "Try the demo, no sign-up"}</button>}
-            <p className="faint mt-1.5 text-center text-xs">X or the demo gets you $1,000 of practice money. Connect a wallet when you want to trade real money.</p>
-            {guestErr && <p className="red mt-2 text-center text-xs">{guestErr}</p>}
-            {loginError && <p className="red mt-2 text-center text-xs">{loginError}</p>}
+            <SignInOptions />
             {authenticated && !address && ready && <p className="muted mt-2 text-center text-xs">Logged in — creating your wallet…</p>}
           </div>
         </>

@@ -34,7 +34,7 @@ export function useSession() {
     if (privyAuthed) await privyLogout();
   }, [privyAuthed, privyLogout]);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const { login } = useLogin({
+  const { login: privyLogin } = useLogin({
     onComplete: () => setLoginError(null),
     onError: (err) => {
       const code = String(err);
