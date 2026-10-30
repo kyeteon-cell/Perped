@@ -59,7 +59,7 @@ const hours = (h: number) => h * 3_600_000;
 
 export async function ensureBots() {
   for (const b of BOTS) {
-    await db.insert(schema.users).values({ id: b.id, address: `0xdemo${b.handle.padEnd(35, "0").slice(0, 35)}`, handle: b.handle, bio: b.bio, isDemo: true, isBot: true, demoBalance: "10000", verified: false })
+    await db.insert(schema.users).values({ id: b.id, address: `0xdemo${b.handle.padEnd(35, "0").slice(0, 35)}`, handle: b.handle, bio: b.bio, avatarUrl: `/api/share-bg/bot-${b.handle}`, isDemo: true, isBot: true, demoBalance: "10000", verified: false })
       .onConflictDoNothing();
     await db.insert(schema.stats).values({ userId: b.id }).onConflictDoNothing();
   }
@@ -399,4 +399,9 @@ export async function boostHistory(target = 40) {
     }
   }
   return added;
+}
+
+/** Keep bot profile pictures in sync with the art registry (runs every tick; cheap). */
+export async function syncBotAvatars() {
+  for (const b of BOTS) await db.update(schema.users).set({ avatarUrl: `/api/share-bg/bot-${b.handle}` }).where(and(eq(schema.users.id, b.id), sql`coalesce(avatar_url, '') <> ${`/api/share-bg/bot-${b.handle}`}`));
 }

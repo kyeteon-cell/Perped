@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { db, ensureSchema } from "@/lib/db";
-import { boostHistory, ensureBots, seedHistory, seedRanks } from "@/lib/bots";
+import { boostHistory, ensureBots, seedHistory, seedRanks, syncBotAvatars } from "@/lib/bots";
 import { queryFeed } from "@/lib/feed";
 import { eq } from "drizzle-orm";
 import { schema } from "@/lib/db";
@@ -53,6 +53,7 @@ export async function GET(req: Request) {
     if (!missing.length && process.env.BOTS_PAUSED !== "1") {
       const [any] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.isBot, true)).limit(1);
       if (!any) { await ensureBots(); bots = { seeded: true, posts: await seedHistory() }; }
+      await syncBotAvatars().catch(() => null);
       await seedRanks().catch(() => 0);
       const boosted = await boostHistory().catch(() => 0);
       if (boosted > 0) await fetch(new URL("/api/cron/stats", req.url), { headers: { authorization: `Bearer ${process.env.CRON_SECRET ?? ""}` } }).catch(() => null);

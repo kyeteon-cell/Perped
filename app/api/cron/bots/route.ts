@@ -1,4 +1,4 @@
-import { boostHistory, botTick, ensureBots, seedHistory, seedRanks } from "@/lib/bots";
+import { boostHistory, botTick, ensureBots, seedHistory, seedRanks, syncBotAvatars } from "@/lib/bots";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { getMarkets, getCandles } from "@/lib/hl-info";
@@ -19,6 +19,7 @@ export async function GET(req: Request) {
     const posts = await seedHistory();
     return Response.json({ ok: true, seeded: true, posts });
   }
+  await syncBotAvatars().catch(() => null);
   const ranked = await seedRanks().catch(() => 0);
   const boosted = await boostHistory().catch(() => 0);
   if (boosted > 0 || ranked > 0) await fetch(new URL("/api/cron/stats", req.url), { headers: { authorization: `Bearer ${secret ?? ""}` } }).catch(() => null);

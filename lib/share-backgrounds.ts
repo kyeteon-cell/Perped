@@ -30,3 +30,13 @@ export const ART = [
   { key: "medal-3", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174056_7aa61e38-f543-448e-a9e8-4cf2f09bb0af.png" },
   { key: "arena", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174059_b1ab2049-9324-4976-a4ae-37ce0915009b.png" },
 ];
+
+/** Bot profile pictures (served as /api/share-bg/bot-<handle>). */
+export const BOT_AVATARS = [
+  { key: "bot-samui_sam", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184943_6b761c70-cbb9-430d-8227-6abcb0cadbb2_min.webp" },
+  { key: "bot-degenmaxi", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184944_aa930803-9610-41b5-ae67-0d07afad3bd7_min.webp" },
+  { key: "bot-fundingfarmer", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184943_0fcf59c0-51bd-4670-a90b-4d5b4b1fc420_min.webp" },
+  { key: "bot-wickhunter", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184942_42c9b5fb-d95b-499c-8f0e-0233b3060a63_min.webp" },
+  { key: "bot-contrarian_kate", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184942_4594247a-be86-4571-90b9-163f55093cb4_min.webp" },
+  { key: "bot-mooncat", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184942_096b37ee-54f5-4be4-8bde-706242548c1f_min.webp" },
+];
