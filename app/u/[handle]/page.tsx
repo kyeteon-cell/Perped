@@ -97,7 +97,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         {user.bio && <p className="mt-3.5">{user.bio}</p>}
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           {isMe ? <Link href="/compose" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Write a post</Link> : <FollowButton handle={user.handle} />}
-          {isMe ? <Link href="/settings" className="btn" style={{ padding: 12, fontSize: 14 }}>Edit profile</Link> : <Link href={`/compose?mode=call`} className="btn" style={{ padding: 12, fontSize: 14 }}>Challenge</Link>}
+          {isMe ? <Link href="/settings" className="btn" style={{ padding: 12, fontSize: 14 }}>Edit profile</Link> : <button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={() => (authenticated ? setChallenge(true) : login())}>⚔ Challenge</button>}
         </div>
       </section>
 

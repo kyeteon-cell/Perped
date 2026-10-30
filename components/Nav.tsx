@@ -9,6 +9,7 @@ import { Icon, I } from "./ui";
 const tabs = [
   { href: "/", label: "Home", icon: I.home, tint: "brand", match: (p: string) => p === "/" || p.startsWith("/post") },
   { href: "/markets", label: "Markets", icon: I.markets, tint: "blue", match: (p: string) => p.startsWith("/markets") || p === "/trade" },
+  { href: "/arena", label: "Arena", icon: I.bolt, tint: "red", match: (p: string) => p.startsWith("/arena") || p.startsWith("/battle") || p.startsWith("/duels") },
   { href: "/leaderboard", label: "Leaders", icon: I.trophy, tint: "gold", match: (p: string) => p.startsWith("/leaderboard") },
 ];
 

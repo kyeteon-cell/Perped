@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { ManageTrade } from "@/components/ManageTrade";
+import { ChallengeSheet } from "@/components/ChallengeSheet";
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
 import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
 import { rankFor } from "@/lib/rank";
@@ -30,11 +31,23 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const { id } = use(params);
   const { data, mutate } = useSWR<Res>(`/api/battle/${id}`, { refreshInterval: 15_000 });
   const [manage, setManage] = useState<Res["fade"] | null>(null);
+  const [rematch, setRematch] = useState<string | null>(null);
+  const [pinOverride, setPinOverride] = useState<boolean | null>(null);
+  const [pinBusy, setPinBusy] = useState(false);
   const { mids } = useMids();
-  const { profile } = useSession();
+  const { profile, authedFetch } = useSession();
   if (!data) return <SkeletonList n={2} />;
   if (data.error) return <p className="muted p-5 text-sm">That isn&apos;t a fade.</p>;
   const { fade, target, fader, targetUser: tu, history, record, camps, battle } = data;
+  const myPost = profile ? (profile.id === fader.user.id ? fade : profile.id === tu.user.id ? target : null) : null;
+  const pinnedWin = pinOverride ?? !!myPost?.pinned;
+  const pinWin = async () => {
+    if (!myPost) return;
+    setPinBusy(true); setPinOverride(!pinnedWin);
+    const r = await authedFetch(`/api/posts/${myPost.id}/pin`, { method: "POST" });
+    if (r.ok) { const j = await r.json(); setPinOverride(!!j.pinned); } else setPinOverride(null);
+    setPinBusy(false);
+  };
   const coin = fade.coin!; const mid = mids[coin] ?? 0;
   const a = roi(fade, mid), b = roi(target, mid);
   const live = fade.status === "open" && target.status === "open";
@@ -80,14 +93,21 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
             <div className="flex items-center justify-between"><div className="eyebrow">{battle.winnerId ? "Verdict" : "Draw"}</div>{battle.winnerId && <RankEmblem level={rankFor((battle.winnerId === fader.user.id ? fader.user.xp : tu.user.xp) ?? 0).level} size={40} />}</div>
             <div className="mt-1 text-[17px] font-extrabold">{battle.winnerId ? `${battle.winnerId === fader.user.id ? fader.user.handle : tu.user.handle} perped ${battle.winnerId === fader.user.id ? tu.user.handle : fader.user.handle}` : "Too close to call"}</div>
             <div className="mono when mt-1">{fader.user.handle} {fmtPct(Number(battle.faderRoi), 1)} · {tu.user.handle} {fmtPct(Number(battle.targetRoi), 1)}{battle.reason === "liquidation" ? " · decided by liquidation" : battle.reason === "timeout" ? " · marked 24h after the first close" : ""}</div>
-            <div className="mt-2 flex gap-2 text-[12px]"><span className="chip">{fader.user.handle} +{battle.xpFader ?? 0} XP</span><span className="chip">{tu.user.handle} +{battle.xpTarget ?? 0} XP</span></div>
+            <div className="mt-2 flex gap-2 text-[12px]"><span className="chip">{fader.user.handle} {(battle.xpFader ?? 0) >= 0 ? "+" : ""}{battle.xpFader ?? 0} XP</span><span className="chip">{tu.user.handle} {(battle.xpTarget ?? 0) >= 0 ? "+" : ""}{battle.xpTarget ?? 0} XP</span></div>
           </div>
+        )}
+        {battle?.status === "settled" && profile && battle.winnerId === profile.id && myPost && (
+          <button className={`pinwin ${pinnedWin ? "on" : ""}`} onClick={pinWin} disabled={pinBusy}>{pinnedWin ? "📌 Pinned to your profile" : "📌 Pin this win to your profile"}</button>
+        )}
+        {battle?.status === "settled" && profile && myPost && (
+          <button className="btn mt-2" style={{ padding: 11, fontSize: 13 }} onClick={() => setRematch(profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}>⚔ {battle.winnerId === profile.id ? "Run it back" : "Rematch"} · challenge {profile.id === fader.user.id ? tu.user.handle : fader.user.handle}</button>
         )}
         <div className="tug mt-5" style={{ height: 10 }}><i style={{ width: `${share}%` }} /></div>
         <div className="when mt-2 text-center">{live ? `${faderLeads ? fader.user.handle : tu.user.handle} is ahead by ${fmtPct(Math.abs(a.roi - b.roi), 1)}` : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
         {live && profile && (profile.id === fader.user.id || profile.id === tu.user.id) && (
           <button className="btn ink mt-4" style={{ padding: 11, fontSize: 13 }} onClick={() => setManage(profile.id === fader.user.id ? fade : target)}>Manage trade</button>
         )}
+        {rematch && <ChallengeSheet handle={rematch} onClose={() => setRematch(null)} />}
         {manage && <ManageTrade post={manage} mid={mid || undefined} onChanged={() => mutate()} onClose={() => setManage(null)} />}
         {live && profile && profile.id !== fader.user.id && profile.id !== tu.user.id && (
           <div className="mt-4 grid grid-cols-2 gap-2.5">

@@ -206,7 +206,7 @@ body { font-family: var(--font-sans), ui-rounded, ui-sans-serif, system-ui, sans
 
 /* Bottom nav */
 .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
-.nav-inner { max-width: 28rem; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 0 calc(10px + env(safe-area-inset-bottom, 0px)); }
+.nav-inner { max-width: 28rem; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); padding: 8px 0 calc(10px + env(safe-area-inset-bottom, 0px)); }
 .nav a { color: var(--faint); font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 0; text-decoration: none; position: relative; }
 .nav a svg { position: relative; }
 .nav a.on::before { content: ""; position: absolute; top: -2px; width: 44px; height: 30px; border-radius: 999px; background: var(--surface); }
@@ -550,3 +550,13 @@ html { scroll-behavior: smooth; }
 .act-ic.violet { background: var(--violet-soft); color: var(--violet); } .act-ic.brand { background: var(--brand-soft); color: var(--brand); }
 .pinbtn { margin-left: auto; }
 .pinbtn + .fade { margin-left: 0 !important; }
+
+/* ---------- Arena ---------- */
+.arena-cta { position: relative; border: 0; border-radius: 999px; padding: 10px 16px; font: inherit; font-weight: 800; font-size: 14px; background: #fff; color: #0b0b0f; cursor: pointer; }
+.arow { display: block; padding: 10px 12px; border-radius: 14px; background: var(--surface); text-decoration: none; color: inherit; }
+.aside { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; opacity: .8; }
+.aside.r { justify-content: flex-end; }
+.aside.lead { opacity: 1; }
+.aside.lead .av { box-shadow: 0 0 0 2px var(--green); }
+.pinwin { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px; padding: 11px; border-radius: 12px; border: 0; font: inherit; font-weight: 800; font-size: 14px; background: var(--gold); color: #1a1200; cursor: pointer; }
+.pinwin.on { background: transparent; border: 1.5px solid var(--gold); color: var(--text); }
