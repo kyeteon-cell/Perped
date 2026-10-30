@@ -157,5 +157,5 @@ export async function closePosition(
  */
 export async function approveBuilderFee(client: hl.ExchangeClient) {
   if (!BUILDER_CONFIGURED) throw new Error("No builder address configured");
-  return client.approveBuilderFee({ builder: BUILDER_ADDRESS.toLowerCase() as `0x${string}`, maxFeeRate: BUILDER_MAX_FEE_RATE });
+  return client.approveBuilderFee({ builder: BUILDER_ADDRESS.toLowerCase() as `0x${string}`, maxFeeRate: BUILDER_MAX_FEE_RATE as `${string}%` });
 }
