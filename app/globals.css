@@ -504,3 +504,22 @@ html { scroll-behavior: smooth; }
 .sio.dark .sio-continue { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.5); color: #fff; }
 .pf-banner { z-index: 0; }
 .pf-banner + .block { position: relative; z-index: 1; }
+
+/* ---------- Follow button, inline comments, rich text ---------- */
+.fbtn { margin-left: auto; flex: none; border: 1.5px solid var(--text); background: var(--text); color: var(--bg); border-radius: 999px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; transition: background .15s, color .15s, transform .12s; }
+.fbtn.on { background: transparent; color: var(--muted); border-color: var(--line); }
+.fbtn:active { transform: scale(.96); }
+.icm { flex-basis: 100%; display: flex; flex-direction: column; gap: 8px; padding-top: 10px; margin-top: 8px; border-top: 1px solid var(--line); animation: fade .18s ease; }
+.icm-row { display: flex; gap: 8px; align-items: flex-start; }
+.icm-row .say { margin: 0; font-size: 13px; }
+.icm-form { display: flex; align-items: center; gap: 8px; }
+.icm-form .field { flex: 1; background: var(--bg); }
+.icm-form .copy { padding: 8px 14px; }
+.acts { flex-wrap: wrap; }
+.acts button.on { color: var(--brand); }
+.tag { color: var(--brand); font-weight: 700; text-decoration: none; }
+
+/* ---------- Quick composer ---------- */
+.qp { position: relative; margin: 0 20px 12px; padding: 12px 14px; border-radius: var(--r); background: var(--surface); }
+.qp-ta { width: 100%; resize: none; border: 0; background: transparent; padding: 7px 0; font: inherit; font-size: 15px; line-height: 1.45; color: var(--text); outline: none; }
+.qp-ta::placeholder { color: var(--faint); }

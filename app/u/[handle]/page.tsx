@@ -10,6 +10,7 @@ import { PerformanceCard } from "@/components/Performance";
 import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/components/ui";
 import { RankCard } from "@/components/RankCard";
 import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
+import { FollowButton } from "@/components/FollowButton";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
@@ -48,11 +49,6 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const pins = (pinned?.posts ?? []).filter((p) => p.post.pinned);
   const callHit = s && s.callsResolved ? (s.callsHit / s.callsResolved) * 100 : null;
 
-  const follow = async () => {
-    if (!authenticated) return login();
-    await authedFetch("/api/follows", { method: "POST", body: JSON.stringify({ handle }) });
-    mutate();
-  };
   const closePos = async (p: AssetPosition, fraction: number) => {
     if (!walletClient) return;
     const asset = markets.find((m) => m.name === p.coin), mid = mids[p.coin];
@@ -92,7 +88,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         </div>
         {user.bio && <p className="mt-3.5">{user.bio}</p>}
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
-          {isMe ? <Link href="/compose" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Write a post</Link> : <button className={`btn ${data.isFollowing ? "" : "brand"}`} style={{ padding: 12, fontSize: 14 }} onClick={follow}>{data.isFollowing ? "Following" : "Follow"}</button>}
+          {isMe ? <Link href="/compose" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Write a post</Link> : <FollowButton handle={user.handle} />}
           {isMe ? <Link href="/settings" className="btn" style={{ padding: 12, fontSize: 14 }}>Edit profile</Link> : <Link href={`/compose?mode=call`} className="btn" style={{ padding: 12, fontSize: 14 }}>Challenge</Link>}
         </div>
       </section>
@@ -192,7 +188,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
       {(tab === "followers" || tab === "following") && (
         <>
           {(people?.users ?? []).map((u) => (
-            <Link key={u.handle} href={`/u/${u.handle}`} className="lb"><Avatar handle={u.handle} url={u.avatarUrl} size={44} link={false} /><div className="min-w-0 flex-1"><div className="name">{u.handle}</div><div className="when">{fmtUsd(Number(u.pnl7d ?? 0), { sign: true, compact: true })} · 7 days · {fmtPct(Number(u.winRate ?? 0), 0)} win</div></div></Link>
+            <Link key={u.handle} href={`/u/${u.handle}`} className="lb"><Avatar handle={u.handle} url={u.avatarUrl} size={44} link={false} /><FollowButton handle={u.handle} compact className="order-last" /><div className="min-w-0 flex-1"><div className="name">{u.handle}</div><div className="when">{fmtUsd(Number(u.pnl7d ?? 0), { sign: true, compact: true })} · 7 days · {fmtPct(Number(u.winRate ?? 0), 0)} win</div></div></Link>
           ))}
           {(people?.users.length ?? 0) === 0 && <p className="muted p-5 text-sm">Nobody here yet.</p>}
         </>

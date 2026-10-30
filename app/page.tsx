@@ -7,6 +7,8 @@ import { FeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
 import { Pulse } from "@/components/Pulse";
 import { QuickCall } from "@/components/QuickCall";
+import { QuickPost } from "@/components/QuickPost";
+import { FollowButton } from "@/components/FollowButton";
 import { FeedFilters, EMPTY_FILTER, activeCount, filterQuery, filterSummary, type FeedFilter } from "@/components/FeedFilters";
 import { Banked } from "@/components/Banked";
 import { DepositSheet } from "@/components/DepositSheet";
@@ -65,6 +67,7 @@ export default function HomePage() {
 
       {tab === "foryou" && <Hero onDeposit={() => setDeposit(true)} />}
       {tab === "foryou" && <QuickCall mids={mids} />}
+      {tab !== "live" && <QuickPost onPosted={() => mutate()} />}
       {tab !== "following" && <Pulse mids={mids} />}
       {tab === "foryou" && <Banked />}
 
@@ -81,9 +84,10 @@ export default function HomePage() {
           <h3 className="text-xl font-bold tracking-tight">{nFilters ? "Nothing matches those filters" : tab === "following" ? "Nobody you follow has posted yet" : "Your feed is quiet"}</h3>
           {nFilters > 0 && <button className="chip mt-3" onClick={() => setFilter(EMPTY_FILTER)}>Clear filters</button>}
           <p className="muted mx-auto mt-1.5 max-w-[28ch]">{tab === "following" ? "Follow a few traders and their trades show up here live." : "Open the first position and it shows up here for everyone to copy, fade, cheer or roast."}</p>
-          <Link href="/markets" className="copy mt-4 inline-block">Place the first trade</Link>
+          {tab === "following" ? null : <Link href="/markets" className="copy mt-4 inline-block">Place the first trade</Link>}
         </div>
       )}
+      {!isLoading && posts.length === 0 && tab === "following" && suggested.length > 0 && <Suggested rows={suggested} />}
 
       {groupFeed(posts).map((g, i) => (
         <div key={g.kind === "strip" ? `strip-${g.items[0].post.id}` : g.item.post.id}>
@@ -117,14 +121,6 @@ function groupFeed(rows: FeedRow[]): Array<{ kind: "one"; item: FeedRow } | { ki
 
 function Suggested({ rows }: { rows: { handle: string; pnl: number; winRate: string }[] }) {
   const { authedFetch, authenticated, login, profile } = useSession();
-  const { data: mine } = useSWR<{ users: { handle: string }[] }>(profile ? `/api/follows?handle=${profile.handle}&dir=following` : null);
-  const [done, setDone] = useState<Record<string, boolean>>({});
-  useEffect(() => { if (mine?.users) setDone((d) => ({ ...Object.fromEntries(mine.users.map((u) => [u.handle, true])), ...d })); }, [mine]);
-  const follow = async (h: string) => {
-    if (!authenticated) return login();
-    const r = await authedFetch("/api/follows", { method: "POST", body: JSON.stringify({ handle: h }) });
-    if (r.ok) { const j = await r.json(); setDone((d) => ({ ...d, [h]: j.following })); }
-  };
   return (
     <div className="hairline py-4" data-tint="violet">
       <div className="flex items-center justify-between px-5"><span className="eyebrow">Traders like you</span><span className="when">doing well this week</span></div>
@@ -134,7 +130,7 @@ function Suggested({ rows }: { rows: { handle: string; pnl: number; winRate: str
             <div className="flex justify-center"><Avatar handle={r.handle} size={48} /></div>
             <Link href={`/u/${r.handle}`} className="name mt-2 block">{r.handle}</Link>
             <div className="when">{fmtUsd(r.pnl, { sign: true, compact: true })} · {fmtPct(Number(r.winRate), 0)} win</div>
-            <button className={`chip follow mt-2.5 w-full justify-center ${done[r.handle] ? "on" : ""}`} onClick={() => follow(r.handle)}>{done[r.handle] ? "Following" : "Follow"}</button>
+            <div className="mt-2.5"><FollowButton handle={r.handle} compact className="!ml-0 w-full" /></div>
           </div>
         ))}
       </div>

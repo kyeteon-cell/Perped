@@ -32,6 +32,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  // ?me=1 → the handles the viewer follows (one small list the client caches for every Follow button).
+  if (url.searchParams.get("me") === "1") {
+    const auth = await getAuth(req).catch(() => null);
+    if (!auth) return Response.json({ handles: [] });
+    const rows = await db.select({ handle: schema.users.handle }).from(schema.follows).innerJoin(schema.users, eq(schema.users.id, schema.follows.followeeId)).where(eq(schema.follows.followerId, auth.privyId));
+    return Response.json({ handles: rows.map((r) => r.handle) });
+  }
   const handle = (url.searchParams.get("handle") ?? "").toLowerCase();
   const dir = url.searchParams.get("dir") === "following" ? "following" : "followers";
   const [u] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.handle, handle)).limit(1);

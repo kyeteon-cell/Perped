@@ -11,6 +11,9 @@ import { Sparkline } from "./Sparkline";
 import { ShareSheet } from "./ShareSheet";
 import { ManageTrade } from "./ManageTrade";
 import { QuickTrade } from "./QuickTrade";
+import { FollowButton } from "./FollowButton";
+import { RichText } from "./RichText";
+import { InlineComments } from "./InlineComments";
 import { HL_NETWORK } from "@/lib/config";
 
 /** Hyperliquid's own explorer page for an account: every fill, visible to anyone. */
@@ -59,6 +62,7 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
           </div>
         </Link>
       ) : null}
+      {author && !author.isBot ? <FollowButton handle={author.handle} compact /> : null}
       <div className="ml-auto flex gap-1.5">{right}</div>
     </div>
   );
@@ -71,28 +75,35 @@ function Acts({ item, onChanged, children, mid, challenge, manage }: { item: Fee
   const [likes, setLikes] = useState(item.likes);
   const [dislikes, setDislikes] = useState(item.dislikes);
   const [mine, setMine] = useState<number | null>(item.myVote ?? null);
+  const [commenting, setCommenting] = useState(false);
+  const [commentCount, setCommentCount] = useState(item.commentCount);
   const vote = async (value: 1 | -1) => {
     if (!authenticated) return login();
-    const r = await authedFetch(`/api/posts/${item.post.id}/vote`, { method: "POST", body: JSON.stringify({ value }) });
-    if (!r.ok) return;
-    const j = await r.json();
-    const next: number | null = j.myVote;
-    setLikes((n) => n + (next === 1 ? 1 : 0) - (mine === 1 ? 1 : 0));
-    setDislikes((n) => n + (next === -1 ? 1 : 0) - (mine === -1 ? 1 : 0));
+    // Optimistic: flip instantly, reconcile with the server, revert on failure.
+    const before = { likes, dislikes, mine };
+    const next: number | null = mine === value ? null : value;
+    setLikes(likes + (next === 1 ? 1 : 0) - (mine === 1 ? 1 : 0));
+    setDislikes(dislikes + (next === -1 ? 1 : 0) - (mine === -1 ? 1 : 0));
     setMine(next);
+    try { if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(6); } catch {}
+    const r = await authedFetch(`/api/posts/${item.post.id}/vote`, { method: "POST", body: JSON.stringify({ value }) });
+    if (!r.ok) { setLikes(before.likes); setDislikes(before.dislikes); setMine(before.mine); return; }
+    const j = await r.json();
+    if (j.myVote !== next) { setMine(j.myVote); }
     onChanged?.();
   };
   return (
     <div className="acts">
       <button className={`vote up ${mine === 1 ? "on" : ""}`} onClick={() => vote(1)}><Icon d={I.like} size={18} /><b>{likes}</b></button>
       <button className={`vote down ${mine === -1 ? "on" : ""}`} onClick={() => vote(-1)}><Icon d={I.dislike} size={18} /><b>{dislikes}</b></button>
-      <Link href={`/post/${item.post.id}`}><Icon d={I.comment} size={18} />{item.commentCount}</Link>
+      <button className={commenting ? "on" : ""} onClick={() => setCommenting((v) => !v)} aria-label="Comment"><Icon d={I.comment} size={18} />{commentCount}</button>
       <button onClick={() => setShare(true)} aria-label="Share"><Icon d={I.share} size={18} /></button>
       {children}
       {manage && <button className="fade ml-auto" onClick={() => setManaging(true)}>Manage</button>}
       {challenge && <button className={manage ? "copy" : "copy ml-auto"} onClick={() => setShare(true)}>Challenge</button>}
       {share && <ShareSheet item={item} mid={mid} onClose={() => setShare(false)} />}
       {managing && <ManageTrade post={item.post} mid={mid} onChanged={onChanged} onClose={() => setManaging(false)} />}
+      {commenting && <InlineComments postId={item.post.id} onCount={setCommentCount} />}
     </div>
   );
 }
@@ -225,7 +236,7 @@ function TradePost({ item, mid, onChanged }: Props) {
       ) : (
         <div className="camps"><span>Be the first to copy or fade this one</span></div>
       )}
-      {post.body && <p className="say">{post.body}</p>}
+      {post.body && <RichText text={post.body} />}
       <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id} manage={isOpen && !!author && author.id === profile?.id}>
         {canAct && (
           <>
@@ -274,7 +285,7 @@ function CallPost({ item, mid, onChanged }: Props) {
         </div>
       </div>
       <div className="track"><b style={{ width: `${open ? progress : 100}%`, background: open ? "var(--text)" : post.callStatus === "hit" ? "var(--green)" : "var(--red)" }} /></div>
-      {post.body && !quick && <p className="say">{post.body}</p>}
+      {post.body && !quick && <RichText text={post.body} />}
       <Acts item={item} onChanged={onChanged} challenge={open && !!item.author && item.author.id === profile?.id}>
         {open && item.author?.id !== profile?.id && <Link href={`/trade?coin=${post.coin}&side=${post.side}`} className="copy ml-auto">Trade it</Link>}
       </Acts>
@@ -329,7 +340,7 @@ function TextPost({ item, onChanged }: Props) {
   return (
     <article className="post bare">
       <Who item={item} />
-      <p className="say">{item.post.body}</p>
+      <RichText text={item.post.body ?? ""} />
       <Acts item={item} onChanged={onChanged} />
     </article>
   );

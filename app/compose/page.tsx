@@ -55,7 +55,7 @@ function ComposeInner() {
     let payload: Record<string, unknown>;
     if (mode === "post") {
       if (!body.trim()) { setBusy(false); return setErr("Write something."); }
-      payload = { kind: "text", body: body.trim(), coin: attach ? myOpen?.posts.find((p) => p.post.id === attach)?.post.coin : undefined };
+      payload = { kind: "text", body: body.trim(), coin: attach ? myOpen?.posts.find((p) => p.post.id === attach)?.post.coin : (body.match(/\$([A-Za-z]{2,10})\b/)?.[1]?.toUpperCase() ?? undefined) };
     } else if (mode === "call") {
       if (!callValid) { setBusy(false); return setErr(dir === "long" ? "Target must be above the current price and invalidation below." : "Target must be below the current price and invalidation above."); }
       payload = { kind: "call", coin, side: dir, targetPx: tgt, invalidPx: inv || undefined, deadline: new Date(Date.now() + hours * 3600_000).toISOString(), body: body.trim() || undefined };

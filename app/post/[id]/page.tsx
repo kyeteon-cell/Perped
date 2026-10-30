@@ -4,6 +4,7 @@ import { use, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
+import { RichText } from "@/components/RichText";
 import { ShareSheet } from "@/components/ShareSheet";
 import { Avatar, Icon, I, SkeletonList } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
@@ -32,9 +33,13 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   const send = async () => {
     if (!authenticated) return login();
     if (!draft.trim()) return;
-    const r = await authedFetch(`/api/posts/${id}/comments`, { method: "POST", body: JSON.stringify({ body: draft, parentId: replyTo ?? undefined }) });
-    if (r.ok) { setDraft(""); setReplyTo(null); setCErr(null); mutateC(); mutate(); }
-    else { const j = await r.json().catch(() => ({})); setCErr(j.error === "pick a handle first" ? "Finish setting up your profile to comment." : j.error ?? "Couldn't post comment"); }
+    const body = draft.trim(), parentId = replyTo ?? undefined;
+    const temp = { comment: { id: -Date.now(), body, parentId: parentId ?? null, createdAt: new Date().toISOString() }, author: { handle: profile?.handle ?? "you", avatarUrl: profile?.avatarUrl ?? null, verified: false } } as unknown as C;
+    mutateC({ comments: [...(cm?.comments ?? []), temp] }, { revalidate: false });
+    setDraft(""); setReplyTo(null); setCErr(null);
+    const r = await authedFetch(`/api/posts/${id}/comments`, { method: "POST", body: JSON.stringify({ body, parentId }) });
+    if (r.ok) { mutateC(); mutate(); }
+    else { const j = await r.json().catch(() => ({})); mutateC(); setDraft(body); setCErr(j.error === "pick a handle first" ? "Finish setting up your profile to comment." : j.error ?? "Couldn't post comment"); }
   };
   const roots = (cm?.comments ?? []).filter((c) => !c.comment.parentId);
   const children = (pid: number) => (cm?.comments ?? []).filter((c) => c.comment.parentId === pid);
@@ -43,7 +48,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       <Avatar handle={c.author.handle} url={c.author.avatarUrl} size={32} />
       <div className="min-w-0 flex-1">
         <div className="text-sm font-bold">{c.author.handle}{c.author.verified && <span className="vbadge">✓</span>}{post?.author?.handle === c.author.handle && <span className="lbl done ml-1.5" style={{ padding: "1px 6px", fontSize: 10 }}>OP</span>}<span className="when"> · {timeAgo(c.comment.createdAt)}</span>{copierHandles.has(c.author.handle) && <span className="lbl long ml-1.5" style={{ padding: "1px 8px", fontSize: 10 }}><i />Copied</span>}{faderHandles.has(c.author.handle) && <span className="lbl short ml-1.5" style={{ padding: "1px 8px", fontSize: 10 }}><i />Faded</span>}</div>
-        <p className="mt-1 text-[15px] leading-relaxed">{c.comment.body}</p>
+        <RichText text={c.comment.body} className="mt-1 text-[15px] leading-relaxed" />
         {!reply && <div className="acts mt-1.5"><button onClick={() => setReplyTo(c.comment.id)}>Reply</button></div>}
       </div>
     </div>
