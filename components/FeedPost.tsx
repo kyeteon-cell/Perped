@@ -190,8 +190,8 @@ function TradePost({ item, mid, onChanged }: Props) {
   return (
     <article className={`post swipe ${swipe.armed ?? ""} ${isDemoPost(item) ? "demo" : ""}`} {...(canAct ? swipe.handlers : {})}>
       <div className="swipe-bg" aria-hidden>
-        <span ref={swipe.refs.bgCopy} className="sb sb-copy"><Icon d={I.copy} size={18} />{swipe.armed === "copy" ? "Release" : "Copy"}</span>
-        <span ref={swipe.refs.bgFade} className="sb sb-fade">{swipe.armed === "fade" ? "Release" : "Fade"}<Icon d={I.bolt} size={18} /></span>
+        <span ref={swipe.refs.bgCopy} className="sb sb-copy"><Icon d={I.copy} size={18} />Copy</span>
+        <span ref={swipe.refs.bgFade} className="sb sb-fade">Fade<Icon d={I.bolt} size={18} /></span>
       </div>
       {quick && <QuickTrade item={item} mode={quick} onClose={() => setQuick(null)} />}
       <div ref={swipe.refs.fg} className="swipe-fg">
