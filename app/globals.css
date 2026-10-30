@@ -66,8 +66,10 @@ body { font-family: var(--font-sans), ui-rounded, ui-sans-serif, system-ui, sans
 .btn.ink { background: var(--ink); color: var(--ink-fg); } .btn.brand { background: var(--brand); color: var(--brand-fg); }
 .btn.deposit { background: var(--green-soft); color: var(--green); } .btn.withdraw { background: var(--red-soft); color: var(--red); }
 .btn.ghost { background: transparent; }
-.copy { background: var(--brand); color: var(--brand-fg); border: 0; border-radius: 999px; padding: 9px 16px; font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
-.fade { background: var(--red-soft); color: var(--red); border: 0; border-radius: 999px; padding: 9px 16px; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; }
+.copy { background: var(--brand); color: var(--brand-fg); border: 0; border-radius: 999px; padding: 9px 18px; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; box-shadow: 0 4px 14px -6px var(--brand); transition: transform .12s ease; }
+.fade { background: var(--red); color: #fff; border: 0; border-radius: 999px; padding: 9px 18px; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; box-shadow: 0 4px 14px -6px var(--red); transition: transform .12s ease; }
+.copy:active, .fade:active { transform: scale(.96); }
+.acts .fade, .acts .copy { padding: 8px 16px; }
 .lbl { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 700; }
 .lbl.long { background: var(--green-soft); color: var(--green); } .lbl.short { background: var(--red-soft); color: var(--red); } .lbl.done { background: var(--surface); color: var(--muted); }
 .lbl.call { background: var(--surface); color: var(--text); } .lbl.backed { background: var(--green-soft); color: var(--green); } .lbl.gold { background: var(--gold-soft); color: var(--gold); }
@@ -268,14 +270,7 @@ button:active { transform: scale(.97); }
 .pdots i.on { width: 16px; border-radius: 999px; background: var(--brand); }
 
 
-/* ---------- Copy / Fade: big buttons + swipe ---------- */
-.cf { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
-.cf a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; border-radius: 14px; font-weight: 800; font-size: 15px; text-decoration: none; letter-spacing: -.01em; transition: transform .12s ease; }
-.cf a:active { transform: scale(.97); }
-.cf a small { font-weight: 500; font-size: 11px; opacity: .8; letter-spacing: 0; }
-.cf a svg { margin-bottom: 2px; }
-.cf-copy { background: var(--brand); color: var(--brand-fg); box-shadow: 0 6px 18px -8px var(--brand); }
-.cf-fade { background: var(--red); color: #fff; box-shadow: 0 6px 18px -8px var(--red); }
+/* ---------- swipe to copy / fade ---------- */
 .swipe { padding: 0 !important; overflow: hidden; touch-action: pan-y; }
 .swipe-fg { position: relative; z-index: 1; padding: 16px 18px; background: var(--surface); border-radius: var(--r); }
 .swipe-bg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font-weight: 900; font-size: 18px; letter-spacing: -.01em; background: linear-gradient(90deg, var(--brand) 0 50%, var(--red) 50% 100%); color: #fff; }
@@ -283,4 +278,3 @@ button:active { transform: scale(.97); }
 .swipe.copy .swipe-bg { background: var(--brand); }
 .swipe.fade .swipe-bg { background: var(--red); }
 .swipe.copy .sb-copy, .swipe.fade .sb-fade { transform: scale(1.15); }
-.swipe-hint { margin-top: 10px; text-align: center; font-size: 11px; color: var(--muted); letter-spacing: .02em; }

@@ -181,14 +181,14 @@ function TradePost({ item, mid, onChanged }: Props) {
         <div className="camps"><span>Be the first to copy or fade this one</span></div>
       )}
       {post.body && <p className="say">{post.body}</p>}
-      {canAct && (
-        <div className="cf">
-          <Link href={`/trade?fade=${post.id}`} className="cf-fade"><Icon d={I.bolt} size={18} />Fade<small>take the other side</small></Link>
-          <Link href={`/trade?copy=${post.id}`} className="cf-copy"><Icon d={I.copy} size={18} />Copy<small>same trade, your size</small></Link>
-        </div>
-      )}
-      <Acts item={item} onChanged={onChanged} />
-      {canAct && <div className="swipe-hint">← swipe to fade · swipe to copy →</div>}
+      <Acts item={item} onChanged={onChanged}>
+        {canAct && (
+          <>
+            <Link href={`/trade?fade=${post.id}`} className="fade ml-auto">Fade</Link>
+            <Link href={`/trade?copy=${post.id}`} className="copy">Copy</Link>
+          </>
+        )}
+      </Acts>
       </div>
     </article>
   );
