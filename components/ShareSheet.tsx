@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtUsd, fmtPrice, pnlForPosition } from "@/lib/format";
 import { APP_URL } from "@/lib/config";
@@ -29,7 +30,8 @@ type CardData = { kind: string; title: string; headline: string; sub: string; li
 function cardData(item: FeedRow, mid?: number): CardData {
   const { post, author } = item;
   const handle = author?.handle ?? "Perped";
-  const url = `${APP_URL}/post/${post.id}`;
+  const origin = typeof window !== "undefined" && /localhost/.test(APP_URL) ? window.location.origin : APP_URL;
+  const url = `${origin}/post/${post.id}`;
   const tag = author?.isDemo || post.paper ? "DEMO" : "REAL";
   if (post.kind === "trade") {
     const entry = Number(post.entryPx), size = Number(post.size), lev = post.leverage ?? 1;
@@ -87,8 +89,11 @@ export async function drawCard(theme: ShareTheme, d: CardData): Promise<HTMLCanv
   if (d.loss) { g.fillStyle = "rgba(190,18,60,.28)"; g.fillRect(0, 0, W, H); }
   const col = { fg: theme.textColor, muted: theme.muted, accent: d.loss ? "#fb7185" : theme.accent, mono: theme.textColor };
   g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 14; g.shadowOffsetY = 2;
-  const sans = "-apple-system, 'Inter', 'Helvetica Neue', Arial, sans-serif";
-  const mono = "ui-monospace, 'SF Mono', Menlo, monospace";
+  // Use the app's own faces (next/font exposes them as CSS variables on <html>).
+  try { await document.fonts.ready; } catch {}
+  const root = getComputedStyle(document.documentElement);
+  const sans = `${root.getPropertyValue("--font-sans") || ""}, -apple-system, 'Helvetica Neue', Arial, sans-serif`.replace(/^,\s*/, "");
+  const mono = `${root.getPropertyValue("--font-mono") || ""}, 'Barlow', system-ui, sans-serif`.replace(/^,\s*/, "");
   // header
   g.fillStyle = col.fg; g.font = `800 54px ${sans}`; g.fillText("Perped", 80, 180);
   g.font = `700 26px ${sans}`; g.fillStyle = col.muted; g.fillText(d.kind, 80, 225);
@@ -145,7 +150,8 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
   const copyLink = async () => { try { await navigator.clipboard.writeText(data.url); setMsg("Link copied"); setTimeout(() => setMsg(null), 1500); } catch {} };
   const shareX = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(data.url)}`;
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <>
       <div className="sheet-bg" onClick={onClose} />
       <div className="sheet" role="dialog" aria-label="Share">
@@ -153,17 +159,18 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
         <div className="flex flex-col items-center gap-3.5 px-5 pb-5">
           {img ? <img src={img} alt="Share card preview" className="share-prev" /> : <div className="share-prev" />}
           <div className="themes">
-            {THEMES.map((t) => <button key={t.key} className={`theme-dot ${t.key === themeId ? "on" : ""}`} style={{ backgroundImage: `url(/api/share-bg/${t.key})` }} onClick={() => setThemeId(t.key)} aria-label={t.name}><span>{t.name}</span></button>)}
+            {THEMES.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === themeId ? "on" : ""}`} onClick={() => setThemeId(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(/api/share-bg/${t.key})` }} /><span>{t.name}</span></button>)}
           </div>
           <div className="grid w-full grid-cols-2 gap-2.5">
             <button className="btn brand" style={{ padding: 12 }} onClick={nativeShare}>Share</button>
-            <button className="btn" style={{ padding: 12 }} onClick={save}>Save image</button>
+            <button className="btn ghostline" style={{ padding: 12 }} onClick={save}>Save image</button>
             <a className="btn ink" style={{ padding: 12 }} href={shareX} target="_blank" rel="noreferrer">Post to X</a>
-            <button className="btn" style={{ padding: 12 }} onClick={copyLink}>{msg ?? "Copy link"}</button>
+            <button className="btn ghostline" style={{ padding: 12 }} onClick={copyLink}>{msg ?? "Copy link"}</button>
           </div>
           <p className="faint text-center text-xs">Cards show the real numbers. Losses too. Nobody edits a receipt.</p>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }

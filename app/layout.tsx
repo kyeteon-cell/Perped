@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito, Fira_Code } from "next/font/google";
+import { Nunito, Barlow } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Nav } from "@/components/Nav";
@@ -7,7 +7,7 @@ import { Ticker } from "@/components/Ticker";
 import { APP_NAME, APP_URL } from "@/lib/config";
 
 const sans = Nunito({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-sans", display: "swap" });
-const mono = Fira_Code({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono", display: "swap" });
+const mono = Barlow({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-mono", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: `${APP_NAME} — get perped`, template: `%s · ${APP_NAME}` },

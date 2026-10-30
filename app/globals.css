@@ -29,7 +29,7 @@
 
 html, body { background: var(--bg); color: var(--text); }
 body { font-family: var(--font-sans), ui-rounded, ui-sans-serif, system-ui, sans-serif; font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
-.mono { font-family: var(--font-mono), ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; font-weight: 500; letter-spacing: -0.01em; }
+.mono { font-family: var(--font-mono), "Barlow", system-ui, sans-serif; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-weight: 600; letter-spacing: 0; }
 
 .muted { color: var(--muted); } .faint { color: var(--faint); } .green { color: var(--green); } .red { color: var(--red); }
 .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tint, var(--muted)); }
@@ -309,12 +309,13 @@ button:active { transform: scale(.97); }
 
 /* ---------- Share sheet ---------- */
 .share-prev { width: 240px; aspect-ratio: 4 / 5; border-radius: 18px; object-fit: cover; box-shadow: 0 24px 60px -24px rgba(0,0,0,.6); background: var(--surface); }
-.themes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-.theme-dot { width: 44px; height: 44px; border-radius: 50%; border: 3px solid transparent; position: relative; cursor: pointer; transition: transform .15s; }
-.theme-dot.on { border-color: var(--text); transform: scale(1.1); }
-.theme-dot span { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px; font-size: 10px; color: var(--muted); white-space: nowrap; }
-.theme-dot { background-size: cover; background-position: center; width: 52px; height: 65px; border-radius: 10px; }
-.themes { margin-bottom: 14px; }
+.themes { display: flex; gap: 10px; width: 100%; overflow-x: auto; padding: 4px 2px 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.themes::-webkit-scrollbar { display: none; }
+.theme-dot { flex: 0 0 64px; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 5px; background: none; border: 0; padding: 0; cursor: pointer; }
+.theme-dot i { display: block; width: 56px; height: 70px; border-radius: 12px; background-size: cover; background-position: center; background-color: var(--surface); border: 2.5px solid transparent; transition: transform .15s, border-color .15s; }
+.theme-dot.on i { border-color: var(--text); transform: scale(1.06); }
+.theme-dot span { font-size: 10px; line-height: 1.1; color: var(--muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 64px; }
+.theme-dot.on span { color: var(--text); font-weight: 700; }
 
 
 /* ---------- Profile ---------- */
