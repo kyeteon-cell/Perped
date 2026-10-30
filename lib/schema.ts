@@ -179,6 +179,37 @@ export const battles = pgTable(
   (t) => [index("battles_status_idx").on(t.status), index("battles_fader_idx").on(t.faderId), index("battles_target_idx").on(t.targetId)],
 );
 
+/**
+ * A rivalry between two traders (user_a < user_b). Updated on every battle and duel between them. Becomes
+ * active after 3 fights or when one calls the other out. Each side can mute alerts.
+ */
+export const rivalries = pgTable(
+  "rivalries",
+  {
+    id: serial("id").primaryKey(),
+    userA: text("user_a").notNull().references(() => users.id),
+    userB: text("user_b").notNull().references(() => users.id),
+    aWins: integer("a_wins").default(0).notNull(),
+    bWins: integer("b_wins").default(0).notNull(),
+    draws: integer("draws").default(0).notNull(),
+    fights: integer("fights").default(0).notNull(),
+    runHolder: text("run_holder"),
+    runLen: integer("run_len").default(0).notNull(),
+    bestRunHolder: text("best_run_holder"),
+    bestRun: integer("best_run").default(0).notNull(),
+    active: boolean("active").default(false).notNull(),
+    calledBy: text("called_by"),
+    mutedA: boolean("muted_a").default(false).notNull(),
+    mutedB: boolean("muted_b").default(false).notNull(),
+    lastAlertA: timestamp("last_alert_a", { withTimezone: true }),
+    lastAlertB: timestamp("last_alert_b", { withTimezone: true }),
+    lastFightAt: timestamp("last_fight_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("rivalries_pair").on(t.userA, t.userB), index("rivalries_a").on(t.userA), index("rivalries_b").on(t.userB)],
+);
+export type Rivalry = typeof rivalries.$inferSelect;
+
 /** Uploaded profile images (avatar / banner), stored inline and served from /api/media/:userId/:kind. */
 export const userMedia = pgTable(
   "user_media",

@@ -123,7 +123,7 @@ export default function ArenaPage() {
           {me.rivals.map((r) => (
             <div key={r.user.id} className="lb">
               <Avatar handle={r.user.handle} url={r.user.avatarUrl} size={40} />
-              <div className="min-w-0 flex-1"><Link href={`/u/${r.user.handle}`} className="name">{r.user.handle}<RankChip xp={r.user.xp} compact /></Link><div className="mono when"><span className="green">{r.won}W</span> · <span className="red">{r.lost}L</span></div></div>
+              <div className="min-w-0 flex-1"><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="name">{r.user.handle}<RankChip xp={r.user.xp} compact /></Link><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="mono when block"><span className="green">{r.won}W</span> · <span className="red">{r.lost}L</span> · see the series →</Link></div>
               <button className="chip on" onClick={() => setTarget(r.user.handle)}>Rematch</button>
             </div>
           ))}

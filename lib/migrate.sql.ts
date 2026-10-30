@@ -191,6 +191,31 @@ create index if not exists battles_status_idx on battles (status);
 create index if not exists battles_fader_idx on battles (fader_id);
 create index if not exists battles_target_idx on battles (target_id);
 
+create table if not exists rivalries (
+  id serial primary key,
+  user_a text not null references users(id),
+  user_b text not null references users(id),
+  a_wins integer not null default 0,
+  b_wins integer not null default 0,
+  draws integer not null default 0,
+  fights integer not null default 0,
+  run_holder text,
+  run_len integer not null default 0,
+  best_run_holder text,
+  best_run integer not null default 0,
+  active boolean not null default false,
+  called_by text,
+  muted_a boolean not null default false,
+  muted_b boolean not null default false,
+  last_alert_a timestamptz,
+  last_alert_b timestamptz,
+  last_fight_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists rivalries_pair on rivalries (user_a, user_b);
+create index if not exists rivalries_a on rivalries (user_a);
+create index if not exists rivalries_b on rivalries (user_b);
+
 create table if not exists xp_log (
   id serial primary key,
   user_id text not null references users(id),

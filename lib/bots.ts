@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, inArray, isNull, ne, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { fadeBlockReason } from "./fades";
+import { alertRivals } from "./rivalries";
 import { getMids, getPerpAssets } from "./hl-info";
 import { notify, systemPost } from "./feed";
 
@@ -210,6 +211,8 @@ export async function botTick() {
         const margin = Math.min(pick([100, 250, 250, 500, 750, 1000, 2000]), Number(me.demoBalance) * 0.3);
         await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, body: Math.random() < b.chatty ? pick(NOTES_OPEN) : null, slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
         await db.update(schema.users).set({ demoBalance: (Number(me.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, b.id));
+        const [justOpened] = await db.select({ id: schema.posts.id, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage }).from(schema.posts).where(eq(schema.posts.userId, b.id)).orderBy(desc(schema.posts.id)).limit(1);
+        if (justOpened) await alertRivals(b.id, justOpened).catch(() => 0);
         log.push(`${b.handle} opened ${side} ${coin}`);
       }
     }

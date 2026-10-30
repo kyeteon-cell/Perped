@@ -583,3 +583,13 @@ html { scroll-behavior: smooth; }
 .bsum-av + .bsum-av { margin-left: -6px; }
 .bsum-text { min-width: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bsum-rec { flex: none; font-size: 10px; opacity: .75; }
+
+/* ---------- Rivalry ---------- */
+.riv-board { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.riv-side { display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none; opacity: .85; }
+.riv-side.lead { opacity: 1; }
+.riv-side.lead .av { box-shadow: 0 0 0 3px var(--gold); }
+.riv-crown { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 20px; z-index: 1; }
+.riv-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit; }
+.rival-chip { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; vertical-align: middle; background: var(--red-soft); color: var(--red); text-decoration: none; }
+.rival-chip.lead { background: var(--gold-soft); color: var(--text); }

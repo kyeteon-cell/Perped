@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "./db";
 
 /** The shape every feed consumer gets. Counts are computed in SQL so the feed is one query. */
@@ -26,6 +26,8 @@ export type FeedRow = {
   myPollVote?: number | null;
   /** Viewer already faded this trade, or this trade is a fade of the viewer's own trade. */
   noFade?: boolean;
+  /** Set when the author is the viewer's rival: the series from the viewer's side. */
+  rival?: { mine: number; theirs: number; me: string } | null;
 };
 
 /** Feed is strictly chronological (newest first). Pinned-first only where a profile asks for it. */
@@ -47,7 +49,11 @@ export async function queryFeed(opts: { where?: SQL | undefined; limit: number; 
     const myFades = await db.select({ src: schema.posts.fadedFromId }).from(schema.posts).where(and(eq(schema.posts.userId, opts.viewerId), inArray(schema.posts.fadedFromId, ids)));
     const srcIds = rows.map((r) => r.post.fadedFromId).filter((x): x is number => !!x);
     const mySrc = srcIds.length ? await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, opts.viewerId), inArray(schema.posts.id, srcIds))) : [];
+    const rivals = await db.select().from(schema.rivalries).where(and(eq(schema.rivalries.active, true), or(eq(schema.rivalries.userA, opts.viewerId), eq(schema.rivalries.userB, opts.viewerId))));
+    const [meRow] = rivals.length ? await db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, opts.viewerId)).limit(1) : [];
     for (const r of rows) {
+      const rv = r.author ? rivals.find((x) => (x.userA === opts.viewerId && x.userB === r.author!.id) || (x.userB === opts.viewerId && x.userA === r.author!.id)) : undefined;
+      r.rival = rv && meRow ? { mine: rv.userA === opts.viewerId ? rv.aWins : rv.bWins, theirs: rv.userA === opts.viewerId ? rv.bWins : rv.aWins, me: meRow.handle } : null;
       r.noFade = myFades.some((f) => f.src === r.post.id) || (!!r.post.fadedFromId && mySrc.some((m) => m.id === r.post.fadedFromId));
       r.myVote = mine.find((v) => v.postId === r.post.id)?.value ?? null;
       r.myPollVote = polls.find((v) => v.postId === r.post.id)?.option ?? null;

@@ -13,6 +13,7 @@ import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
 import { FollowButton } from "@/components/FollowButton";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { PinCard } from "@/components/PinCard";
+import type { RivalRow } from "@/app/api/rivalries/route";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
@@ -43,6 +44,11 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const postsKey = tab === "posts" ? `/api/posts?handle=${handle}&kind=text` : tab === "trades" ? `/api/posts?handle=${handle}&kind=trade&status=${tradeTab}` : null;
   const { data: feed, mutate: mutateFeed } = useSWR<{ posts: FeedRow[] }>(postsKey);
   const { data: calls } = useSWR<{ posts: FeedRow[] }>(tab === "posts" ? `/api/posts?handle=${handle}&kind=call&limit=10` : null);
+  const { data: theirRivals } = useSWR<{ rivals: RivalRow[] }>(`/api/rivalries?handle=${handle}`);
+  const { profile: viewer } = useSession();
+  const { data: myRivals, mutate: mutateMyRivals } = useSWR<{ rivals: RivalRow[] }>(viewer && viewer.handle !== handle ? `/api/rivalries?handle=${viewer.handle}` : null);
+  const vsMe = myRivals?.rivals.find((r) => r.handle === handle.toLowerCase());
+  const callOutRival = async () => { if (!authenticated) return login(); await authedFetch("/api/rivalries", { method: "POST", body: JSON.stringify({ handle, action: "call" }) }); mutateMyRivals(); };
   const { data: pinned, mutate: mutatePinned } = useSWR<{ posts: FeedRow[] }>(`/api/posts?handle=${handle}&kind=trade&limit=60`);
   const { data: peopleList } = useSWR<{ users: { handle: string; avatarUrl: string | null; pnl7d: string | null; winRate: string | null }[] }>(tab === "people" ? `/api/follows?handle=${handle}&dir=${people}` : null);
 
@@ -93,6 +99,9 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
               <button className="muted" onClick={() => { setPeopleDir("followers"); setTab("people"); }}><b style={{ color: "var(--text)" }}>{data.followers}</b> followers</button>
               <button className="muted" onClick={() => { setPeopleDir("following"); setTab("people"); }}><b style={{ color: "var(--text)" }}>{data.following}</b> following</button>
             </div>
+            {!isMe && viewer && (vsMe
+              ? <Link href={`/rivalry/${viewer.handle}/${user.handle}`} className={`rival-chip mt-2 ${vsMe.mine > vsMe.theirs ? "lead" : ""}`} style={{ marginLeft: 0, fontSize: 12, padding: "3px 10px" }}>⚔ Your rival · {vsMe.mine > vsMe.theirs ? "you lead" : vsMe.mine < vsMe.theirs ? "they lead" : "all square"} {vsMe.mine}–{vsMe.theirs}</Link>
+              : <button className="rival-chip mt-2" style={{ marginLeft: 0, fontSize: 12, padding: "3px 10px", border: 0 }} onClick={callOutRival}>⚔ Call out as your rival</button>)}
           </div>
         </div>
         {user.bio && <p className="mt-3.5">{user.bio}</p>}
@@ -120,6 +129,21 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
       )}
 
       <RankCard xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} recent={data.xpRecent ?? []} />
+
+      {(theirRivals?.rivals.length ?? 0) > 0 && (
+        <section className="block">
+          <div className="flex items-center justify-between"><span className="eyebrow">Rivals</span><span className="when">{theirRivals!.rivals.length}</span></div>
+          <div className="mt-2 flex flex-col">
+            {theirRivals!.rivals.slice(0, 4).map((r) => (
+              <Link key={r.handle} href={`/rivalry/${user.handle}/${r.handle}`} className="lb">
+                <Avatar handle={r.handle} url={r.avatarUrl} size={40} link={false} />
+                <div className="min-w-0 flex-1"><div className="name">{r.handle}<RankChip xp={r.xp} compact /></div><div className="when">{r.fights} fights{r.runHolderIsMe !== null && r.runLen >= 2 ? ` · ${r.runHolderIsMe ? user.handle : r.handle} on a ${r.runLen}-run` : ""}{r.calledByThem ? " · called them out" : ""}</div></div>
+                <div className="text-right"><div className="mono text-[18px] font-bold"><span className={r.mine >= r.theirs ? "green" : "muted"}>{r.mine}</span><span className="muted">–</span><span className={r.theirs > r.mine ? "red" : "muted"}>{r.theirs}</span></div>{r.mine > r.theirs && <div className="when text-[10px]">👑 leads</div>}</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {isMe && user.isDemo && (
         <section className="block">

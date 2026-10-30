@@ -4,6 +4,7 @@ import { notify, systemPost } from "./feed";
 import { pnlForPosition } from "./format";
 import { lossPenalty, rankFor, XP } from "./rank";
 import { awardXp } from "./xp";
+import { recordFight } from "./rivalries";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -89,6 +90,7 @@ export async function settleBattles(mids: Record<string, string | number>) {
 
     await db.update(schema.battles).set({ status: "settled", winnerId, faderRoi: fr.roi.toFixed(2), targetRoi: tr.roi.toFixed(2), reason, xpFader: xpF, xpTarget: xpT, settledAt: new Date() }).where(eq(schema.battles.id, b.id));
     await restampPosts([b.faderPostId, b.targetPostId]);
+    await recordFight(b.faderId, b.targetId, winnerId, new Date(), { coin: b.coin, href: `/battle/${b.faderPostId}` }).catch(() => null);
     await awardXp(b.faderId, xpF, winnerId ? (winnerId === b.faderId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
     await awardXp(b.targetId, xpT, winnerId ? (winnerId === b.targetId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
     if (winnerId && loserId) {

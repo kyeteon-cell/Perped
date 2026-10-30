@@ -5,6 +5,7 @@ import { notify, systemPost } from "@/lib/feed";
 import { closeTradePost } from "@/lib/trades";
 import { backfillBattles, backfillBattleStamps, settleBattles } from "@/lib/battles";
 import { awardXp } from "@/lib/xp";
+import { rebuildRivalries, recordFight } from "@/lib/rivalries";
 import { lossPenalty, rankFor, XP } from "@/lib/rank";
 import { demoLiqPx } from "@/lib/format";
 
@@ -105,11 +106,13 @@ export async function GET(req: Request) {
       await awardXp(uid, delta, won ? "duel_win" : "duel_loss", `duel:${d.id}`);
       await notify(uid, "duel", won ? "You won the duel" : "You lost the duel", `${d.coin} · ${start} → ${p} · ${delta >= 0 ? "+" : ""}${delta} XP`, `/duels/${d.id}`);
     }
+    await recordFight(d.challengerId, d.opponentId, winnerId, now, { coin: d.coin, href: `/duels/${d.id}` }).catch(() => null);
     duelsSettled++;
   }
 
   // Clean up any burst of battle cards (backfill settled many at once): keep the 3 newest, drop the rest.
   await db.execute(sql`delete from posts where kind = 'system' and system_type = 'battle_settled' and id not in (select id from posts where kind = 'system' and system_type = 'battle_settled' order by created_at desc limit 3) and created_at > now() - interval '12 hours'`).catch(() => null);
+  await rebuildRivalries().catch(() => 0);
   // Battles (fades): make sure every fade has one, then settle the decided ones.
   await backfillBattles().catch(() => 0);
   const battles = await settleBattles(mids).catch(() => 0);

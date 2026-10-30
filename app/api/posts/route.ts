@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ensureBattle } from "@/lib/battles";
 import { fadeBlockReason } from "@/lib/fades";
+import { alertRivals } from "@/lib/rivalries";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
@@ -192,6 +193,7 @@ export async function POST(req: Request) {
   }
   const [post] = await db.insert(schema.posts).values(values).returning();
   if (b.kind === "trade" && b.fadedFromId) await ensureBattle(post.id).catch(() => null);
+  if (b.kind === "trade") await alertRivals(profile.id, post).catch(() => 0);
   if (b.kind === "trade" && b.backsCallId) {
     await db.update(schema.posts).set({ backedPostId: post.id }).where(and(eq(schema.posts.id, b.backsCallId), eq(schema.posts.userId, profile.id)));
   }

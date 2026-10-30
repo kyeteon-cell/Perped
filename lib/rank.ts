@@ -46,5 +46,5 @@ export const XP_REASON_LABEL: Record<string, string> = {
   battle_win: "Won a battle", battle_loss: "Lost a battle", battle_draw: "Drew a battle",
   duel_win: "Won a duel", duel_loss: "Lost a duel",
   call_hit: "Call hit", call_miss: "Call missed",
-  trade_win: "Profitable trade", trade_loss: "Losing trade", liquidation: "Liquidated", season_start: "Season start",
+  trade_win: "Profitable trade", trade_loss: "Losing trade", liquidation: "Liquidated", season_start: "Season start", rival_lead: "Took the rivalry lead", rival_sweep: "Rivalry sweep",
 };

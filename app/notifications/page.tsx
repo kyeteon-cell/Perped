@@ -11,7 +11,7 @@ import type { Notification } from "@/lib/schema";
 const STYLE: Record<string, { icon: string; tint: string }> = {
   call_hit: { icon: I.check, tint: "green" }, call_missed: { icon: I.warn, tint: "red" }, copied: { icon: I.copy, tint: "brand" }, faded: { icon: I.copy, tint: "red" },
   stop: { icon: I.warn, tint: "red" }, tp: { icon: I.check, tint: "green" }, follow: { icon: I.user, tint: "violet" }, rank: { icon: I.trophy, tint: "gold" },
-  reply: { icon: I.comment, tint: "blue" }, duel: { icon: I.trophy, tint: "gold" }, battle: { icon: I.bolt, tint: "gold" }, sl: { icon: I.warn, tint: "red" }, liquidation: { icon: I.bolt, tint: "red" }, referral: { icon: I.user, tint: "green" }, settled: { icon: I.list, tint: "green" },
+  reply: { icon: I.comment, tint: "blue" }, duel: { icon: I.trophy, tint: "gold" }, battle: { icon: I.bolt, tint: "gold" }, rival: { icon: I.bolt, tint: "red" }, sl: { icon: I.warn, tint: "red" }, liquidation: { icon: I.bolt, tint: "red" }, referral: { icon: I.user, tint: "green" }, settled: { icon: I.list, tint: "green" },
 };
 
 export default function NotificationsPage() {

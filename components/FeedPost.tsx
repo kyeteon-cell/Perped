@@ -60,7 +60,7 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
         <Link href={`/u/${author.handle}`} className="flex items-center gap-3">
           <Avatar handle={author.handle} url={author.avatarUrl} link={false} />
           <div>
-            <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}<RankChip xp={author.xp} compact />{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</div>
+            <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}<RankChip xp={author.xp} compact />{item.rival ? <span className={`rival-chip ${item.rival.mine > item.rival.theirs ? "lead" : ""}`}>⚔ {item.rival.mine}–{item.rival.theirs}</span> : null}{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</div>
             <div className="when">{timeAgo(post.createdAt)} ago{post.copiedFromId ? " · copied" : ""}{post.fadedFromId ? " · faded" : ""}{post.kind === "trade" && post.status === "closed" ? " · closed" : ""}</div>
           </div>
         </Link>
@@ -448,6 +448,24 @@ function SystemPost({ item, onChanged }: Props) {
         </div>
         <Acts item={item} onChanged={onChanged}>
           {typeof meta.faderPostId === "number" && <Link href={`/battle/${meta.faderPostId}`} className="chip ml-auto">See the battle</Link>}
+        </Acts>
+      </article>
+    );
+  }
+
+  if (t === "rivalry") {
+    const w = String(meta.winner ?? "?"), l = String(meta.loser ?? "?");
+    const label = meta.kind === "sweep" ? "Sweep" : meta.kind === "streak_end" ? "Run ended" : "Lead change";
+    return (
+      <article className="post duel">
+        <div className="duel-head"><span className="lbl gold">⚔ Rivalry · {label}</span><span className="when">{timeAgo(post.createdAt)} ago</span></div>
+        <div className="duel-body">
+          <div className="duelist"><Avatar handle={w} size={48} /><div className="name mt-1.5">{w}</div></div>
+          <div className="duel-mid"><div className="mono text-[22px] font-bold">{String(meta.score ?? "")}</div><div className="when">{post.body}</div></div>
+          <div className="duelist"><Avatar handle={l} size={48} /><div className="name mt-1.5">{l}</div></div>
+        </div>
+        <Acts item={item} onChanged={onChanged}>
+          {typeof meta.href === "string" && <Link href={meta.href} className="chip ml-auto">See the rivalry</Link>}
         </Acts>
       </article>
     );
