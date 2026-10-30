@@ -37,8 +37,13 @@ export async function GET(req: Request) {
     const ids = [...f.map((x) => x.id), auth.privyId];
     conds.push(inArray(schema.posts.userId, ids));
   }
-  const posts = await queryFeed({ where: and(...conds.filter(Boolean)), limit, viewerId: auth?.privyId, pinnedFirst: !!q.handle });
-  return Response.json({ posts, nextCursor: posts.length === limit ? new Date(posts[posts.length - 1].post.createdAt).getTime() : null });
+  try {
+    const posts = await queryFeed({ where: and(...conds.filter(Boolean)), limit, viewerId: auth?.privyId, pinnedFirst: !!q.handle });
+    return Response.json({ posts, nextCursor: posts.length === limit ? new Date(posts[posts.length - 1].post.createdAt).getTime() : null });
+  } catch (e) {
+    console.error("[posts] feed query failed", e);
+    return Response.json({ posts: [], nextCursor: null, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
 }
 
 const Trade = z.object({

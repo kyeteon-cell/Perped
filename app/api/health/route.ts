@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db, ensureSchema } from "@/lib/db";
 import { ensureBots, seedHistory } from "@/lib/bots";
+import { queryFeed } from "@/lib/feed";
 import { eq } from "drizzle-orm";
 import { schema } from "@/lib/db";
 import { APP_NAME, BUILDER_CONFIGURED, HL_DATA_NETWORK, HL_NETWORK } from "@/lib/config";
@@ -53,7 +54,11 @@ export async function GET(req: Request) {
       const [any] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.isBot, true)).limit(1);
       if (!any) { await ensureBots(); bots = { seeded: true, posts: await seedHistory() }; }
     }
-    return Response.json({ ok: missing.length === 0, app: APP_NAME, version: "0.4.0", trading: HL_NETWORK, prices: HL_DATA_NETWORK, builderConfigured: BUILDER_CONFIGURED, privy, bots, tables, missing });
+    // Smoke-test the feed query and count posts/bots so an empty Home can be diagnosed from here.
+    let feed: unknown;
+    try { const rows = await queryFeed({ limit: 3 }); feed = { ok: true, rows: rows.length, newest: rows[0]?.post.createdAt ?? null }; } catch (e) { feed = { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+    const [counts] = (await db.execute(sql`select (select count(*) from posts) as posts, (select count(*) from users where is_bot) as bots, (select max(created_at) from posts where user_id in (select id from users where is_bot)) as last_bot_post`)) as unknown as { posts: string; bots: string; last_bot_post: string | null }[];
+    return Response.json({ ok: missing.length === 0, feed, counts, botsPaused: process.env.BOTS_PAUSED === "1", app: APP_NAME, version: "0.4.0", trading: HL_NETWORK, prices: HL_DATA_NETWORK, builderConfigured: BUILDER_CONFIGURED, privy, bots, tables, missing });
   } catch (e) {
     return Response.json({ ok: false, privy, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
