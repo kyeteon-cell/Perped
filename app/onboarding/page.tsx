@@ -15,7 +15,7 @@ import { Icon, I } from "@/components/ui";
  */
 export default function OnboardingPage() {
   const router = useRouter();
-  const { ready, authenticated, login, address, walletClient, profile, profileLoading, authedFetch, refreshMe, fee } = useSession();
+  const { ready, authenticated, login, address, walletClient, profile, profileLoading, authedFetch, refreshMe, fee, loginError } = useSession();
   const [step, setStep] = useState(1);
   const [handle, setHandle] = useState("");
   const [bio, setBio] = useState("");
@@ -82,6 +82,8 @@ export default function OnboardingPage() {
             <button className="btn" onClick={login}><Icon d={I.mail} size={18} />Continue with email</button>
             <button className="btn" onClick={login}><Icon d={I.wallet} size={18} />Connect a wallet</button>
             <p className="faint mt-1.5 text-center text-xs">No seed phrases. A wallet is created for you and only you control it.</p>
+            {loginError && <p className="red mt-2 text-center text-xs">{loginError}</p>}
+            {authenticated && !address && ready && <p className="muted mt-2 text-center text-xs">Logged in — creating your wallet…</p>}
           </div>
         </>
       )}

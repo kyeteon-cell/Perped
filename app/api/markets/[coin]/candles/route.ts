@@ -7,11 +7,24 @@ const RANGES: Record<string, { interval: string; ms: number }> = {
   "1w": { interval: "1h", ms: 7 * 24 * 60 * 60_000 },
   "1m": { interval: "4h", ms: 30 * 24 * 60 * 60_000 },
 };
+const INTERVAL_MS: Record<string, number> = { "1m": 60_000, "5m": 300_000, "15m": 900_000, "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000 };
 
-/** GET /api/markets/:coin/candles?range=1h|4h|1d|1w|1m (mainnet data) */
+/**
+ * GET /api/markets/:coin/candles?interval=1m|5m|15m|1h|4h|1d[&limit=500]   (preferred, mainnet data)
+ * GET /api/markets/:coin/candles?range=1h|4h|1d|1w|1m                      (legacy)
+ */
 export async function GET(req: Request, ctx: { params: Promise<{ coin: string }> }) {
   const { coin } = await ctx.params;
-  const range = RANGES[new URL(req.url).searchParams.get("range") ?? "1h"] ?? RANGES["1h"];
-  const candles = await getCandles(coin.toUpperCase(), range.interval, Date.now() - range.ms);
-  return Response.json({ coin: coin.toUpperCase(), candles });
+  const q = new URL(req.url).searchParams;
+  const interval = q.get("interval");
+  let iv: string, since: number;
+  if (interval && INTERVAL_MS[interval]) {
+    const limit = Math.min(1000, Math.max(50, Number(q.get("limit") ?? 500)));
+    iv = interval; since = Date.now() - INTERVAL_MS[interval] * limit;
+  } else {
+    const range = RANGES[q.get("range") ?? "1d"] ?? RANGES["1d"];
+    iv = range.interval; since = Date.now() - range.ms;
+  }
+  const candles = await getCandles(coin.toUpperCase(), iv, since);
+  return Response.json({ coin: coin.toUpperCase(), interval: iv, candles });
 }

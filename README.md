@@ -12,7 +12,7 @@ Mobile-first web app (installable PWA). Trades execute directly on Hyperliquid f
 
 **Post types** — trade, text, call (coin, up/down, target, invalidation, deadline, optional "backed" trade), poll (verified users; optional price settlement), system (liquidation, milestone, settled, duel settled).
 
-**Markets** — totals, 24h movers, sort by volume / gainers / losers / OI / funding / hot on Perped, rows with sparkline, funding and Perped long/short split. Market page with candlestick chart (candles/line, 1h/4h/1d/1w/1m, volume, drag crosshair with OHLC), stats, sentiment and the ticket.
+**Markets** — totals, 24h movers, sort by volume / gainers / losers / OI / funding / hot on Perped, rows with sparkline, funding and Perped long/short split. Market page with a TradingView lightweight-charts chart (candles/line, 1m–1d intervals, volume, pinch-zoom/pan, crosshair OHLC, live last candle), stats, sentiment and the ticket.
 
 **Ticket** — market or limit, margin presets, leverage slider with caps, TP/SL placed with the entry as a Hyperliquid `normalTpsl` group, builder-fee approval inline, copy mode, fade mode (auto 5% stop, 2× cap for accounts under 10 trades, public warning).
 
@@ -86,7 +86,7 @@ npm run dev                  # http://localhost:3000
 5. Compose → Call → HYPE up to a target, 24 h → wait for the resolver (or hit `/api/cron/resolve` with the secret).
 
 ## Env
-See `.env.example`. New in v0.4: `NEXT_PUBLIC_BUILDER_MAX_FEE_TENTHS_BPS`, `NEXT_PUBLIC_BUILDER_FEE_REFERRED_TENTHS_BPS`, `NEXT_PUBLIC_BUILDER_FEE_TOP_TENTHS_BPS`, `NEXT_PUBLIC_TOP_TIER_RANK`, `NEXT_PUBLIC_REFERRAL_SHARE_PCT`, `NEXT_PUBLIC_REFERRAL_TOP_SHARE_PCT`, `NEXT_PUBLIC_REFERRAL_TOP_THRESHOLD`. The schema now migrates itself on the first database call after each deploy (idempotent SQL; `AUTO_MIGRATE=0` turns it off). Open `/api/health` to confirm — no key needed.
+See `.env.example`. New in v0.4: `NEXT_PUBLIC_BUILDER_MAX_FEE_TENTHS_BPS`, `NEXT_PUBLIC_BUILDER_FEE_REFERRED_TENTHS_BPS`, `NEXT_PUBLIC_BUILDER_FEE_TOP_TENTHS_BPS`, `NEXT_PUBLIC_TOP_TIER_RANK`, `NEXT_PUBLIC_REFERRAL_SHARE_PCT`, `NEXT_PUBLIC_REFERRAL_TOP_SHARE_PCT`, `NEXT_PUBLIC_REFERRAL_TOP_THRESHOLD`. The schema now migrates itself on the first database call after each deploy (idempotent SQL; `AUTO_MIGRATE=0` turns it off). Open `/api/health` to confirm — no key needed. It also checks Privy: that the app id/secret pair is valid and that the current domain is in Privy's allowed origins, which is the usual reason login fails on a new deploy. Login errors are shown in the UI too.
 
 ## Layout
 ```

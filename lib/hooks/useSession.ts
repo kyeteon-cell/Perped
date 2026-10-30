@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useLogin, usePrivy, useWallets } from "@privy-io/react-auth";
 import { createWalletClient, custom, type WalletClient } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import useSWR from "swr";
@@ -13,7 +13,21 @@ const chain = HL_NETWORK === "mainnet" ? arbitrum : arbitrumSepolia;
 
 /** Everything a page needs about the logged-in user: wallet, viem client, profile, authed fetch. */
 export function useSession() {
-  const { ready, authenticated, login, logout, getAccessToken, user } = usePrivy();
+  const { ready, authenticated, logout, getAccessToken, user } = usePrivy();
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const { login } = useLogin({
+    onComplete: () => setLoginError(null),
+    onError: (err) => {
+      const code = String(err);
+      if (code === "exited_auth_flow") return; // user closed the modal
+      const host = typeof window !== "undefined" ? window.location.origin : "";
+      setLoginError(
+        /origin|domain|allowed|unauthorized|forbidden/i.test(code)
+          ? `Login blocked for ${host}. Add this URL to Allowed origins in the Privy dashboard (Settings → Domains).`
+          : `Login failed: ${code}. Check the Privy dashboard: login methods enabled, and ${host} in Allowed origins.`,
+      );
+    },
+  });
   const { wallets } = useWallets();
   const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
 
@@ -71,6 +85,8 @@ export function useSession() {
     unread: me?.unread ?? 0,
     /** The builder fee this user pays per fill (tier-resolved server-side). */
     fee: me?.fee ?? resolveFeeTier({}),
+    /** Why the last login attempt failed, in words the person can act on. */
+    loginError,
     refreshMe,
   };
 }

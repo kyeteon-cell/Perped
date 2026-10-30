@@ -2,7 +2,7 @@
   "name": "perped",
   "version": "0.4.0",
   "private": true,
-  "description": "Perped — social perps on Hyperliquid. Every trade is a post.",
+  "description": "Perped \u2014 social perps on Hyperliquid. Every trade is a post.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -18,6 +18,7 @@
     "@privy-io/react-auth": "^2.0.0",
     "@privy-io/server-auth": "^1.18.0",
     "drizzle-orm": "^0.44.0",
+    "lightweight-charts": "^4.2.0",
     "next": "^15.3.0",
     "postgres": "^3.4.5",
     "react": "^19.1.0",
