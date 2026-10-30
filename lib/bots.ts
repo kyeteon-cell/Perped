@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, ne, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { fadeBlockReason } from "./fades";
 import { getMids, getPerpAssets } from "./hl-info";
@@ -408,4 +408,41 @@ export async function boostHistory(target = 40) {
 /** Keep bot profile pictures in sync with the art registry (runs every tick; cheap). */
 export async function syncBotAvatars() {
   for (const b of BOTS) await db.update(schema.users).set({ avatarUrl: `/api/share-bg/bot-${b.handle}` }).where(and(eq(schema.users.id, b.id), sql`coalesce(avatar_url, '') <> ${`/api/share-bg/bot-${b.handle}`}`));
+}
+
+/**
+ * Bots curate their own trophy shelf: up to 4 pins, chosen from their closed trades as
+ *  1. the trades that beat the most faders (ties → widest winning margin),
+ *  2. their most recent battle win (the one keeping a streak alive),
+ *  3. their best ROI.
+ * Only rewrites pins when the choice changed. Runs each bot tick.
+ */
+export async function botPins() {
+  let changed = 0;
+  for (const b of BOTS) {
+    const rows = await db.select({ id: schema.posts.id, pinned: schema.posts.pinned, meta: schema.posts.meta, entryPx: schema.posts.entryPx, exitPx: schema.posts.exitPx, side: schema.posts.side, leverage: schema.posts.leverage, closedAt: schema.posts.closedAt })
+      .from(schema.posts)
+      .where(and(eq(schema.posts.userId, b.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "closed")))
+      .orderBy(desc(schema.posts.closedAt)).limit(200);
+    if (!rows.length) continue;
+    type Bt = { won: boolean | null; myRoi: number; theirRoi: number; battleId: number };
+    const info = rows.map((r) => {
+      const battles = (((r.meta ?? {}) as { battles?: Bt[] }).battles ?? []);
+      const wins = battles.filter((x) => x.won === true);
+      const entry = Number(r.entryPx), exit = Number(r.exitPx ?? entry);
+      const roi = ((exit - entry) / entry) * 100 * (r.side === "long" ? 1 : -1) * (r.leverage ?? 1);
+      return { id: r.id, pinned: r.pinned, wins: wins.length, margin: Math.max(0, ...wins.map((w) => w.myRoi - w.theirRoi)), roi, latestWin: wins.length ? Math.max(...wins.map((w) => w.battleId)) : 0 };
+    });
+    const pick = new Set<number>();
+    for (const r of [...info].filter((r) => r.wins > 0).sort((a, z) => z.wins - a.wins || z.margin - a.margin).slice(0, 2)) pick.add(r.id);
+    const recent = [...info].filter((r) => r.wins > 0).sort((a, z) => z.latestWin - a.latestWin)[0];
+    if (recent) pick.add(recent.id);
+    for (const r of [...info].filter((r) => r.roi > 0).sort((a, z) => z.roi - a.roi)) { if (pick.size >= 4) break; pick.add(r.id); }
+    const current = new Set(info.filter((r) => r.pinned).map((r) => r.id));
+    if (current.size === pick.size && [...pick].every((id) => current.has(id))) continue;
+    await db.update(schema.posts).set({ pinned: false }).where(and(eq(schema.posts.userId, b.id), eq(schema.posts.pinned, true)));
+    if (pick.size) await db.update(schema.posts).set({ pinned: true }).where(inArray(schema.posts.id, [...pick]));
+    changed++;
+  }
+  return changed;
 }
