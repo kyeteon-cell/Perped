@@ -8,7 +8,7 @@ export const RANKS = [
   { level: 5, title: "Whale Fader", min: 3_000 },
   { level: 6, title: "Liquidator", min: 6_000 },
   { level: 7, title: "Market Maker", min: 11_000 },
-  { level: 8, title: "Perp God", min: 20_000 },
+  { level: 8, title: "Perpetrator", min: 20_000 },
 ] as const;
 
 export type Rank = (typeof RANKS)[number];

@@ -1,5 +1,7 @@
 "use client";
 
+import { rankFor } from "@/lib/rank";
+
 /** Small shared pieces: icons, coin monograms, avatars, theme helpers. */
 
 export function Icon({ d, size = 20, className = "" }: { d: string; size?: number; className?: string }) {
