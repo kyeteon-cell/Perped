@@ -167,6 +167,8 @@ function TradePost({ item, mid, onChanged }: Props) {
         <span className="sb-fade" style={{ opacity: Math.min(1, Math.max(0, -swipe.dx / 60)) }}>{swipe.armed === "fade" ? "✓ " : ""}Fade <Icon d={I.bolt} size={20} /></span>
       </div>
       <div className="swipe-fg" style={{ transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined, transition: swipe.dx ? "none" : "transform .25s cubic-bezier(.2,.8,.2,1)" }}>
+      {post.fadedFromId && <Link href={`/battle/${post.id}`} className="kind battle-link"><Icon d={I.bolt} size={13} />Fade · open the battle →</Link>}
+      {post.copiedFromId && <div className="kind"><Icon d={I.copy} size={13} />Copy trade</div>}
       <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
