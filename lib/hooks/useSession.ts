@@ -50,6 +50,8 @@ export function useSession() {
   /** Open Privy. Pass { loginMethods: ["wallet"] } etc. to show a single method. Accepts anything so it works as an onClick handler. */
   const login = useCallback((opts?: unknown) => {
     const o = opts && typeof opts === "object" && "loginMethods" in (opts as Record<string, unknown>) ? (opts as Record<string, unknown>) : undefined;
+    // No method chosen → Perped's own sign-in sheet (Demo vs Real, with Guest). A method → straight into Privy on that method.
+    if (!o) { if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("perped:login")); return; }
     return privyLogin(o as Parameters<typeof privyLogin>[0]);
   }, [privyLogin]);
   const { wallets } = useWallets();
