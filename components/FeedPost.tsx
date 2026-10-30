@@ -10,6 +10,7 @@ import { Avatar, CoinMark, Icon, I, ticker, RankChip } from "./ui";
 import { Sparkline } from "./Sparkline";
 import { ShareSheet } from "./ShareSheet";
 import { ManageTrade } from "./ManageTrade";
+import { QuickTrade } from "./QuickTrade";
 import { HL_NETWORK } from "@/lib/config";
 
 /** Hyperliquid's own explorer page for an account: every fill, visible to anyone. */
@@ -104,27 +105,40 @@ function Acts({ item, onChanged, children, mid, challenge, manage }: { item: Fee
  * supported). Vertical movement hands control back to the scroller.
  */
 function useSwipeToAct(onCopy: () => void, onFade: () => void, enabled: boolean) {
-  const [dx, setDx] = useState(0);
+  // Movement is written straight to the DOM (no React state per touch), so the card tracks the finger without lag.
   const [armed, setArmed] = useState<"copy" | "fade" | null>(null);
+  const armedRef = useRef<"copy" | "fade" | null>(null);
+  const fg = useRef<HTMLDivElement>(null);
+  const bgCopy = useRef<HTMLSpanElement>(null);
+  const bgFade = useRef<HTMLSpanElement>(null);
   const start = useRef<{ x: number; y: number; locked: null | "h" | "v" } | null>(null);
-  const THRESH = 96, MAX = 150;
+  const THRESH = 72, MAX = 110;
+  const paint = (dx: number, animate: boolean) => {
+    const el = fg.current; if (!el) return;
+    el.style.transition = animate ? "transform .22s cubic-bezier(.2,.8,.2,1)" : "none";
+    el.style.transform = dx ? `translate3d(${dx}px,0,0)` : "";
+    if (bgCopy.current) bgCopy.current.style.opacity = String(Math.min(1, Math.max(0, dx / 48)));
+    if (bgFade.current) bgFade.current.style.opacity = String(Math.min(1, Math.max(0, -dx / 48)));
+  };
   const onTouchStart = (e: React.TouchEvent) => { if (!enabled) return; const t = e.touches[0]; start.current = { x: t.clientX, y: t.clientY, locked: null }; };
   const onTouchMove = (e: React.TouchEvent) => {
     const s0 = start.current; if (!s0) return;
     const t = e.touches[0]; const mx = t.clientX - s0.x, my = t.clientY - s0.y;
-    if (!s0.locked) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; s0.locked = Math.abs(mx) > Math.abs(my) * 1.2 ? "h" : "v"; }
+    if (!s0.locked) { if (Math.abs(mx) < 10 && Math.abs(my) < 10) return; s0.locked = Math.abs(mx) > Math.abs(my) * 1.3 ? "h" : "v"; }
     if (s0.locked === "v") return;
-    const clamped = Math.max(-MAX, Math.min(MAX, mx * 0.9));
-    setDx(clamped);
-    const next = clamped > THRESH ? "copy" : clamped < -THRESH ? "fade" : null;
-    if (next !== armed) { setArmed(next); if (next && typeof navigator !== "undefined" && "vibrate" in navigator) try { navigator.vibrate(12); } catch {} }
+    // Rubber-band past the threshold so the card never flies off.
+    const abs = Math.abs(mx), eased = abs <= THRESH ? abs : THRESH + (abs - THRESH) * 0.35;
+    const dx = Math.sign(mx) * Math.min(MAX, eased);
+    paint(dx, false);
+    const next = dx > THRESH - 4 ? "copy" : dx < -(THRESH - 4) ? "fade" : null;
+    if (next !== armedRef.current) { armedRef.current = next; setArmed(next); if (next && typeof navigator !== "undefined" && "vibrate" in navigator) try { navigator.vibrate(10); } catch {} }
   };
   const onTouchEnd = () => {
     if (!start.current) return;
-    const a = armed; start.current = null; setDx(0); setArmed(null);
+    const a = armedRef.current; start.current = null; armedRef.current = null; setArmed(null); paint(0, true);
     if (a === "copy") onCopy(); else if (a === "fade") onFade();
   };
-  return { dx, armed, handlers: { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel: onTouchEnd } };
+  return { armed, refs: { fg, bgCopy, bgFade }, handlers: { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel: onTouchEnd } };
 }
 
 /* ---------- trade ---------- */
@@ -152,7 +166,8 @@ function TradePost({ item, mid, onChanged }: Props) {
   const showSize = author?.showSizes !== false;
   const camps = item.copyCount + item.fadeCount;
   const canAct = isOpen && !!author && author.id !== profile?.id;
-  const swipe = useSwipeToAct(() => router.push(`/trade?copy=${post.id}`), () => router.push(`/trade?fade=${post.id}`), canAct);
+  const [quick, setQuick] = useState<"copy" | "fade" | null>(null);
+  const swipe = useSwipeToAct(() => setQuick("copy"), () => setQuick("fade"), canAct);
 
   if (!isOpen) {
     // Closed trade: one compact row. The feed is about what's live; banked results are a footnote.
@@ -175,10 +190,11 @@ function TradePost({ item, mid, onChanged }: Props) {
   return (
     <article className={`post swipe ${swipe.armed ?? ""} ${isDemoPost(item) ? "demo" : ""}`} {...(canAct ? swipe.handlers : {})}>
       <div className="swipe-bg" aria-hidden>
-        <span className="sb-copy" style={{ opacity: Math.min(1, Math.max(0, swipe.dx / 60)) }}><Icon d={I.copy} size={20} /> Copy{swipe.armed === "copy" ? " ✓" : ""}</span>
-        <span className="sb-fade" style={{ opacity: Math.min(1, Math.max(0, -swipe.dx / 60)) }}>{swipe.armed === "fade" ? "✓ " : ""}Fade <Icon d={I.bolt} size={20} /></span>
+        <span ref={swipe.refs.bgCopy} className="sb sb-copy"><Icon d={I.copy} size={18} />{swipe.armed === "copy" ? "Release" : "Copy"}</span>
+        <span ref={swipe.refs.bgFade} className="sb sb-fade">{swipe.armed === "fade" ? "Release" : "Fade"}<Icon d={I.bolt} size={18} /></span>
       </div>
-      <div className="swipe-fg" style={{ transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined, transition: swipe.dx ? "none" : "transform .25s cubic-bezier(.2,.8,.2,1)" }}>
+      {quick && <QuickTrade item={item} mode={quick} onClose={() => setQuick(null)} />}
+      <div ref={swipe.refs.fg} className="swipe-fg">
       {post.fadedFromId && <Link href={`/battle/${post.id}`} className="kind battle-link"><Icon d={I.bolt} size={13} />Fade · open the battle →</Link>}
       {post.copiedFromId && <div className="kind"><Icon d={I.copy} size={13} />Copy trade</div>}
       <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
@@ -213,8 +229,8 @@ function TradePost({ item, mid, onChanged }: Props) {
       <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id} manage={isOpen && !!author && author.id === profile?.id}>
         {canAct && (
           <>
-            {author?.allowFade !== false && <Link href={`/trade?fade=${post.id}`} className="fade ml-auto">Fade</Link>}
-            {author?.allowCopy !== false && <Link href={`/trade?copy=${post.id}`} className={author?.allowFade === false ? "copy ml-auto" : "copy"}>Copy</Link>}
+            {author?.allowFade !== false && <button className="fade ml-auto" onClick={() => setQuick("fade")}>Fade</button>}
+            {author?.allowCopy !== false && <button className={author?.allowFade === false ? "copy ml-auto" : "copy"} onClick={() => setQuick("copy")}>Copy</button>}
           </>
         )}
       </Acts>

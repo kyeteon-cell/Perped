@@ -278,12 +278,15 @@ button:active { transform: scale(.97); }
 
 /* ---------- swipe to copy / fade ---------- */
 .swipe { padding: 0 !important; overflow: hidden; touch-action: pan-y; }
-.swipe-fg { position: relative; z-index: 1; padding: 16px 18px; background: var(--surface); border-radius: var(--r); }
-.swipe-bg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font-weight: 900; font-size: 18px; letter-spacing: -.01em; background: linear-gradient(90deg, var(--brand) 0 50%, var(--red) 50% 100%); color: #fff; }
-.swipe-bg span { display: inline-flex; align-items: center; gap: 8px; transition: opacity .1s linear; }
-.swipe.copy .swipe-bg { background: var(--brand); }
-.swipe.fade .swipe-bg { background: var(--red); }
-.swipe.copy .sb-copy, .swipe.fade .sb-fade { transform: scale(1.15); }
+.swipe-fg { position: relative; z-index: 1; padding: 16px 18px; background: var(--surface); border-radius: var(--r); will-change: transform; }
+.swipe-bg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: var(--bg); border-radius: var(--r); }
+.sb { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 999px; font-size: 14px; font-weight: 800; opacity: 0; transition: transform .15s ease; }
+.sb-copy { background: var(--green-soft); color: var(--green); }
+.sb-fade { background: var(--red-soft); color: var(--red); }
+.swipe.copy .sb-copy { background: var(--green); color: #fff; transform: scale(1.06); }
+.swipe.fade .sb-fade { background: var(--red); color: #fff; transform: scale(1.06); }
+.sheet.qt .block { padding: 14px 20px; }
+.sheet.qt .block + .block { border-top: 1px solid var(--line); }
 
 
 /* ---------- Banked: marquee of closed trades on Home ---------- */
