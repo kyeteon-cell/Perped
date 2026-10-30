@@ -97,7 +97,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
           </div>
         )}
         {battle?.status === "settled" && profile && battle.winnerId === profile.id && myPost && (
-          <button className={`pinwin ${pinnedWin ? "on" : ""}`} onClick={pinWin} disabled={pinBusy}>{pinnedWin ? "📌 Pinned to your profile" : "📌 Pin this win to your profile"}</button>
+          <button className={`pinwin ${pinnedWin ? "on" : ""}`} onClick={pinWin} disabled={pinBusy}>{pinnedWin ? "📌 Pinned" : "📌 Pin this win"}</button>
         )}
         {battle?.status === "settled" && profile && myPost && (
           <button className="btn mt-2" style={{ padding: 11, fontSize: 13 }} onClick={() => setRematch(profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}>⚔ {battle.winnerId === profile.id ? "Run it back" : "Rematch"} · challenge {profile.id === fader.user.id ? tu.user.handle : fader.user.handle}</button>

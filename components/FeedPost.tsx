@@ -183,6 +183,7 @@ function ClosedTradeCard({ item, onChanged }: Props) {
   const heldTxt = held >= 1440 ? `${Math.round(held / 1440)}d` : held >= 60 ? `${Math.round(held / 60)}h` : `${held}m`;
   const reason = (post.meta as { closeReason?: string } | null)?.closeReason;
   const battle = (post.meta as { battle?: BattleStamp } | null)?.battle;
+  const rec = (post.meta as { battleRecord?: { won: number; lost: number; drawn: number } } | null)?.battleRecord;
   return (
     <article className={`post ${win ? "tint-green" : "tint-red"} ${isDemoPost(item) ? "demo" : ""}`}>
       <KindTag icon={I.check}>{reason === "liquidation" ? "Liquidated" : reason === "tp" ? "Take profit hit" : reason === "sl" ? "Stop loss hit" : "Closed trade"}</KindTag>
@@ -202,7 +203,7 @@ function ClosedTradeCard({ item, onChanged }: Props) {
       </div>
       {battle && (
         <Link href={`/battle/${battle.faderPostId}`} className={`bres ${battle.won === true ? "win" : battle.won === false ? "loss" : "draw"}`}>
-          <span>⚡ {battle.won === true ? `Perped ${battle.vs ?? "them"}` : battle.won === false ? `Perped by ${battle.vs ?? "them"}` : `Drew with ${battle.vs ?? "them"}`}</span>
+          <span>⚡ {battle.won === true ? `Perped ${battle.vs ?? "them"}` : battle.won === false ? `Perped by ${battle.vs ?? "them"}` : `Drew with ${battle.vs ?? "them"}`}{rec && rec.won + rec.lost + rec.drawn > 1 ? <span className="when ml-1.5">· {rec.won}W {rec.lost}L{rec.drawn ? ` ${rec.drawn}D` : ""} on this trade</span> : null}</span>
           <span className="mono">{fmtPct(battle.myRoi, 1)} vs {fmtPct(battle.theirRoi, 1)}</span>
         </Link>
       )}

@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { notify, systemPost } from "./feed";
 import { pnlForPosition } from "./format";
@@ -88,10 +88,7 @@ export async function settleBattles(mids: Record<string, string | number>) {
     const xpF = xpFor(b.faderId), xpT = xpFor(b.targetId);
 
     await db.update(schema.battles).set({ status: "settled", winnerId, faderRoi: fr.roi.toFixed(2), targetRoi: tr.roi.toFixed(2), reason, xpFader: xpF, xpTarget: xpT, settledAt: new Date() }).where(eq(schema.battles.id, b.id));
-    // Stamp the result on both trade posts (meta.battle) so cards, pins and share cards can show it directly.
-    const stamp = (mine: { roi: number }, theirs: { roi: number }, vs: string | undefined, won: boolean | null) => ({ battleId: b.id, faderPostId: b.faderPostId, vs, won, myRoi: Number(mine.roi.toFixed(2)), theirRoi: Number(theirs.roi.toFixed(2)), reason });
-    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${JSON.stringify({ battle: stamp(fr, tr, tu?.handle, winnerId ? winnerId === b.faderId : null) })}::jsonb` }).where(eq(schema.posts.id, b.faderPostId));
-    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${JSON.stringify({ battle: stamp(tr, fr, fu?.handle, winnerId ? winnerId === b.targetId : null) })}::jsonb` }).where(eq(schema.posts.id, b.targetPostId));
+    await restampPosts([b.faderPostId, b.targetPostId]);
     await awardXp(b.faderId, xpF, winnerId ? (winnerId === b.faderId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
     await awardXp(b.targetId, xpT, winnerId ? (winnerId === b.targetId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
     if (winnerId && loserId) {
@@ -118,18 +115,41 @@ export async function settleBattles(mids: Record<string, string | number>) {
   return settled;
 }
 
-/** Stamp already-settled battles onto their posts (one-off backfill; cheap and idempotent). */
-export async function backfillBattleStamps(limit = 100) {
-  const rows = await db.select().from(schema.battles).where(and(eq(schema.battles.status, "settled"), sql`not exists (select 1 from posts p where p.id = ${schema.battles.faderPostId} and p.meta ? 'battle')`)).limit(limit);
-  for (const b of rows) {
-    const [[fu], [tu]] = await Promise.all([
-      db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, b.faderId)).limit(1),
-      db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, b.targetId)).limit(1),
-    ]);
-    const fr = Number(b.faderRoi ?? 0), tr = Number(b.targetRoi ?? 0);
-    const stamp = (my: number, their: number, vs: string | undefined, won: boolean | null) => JSON.stringify({ battle: { battleId: b.id, faderPostId: b.faderPostId, vs, won, myRoi: my, theirRoi: their, reason: b.reason } });
-    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${stamp(fr, tr, tu?.handle, b.winnerId ? b.winnerId === b.faderId : null)}::jsonb` }).where(eq(schema.posts.id, b.faderPostId));
-    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${stamp(tr, fr, fu?.handle, b.winnerId ? b.winnerId === b.targetId : null)}::jsonb` }).where(eq(schema.posts.id, b.targetPostId));
+/**
+ * Work out each trade's battle label from ALL the battles it was in (a trade can be faded by several people,
+ * so it can have several battles). Shown result = best outcome: a win beats a draw beats a loss; among wins,
+ * the widest margin. Also stores the trade's battle record. Only writes rows whose label actually changed.
+ */
+export async function restampPosts(postIds: number[]) {
+  const ids = [...new Set(postIds)].filter(Boolean);
+  if (!ids.length) return 0;
+  const battles = await db.select().from(schema.battles).where(and(eq(schema.battles.status, "settled"), sql`(${schema.battles.faderPostId} in ${ids} or ${schema.battles.targetPostId} in ${ids})`));
+  const uids = [...new Set(battles.flatMap((b) => [b.faderId, b.targetId]))];
+  const users = uids.length ? await db.select({ id: schema.users.id, handle: schema.users.handle }).from(schema.users).where(sql`${schema.users.id} in ${uids}`) : [];
+  const H = new Map(users.map((u) => [u.id, u.handle]));
+  const posts = await db.select({ id: schema.posts.id, meta: schema.posts.meta }).from(schema.posts).where(sql`${schema.posts.id} in ${ids}`);
+  let changed = 0;
+  for (const p of posts) {
+    const mine = battles.filter((b) => b.faderPostId === p.id || b.targetPostId === p.id).map((b) => {
+      const isFader = b.faderPostId === p.id;
+      const meId = isFader ? b.faderId : b.targetId, oppId = isFader ? b.targetId : b.faderId;
+      const my = Number(isFader ? b.faderRoi : b.targetRoi), their = Number(isFader ? b.targetRoi : b.faderRoi);
+      return { battleId: b.id, faderPostId: b.faderPostId, vs: H.get(oppId), won: b.winnerId ? b.winnerId === meId : null, myRoi: my, theirRoi: their, reason: b.reason };
+    });
+    if (!mine.length) continue;
+    const score = (x: (typeof mine)[number]) => (x.won === true ? 2 : x.won === null ? 1 : 0) * 1e6 + (x.myRoi - x.theirRoi);
+    const best = [...mine].sort((a, b) => score(b) - score(a))[0];
+    const record = { won: mine.filter((m) => m.won === true).length, lost: mine.filter((m) => m.won === false).length, drawn: mine.filter((m) => m.won === null).length };
+    const cur = (p.meta ?? {}) as { battle?: { battleId?: number; won?: boolean | null }; battleRecord?: typeof record };
+    if (cur.battle?.battleId === best.battleId && cur.battle?.won === best.won && JSON.stringify(cur.battleRecord) === JSON.stringify(record)) continue;
+    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${JSON.stringify({ battle: best, battleRecord: record })}::jsonb` }).where(eq(schema.posts.id, p.id));
+    changed++;
   }
-  return rows.length;
+  return changed;
+}
+
+/** Cron sweep: re-derive labels for trades in the most recent settled battles (fixes any old overwritten stamps). */
+export async function backfillBattleStamps(limit = 300) {
+  const rows = await db.select({ f: schema.battles.faderPostId, t: schema.battles.targetPostId }).from(schema.battles).where(eq(schema.battles.status, "settled")).orderBy(desc(schema.battles.settledAt)).limit(limit);
+  return restampPosts(rows.flatMap((r) => [r.f, r.t]));
 }

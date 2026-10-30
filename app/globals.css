@@ -459,7 +459,8 @@ html { scroll-behavior: smooth; }
 .xpbar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
 .xpbar i { display: block; height: 100%; border-radius: 999px; background: var(--text); transition: width .6s cubic-bezier(.2,.8,.2,1); }
 .xpbar i.lv3 { background: var(--blue); } .xpbar i.lv4 { background: var(--violet); } .xpbar i.lv5 { background: var(--green); } .xpbar i.lv6 { background: var(--red); } .xpbar i.lv7, .xpbar i.lv8 { background: var(--gold); }
-.verdict { padding: 14px; border-radius: 14px; background: var(--gold-soft); border: 1px solid var(--gold); }
+.verdict { padding: 14px; border-radius: 14px; background: var(--gold-soft); border: 1px solid var(--gold); color: var(--text); }
+.verdict .when { color: var(--muted); }
 
 /* ---------- Profile editor ---------- */
 .pe-banner { height: 110px; border-radius: 16px; background: linear-gradient(135deg, var(--violet) 0%, #b893ff 60%, #ffd6e8 100%); background-size: cover; background-position: center; position: relative; cursor: pointer; overflow: hidden; }
@@ -559,4 +560,4 @@ html { scroll-behavior: smooth; }
 .aside.lead { opacity: 1; }
 .aside.lead .av { box-shadow: 0 0 0 2px var(--green); }
 .pinwin { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px; padding: 11px; border-radius: 12px; border: 0; font: inherit; font-weight: 800; font-size: 14px; background: var(--gold); color: #1a1200; cursor: pointer; }
-.pinwin.on { background: transparent; border: 1.5px solid var(--gold); color: var(--text); }
+.pinwin.on { background: var(--gold-soft); border: 1.5px solid var(--gold); color: var(--text); }
