@@ -1,16 +1,16 @@
 import { and, desc, eq, gte, isNull, ne, sql } from "drizzle-orm";
 import { db, schema } from "./db";
-import { getMids } from "./hl-info";
+import { getMids, getPerpAssets } from "./hl-info";
 import { notify, systemPost } from "./feed";
 
 /** Six demo traders with distinct styles. They are flagged isDemo + isBot and never touch Hyperliquid. */
 export const BOTS = [
-  { id: "bot:samui_sam", handle: "samui_sam", bio: "Swing trades on the majors. Takes profit early, posts the losses too.", coins: ["BTC", "ETH", "SOL"], lev: [2, 3], bias: 0.6, winSkew: 0.62, chatty: 0.6, calls: 0.25, holdH: [6, 48] },
-  { id: "bot:degenmaxi", handle: "degenmaxi", bio: "5× or nothing. Here for a good time, not a long time.", coins: ["SOL", "DOGE", "WIF", "HYPE"], lev: [4, 5], bias: 0.5, winSkew: 0.42, chatty: 0.9, calls: 0.1, holdH: [1, 8] },
-  { id: "bot:fundingfarmer", handle: "fundingfarmer", bio: "I trade the funding rate, not the chart. Calls > trades.", coins: ["BTC", "ETH", "HYPE", "XRP"], lev: [1, 2], bias: 0.5, winSkew: 0.58, chatty: 0.4, calls: 0.6, holdH: [12, 72] },
-  { id: "bot:wickhunter", handle: "wickhunter", bio: "Liquidity grabs and failed breakouts. Stops always on.", coins: ["SOL", "ETH", "SUI", "LINK"], lev: [3, 3], bias: 0.45, winSkew: 0.6, chatty: 0.5, calls: 0.3, holdH: [2, 24] },
-  { id: "bot:contrarian_kate", handle: "contrarian_kate", bio: "If everyone's long, I'm short. Fading is a lifestyle.", coins: ["BTC", "SOL", "DOGE"], lev: [2, 3], bias: 0.3, winSkew: 0.52, chatty: 0.7, calls: 0.2, holdH: [4, 36], fader: true },
-  { id: "bot:mooncat", handle: "mooncat", bio: "New here. Learning in public. Be nice.", coins: ["DOGE", "WIF", "SOL"], lev: [2, 5], bias: 0.7, winSkew: 0.4, chatty: 0.8, calls: 0.05, holdH: [1, 12] },
+  { id: "bot:samui_sam", handle: "samui_sam", bio: "Swing trades on the majors. Takes profit early, posts the losses too.", coins: ["BTC", "ETH", "SOL"], lev: [5, 15], style: "mid" as const, bias: 0.6, winSkew: 0.62, chatty: 0.6, calls: 0.25, holdH: [6, 48] },
+  { id: "bot:degenmaxi", handle: "degenmaxi", bio: "Max leverage or nothing. Here for a good time, not a long time.", coins: ["SOL", "DOGE", "WIF", "HYPE"], lev: [20, 50], style: "degen" as const, bias: 0.5, winSkew: 0.42, chatty: 0.9, calls: 0.1, holdH: [1, 8] },
+  { id: "bot:fundingfarmer", handle: "fundingfarmer", bio: "I trade the funding rate, not the chart. Calls > trades.", coins: ["BTC", "ETH", "HYPE", "XRP"], lev: [2, 5], style: "low" as const, bias: 0.5, winSkew: 0.58, chatty: 0.4, calls: 0.6, holdH: [12, 72] },
+  { id: "bot:wickhunter", handle: "wickhunter", bio: "Liquidity grabs and failed breakouts. Stops always on.", coins: ["SOL", "ETH", "SUI", "LINK"], lev: [10, 25], style: "high" as const, bias: 0.45, winSkew: 0.6, chatty: 0.5, calls: 0.3, holdH: [2, 24] },
+  { id: "bot:contrarian_kate", handle: "contrarian_kate", bio: "If everyone's long, I'm short. Fading is a lifestyle.", coins: ["BTC", "SOL", "DOGE"], lev: [5, 20], style: "mid" as const, bias: 0.3, winSkew: 0.52, chatty: 0.7, calls: 0.2, holdH: [4, 36], fader: true },
+  { id: "bot:mooncat", handle: "mooncat", bio: "New here. Learning in public. Be nice.", coins: ["DOGE", "WIF", "SOL"], lev: [10, 50], style: "degen" as const, bias: 0.7, winSkew: 0.4, chatty: 0.8, calls: 0.05, holdH: [1, 12] },
 ];
 
 const NOTES_OPEN = ["Clean break of the range. Stop below the wick.", "Funding flipped, taking the other side.", "Scalp, not a marriage.", "Daily close above resistance. Sizing small.", "Reclaimed the level. Let's see.", "Mean reversion play. Tight stop.", "No thesis, vibes. Don't copy this.", "Second attempt at this level, first one got perped.", "HTF trend is up, buying the dip.", "Weekend liquidity is thin, careful."];
@@ -22,10 +22,34 @@ const REPLIES_OWN = ["Still holding. Thesis unchanged.", "Fair point, but I'm st
 const DUEL_LINES = ["Let's settle this on the chart.", "Put your size where your mouth is.", "You've faded me twice. Duel.", "Opposite sides, same coin, 48 hours."];
 const POLLS = [["Does BTC close the week green?", ["Yes", "No"], "BTC", "gte"], ["ETH above {px} in 3 days?", ["Yes", "No"], "ETH", "gte"], ["SOL back below {px} by Friday?", ["Yes", "No"], "SOL", "lte"]] as const;
 
+/** Max leverage per coin on Hyperliquid, cached per run. */
+let maxLevCache: Record<string, number> | null = null;
+async function maxLevMap() {
+  if (maxLevCache) return maxLevCache;
+  try { maxLevCache = Object.fromEntries((await getPerpAssets()).map((a) => [a.name, a.maxLeverage])); } catch { maxLevCache = {}; }
+  return maxLevCache;
+}
+
+/**
+ * Leverage a bot uses on a coin. Degens run the market's maximum most of the time (that's the point:
+ * big numbers in the feed); "high" sits in the upper half; "mid" and "low" stay sensible with the
+ * occasional max send for the leaderboard.
+ */
+function pickLev(b: { lev: [number, number] | number[]; style?: "degen" | "high" | "mid" | "low" }, coin: string, maxMap: Record<string, number>) {
+  const max = Math.max(2, maxMap[coin] ?? 20);
+  const r = Math.random();
+  switch (b.style) {
+    case "degen": return r < 0.8 ? max : Math.round(rnd(max * 0.5, max));
+    case "high": return r < 0.35 ? max : Math.round(rnd(max * 0.4, max));
+    case "low": return r < 0.05 ? max : Math.round(rnd(Math.min(b.lev[0], max), Math.min(b.lev[1], max)));
+    default: return r < 0.15 ? max : Math.round(rnd(Math.min(b.lev[0], max), Math.min(b.lev[1], max)));
+  }
+}
+
 /** 0..1 how alike two bots are: shared coins and similar leverage. Drives who follows whom. */
 function similarity(a: (typeof BOTS)[number], b: (typeof BOTS)[number]) {
   const shared = a.coins.filter((c) => b.coins.includes(c)).length / Math.max(a.coins.length, b.coins.length);
-  const levGap = Math.abs((a.lev[0] + a.lev[1]) / 2 - (b.lev[0] + b.lev[1]) / 2) / 4;
+  const levGap = Math.min(1, Math.abs((a.lev[0] + a.lev[1]) / 2 - (b.lev[0] + b.lev[1]) / 2) / 40);
   return Math.max(0, shared * 0.7 + (1 - levGap) * 0.3);
 }
 
@@ -46,6 +70,7 @@ export async function ensureBots() {
 /** Backfill ~2 weeks of closed trades, a few open ones, calls, polls, comments and votes. */
 export async function seedHistory() {
   const mids = await getMids();
+  const maxMap = await maxLevMap();
   const now = Date.now();
   const created: number[] = [];
   for (const b of BOTS) {
@@ -53,7 +78,7 @@ export async function seedHistory() {
       const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
       if (!mid) continue;
       const side = Math.random() < b.bias ? "long" : "short";
-      const lev = Math.round(rnd(b.lev[0], b.lev[1]));
+      const lev = pickLev(b, coin, maxMap);
       const openedAt = now - hours(rnd(24, 24 * 14));
       const hold = hours(rnd(b.holdH[0], b.holdH[1]));
       const win = Math.random() < b.winSkew;
@@ -71,7 +96,7 @@ export async function seedHistory() {
       const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
       if (!mid) continue;
       const side = Math.random() < b.bias ? "long" : "short";
-      const lev = Math.round(rnd(b.lev[0], b.lev[1]));
+      const lev = pickLev(b, coin, maxMap);
       const entry = mid * (1 + rnd(-0.02, 0.02));
       const margin = pick([25, 50, 100, 150]);
       const notional = margin * lev;
@@ -119,6 +144,7 @@ export async function seedHistory() {
 /** One tick of bot life. Humans first: react to any human post from the last hour, then do own thing. */
 export async function botTick() {
   const mids = await getMids();
+  const maxMap = await maxLevMap();
   const now = Date.now();
   const log: string[] = [];
   const humanRecent = await db.select({ id: schema.posts.id, userId: schema.posts.userId, kind: schema.posts.kind, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage, status: schema.posts.status })
@@ -139,7 +165,7 @@ export async function botTick() {
         if (mid) {
           const fade = b.fader ? Math.random() < 0.7 : Math.random() < 0.25;
           const side = fade ? (hp.side === "long" ? "short" : "long") : hp.side;
-          const lev = Math.min(hp.leverage ?? 2, b.lev[1]);
+          const lev = b.style === "degen" || b.style === "high" ? pickLev(b, hp.coin!, maxMap) : Math.min(hp.leverage ?? 2, Math.max(2, maxMap[hp.coin!] ?? 20));
           const margin = pick([25, 50, 100]);
           await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin: hp.coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, copiedFromId: fade ? undefined : hp.id, fadedFromId: fade ? hp.id : undefined, body: fade ? pick(["Fading this. Sorry not sorry.", "Other side of this one.", "Respectfully, no."]) : pick(["Copied. Let's ride.", "In with you.", "Copied at market."]) });
           if (hp.userId) await notify(hp.userId, fade ? "faded" : "copied", `${b.handle} ${fade ? "faded" : "copied"} your ${hp.coin} trade`, `$${margin * lev} at ${mid}`, `/post/${hp.id}`);
@@ -175,7 +201,7 @@ export async function botTick() {
       const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
       if (mid && Number(me.demoBalance) > 30) {
         const side = Math.random() < b.bias ? "long" : "short";
-        const lev = Math.round(rnd(b.lev[0], b.lev[1]));
+        const lev = pickLev(b, coin, maxMap);
         const margin = Math.min(pick([25, 50, 100, 150]), Number(me.demoBalance) * 0.3);
         await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, body: Math.random() < b.chatty ? pick(NOTES_OPEN) : null, slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
         await db.update(schema.users).set({ demoBalance: (Number(me.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, b.id));
@@ -219,7 +245,7 @@ export async function botTick() {
       const [dup] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), sql`(${schema.posts.copiedFromId} = ${t.id} or ${schema.posts.fadedFromId} = ${t.id})`)).limit(1);
       if (dup) continue;
       const side = fade ? (t.side === "long" ? "short" : "long") : t.side;
-      const lev = Math.min(t.leverage ?? 2, b.lev[1]);
+      const lev = b.style === "degen" || b.style === "high" ? pickLev(b, t.coin!, maxMap) : Math.min(t.leverage ?? 2, Math.max(2, maxMap[t.coin!] ?? 20));
       const margin = pick([25, 50, 75]);
       await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin: t.coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, copiedFromId: copy ? t.id : undefined, fadedFromId: fade ? t.id : undefined, body: fade ? pick(["Fading this. Sorry not sorry.", "Other side of this one.", "Respectfully, no."]) : pick(["Copied. Let's ride.", "In with you.", "Copied at market."]), slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
       await db.update(schema.users).set({ demoBalance: (Number(me.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, b.id));
