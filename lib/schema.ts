@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, numeric, boolean, index, uniqueIndex, serial, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, numeric, boolean, index, uniqueIndex, serial, jsonb, primaryKey } from "drizzle-orm/pg-core";
 
 /** One row per Privy user. `address` is their Hyperliquid (EVM) wallet. */
 export const users = pgTable(
@@ -16,6 +16,7 @@ export const users = pgTable(
     demoBalance: numeric("demo_balance").default("10000").notNull(),
     isBot: boolean("is_bot").default(false).notNull(),
     xp: integer("xp").default(0).notNull(),
+    bannerUrl: text("banner_url"),
     // Settings (consent-based heat)
     showLiquidations: boolean("show_liquidations").default(true).notNull(),
     showSizes: boolean("show_sizes").default(true).notNull(),
@@ -176,6 +177,19 @@ export const battles = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("battles_status_idx").on(t.status), index("battles_fader_idx").on(t.faderId), index("battles_target_idx").on(t.targetId)],
+);
+
+/** Uploaded profile images (avatar / banner), stored inline and served from /api/media/:userId/:kind. */
+export const userMedia = pgTable(
+  "user_media",
+  {
+    userId: text("user_id").notNull().references(() => users.id),
+    kind: text("kind", { enum: ["avatar", "banner"] }).notNull(),
+    mime: text("mime").notNull(),
+    data: text("data").notNull(), // base64
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.kind] })],
 );
 
 /** Every XP change, so profiles can show how a rank was earned. */

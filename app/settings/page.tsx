@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ProfileEditor } from "@/components/ProfileEditor";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { Icon, I, getTheme, setTheme, type Theme } from "@/components/ui";
@@ -49,7 +50,9 @@ export default function SettingsPage() {
     <div data-tint="violet" className="fade-in pb-6">
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href={`/u/${profile.handle}`} className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Settings</div><span className="w-9" /></header>
 
-      <div className="eyebrow px-5 pb-1.5 pt-3.5">Appearance</div>
+      <ProfileEditor />
+
+      <div className="eyebrow px-5 pb-1.5 pt-4">Appearance</div>
       <div className="srow"><span>Theme</span><Seg value={theme} options={[["light", "Day"], ["dark", "Night"], ["auto", "Auto"]]} onChange={(v) => { setTheme(v); setThemeState(v); }} /></div>
       <div className="srow"><span>Show P&L as</span><Seg value={local.pnlDisplay ?? "pct"} options={[["pct", "%"], ["usd", "$"], ["roi", "ROI"]]} onChange={(v) => save({ pnlDisplay: v })} /></div>
 

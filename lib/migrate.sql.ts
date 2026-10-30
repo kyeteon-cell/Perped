@@ -29,6 +29,15 @@ update users set demo_balance = 10000 where is_demo and demo_balance = 1000;
 alter table users add column if not exists is_bot boolean not null default false;
 alter table users add column if not exists referred_by text;
 alter table users add column if not exists xp integer not null default 0;
+alter table users add column if not exists banner_url text;
+create table if not exists user_media (
+  user_id text not null references users(id),
+  kind text not null,
+  mime text not null,
+  data text not null,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, kind)
+);
 alter table users add column if not exists referred_at timestamptz;
 create index if not exists users_referred_by_idx on users (referred_by);
 create unique index if not exists users_handle_idx on users (handle);

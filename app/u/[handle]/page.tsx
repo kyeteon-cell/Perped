@@ -72,7 +72,9 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         <h1 className="text-xl font-bold">{user.handle}</h1>
         {isMe ? <Link href="/settings" className="iconbtn" aria-label="Settings"><Icon d={I.gear} /></Link> : <span className="w-9" />}
       </header>
-      <div className="h-[92px] -mb-[46px]" style={{ background: "linear-gradient(135deg, var(--violet) 0%, #b893ff 60%, #ffd6e8 100%)" }} />
+      <div className="pf-banner relative" style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : undefined}>
+        {isMe && <Link href="/settings#profile" className="absolute right-4 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: "rgba(0,0,0,.45)", color: "#fff" }}>Edit photo &amp; banner</Link>}
+      </div>
 
       <section className="block">
         <div className="flex items-center gap-4">
