@@ -1,5 +1,6 @@
 "use client";
 
+import useSWR from "swr";
 import { rankFor } from "@/lib/rank";
 
 /** Small shared pieces: icons, coin monograms, avatars, theme helpers. */
@@ -73,9 +74,15 @@ export function ticker(coin: string, withMult = false) {
 }
 
 /** Deterministic gradient avatar from a handle. */
+/**
+ * Avatar. Pass `url` (string or null) when the caller has the profile; leave it undefined and the picture is
+ * looked up by handle (one small request per handle, cached), so system cards and suggestions get photos too.
+ */
 export function Avatar({ handle, size = 40, url }: { handle: string; size?: number; url?: string | null }) {
   const idx = [...handle].reduce((a, c) => a + c.charCodeAt(0), 0) % 6;
-  if (url) return <img src={url} alt="" className="av" style={{ width: size, height: size, objectFit: "cover" }} />;
+  const { data } = useSWR<{ url: string | null }>(url === undefined && handle && handle !== "?" ? `/api/avatar?handle=${encodeURIComponent(handle)}` : null, { dedupingInterval: 300_000, revalidateOnFocus: false });
+  const src = url ?? data?.url ?? null;
+  if (src) return <img src={src} alt="" className="av" style={{ width: size, height: size, objectFit: "cover" }} />;
   return <span className={`av av-${idx}`} style={{ width: size, height: size, fontSize: Math.round(size / 3) }}>{handle.slice(0, 2).toUpperCase()}</span>;
 }
 
