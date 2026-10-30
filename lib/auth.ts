@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db, schema, ensureSchema } from "./db";
 import { guestAddress, verifyGuestToken } from "./guest";
 
-const privy = new PrivyClient(process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "", process.env.PRIVY_APP_SECRET ?? "");
+const privy = new PrivyClient(process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cmvuadbdq07k40fl8a3hq3c3z", process.env.PRIVY_APP_SECRET ?? "");
 
 export type AuthedUser = { privyId: string; address: string | null; hasExternalWallet: boolean; guest?: boolean };
 

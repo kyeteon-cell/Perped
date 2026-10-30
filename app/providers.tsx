@@ -9,7 +9,9 @@ import { HL_NETWORK } from "@/lib/config";
 const chain = HL_NETWORK === "mainnet" ? arbitrum : arbitrumSepolia;
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+  // The Privy App ID is public (it ships to every browser), so a baked-in fallback keeps preview
+  // deployments that lack env vars working. Override with NEXT_PUBLIC_PRIVY_APP_ID.
+  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cmvuadbdq07k40fl8a3hq3c3z";
   if (!appId) {
     return (
       <div className="p-6 text-sm">
