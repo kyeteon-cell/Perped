@@ -4,7 +4,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { queryFeed, notify } from "@/lib/feed";
-import { DEMO_ENABLED, MAX_POSITION_USD } from "@/lib/config";
+import { DEMO_ENABLED } from "@/lib/config";
 import { getMids, getPerpAssets } from "@/lib/hl-info";
 
 /**
@@ -95,8 +95,8 @@ const Trade = z.object({
   coin: z.string().min(1).max(20),
   side: z.enum(["long", "short"]),
   size: z.number().positive(),
-  notionalUsd: z.number().positive().max(MAX_POSITION_USD * 100),
-  leverage: z.number().int().min(1).max(100), // the market's real cap is checked in POST
+  notionalUsd: z.number().positive(),
+  leverage: z.number().int().min(1).max(200), // Hyperliquid's own per-market max is checked in POST
   entryPx: z.number().positive(),
   paper: z.boolean().optional(),
   oid: z.number().int().optional(),

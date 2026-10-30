@@ -54,7 +54,6 @@ export const REFERRAL_TOP_THRESHOLD = clampInt(Number(process.env.NEXT_PUBLIC_RE
 
 /** Fallback only, used before market data loads. The real cap is each market's own max leverage on Hyperliquid. */
 export const MAX_LEVERAGE = clampInt(Number(process.env.NEXT_PUBLIC_MAX_LEVERAGE ?? 50), 1, 100);
-export const MAX_POSITION_USD = Math.max(10, Number(process.env.NEXT_PUBLIC_MAX_POSITION_USD ?? 500));
 
 export const BUILDER_CONFIGURED =
   BUILDER_ADDRESS.toLowerCase() !== "0x0000000000000000000000000000000000000000";

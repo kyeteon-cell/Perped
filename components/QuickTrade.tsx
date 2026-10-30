@@ -17,7 +17,7 @@ export function QuickTrade({ item, mode, onClose }: { item: FeedRow; mode: "copy
   const { data: me } = useSWR<{ stats: { closedTrades: number } | null }>(profile ? `/api/profile/${profile.handle}` : null);
   const s = post.side as "long" | "short";
   const side = mode === "fade" ? (s === "long" ? "short" : "long") : s;
-  const seed = { coin: post.coin!, side, leverage: mode === "fade" ? 2 : post.leverage ?? 2, copiedFromId: mode === "copy" ? post.id : undefined, fadedFromId: mode === "fade" ? post.id : undefined, handle: author?.handle, closedTrades: me?.stats?.closedTrades ?? 0 };
+  const seed = { coin: post.coin!, side, leverage: post.leverage ?? 2, copiedFromId: mode === "copy" ? post.id : undefined, fadedFromId: mode === "fade" ? post.id : undefined, handle: author?.handle, closedTrades: me?.stats?.closedTrades ?? 0 };
   return (
     <Sheet className="qt" label={mode === "copy" ? "Copy trade" : "Fade trade"} onClose={onClose}>
         <div className="flex items-center gap-3 px-5 pb-1" data-sheet-handle>
@@ -29,7 +29,7 @@ export function QuickTrade({ item, mode, onClose }: { item: FeedRow; mode: "copy
           <CoinMark coin={post.coin!} size="sm" />
         </div>
         <TradeTicket seed={seed} compact quick onDone={onClose} />
-        <p className="faint px-5 pb-2 text-center text-[11px]">{mode === "fade" ? "Fades start at 2× with an automatic 5% stop until you have 10 closed trades." : "Want limit orders, TP/SL or a note? "}{mode === "copy" && <a href={`/trade?copy=${post.id}`} className="underline">Open the full ticket</a>}</p>
+        <p className="faint px-5 pb-2 text-center text-[11px]">{mode === "fade" ? "Fades get an automatic 5% stop; change it later from Manage. " : "Want limit orders, TP/SL or a note? "}<a href={`/trade?${mode}=${post.id}`} className="underline">Open the full ticket</a></p>
     </Sheet>
   );
 }

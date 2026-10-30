@@ -7,7 +7,7 @@ import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { Icon, I, getTheme, setTheme, type Theme } from "@/components/ui";
 import useSWR from "swr";
-import { BUILDER_FEE_REFERRED_TENTHS_BPS, BUILDER_FEE_STANDARD_TENTHS_BPS, BUILDER_FEE_TOP_TENTHS_BPS, BUILDER_MAX_FEE_RATE, DEMO_ENABLED, MAX_POSITION_USD, TOP_TIER_RANK } from "@/lib/config";
+import { BUILDER_FEE_REFERRED_TENTHS_BPS, BUILDER_FEE_STANDARD_TENTHS_BPS, BUILDER_FEE_TOP_TENTHS_BPS, BUILDER_MAX_FEE_RATE, DEMO_ENABLED, TOP_TIER_RANK } from "@/lib/config";
 import { fmtUsd } from "@/lib/format";
 import { tenthsBpsToLabel, type FeeInfo } from "@/lib/fees";
 import type { ReferralSummary } from "@/lib/referrals";
@@ -74,7 +74,6 @@ export default function SettingsPage() {
       {!hasExternalWallet && !isGuest && !local.isDemo && <div className="srow"><span className="muted text-sm">No wallet connected.</span><button className="chip" onClick={linkWallet}>Connect wallet</button></div>}
       {(saveErr || linkError) && <p className="red px-5 pb-1 text-sm">{saveErr ?? linkError}</p>}
       <div className="srow"><span>Default leverage</span><Seg value={String(local.defaultLeverage ?? 3)} options={levOptions} onChange={(v) => save({ defaultLeverage: Number(v) })} /></div>
-      <div className="srow"><span>Max per trade</span><span className="mono">${MAX_POSITION_USD}</span></div>
       <div className="srow"><span>Max leverage<span className="when ml-1.5">per market, same as Hyperliquid</span></span><span className="mono">up to {topCap}×</span></div>
       <div className="srow"><span>Your Perped fee<span className="when ml-1.5">{fee.reason}</span></span><span className="mono font-bold">{fee.label}</span></div>
       <Link href="/how-it-works" className="srow" style={{ color: "var(--brand)" }}><span>How Perped works · where your money is · fees · risks</span><span>→</span></Link>

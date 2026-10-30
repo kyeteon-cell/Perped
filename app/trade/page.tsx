@@ -23,7 +23,7 @@ function TradeInner() {
   let seed: Seed = { coin: (sp.get("coin") ?? "SOL").toUpperCase(), side: (sp.get("side") as "long" | "short") ?? "long", leverage: sp.get("lev") ? Number(sp.get("lev")) : undefined, backsCallId: sp.get("backs") ? Number(sp.get("backs")) : undefined, closedTrades: me?.stats?.closedTrades ?? 0 };
   if (row) {
     const s = row.post.side!;
-    seed = { ...seed, coin: row.post.coin!, side: fade ? (s === "long" ? "short" : "long") : s, leverage: fade ? 2 : row.post.leverage ?? 2, copiedFromId: copy ? row.post.id : undefined, fadedFromId: fade ? row.post.id : undefined, handle: row.author?.handle };
+    seed = { ...seed, coin: row.post.coin!, side: fade ? (s === "long" ? "short" : "long") : s, leverage: row.post.leverage ?? 2, copiedFromId: copy ? row.post.id : undefined, fadedFromId: fade ? row.post.id : undefined, handle: row.author?.handle };
   }
   if (duel && duel.role !== "viewer") {
     const d = duel.duel;

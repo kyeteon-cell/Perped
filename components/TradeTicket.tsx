@@ -10,10 +10,10 @@ import { useMids } from "@/lib/hooks/useMids";
 import { makeExchangeClient, placeMarketOrder, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
 import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice } from "@/lib/format";
-import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, MAX_POSITION_USD } from "@/lib/config";
+import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE } from "@/lib/config";
 import { CoinMark, ticker } from "./ui";
 
-const QUICK = [25, 50, 100, 250];
+const QUICK = [50, 100, 250, 500, 1000, 2500];
 
 export type Seed = {
   coin: string;
@@ -44,9 +44,8 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
   const [coin, setCoin] = useState(seed.coin);
   const [side, setSide] = useState<"long" | "short">(seed.side ?? "long");
   const [usd, setUsd] = useState(seed.usd ?? 50);
-  // Leverage cap = whatever Hyperliquid allows on this market (BTC 40×, ETH 25×, …). Fades for new accounts stay at 2×.
-  const fadeCap = isFade && (seed.closedTrades ?? 0) < 10 ? 2 : 100;
-  const [lev, setLev] = useState(Math.min(seed.leverage ?? profile?.defaultLeverage ?? 2, fadeCap));
+  // Leverage cap = whatever Hyperliquid allows on this market (BTC 40×, ETH 25×, …). No caps of our own.
+  const [lev, setLev] = useState(seed.leverage ?? profile?.defaultLeverage ?? 2);
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
   const [limitPx, setLimitPx] = useState("");
   const [tpslOn, setTpslOn] = useState(isFade);
@@ -60,7 +59,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
 
   const market: Market | undefined = useMemo(() => markets.find((m) => m.name === coin), [markets, coin]);
   const mid = mids[coin] ?? market?.mid ?? 0;
-  const maxLev = Math.min(fadeCap, market?.maxLeverage ?? 50);
+  const maxLev = market?.maxLeverage ?? 100;
   useEffect(() => { if (lev > maxLev) setLev(maxLev); }, [maxLev, lev]);
   useEffect(() => {
     if (isDemo || !address || !BUILDER_CONFIGURED) return setApproved(true);
@@ -111,7 +110,6 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     if (!authenticated) return login();
     if (!profile) return router.push("/onboarding");
     if (!market || !mid) return setErr("Market not ready.");
-    if (usd > MAX_POSITION_USD) return setErr(`Max ${fmtUsd(MAX_POSITION_USD)} margin per trade during beta.`);
     if (orderType === "limit" && !(Number(limitPx) > 0)) return setErr("Enter a limit price.");
     if (!tpslValid) return setErr(side === "long" ? "Take profit must be above entry and stop loss below." : "Take profit must be below entry and stop loss above.");
     setErr(null);
@@ -178,10 +176,10 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       </div>
 
       <div className="block">
-        <div className="flex items-center justify-between text-sm"><span className="muted">Margin ({isDemo ? "demo USDC" : "USDC"})</span><span className="when">{isDemo ? `Balance ${fmtUsd(Number(profile?.demoBalance ?? 0))}` : `Max ${fmtUsd(MAX_POSITION_USD)} in beta`}</span></div>
-        <div className="mono my-2 text-[40px] font-semibold tracking-tight"><span className="muted text-2xl align-top">$</span><input type="number" inputMode="decimal" className="mono inline-block w-40 border-0 bg-transparent p-0 text-[40px] font-semibold tracking-tight outline-none" value={usd} min={5} max={MAX_POSITION_USD} onChange={(e) => setUsd(Math.max(0, Number(e.target.value)))} /></div>
+        <div className="flex items-center justify-between text-sm"><span className="muted">Margin ({isDemo ? "demo USDC" : "USDC"})</span><span className="when">{isDemo ? `Balance ${fmtUsd(Number(profile?.demoBalance ?? 0))}` : "Hyperliquid minimum $10 notional"}</span></div>
+        <div className="mono my-2 text-[40px] font-semibold tracking-tight"><span className="muted text-2xl align-top">$</span><input type="number" inputMode="decimal" className="mono inline-block w-40 border-0 bg-transparent p-0 text-[40px] font-semibold tracking-tight outline-none" value={usd} min={1} onChange={(e) => setUsd(Math.max(0, Number(e.target.value)))} /></div>
         <div className="seg">{QUICK.map((q) => <button key={q} className={`chip ${usd === q ? "on" : ""}`} onClick={() => setUsd(q)}>{q}</button>)}</div>
-        <div className="mt-4 flex items-center justify-between text-sm"><span className="muted">Leverage</span><span className="mono font-bold">{lev}×{isFade && fadeCap === 2 ? <span className="when ml-2">capped at 2× for new accounts</span> : null}</span></div>
+        <div className="mt-4 flex items-center justify-between text-sm"><span className="muted">Leverage</span><span className="mono font-bold">{lev}×<span className="when ml-2">Hyperliquid max {maxLev}×</span></span></div>
         <input type="range" min={1} max={maxLev} value={lev} onChange={(e) => setLev(Number(e.target.value))} className="range my-1.5" />
         <div className="grid grid-cols-3 gap-2.5">
           <div className="stat"><small>Position</small><div className="v mono">{fmtUsd(notional, { compact: notional >= 10000 })}</div></div>
