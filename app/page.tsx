@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { FeedPost, RankStrip } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
 import { Pulse } from "@/components/Pulse";
+import { Banked } from "@/components/Banked";
 import { DepositSheet } from "@/components/DepositSheet";
 import { Avatar, Icon, I } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
@@ -55,6 +56,7 @@ export default function HomePage() {
 
       {tab === "foryou" && <Hero onDeposit={() => setDeposit(true)} />}
       {tab !== "following" && <Pulse mids={mids} />}
+      {tab === "foryou" && <Banked />}
 
       {isLoading && <p className="muted px-5 py-6 text-sm">Loading…</p>}
       {!isLoading && posts.length === 0 && (

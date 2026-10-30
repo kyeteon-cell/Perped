@@ -278,3 +278,13 @@ button:active { transform: scale(.97); }
 .swipe.copy .swipe-bg { background: var(--brand); }
 .swipe.fade .swipe-bg { background: var(--red); }
 .swipe.copy .sb-copy, .swipe.fade .sb-fade { transform: scale(1.15); }
+
+
+/* ---------- Banked: marquee of closed trades on Home ---------- */
+.banked { position: relative; display: flex; align-items: center; height: 40px; margin: 10px 0 2px; overflow: hidden; background: linear-gradient(90deg, var(--surface), var(--bg) 60%, var(--surface)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.bk-label { position: relative; z-index: 2; flex: none; height: 100%; display: flex; align-items: center; padding: 0 12px 0 20px; font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); background: var(--bg); box-shadow: 12px 0 14px -6px var(--bg); }
+.bk-track { display: flex; gap: 22px; white-space: nowrap; padding-left: 12px; animation: tk 60s linear infinite; }
+.bk-track:active { animation-play-state: paused; }
+.bk { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; padding: 4px 10px 4px 4px; border-radius: 999px; text-decoration: none; color: inherit; }
+.bk.win { background: var(--green-soft); } .bk.loss { background: var(--red-soft); }
+@media (prefers-reduced-motion: reduce) { .bk-track { animation: none; overflow-x: auto; } }

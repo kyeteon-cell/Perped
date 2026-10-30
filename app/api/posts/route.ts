@@ -28,6 +28,8 @@ export async function GET(req: Request) {
     cursor ? sql`${schema.posts.id} < ${cursor}` : undefined,
   ];
   if (q.tab === "live") conds.push(and(eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open")));
+  // For you: closed trades live in the "Banked" banner, not the feed.
+  if (q.tab === "foryou" || (!q.tab && !q.handle && !q.coin && !q.status)) conds.push(sql`not (${schema.posts.kind} = 'trade' and ${schema.posts.status} = 'closed')`);
   if (q.tab === "following") {
     if (!auth) return Response.json({ posts: [], nextCursor: null });
     const f = await db.select({ id: schema.follows.followeeId }).from(schema.follows).where(eq(schema.follows.followerId, auth.privyId));
