@@ -109,6 +109,10 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
   const submit = async () => {
     if (!authenticated) return login();
     if (!profile) return router.push("/onboarding");
+    if (seed.fadedFromId) {
+      const c = await authedFetch(`/api/posts/${seed.fadedFromId}/fade-check`).then((r) => r.json()).catch(() => ({ ok: true }));
+      if (!c.ok) return setErr(c.reason ?? "You can't fade this trade.");
+    }
     if (!market || !mid) return setErr("Market not ready.");
     if (orderType === "limit" && !(Number(limitPx) > 0)) return setErr("Enter a limit price.");
     if (!tpslValid) return setErr(side === "long" ? "Take profit must be above entry and stop loss below." : "Take profit must be below entry and stop loss above.");

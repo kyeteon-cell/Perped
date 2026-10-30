@@ -12,6 +12,7 @@ import { RankCard } from "@/components/RankCard";
 import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
 import { FollowButton } from "@/components/FollowButton";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { PinCard } from "@/components/PinCard";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
@@ -21,7 +22,7 @@ import type { User, Stats } from "@/lib/schema";
 import type { AssetPosition } from "@/lib/hl-info";
 import type { FeedRow } from "@/lib/feed";
 
-type ProfileRes = { user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
+type ProfileRes = { battleStreak?: number; bestStreak?: number; user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
 type Tab = "activity" | "trades" | "posts" | "people";
 type People = "followers" | "following";
 
@@ -103,24 +104,20 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
       {(pins.length > 0 || isMe) && (
         <section className="block pb-3">
-          <div className="flex items-center justify-between"><span className="eyebrow">{showingTop ? "Top trades" : "Pinned"}</span>{isMe && <span className="when">{showingTop ? "pin your own picks from Trades → Closed" : "your picks"}</span>}</div>
+          <div className="flex items-center justify-between">
+            <span className="eyebrow">{showingTop ? "Top trades" : "Pinned"}</span>
+            <span className="flex items-center gap-2">
+              {(data.battleStreak ?? 0) >= 2 && <span className="pin-streak">🔥 {data.battleStreak}-win streak</span>}
+              {(s?.battlesWon ?? 0) + (s?.battlesLost ?? 0) > 0 && <span className="mono when"><span className="green">{s?.battlesWon ?? 0}W</span>–<span className="red">{s?.battlesLost ?? 0}L</span></span>}
+            </span>
+          </div>
+          {isMe && showingTop && <div className="when mt-0.5 text-[11px]">Showing your best results. Pin your own picks from any trade or battle.</div>}
           <div className="hstrip mt-3" style={{ margin: "12px -20px 0", padding: "0 20px 6px" }}>
-            {pins.map((p) => {
-              const roi = roiOf(p); const live = p.post.status === "open";
-              return (
-                <Link key={p.post.id} href={`/post/${p.post.id}`} className={`pincard ${(p.post.meta as { battle?: { won: boolean | null } } | null)?.battle?.won === true ? "won" : ""}`}>
-                  {(p.post.meta as { battle?: { won: boolean | null; vs?: string } } | null)?.battle && <div className={`pin-battle ${(p.post.meta as { battle: { won: boolean | null } }).battle.won === true ? "green" : (p.post.meta as { battle: { won: boolean | null } }).battle.won === false ? "red" : "muted"}`}>⚡ {(p.post.meta as { battle: { won: boolean | null; vs?: string } }).battle.won === true ? "Perped" : (p.post.meta as { battle: { won: boolean | null } }).battle.won === false ? "Perped by" : "Drew with"} {(p.post.meta as { battle: { vs?: string } }).battle.vs}</div>}
-                  <div className="flex items-center gap-2"><CoinMark coin={p.post.coin!} size="sm" /><b>{ticker(p.post.coin!)}</b><span className={`ml-auto text-[11px] font-bold ${p.post.side === "long" ? "green" : "red"}`}>{p.post.side === "long" ? "Long" : "Short"} {p.post.leverage}×</span></div>
-                  <div className={`mono mt-2 text-[26px] font-bold leading-none ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, Math.abs(roi) < 10 ? 1 : 0)}</div>
-                  <div className="when mt-1.5 text-[11px]">{live ? <span className="green font-bold">● LIVE</span> : new Date(p.post.closedAt ?? p.post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {fmtUsd(Number(p.post.notionalUsd) / (p.post.leverage ?? 1), { compact: true })} margin</div>
-                </Link>
-              );
-            })}
-            {isMe && <button className="hcard grid place-items-center text-center" style={{ background: "transparent", border: "1px dashed var(--line)" }} onClick={() => { setTab("trades"); setTradeTab("closed"); }}><div><Icon d={I.plus} /><div className="when mt-1.5">Pin a trade</div></div></button>}
+            {pins.map((p) => <PinCard key={p.post.id} item={p} roi={roiOf(p)} />)}
+            {isMe && <button className="hcard grid place-items-center text-center" style={{ background: "transparent", border: "1px dashed var(--line)", minWidth: 120 }} onClick={() => { setTab("trades"); setTradeTab("closed"); }}><div><Icon d={I.plus} /><div className="when mt-1 text-[12px]">Pin a trade</div></div></button>}
           </div>
         </section>
       )}
-
 
       <RankCard xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} recent={data.xpRecent ?? []} />
 

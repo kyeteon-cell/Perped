@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ensureBattle } from "@/lib/battles";
+import { fadeBlockReason } from "@/lib/fades";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
@@ -139,6 +140,10 @@ export async function POST(req: Request) {
   if (b.kind === "poll" && !profile.verified) return Response.json({ error: "polls are for verified traders (10+ closed trades and a linked X account)" }, { status: 403 });
 
   if (b.kind === "trade") {
+    if (b.fadedFromId) {
+      const why = await fadeBlockReason(profile.id, b.fadedFromId);
+      if (why) return Response.json({ error: why }, { status: 409 });
+    }
     // Leverage cap = Hyperliquid's own max for this market.
     const assets = await getPerpAssets().catch(() => []);
     const cap = assets.find((a) => a.name === b.coin.toUpperCase())?.maxLeverage ?? 50;

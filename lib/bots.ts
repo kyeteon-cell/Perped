@@ -1,5 +1,6 @@
 import { and, desc, eq, gte, isNull, ne, sql } from "drizzle-orm";
 import { db, schema } from "./db";
+import { fadeBlockReason } from "./fades";
 import { getMids, getPerpAssets } from "./hl-info";
 import { notify, systemPost } from "./feed";
 
@@ -162,8 +163,10 @@ export async function botTick() {
       if (Math.random() < b.chatty * 0.3) await db.insert(schema.comments).values({ postId: hp.id, userId: b.id, body: pick(COMMENTS) });
       if (hp.kind === "trade" && hp.status === "open" && hp.coin && hp.side && Math.random() < 0.25) {
         const mid = Number(mids[hp.coin] ?? 0);
-        if (mid) {
-          const fade = b.fader ? Math.random() < 0.7 : Math.random() < 0.25;
+        const wantFade = b.fader ? Math.random() < 0.7 : Math.random() < 0.25;
+        const fade = wantFade && !(await fadeBlockReason(b.id, hp.id));
+        const [dupHuman] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), sql`(${schema.posts.copiedFromId} = ${hp.id} or ${schema.posts.fadedFromId} = ${hp.id})`)).limit(1);
+        if (mid && !dupHuman && (fade || !wantFade)) {
           const side = fade ? (hp.side === "long" ? "short" : "long") : hp.side;
           const lev = b.style === "degen" || b.style === "high" ? pickLev(b, hp.coin!, maxMap) : Math.min(hp.leverage ?? 2, Math.max(2, maxMap[hp.coin!] ?? 20));
           const margin = pick([100, 250, 500]);
@@ -246,6 +249,7 @@ export async function botTick() {
       if (!fade && !copy) continue;
       const [dup] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), sql`(${schema.posts.copiedFromId} = ${t.id} or ${schema.posts.fadedFromId} = ${t.id})`)).limit(1);
       if (dup) continue;
+      if (fade && (await fadeBlockReason(b.id, t.id))) continue;
       const side = fade ? (t.side === "long" ? "short" : "long") : t.side;
       const lev = b.style === "degen" || b.style === "high" ? pickLev(b, t.coin!, maxMap) : Math.min(t.leverage ?? 2, Math.max(2, maxMap[t.coin!] ?? 20));
       const margin = pick([25, 50, 75]);

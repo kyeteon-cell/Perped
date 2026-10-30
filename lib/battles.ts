@@ -140,9 +140,10 @@ export async function restampPosts(postIds: number[]) {
     const score = (x: (typeof mine)[number]) => (x.won === true ? 2 : x.won === null ? 1 : 0) * 1e6 + (x.myRoi - x.theirRoi);
     const best = [...mine].sort((a, b) => score(b) - score(a))[0];
     const record = { won: mine.filter((m) => m.won === true).length, lost: mine.filter((m) => m.won === false).length, drawn: mine.filter((m) => m.won === null).length };
-    const cur = (p.meta ?? {}) as { battle?: { battleId?: number; won?: boolean | null }; battleRecord?: typeof record };
-    if (cur.battle?.battleId === best.battleId && cur.battle?.won === best.won && JSON.stringify(cur.battleRecord) === JSON.stringify(record)) continue;
-    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${JSON.stringify({ battle: best, battleRecord: record })}::jsonb` }).where(eq(schema.posts.id, p.id));
+    const all = [...mine].sort((a, b) => score(b) - score(a));
+    const cur = (p.meta ?? {}) as { battle?: { battleId?: number; won?: boolean | null }; battleRecord?: typeof record; battles?: unknown[] };
+    if (cur.battle?.battleId === best.battleId && cur.battle?.won === best.won && JSON.stringify(cur.battleRecord) === JSON.stringify(record) && (cur.battles?.length ?? 0) === all.length) continue;
+    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${JSON.stringify({ battle: best, battleRecord: record, battles: all })}::jsonb` }).where(eq(schema.posts.id, p.id));
     changed++;
   }
   return changed;

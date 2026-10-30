@@ -15,6 +15,7 @@ import { QuickTrade } from "./QuickTrade";
 import { FollowButton } from "./FollowButton";
 import { RichText } from "./RichText";
 import { InlineComments } from "./InlineComments";
+import { BattleSummary, battlesOf } from "./BattleSummary";
 import { HL_NETWORK } from "@/lib/config";
 
 /** Hyperliquid's own explorer page for an account: every fill, visible to anyone. */
@@ -118,7 +119,7 @@ function Acts({ item, onChanged, children, mid, challenge, manage }: { item: Fee
  * coloured backdrop that labels the action; past the threshold it commits (with a haptic tick where
  * supported). Vertical movement hands control back to the scroller.
  */
-function useSwipeToAct(onCopy: () => void, onFade: () => void, enabled: boolean) {
+function useSwipeToAct(onCopy: () => void, onFade: () => void, enabled: boolean, allowFade = true, allowCopy = true) {
   // Movement is written straight to the DOM (no React state per touch), so the card tracks the finger without lag.
   const [armed, setArmed] = useState<"copy" | "fade" | null>(null);
   const armedRef = useRef<"copy" | "fade" | null>(null);
@@ -142,9 +143,10 @@ function useSwipeToAct(onCopy: () => void, onFade: () => void, enabled: boolean)
     if (s0.locked === "v") return;
     // Rubber-band past the threshold so the card never flies off.
     const abs = Math.abs(mx), eased = abs <= THRESH ? abs : THRESH + (abs - THRESH) * 0.35;
-    const dx = Math.sign(mx) * Math.min(MAX, eased);
+    let dx = Math.sign(mx) * Math.min(MAX, eased);
+    if ((dx < 0 && !allowFade) || (dx > 0 && !allowCopy)) dx = Math.sign(dx) * Math.min(Math.abs(dx), 14); // a little give, no action
     paint(dx, false);
-    const next = dx > THRESH - 4 ? "copy" : dx < -(THRESH - 4) ? "fade" : null;
+    const next = dx > THRESH - 4 && allowCopy ? "copy" : dx < -(THRESH - 4) && allowFade ? "fade" : null;
     if (next !== armedRef.current) { armedRef.current = next; setArmed(next); if (next && typeof navigator !== "undefined" && "vibrate" in navigator) try { navigator.vibrate(10); } catch {} }
   };
   const onTouchEnd = () => {
@@ -182,8 +184,6 @@ function ClosedTradeCard({ item, onChanged }: Props) {
   const held = post.closedAt ? Math.max(1, Math.round((new Date(post.closedAt).getTime() - new Date(post.createdAt).getTime()) / 60_000)) : 0;
   const heldTxt = held >= 1440 ? `${Math.round(held / 1440)}d` : held >= 60 ? `${Math.round(held / 60)}h` : `${held}m`;
   const reason = (post.meta as { closeReason?: string } | null)?.closeReason;
-  const battle = (post.meta as { battle?: BattleStamp } | null)?.battle;
-  const rec = (post.meta as { battleRecord?: { won: number; lost: number; drawn: number } } | null)?.battleRecord;
   return (
     <article className={`post ${win ? "tint-green" : "tint-red"} ${isDemoPost(item) ? "demo" : ""}`}>
       <KindTag icon={I.check}>{reason === "liquidation" ? "Liquidated" : reason === "tp" ? "Take profit hit" : reason === "sl" ? "Stop loss hit" : "Closed trade"}</KindTag>
@@ -201,12 +201,7 @@ function ClosedTradeCard({ item, onChanged }: Props) {
           <div className={`mono text-[13px] ${win ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })} banked</div>
         </div>
       </div>
-      {battle && (
-        <Link href={`/battle/${battle.faderPostId}`} className={`bres ${battle.won === true ? "win" : battle.won === false ? "loss" : "draw"}`}>
-          <span>⚡ {battle.won === true ? `Perped ${battle.vs ?? "them"}` : battle.won === false ? `Perped by ${battle.vs ?? "them"}` : `Drew with ${battle.vs ?? "them"}`}{rec && rec.won + rec.lost + rec.drawn > 1 ? <span className="when ml-1.5">· {rec.won}W {rec.lost}L{rec.drawn ? ` ${rec.drawn}D` : ""} on this trade</span> : null}</span>
-          <span className="mono">{fmtPct(battle.myRoi, 1)} vs {fmtPct(battle.theirRoi, 1)}</span>
-        </Link>
-      )}
+      {battlesOf(post.meta).length > 0 && <div className="mt-3"><BattleSummary battles={battlesOf(post.meta)} /></div>}
       <div className="mt-2 flex items-center justify-between">
         {isDemoPost(item) ? <Link href="/how-it-works#demo" className="verify">Demo · simulated at live Hyperliquid prices</Link> : <a href={explorerUrl(author?.address)} target="_blank" rel="noreferrer" className="verify real"><Icon d={I.shield} size={12} />Verified on Hyperliquid ↗</a>}
         <span className="when">{item.copyCount} copied · {item.fadeCount} faded</span>
@@ -245,7 +240,9 @@ function TradePost({ item, mid, onChanged, full }: Props) {
   const camps = item.copyCount + item.fadeCount;
   const canAct = isOpen && !!author && author.id !== profile?.id;
   const [quick, setQuick] = useState<"copy" | "fade" | null>(null);
-  const swipe = useSwipeToAct(() => setQuick("copy"), () => setQuick("fade"), canAct);
+  const canFade = author?.allowFade !== false && !item.noFade;
+  const canCopy = author?.allowCopy !== false;
+  const swipe = useSwipeToAct(() => setQuick("copy"), () => setQuick("fade"), canAct, canFade, canCopy);
 
   if (!isOpen && full) return <ClosedTradeCard item={item} mid={mid} onChanged={onChanged} />;
   if (!isOpen) {
@@ -308,8 +305,8 @@ function TradePost({ item, mid, onChanged, full }: Props) {
       <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id} manage={isOpen && !!author && author.id === profile?.id}>
         {canAct && (
           <>
-            {author?.allowFade !== false && <button className="fade ml-auto" onClick={() => setQuick("fade")}>Fade</button>}
-            {author?.allowCopy !== false && <button className={author?.allowFade === false ? "copy ml-auto" : "copy"} onClick={() => setQuick("copy")}>Copy</button>}
+            {canFade ? <button className="fade ml-auto" onClick={() => setQuick("fade")}>Fade</button> : item.noFade ? <span className="when ml-auto text-[11px]">already in a battle</span> : null}
+            {canCopy && <button className={canFade || item.noFade ? "copy" : "copy ml-auto"} onClick={() => setQuick("copy")}>Copy</button>}
           </>
         )}
       </Acts>

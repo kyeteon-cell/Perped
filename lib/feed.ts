@@ -24,6 +24,8 @@ export type FeedRow = {
   pollCounts: number[];
   myVote?: number | null;
   myPollVote?: number | null;
+  /** Viewer already faded this trade, or this trade is a fade of the viewer's own trade. */
+  noFade?: boolean;
 };
 
 /** Feed is strictly chronological (newest first). Pinned-first only where a profile asks for it. */
@@ -42,7 +44,11 @@ export async function queryFeed(opts: { where?: SQL | undefined; limit: number; 
       db.select().from(schema.votes).where(and(eq(schema.votes.userId, opts.viewerId), inArray(schema.votes.postId, ids))),
       db.select().from(schema.pollVotes).where(and(eq(schema.pollVotes.userId, opts.viewerId), inArray(schema.pollVotes.postId, ids))),
     ]);
+    const myFades = await db.select({ src: schema.posts.fadedFromId }).from(schema.posts).where(and(eq(schema.posts.userId, opts.viewerId), inArray(schema.posts.fadedFromId, ids)));
+    const srcIds = rows.map((r) => r.post.fadedFromId).filter((x): x is number => !!x);
+    const mySrc = srcIds.length ? await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, opts.viewerId), inArray(schema.posts.id, srcIds))) : [];
     for (const r of rows) {
+      r.noFade = myFades.some((f) => f.src === r.post.id) || (!!r.post.fadedFromId && mySrc.some((m) => m.id === r.post.fadedFromId));
       r.myVote = mine.find((v) => v.postId === r.post.id)?.value ?? null;
       r.myPollVote = polls.find((v) => v.postId === r.post.id)?.option ?? null;
     }

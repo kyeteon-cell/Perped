@@ -325,7 +325,7 @@ button:active { transform: scale(.97); }
 
 /* ---------- Profile ---------- */
 .profile .eyebrow { color: var(--muted); }
-.pincard { flex: none; width: 156px; background: var(--surface); border-radius: var(--r); padding: 12px 14px; scroll-snap-align: start; text-decoration: none; color: inherit; }
+.pincard { flex: none; width: 214px; cursor: pointer; background: var(--surface); border-radius: var(--r); padding: 12px 14px; scroll-snap-align: start; text-decoration: none; color: inherit; }
 .btn.ghostline { background: transparent; border: 1.5px solid var(--line); color: var(--text); }
 
 .split { height: 6px; border-radius: 999px; background: var(--red); overflow: hidden; }
@@ -561,3 +561,25 @@ html { scroll-behavior: smooth; }
 .aside.lead .av { box-shadow: 0 0 0 2px var(--green); }
 .pinwin { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px; padding: 11px; border-radius: 12px; border: 0; font: inherit; font-weight: 800; font-size: 14px; background: var(--gold); color: #1a1200; cursor: pointer; }
 .pinwin.on { background: var(--gold-soft); border: 1.5px solid var(--gold); color: var(--text); }
+
+/* ---------- Trophy (pin) cards & battle summary ---------- */
+.pincard { position: relative; overflow: hidden; }
+.pincard.won { box-shadow: inset 0 0 0 1.5px var(--gold); }
+.pincard.legend { box-shadow: inset 0 0 0 2px var(--gold), 0 6px 22px -10px rgba(242,182,58,.7); background: linear-gradient(160deg, var(--gold-soft), var(--surface) 70%); }
+.pc-long { background: var(--green-soft); color: var(--green); } .pc-short { background: var(--red-soft); color: var(--red); }
+.pc-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.pc-chip { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: var(--bg); color: var(--muted); }
+.pc-chip.live { color: var(--green); } .pc-chip.good { color: var(--green); } .pc-chip.bad { color: var(--red); }
+.pc-chip.gold { background: var(--gold); color: #1a1200; }
+.pin-streak { font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: var(--gold-soft); color: var(--text); }
+.bsum-wrap { display: block; max-width: 100%; }
+.bsum { display: flex; align-items: center; gap: 6px; width: 100%; max-width: 100%; border: 0; border-radius: 999px; padding: 4px 10px 4px 4px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; text-align: left; }
+.bsum.sm { font-size: 11px; padding: 3px 8px 3px 3px; }
+.bsum.win { background: var(--gold-soft); color: var(--text); box-shadow: inset 0 0 0 1px var(--gold); }
+.bsum.loss { background: var(--red-soft); color: var(--red); }
+.bsum.draw { background: var(--surface); color: var(--muted); }
+.bsum-stack { display: inline-flex; flex: none; }
+.bsum-av { display: inline-flex; border-radius: 50%; box-shadow: 0 0 0 2px var(--bg); }
+.bsum-av + .bsum-av { margin-left: -6px; }
+.bsum-text { min-width: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bsum-rec { flex: none; font-size: 10px; opacity: .75; }
