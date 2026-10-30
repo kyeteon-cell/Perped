@@ -78,7 +78,7 @@ function Suggested({ rows }: { rows: { handle: string; pnl: number; winRate: str
   const follow = async (h: string) => {
     if (!authenticated) return login();
     const r = await authedFetch("/api/follows", { method: "POST", body: JSON.stringify({ handle: h }) });
-    if (r.ok) setDone((d) => ({ ...d, [h]: (await r.json()).following }));
+    if (r.ok) { const j = await r.json(); setDone((d) => ({ ...d, [h]: j.following })); }
   };
   return (
     <div className="hairline py-4" data-tint="violet">
