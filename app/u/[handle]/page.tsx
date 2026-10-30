@@ -7,7 +7,7 @@ import { FeedPost } from "@/components/FeedPost";
 import { DepositSheet } from "@/components/DepositSheet";
 import { ChallengeSheet } from "@/components/ChallengeSheet";
 import { PerformanceCard } from "@/components/Performance";
-import { Avatar, CoinMark, Icon, I, ticker } from "@/components/ui";
+import { Avatar, CoinMark, Icon, I, ticker, SkeletonList } from "@/components/ui";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
@@ -39,7 +39,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const { data: pinned } = useSWR<{ posts: FeedRow[] }>(`/api/posts?handle=${handle}&kind=trade&status=closed&limit=20`);
   const { data: people } = useSWR<{ users: { handle: string; avatarUrl: string | null; pnl7d: string | null; winRate: string | null }[] }>(tab === "followers" || tab === "following" ? `/api/follows?handle=${handle}&dir=${tab}` : null);
 
-  if (!data) return <p className="muted p-5 text-sm">Loading…</p>;
+  if (!data) return <SkeletonList n={2} />;
   if ("error" in (data as unknown as Record<string, unknown>)) return <div className="p-5"><p className="muted">No trader with that handle.</p></div>;
   const { user, stats: s, isMe } = data;
   const pins = (pinned?.posts ?? []).filter((p) => p.post.pinned);

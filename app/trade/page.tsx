@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { TradeTicket, type Seed } from "@/components/TradeTicket";
-import { Icon, I } from "@/components/ui";
+import { Icon, I, SkeletonList } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 
@@ -30,7 +30,7 @@ function TradeInner() {
     const side = duel.role === "opponent" ? (d.challengerSide === "long" ? "short" : "long") : d.challengerSide;
     seed = { ...seed, coin: d.coin, side, usd: Number(d.stakeUsd), duelId: d.id, duelRole: duel.role, handle: duel.role === "opponent" ? duel.challenger.handle : duel.opponent.handle };
   }
-  if ((srcId && !src) || (duelId && !duel)) return <p className="muted p-5 text-sm">Loading…</p>;
+  if ((srcId && !src) || (duelId && !duel)) return <SkeletonList n={2} />;
 
   return (
     <div data-tint="blue">
@@ -45,5 +45,5 @@ function TradeInner() {
 }
 
 export default function TradePage() {
-  return <Suspense fallback={<p className="muted p-5 text-sm">Loading…</p>}><TradeInner /></Suspense>;
+  return <Suspense fallback={<SkeletonList n={2} />}><TradeInner /></Suspense>;
 }

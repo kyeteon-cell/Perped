@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
-import { Avatar, CoinMark, Icon, I, ticker } from "@/components/ui";
+import { Avatar, CoinMark, Icon, I, ticker, SkeletonList } from "@/components/ui";
 import type { Post, Stats } from "@/lib/schema";
 
 type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null };
@@ -28,7 +28,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const { data } = useSWR<Res>(`/api/battle/${id}`, { refreshInterval: 15_000 });
   const { mids } = useMids();
   const { profile } = useSession();
-  if (!data) return <p className="muted p-5 text-sm">Loading…</p>;
+  if (!data) return <SkeletonList n={2} />;
   if (data.error) return <p className="muted p-5 text-sm">That isn&apos;t a fade.</p>;
   const { fade, target, fader, targetUser: tu, history, record, camps } = data;
   const coin = fade.coin!; const mid = mids[coin] ?? 0;

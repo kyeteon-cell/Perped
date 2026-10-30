@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { useMids } from "@/lib/hooks/useMids";
-import { Avatar, CoinMark, Icon, I } from "@/components/ui";
+import { Avatar, CoinMark, Icon, I, SkeletonList } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtPrice } from "@/lib/format";
 
@@ -147,5 +147,5 @@ function ComposeInner() {
 }
 
 export default function ComposePage() {
-  return <Suspense fallback={<p className="muted p-5 text-sm">Loading…</p>}><ComposeInner /></Suspense>;
+  return <Suspense fallback={<SkeletonList n={1} />}><ComposeInner /></Suspense>;
 }

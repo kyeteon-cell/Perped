@@ -86,3 +86,26 @@ export function setTheme(t: Theme) {
 export function getTheme(): Theme {
   try { return (localStorage.getItem("perped-theme") as Theme) || "auto"; } catch { return "auto"; }
 }
+
+/** Shimmer placeholder. `lines` stacks text-shaped bars; `h` makes one block of that height. */
+export function Skeleton({ lines = 0, h, w, className = "", round = false }: { lines?: number; h?: number; w?: string | number; className?: string; round?: boolean }) {
+  if (lines > 0) return <div className={`flex flex-col gap-2 ${className}`}>{Array.from({ length: lines }).map((_, i) => <i key={i} className="skel" style={{ height: 12, width: i === lines - 1 ? "55%" : "100%" }} />)}</div>;
+  return <i className={`skel ${round ? "rounded-full" : ""} ${className}`} style={{ height: h ?? 16, width: w ?? "100%" }} />;
+}
+
+/** A feed/list placeholder: n rows of avatar + two text lines, inside cards. */
+export function SkeletonList({ n = 3, card = true }: { n?: number; card?: boolean }) {
+  return (
+    <div className="flex flex-col gap-3 px-5 py-3" aria-busy="true" aria-label="Loading">
+      {Array.from({ length: n }).map((_, i) => (
+        <div key={i} className={card ? "card" : ""} style={{ padding: card ? 14 : "6px 0", animationDelay: `${i * 60}ms` }}>
+          <div className="flex items-center gap-3">
+            <Skeleton round h={36} w={36} />
+            <div className="flex-1"><Skeleton h={12} w="40%" /><Skeleton h={10} w="25%" className="mt-2" /></div>
+          </div>
+          <Skeleton lines={2} className="mt-3" />
+        </div>
+      ))}
+    </div>
+  );
+}

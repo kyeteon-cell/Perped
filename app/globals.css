@@ -182,7 +182,7 @@ body { font-family: var(--font-sans), ui-rounded, ui-sans-serif, system-ui, sans
 .tabs { display: grid; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .tabs button, .tabs a { background: none; border: 0; padding: 12px 0; font: inherit; font-size: 14px; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
 .tabs .on { color: var(--text); border-bottom-color: var(--tint, var(--text)); }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse 1.6s ease-in-out infinite; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse 2.4s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
 
 /* Lists */
@@ -236,13 +236,13 @@ button:active { transform: scale(.97); }
 
 /* ---------- Pulse: the live strip on Home ---------- */
 .pulse { margin-top: 4px; }
-.pulse-skel { height: 190px; margin: 14px 20px 6px; border-radius: var(--r); background: linear-gradient(90deg, var(--surface) 25%, var(--line) 50%, var(--surface) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+.pulse-skel { height: 190px; margin: 14px 20px 6px; border-radius: var(--r); background: var(--surface); }
 @keyframes shimmer { from { background-position: 200% 0 } to { background-position: -200% 0 } }
-.livedot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; box-shadow: 0 0 0 0 var(--green-soft); animation: ping 1.6s ease-out infinite; }
+.livedot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; box-shadow: 0 0 0 0 var(--green-soft); animation: ping 2.4s ease-out infinite; }
 @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,.55) } 70% { box-shadow: 0 0 0 8px rgba(22,163,74,0) } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0) } }
 .prail { display: flex; gap: 10px; overflow-x: auto; padding: 12px 20px 4px; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .prail::-webkit-scrollbar { display: none; }
-.pcard { flex: none; width: calc(100vw - 56px); max-width: 360px; min-height: 170px; scroll-snap-align: start; border-radius: var(--r); padding: 14px 16px; background: var(--surface); color: inherit; text-decoration: none; display: block; position: relative; overflow: hidden; animation: fade .4s ease both; }
+.pcard { flex: none; width: calc(100vw - 56px); max-width: 360px; min-height: 170px; scroll-snap-align: start; border-radius: var(--r); padding: 14px 16px; background: var(--surface); color: inherit; text-decoration: none; display: block; position: relative; overflow: hidden; }
 .pc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .pc-tag { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .pc-tag.gold { color: var(--gold); } .pc-tag.green { color: var(--green); } .pc-tag.red { color: var(--red); } .pc-tag.violet { color: var(--violet); } .pc-tag.brand { color: var(--brand); }
@@ -253,20 +253,20 @@ button:active { transform: scale(.97); }
 .pcard.fadec.target-wins { background: linear-gradient(160deg, var(--red-soft), var(--surface) 75%); }
 .pcard.streak { background: linear-gradient(160deg, var(--brand-soft), var(--surface) 75%); }
 .avring { display: inline-grid; place-items: center; border-radius: 50%; padding: 3px; border: 2px solid transparent; transition: border-color .4s, transform .4s; }
-.avring.lead { border-color: var(--green); transform: scale(1.06); animation: glow 1.8s ease-in-out infinite; }
+.avring.lead { border-color: var(--green); transform: scale(1.06); box-shadow: 0 0 0 4px rgba(22,163,74,.14); }
 .avring.losing { border-color: var(--red); opacity: .85; filter: saturate(.7); }
 @keyframes glow { 0%,100% { box-shadow: 0 0 0 0 rgba(22,163,74,.0) } 50% { box-shadow: 0 0 0 6px rgba(22,163,74,.18) } }
 .vs { font-weight: 900; font-size: 12px; letter-spacing: .1em; color: var(--muted); }
 .tug { height: 8px; border-radius: 999px; background: var(--red); overflow: hidden; margin: 8px 0 6px; }
 .tug i { display: block; height: 100%; background: var(--green); border-radius: 999px; transition: width .6s cubic-bezier(.2,.8,.2,1); }
-.brow { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; animation: slidein .45s cubic-bezier(.2,.8,.2,1) both; }
+.brow { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; animation: fade .3s ease both; }
 @keyframes slidein { from { opacity: 0; transform: translateX(14px) } to { opacity: 1; transform: none } }
 .brow .rk { width: 16px; font-size: 11px; font-weight: 800; color: var(--muted); text-align: center; }
 .bbar { display: block; height: 4px; border-radius: 999px; background: var(--line); margin-top: 4px; overflow: hidden; }
 .bbar i { display: block; height: 100%; border-radius: 999px; transition: width .6s cubic-bezier(.2,.8,.2,1); }
-.fadec .arrow { font-size: 22px; line-height: 1; animation: nudge 1.2s ease-in-out infinite; }
+.fadec .arrow { font-size: 22px; line-height: 1; }
 @keyframes nudge { 0%,100% { transform: translateX(-3px) } 50% { transform: translateX(3px) } }
-.flames { font-size: 13px; letter-spacing: -2px; animation: flicker 1.1s ease-in-out infinite; }
+.flames { font-size: 13px; letter-spacing: -2px; }
 @keyframes flicker { 0%,100% { filter: brightness(1) } 50% { filter: brightness(1.35) } }
 .fu { animation: numup .6s ease; } .fd { animation: numdown .6s ease; }
 @keyframes numup { 0% { color: var(--green); transform: translateY(-2px) } 100% { transform: none } }
@@ -398,3 +398,19 @@ button:active { transform: scale(.97); }
 .pin.hot { box-shadow: 0 0 0 2px var(--gold), 0 0 0 5px rgba(245,181,10,.25), 0 4px 10px -4px rgba(0,0,0,.6); }
 .pin:active { transform: translate(-50%, -50%) scale(1.15); }
 .pin .av { font-size: 8px; }
+
+
+/* ---------- Tidy: skeletons, press feedback, focus, calmer motion ---------- */
+.skel { display: block; border-radius: 8px; background: var(--surface); position: relative; overflow: hidden; }
+.skel::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 6%, transparent), transparent); transform: translateX(-100%); animation: skel 1.6s ease-in-out infinite; }
+@keyframes skel { to { transform: translateX(100%); } }
+.card .skel, .block .skel { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.btn, .chip, .copy, .fade, .pin-toggle, .nav a, .theme-dot, .sio button { transition: transform .12s ease, background-color .15s ease, border-color .15s ease, color .15s ease, opacity .15s ease; }
+.btn:active:not(:disabled), .chip:active, .copy:active, .fade:active, .sio button:active { transform: scale(.97); }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 6px; }
+button:focus:not(:focus-visible) { outline: none; }
+img { -webkit-user-drag: none; }
+.post, .card, .block { will-change: auto; }
+main, .page { animation: fade .22s ease both; }
+::selection { background: var(--brand-soft); }
+html { scroll-behavior: smooth; }

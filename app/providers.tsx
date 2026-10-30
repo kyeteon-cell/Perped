@@ -54,5 +54,5 @@ function AuthedSWR({ children }: { children: React.ReactNode }) {
     }
     return fetch(url, { headers }).then((r) => r.json());
   }, [authenticated, getAccessToken, wallets]);
-  return <SWRConfig value={{ fetcher, revalidateOnFocus: false }}>{children}</SWRConfig>;
+  return <SWRConfig value={{ fetcher, revalidateOnFocus: false, keepPreviousData: true, dedupingInterval: 4000, errorRetryCount: 2 }}>{children}</SWRConfig>;
 }

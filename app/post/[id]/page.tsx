@@ -5,7 +5,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
 import { ShareSheet } from "@/components/ShareSheet";
-import { Avatar, Icon, I } from "@/components/ui";
+import { Avatar, Icon, I, SkeletonList } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
@@ -52,7 +52,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div data-tint="brand" className="fade-in pb-20">
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Thread</div>{post ? <button className="iconbtn" aria-label="Share" onClick={() => setReceipt(true)}><Icon d={I.share} /></button> : <span className="w-9" />}</header>
-      {!post && <p className="muted p-5 text-sm">Loading…</p>}
+      {!post && <SkeletonList n={1} />}
       {post && <FeedPost item={post} mid={post.post.coin ? mids[post.post.coin] : undefined} onChanged={() => mutate()} />}
       {roots.map((c) => (<div key={c.comment.id}><Row c={c} />{children(c.comment.id).map((r) => <Row key={r.comment.id} c={r} reply />)}</div>))}
       {cm && roots.length === 0 && <p className="muted p-5 text-sm">No comments yet. Respect or roast.</p>}

@@ -4,7 +4,7 @@ import { use } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { StatsPanels } from "@/components/Performance";
-import { Avatar, Icon, I } from "@/components/ui";
+import { Avatar, Icon, I, SkeletonList } from "@/components/ui";
 import type { Stats, User } from "@/lib/schema";
 
 type Res = { user: User; stats: Stats | null; rivalries: { opponent: string; wins: number; losses: number }[]; error?: string };
@@ -13,7 +13,7 @@ type Res = { user: User; stats: Stats | null; rivalries: { opponent: string; win
 export default function StatsPage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = use(params);
   const { data } = useSWR<Res>(`/api/profile/${handle}`);
-  if (!data) return <p className="muted p-5 text-sm">Loading…</p>;
+  if (!data) return <SkeletonList n={2} />;
   if (data.error) return <p className="muted p-5 text-sm">No trader with that handle.</p>;
   return (
     <div className="fade-in profile pb-6">

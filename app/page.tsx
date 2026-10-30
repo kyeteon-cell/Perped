@@ -8,7 +8,7 @@ import { Hero } from "@/components/Hero";
 import { Pulse } from "@/components/Pulse";
 import { Banked } from "@/components/Banked";
 import { DepositSheet } from "@/components/DepositSheet";
-import { Avatar, Icon, I } from "@/components/ui";
+import { Avatar, Icon, I, SkeletonList } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
@@ -66,7 +66,7 @@ export default function HomePage() {
         <span className="when ml-auto">{realness === "all" ? "" : realness === "real" ? "showing live trades only" : "showing practice trades only"}</span>
       </div>
 
-      {isLoading && <p className="muted px-5 py-6 text-sm">Loading…</p>}
+      {isLoading && posts.length === 0 && <SkeletonList n={3} />}
       {!isLoading && posts.length === 0 && (
         <div className="block text-center" style={{ padding: "36px 24px" }}>
           <h3 className="text-xl font-bold tracking-tight">{tab === "following" ? "Nobody you follow has posted yet" : "Your feed is quiet"}</h3>

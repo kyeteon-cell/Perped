@@ -3,7 +3,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { Avatar } from "@/components/ui";
+import { Avatar, SkeletonList } from "@/components/ui";
 import { fmtUsd, fmtPct } from "@/lib/format";
 
 type Row = { handle: string; avatarUrl: string | null; pnl?: number; winRate: string; closedTrades: number; volume30d: string; liquidations: number; fadedCount: number; callsResolved: number; callsHit: number; callAvgMove: string; callStreak: number; hitRate?: number };
@@ -27,7 +27,7 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      {isLoading && <p className="muted px-5 py-4 text-sm">Loading…</p>}
+      {isLoading && rows.length === 0 && <SkeletonList n={5} card={false} />}
       {!isLoading && rows.length === 0 && <div className="block text-center muted">{mode === "trades" ? "No closed trades yet this period." : "Nobody has 5 resolved calls yet. Make some calls."}</div>}
 
       {podium.length === 3 && (
