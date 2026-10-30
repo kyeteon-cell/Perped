@@ -2,7 +2,7 @@
 
 import { useMids } from "@/lib/hooks/useMids";
 import { useMarkets } from "@/lib/hooks/useMarkets";
-import { CoinMark } from "./ui";
+import { CoinMark, ticker } from "./ui";
 import { fmtPct } from "@/lib/format";
 
 const SHOW = ["BTC", "ETH", "SOL", "HYPE", "XRP", "DOGE", "SUI", "LINK", "AVAX", "ARB"];
@@ -24,7 +24,7 @@ export function Ticker() {
         {items.map((r, i) => (
           <span key={`${r.c}-${i}`} className="tk">
             <CoinMark coin={r.c} size="xs" />
-            <span>{r.c}</span>
+            <span>{ticker(r.c)}</span>
             <span className="mono" style={{ fontWeight: 500 }}>{fmtPxShort(r.px)}</span>
             <span className={`mono ${r.ch >= 0 ? "green" : "red"}`}>{fmtPct(r.ch, 1)}</span>
           </span>

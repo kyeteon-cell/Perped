@@ -5,7 +5,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
 import { DepositSheet } from "@/components/DepositSheet";
-import { Avatar, CoinMark, Icon, I } from "@/components/ui";
+import { Avatar, CoinMark, Icon, I, ticker } from "@/components/ui";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
@@ -21,7 +21,7 @@ type Tab = "posts" | "trades" | "followers" | "following";
 export default function ProfilePage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = use(params);
   const { data, mutate } = useSWR<ProfileRes>(`/api/profile/${handle}`, { refreshInterval: 20_000 });
-  const { authedFetch, walletClient, authenticated, login } = useSession();
+  const { authedFetch, walletClient, authenticated, login, fee } = useSession();
   const { mids } = useMids();
   const { markets } = useMarkets();
   const [tab, setTab] = useState<Tab>("posts");
@@ -52,7 +52,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
     const asset = markets.find((m) => m.name === p.coin), mid = mids[p.coin];
     if (!asset || !mid) return setErr("Market data not ready");
     setBusy(p.coin); setErr(null);
-    const res = await closePosition(makeExchangeClient(walletClient), asset, Number(p.szi) * fraction, mid);
+    const res = await closePosition(makeExchangeClient(walletClient), asset, Number(p.szi) * fraction, mid, fee.tenthsBps);
     if (!res.ok) { setBusy(null); return setErr(res.error ?? "Close failed"); }
     if (fraction === 1) {
       const mine = (feed?.posts ?? []).filter((i) => i.post.coin === p.coin && i.post.status === "open");
@@ -172,7 +172,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
             return (
               <div key={p.coin} className="post">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3"><CoinMark coin={p.coin} /><div><div className="name">{p.coin} <span className={`lbl ${szi > 0 ? "long" : "short"}`} style={{ padding: "2px 8px", fontSize: 11 }}><i />{szi > 0 ? "Long" : "Short"} {p.leverage.value}×</span></div><div className="mono when text-xs">{Math.abs(szi)} · in at {p.entryPx ? Number(p.entryPx).toLocaleString() : "—"} · now {mid ? mid.toLocaleString() : "…"}{p.liquidationPx ? ` · liq ${Number(p.liquidationPx).toLocaleString()}` : ""}</div></div></div>
+                  <div className="flex items-center gap-3"><CoinMark coin={p.coin} /><div><div className="name">{ticker(p.coin, true)} <span className={`lbl ${szi > 0 ? "long" : "short"}`} style={{ padding: "2px 8px", fontSize: 11 }}><i />{szi > 0 ? "Long" : "Short"} {p.leverage.value}×</span></div><div className="mono when text-xs">{Math.abs(szi)} · in at {p.entryPx ? Number(p.entryPx).toLocaleString() : "—"} · now {mid ? mid.toLocaleString() : "…"}{p.liquidationPx ? ` · liq ${Number(p.liquidationPx).toLocaleString()}` : ""}</div></div></div>
                   <div className={`mono text-xl font-bold ${upnl >= 0 ? "green" : "red"}`}>{fmtUsd(upnl, { sign: true })}</div>
                 </div>
                 {isMe && <div className="mt-3.5 flex gap-2"><button className="chip danger" disabled={busy === p.coin} onClick={() => closePos(p, 0.5)}>Close 50%</button><button className="chip danger" disabled={busy === p.coin} onClick={() => closePos(p, 1)}>{busy === p.coin ? "Closing…" : "Close all"}</button><Link href={`/markets/${p.coin}`} className="chip info">Add</Link></div>}

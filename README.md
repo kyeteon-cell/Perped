@@ -26,6 +26,31 @@ Mobile-first web app (installable PWA). Trades execute directly on Hyperliquid f
 
 Deferred: live rooms / audio / video, in-app withdrawals (currently opens Hyperliquid portfolio), native wrapper.
 
+## Fees and referrals (v0.4)
+
+Every live fill carries Perped's Hyperliquid **builder code**. Users approve a maximum once (`NEXT_PUBLIC_BUILDER_MAX_FEE_TENTHS_BPS`, default 0.07%); each order is then charged at the user's **tier rate**, never above the max:
+
+| Tier | Default | How you get it |
+|---|---|---|
+| Standard | 0.05% | everyone |
+| Referral | 0.035% | signed up with another user's code |
+| Top trader | 0.025% | top 100 on the 30-day PnL board, 10+ closed trades, positive 30-day PnL |
+
+The tier is resolved server-side (`lib/fees.ts`, `/api/me` → `fee`) and the ticket passes `feeTenthsBps` into every order.
+
+**Referral codes** are handles. Share `https://<your-domain>/?ref=<handle>`; the home page remembers it and onboarding step 2 pre-fills it (it can also be typed). Referrers earn **25%** of the builder fee their referees pay, **40%** once ten of them have traded in the last 30 days; paid in USDC to their Perped wallet.
+
+- `/api/cron/referrals` runs daily at 00:40 UTC: for each referred live user it reads yesterday's fills, sums the `builderFee` field (so only Perped-routed fills count) and writes one `referral_earnings` row per referee per day. Re-run a day with `?key=CRON_SECRET&day=YYYY-MM-DD`.
+- `/api/referrals` (authed) → your code, link, tier, summary, referees, payouts; shown in Settings.
+- `/api/admin/referrals?key=CRON_SECRET` → your payout list (who's owed what, and their wallet). `POST` `{handle, amountUsd, txHash}` to record a payout you've sent; the referrer gets a notification.
+- Builder fees themselves accrue on-chain to `NEXT_PUBLIC_BUILDER_ADDRESS`; claim them from Hyperliquid's referral/builder rewards page.
+
+**Live prices** — market data (ticker, markets, charts, demo fills) comes from Hyperliquid **mainnet** regardless of the trading network (`NEXT_PUBLIC_HL_DATA_NETWORK`, default `mainnet`). Orders, balances and fills use `NEXT_PUBLIC_HL_NETWORK`; asset indices are re-resolved on the trading network before signing because they differ between networks.
+
+**Coin logos and tickers** — `CoinMark` loads each coin's logo from Hyperliquid's icon set (`app.hyperliquid.xyz/coins/<COIN>.svg`) with a coloured letter badge as fallback. Hyperliquid's thousand-lot coins (`kPEPE`, `kBONK`…) are shown by their real ticker with a `·1000×` tag; links and API calls keep the Hyperliquid name.
+
+**Leverage cap** follows Hyperliquid's live max leverage on the HYPE pair (read from `metaAndAssetCtxs`), per-market caps still apply on top; `NEXT_PUBLIC_MAX_LEVERAGE` is only the fallback before markets load.
+
 ## Demo mode and demo traders
 
 - **Demo mode** (any user): simulated fills at live Hyperliquid prices against a $1,000 practice balance. Offered at the end of onboarding, switchable in Settings ("Go live" turns it off). Demo accounts and paper trades carry a **Demo** tag; Leaders has a Real / Demo switch so results never mix.
@@ -61,7 +86,7 @@ npm run dev                  # http://localhost:3000
 5. Compose → Call → HYPE up to a target, 24 h → wait for the resolver (or hit `/api/cron/resolve` with the secret).
 
 ## Env
-See `.env.example`. New in v0.3: `NEXT_PUBLIC_ONRAMP_URL`, `CRON_SECRET`.
+See `.env.example`. New in v0.4: `NEXT_PUBLIC_BUILDER_MAX_FEE_TENTHS_BPS`, `NEXT_PUBLIC_BUILDER_FEE_REFERRED_TENTHS_BPS`, `NEXT_PUBLIC_BUILDER_FEE_TOP_TENTHS_BPS`, `NEXT_PUBLIC_TOP_TIER_RANK`, `NEXT_PUBLIC_REFERRAL_SHARE_PCT`, `NEXT_PUBLIC_REFERRAL_TOP_SHARE_PCT`, `NEXT_PUBLIC_REFERRAL_TOP_THRESHOLD`. After deploying, hit `/api/setup?key=CRON_SECRET` once to add the new columns and tables.
 
 ## Layout
 ```

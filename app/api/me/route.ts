@@ -2,21 +2,31 @@ import { z } from "zod";
 import { and, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized, HANDLE_RE } from "@/lib/auth";
+import { normaliseReferralCode, resolveFeeTier, type FeeInfo } from "@/lib/fees";
+import { getFeeInfo } from "@/lib/referrals";
 
-/** GET /api/me → profile (null until a handle is chosen), wallet address, unread notification count. */
+/** GET /api/me → profile (null until a handle is chosen), wallet address, unread count, fee tier. */
 export async function GET(req: Request) {
   const auth = await getAuth(req);
   if (!auth) return unauthorized();
   const profile = await getProfile(auth.privyId);
   let unread = 0;
+  let fee: FeeInfo = resolveFeeTier({});
   if (profile) {
     const [r] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(schema.notifications).where(and(eq(schema.notifications.userId, profile.id), eq(schema.notifications.read, false)));
     unread = r?.n ?? 0;
+    fee = await getFeeInfo(profile.id, profile.referredBy);
   }
-  return Response.json({ profile, address: auth.address, unread });
+  return Response.json({ profile, address: auth.address, unread, fee });
 }
 
-const Body = z.object({ handle: z.string().toLowerCase().regex(HANDLE_RE, "3–20 chars, a–z 0–9 _"), bio: z.string().max(160).optional(), avatarUrl: z.string().url().max(500).optional() });
+const Body = z.object({
+  handle: z.string().toLowerCase().regex(HANDLE_RE, "3–20 chars, a–z 0–9 _"),
+  bio: z.string().max(160).optional(),
+  avatarUrl: z.string().url().max(500).optional(),
+  /** Referral code (another user's handle). Only honoured when the profile is first created. */
+  referralCode: z.string().max(40).optional().nullable(),
+});
 
 /** POST /api/me → create or update the profile (onboarding step 2 / edit profile). */
 export async function POST(req: Request) {
@@ -25,14 +35,28 @@ export async function POST(req: Request) {
   if (!auth.address) return Response.json({ error: "wallet not ready" }, { status: 400 });
   const parsed = Body.safeParse(await req.json());
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "invalid" }, { status: 400 });
-  const { handle, bio, avatarUrl } = parsed.data;
+  const { handle, bio, avatarUrl, referralCode } = parsed.data;
   const taken = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.handle, handle)).limit(1);
   if (taken[0] && taken[0].id !== auth.privyId) return Response.json({ error: "handle taken" }, { status: 409 });
+
+  // Resolve the referrer once, at first signup. Self-referral and unknown codes are ignored silently.
+  let referredBy: string | null = null;
+  const existing = await getProfile(auth.privyId);
+  const code = normaliseReferralCode(referralCode);
+  if (!existing && code && code !== handle) {
+    const [ref] = await db.select({ id: schema.users.id, isBot: schema.users.isBot }).from(schema.users).where(eq(schema.users.handle, code)).limit(1);
+    if (ref && ref.id !== auth.privyId && !ref.isBot) referredBy = ref.id;
+  }
+
   const [row] = await db
     .insert(schema.users)
-    .values({ id: auth.privyId, address: auth.address, handle, bio, avatarUrl })
+    .values({ id: auth.privyId, address: auth.address, handle, bio, avatarUrl, referredBy, referredAt: referredBy ? new Date() : null })
     .onConflictDoUpdate({ target: schema.users.id, set: { handle, bio, avatarUrl, address: auth.address } })
     .returning();
   await db.insert(schema.stats).values({ userId: row.id }).onConflictDoNothing();
-  return Response.json({ profile: row });
+  if (referredBy) {
+    await db.insert(schema.notifications).values({ userId: referredBy, type: "referral", title: `@${handle} joined with your code`, body: "You earn a share of the Perped fee on every trade they make.", href: "/settings" });
+  }
+  const fee = await getFeeInfo(row.id, row.referredBy);
+  return Response.json({ profile: row, fee });
 }

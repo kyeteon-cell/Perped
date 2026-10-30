@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtUsd } from "@/lib/format";
-import { Avatar, CoinMark } from "./ui";
+import { Avatar, CoinMark, ticker } from "./ui";
 import { APP_URL } from "@/lib/config";
 
 /** Share card for a closed trade. Rendered as DOM; "Share to X" posts text + link, "Save image" uses canvas. */
@@ -16,7 +16,7 @@ export function Receipt({ item, onClose }: { item: FeedRow; onClose: () => void 
   const pnl = Number(post.realizedPnl ?? 0);
   const loss = pnl < 0;
   const held = post.closedAt ? Math.round((new Date(post.closedAt).getTime() - new Date(post.createdAt).getTime()) / 3_600_000) : 0;
-  const text = `${author?.handle} ${post.side} ${post.coin} ${lev}× · ${fmtPct(roi, 1)} (${fmtUsd(pnl, { sign: true })}) · verified on Hyperliquid via Perped`;
+  const text = `${author?.handle} ${post.side} ${ticker(post.coin!, true)} ${lev}× · ${fmtPct(roi, 1)} (${fmtUsd(pnl, { sign: true })}) · verified on Hyperliquid via Perped`;
   const url = `${APP_URL}/post/${post.id}`;
   const shareX = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
 
@@ -46,7 +46,7 @@ export function Receipt({ item, onClose }: { item: FeedRow; onClose: () => void 
           <div ref={ref} className={`receipt ${loss ? "loss" : ""}`}>
             <div className="flex items-center justify-between"><span className="font-extrabold tracking-tight">Perped</span><span className="text-xs opacity-70">{post.closedAt ? new Date(post.closedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span></div>
             <div className="mt-4 flex items-center gap-2.5 text-sm">{author && <Avatar handle={author.handle} url={author.avatarUrl} size={32} />}<b>{author?.handle}</b><span className="lbl ml-auto" style={{ background: "rgba(255,255,255,.18)", color: "#fff" }}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span></div>
-            <div className="mt-4 flex items-center gap-2.5 text-[22px] font-bold tracking-tight"><CoinMark coin={post.coin!} />{post.coin}</div>
+            <div className="mt-4 flex items-center gap-2.5 text-[22px] font-bold tracking-tight"><CoinMark coin={post.coin!} />{ticker(post.coin!, true)}</div>
             <div className="mono mt-1.5 text-[56px] font-semibold leading-none tracking-tighter">{style === "roast" && loss ? "got perped" : fmtPct(roi, 1)}</div>
             <div className="mono mt-3 flex justify-between text-sm opacity-90"><span>{entry} → {exit}</span><span>{fmtUsd(pnl, { sign: true })}</span></div>
             <div className="mt-3 flex justify-between text-sm opacity-90"><span>Held {held} h</span><span>{item.copyCount} copied · {item.fadeCount} faded</span></div>

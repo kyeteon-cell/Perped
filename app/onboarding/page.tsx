@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/hooks/useSession";
 import { makeExchangeClient, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
-import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_FEE_TENTHS_BPS, BUILDER_MAX_FEE_RATE, DEMO_ENABLED, HL_NETWORK } from "@/lib/config";
+import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, BUILDER_MAX_FEE_TENTHS_BPS, DEMO_ENABLED, HL_NETWORK, REFERRAL_SHARE_PCT } from "@/lib/config";
+import { normaliseReferralCode, referralLink } from "@/lib/fees";
 import { Icon, I } from "@/components/ui";
 
 /**
@@ -14,7 +15,7 @@ import { Icon, I } from "@/components/ui";
  */
 export default function OnboardingPage() {
   const router = useRouter();
-  const { ready, authenticated, login, address, walletClient, profile, profileLoading, authedFetch, refreshMe } = useSession();
+  const { ready, authenticated, login, address, walletClient, profile, profileLoading, authedFetch, refreshMe, fee } = useSession();
   const [step, setStep] = useState(1);
   const [handle, setHandle] = useState("");
   const [bio, setBio] = useState("");
@@ -22,6 +23,17 @@ export default function OnboardingPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [refCode, setRefCode] = useState("");
+  const [refTouched, setRefTouched] = useState(false);
+
+  // A referral code arrives as ?ref=handle (saved by the home page) or is typed in step 2.
+  useEffect(() => {
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("ref");
+      const saved = fromUrl ?? localStorage.getItem("perped:ref");
+      if (saved) { localStorage.setItem("perped:ref", saved); setRefCode(saved); }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (!ready) return;
@@ -37,16 +49,17 @@ export default function OnboardingPage() {
 
   const saveHandle = async () => {
     setBusy(true); setErr(null);
-    const r = await authedFetch("/api/me", { method: "POST", body: JSON.stringify({ handle: handle.toLowerCase(), bio: bio || undefined }) });
+    const r = await authedFetch("/api/me", { method: "POST", body: JSON.stringify({ handle: handle.toLowerCase(), bio: bio || undefined, referralCode: normaliseReferralCode(refCode) }) });
     const j = await r.json(); setBusy(false);
     if (!r.ok) return setErr(j.error ?? "Try another handle");
+    try { localStorage.removeItem("perped:ref"); } catch {}
     await refreshMe(); setStep(3);
   };
   const approve = async () => {
     if (!walletClient) return;
     setBusy(true); setErr(null);
     try {
-      if (BUILDER_CONFIGURED && address && (await getMaxBuilderFee(address, BUILDER_ADDRESS)) < BUILDER_FEE_TENTHS_BPS) await approveBuilderFee(makeExchangeClient(walletClient));
+      if (BUILDER_CONFIGURED && address && (await getMaxBuilderFee(address, BUILDER_ADDRESS)) < BUILDER_MAX_FEE_TENTHS_BPS) await approveBuilderFee(makeExchangeClient(walletClient));
       setStep(5);
     } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     setBusy(false);
@@ -81,6 +94,11 @@ export default function OnboardingPage() {
             <p className="muted mt-2.5">Your handle is how you appear in the feed and on the leaderboards. You can change it later.</p>
             <div className="card mt-5 flex items-center gap-2.5 px-4"><span className="muted">@</span><input className="field !bg-transparent !px-0" placeholder="yourname" value={handle} onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20))} autoFocus /><span className={`text-xs font-bold ${avail === false ? "red" : avail ? "green" : "faint"}`}>{avail === null ? "" : avail ? "Available" : "Taken"}</span></div>
             <input className="field mt-2.5" placeholder="One line about how you trade (optional)" value={bio} onChange={(e) => setBio(e.target.value)} maxLength={160} />
+            {refCode && !refTouched ? (
+              <div className="card mt-2.5 flex items-center justify-between px-4 py-3 text-sm"><span><span className="muted">Referred by</span> <b>@{refCode.replace(/^@/, "")}</b> <span className="green ml-1.5 text-xs font-bold">reduced fee</span></span><button className="chip" onClick={() => { setRefTouched(true); setRefCode(""); }}>Change</button></div>
+            ) : (
+              <input className="field mt-2.5" placeholder="Referral code (optional) — pays a lower fee" value={refCode} onChange={(e) => { setRefTouched(true); setRefCode(e.target.value.replace(/[^a-zA-Z0-9_@]/g, "").slice(0, 21)); }} />
+            )}
             {err && <p className="red mt-3 text-sm">{err}</p>}
           </div>
           <div className="px-6 pb-8"><button className="btn ink" onClick={saveHandle} disabled={busy || handle.length < 3 || avail === false}>{busy ? "Saving…" : "Continue"}</button></div>
@@ -112,10 +130,11 @@ export default function OnboardingPage() {
           <div className="flex-1 px-6 pb-3 pt-6">
             <Progress n={4} />
             <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">One signature to start</h2>
-            <p className="muted mt-2.5">Perped earns a small fee on trades placed here. Hyperliquid asks you to approve the maximum once, up front.</p>
+            <p className="muted mt-2.5">Perped earns a small fee on trades placed here. Hyperliquid asks you to approve a maximum once, up front; you&apos;re only ever charged your rate.</p>
             <div className="fee mt-4">
-              <div className="fee-row"><span className="muted">Perped fee</span><b className="mono">{BUILDER_MAX_FEE_RATE}</b></div>
-              <div className="fee-row"><span className="muted">On a $250 trade</span><b className="mono">${(250 * BUILDER_FEE_TENTHS_BPS / 100000).toFixed(2)}</b></div>
+              <div className="fee-row"><span className="muted">Your rate{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? "Top trader" : "Referral"}</span>}</span><b className="mono">{fee.label}</b></div>
+              <div className="fee-row"><span className="muted">On a $250 trade</span><b className="mono">${(250 * fee.tenthsBps / 100000).toFixed(2)}</b></div>
+              <div className="fee-row"><span className="muted">Maximum you approve</span><b className="mono">{BUILDER_MAX_FEE_RATE}</b></div>
               <div className="fee-row"><span className="muted">Hyperliquid's own fee</span><b className="mono">~0.045%</b></div>
               <div className="fee-row"><span className="muted">Applies to</span><b>Trades placed in Perped only</b></div>
             </div>
@@ -132,6 +151,7 @@ export default function OnboardingPage() {
             <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">You&apos;re in{profile ? `, ${profile.handle}` : ""}.</h2>
             <p className="muted mt-2.5">Your trading wallet is ready. Add funds when you want to trade, or go look around first.</p>
             <div className="card mt-4 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>Your Hyperliquid wallet {HL_NETWORK === "testnet" ? "(testnet)" : ""}</div><div className="mono mt-1.5 break-all text-[13px]">{address}</div><button className="chip info mt-3" onClick={copy}>{copied ? "Copied" : "Copy address"}</button></div>
+            {profile && <div className="card mt-2.5 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>Your referral code</div><div className="mt-1.5 flex items-center justify-between"><b className="mono text-lg uppercase">{profile.handle}</b><button className="chip" onClick={async () => { try { await navigator.clipboard.writeText(referralLink(window.location.origin, profile.handle)); } catch {} }}>Copy link</button></div><p className="muted mt-1.5 text-[13px]">Friends who join with it pay a lower fee. You earn {REFERRAL_SHARE_PCT}% of the Perped fee on every trade they make, for life.</p></div>}
             <div className="mt-3.5 flex flex-col gap-2.5">
               {DEMO_ENABLED && <button className="card flex items-start gap-3.5 p-3.5 text-left" style={{ border: "1.5px solid var(--brand)" }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ isDemo: true }) }); await refreshMe(); router.push("/"); }}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}><Icon d={I.bolt} /></div><div><b>Start in demo with $1,000</b><p className="muted mt-1 text-[13px]">Practice with simulated fills at live prices. No money needed. Switch to real whenever you like.</p></div></button>}
               <div className="card flex items-start gap-3.5 p-3.5"><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--green-soft)", color: "var(--green)" }}><Icon d={I.card} /></div><div><b>Buy USDC with a card</b><p className="muted mt-1 text-[13px]">Apple Pay, card or bank. Lands in your wallet in minutes. Available from your profile.</p></div></div>

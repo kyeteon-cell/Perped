@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
@@ -19,6 +19,10 @@ export default function HomePage() {
   const { mids, connected } = useMids();
   const [tab, setTab] = useState<Tab>("foryou");
   const [deposit, setDeposit] = useState(false);
+  // Referral links land here (/?ref=handle). Remember the code until onboarding uses it.
+  useEffect(() => {
+    try { const ref = new URLSearchParams(window.location.search).get("ref"); if (ref) localStorage.setItem("perped:ref", ref.toLowerCase()); } catch {}
+  }, []);
   const key = `/api/posts?tab=${tab}`;
   const { data, mutate, isLoading } = useSWR<{ posts: FeedRow[] }>(key, async () => (await authedFetch(key)).json(), { refreshInterval: 15_000 });
   const posts = data?.posts ?? [];

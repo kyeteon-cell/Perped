@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import { fmtUsd, fmtPct, pnlForPosition, timeAgo } from "@/lib/format";
 import { useSession } from "@/lib/hooks/useSession";
-import { Avatar, CoinMark, Icon, I } from "./ui";
+import { Avatar, CoinMark, Icon, I, ticker } from "./ui";
 
 type Props = { item: FeedRow; mid?: number; onChanged?: () => void; compact?: boolean };
 
@@ -99,7 +99,7 @@ function TradePost({ item, mid, onChanged }: Props) {
         <div className="flex items-center gap-3">
           <CoinMark coin={post.coin!} />
           <div>
-            <Link href={`/markets/${post.coin}`} className="coin">{post.coin}</Link>
+            <Link href={`/markets/${post.coin}`} className="coin">{ticker(post.coin!, true)}</Link>
             <div className="mono when mt-2">
               {showSize ? `${fmtUsd(Number(post.notionalUsd), { compact: true })} · ` : ""}
               {isOpen ? `in at ${entry.toLocaleString("en-US", { maximumFractionDigits: 6 })}` : `${entry.toLocaleString("en-US", { maximumFractionDigits: 6 })} → ${mark.toLocaleString("en-US", { maximumFractionDigits: 6 })}`}
@@ -150,7 +150,7 @@ function CallPost({ item, mid, onChanged }: Props) {
         <div className="flex items-center gap-3">
           <CoinMark coin={post.coin!} />
           <div>
-            <div className="coin">{post.coin} <span className="muted text-sm font-semibold tracking-normal">{up ? "↑" : "↓"} {target.toLocaleString("en-US", { maximumFractionDigits: 6 })}</span></div>
+            <div className="coin">{ticker(post.coin!, true)} <span className="muted text-sm font-semibold tracking-normal">{up ? "↑" : "↓"} {target.toLocaleString("en-US", { maximumFractionDigits: 6 })}</span></div>
             <div className="mono when mt-2">{fromPx ? `from ${fromPx} · ${fmtPct(pctToTarget, 1)}` : up ? "up" : "down"}{deadline ? ` · by ${deadline.toLocaleDateString("en-US", { weekday: "short" })}` : ""}{post.invalidPx ? ` · invalid ${up ? "below" : "above"} ${post.invalidPx}` : ""}</div>
           </div>
         </div>

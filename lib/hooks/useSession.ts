@@ -7,6 +7,7 @@ import { arbitrum, arbitrumSepolia } from "viem/chains";
 import useSWR from "swr";
 import { HL_NETWORK } from "@/lib/config";
 import type { User } from "@/lib/schema";
+import { resolveFeeTier, type FeeInfo } from "@/lib/fees";
 
 const chain = HL_NETWORK === "mainnet" ? arbitrum : arbitrumSepolia;
 
@@ -49,7 +50,7 @@ export function useSession() {
     [getAccessToken, address],
   );
 
-  const { data: me, mutate: refreshMe, isLoading: meLoading } = useSWR<{ profile: User | null; unread: number }>(
+  const { data: me, mutate: refreshMe, isLoading: meLoading } = useSWR<{ profile: User | null; unread: number; fee?: FeeInfo }>(
     authenticated && address ? ["/api/me", address] : null,
     async () => (await authedFetch("/api/me")).json(),
     { refreshInterval: 30_000 },
@@ -68,6 +69,8 @@ export function useSession() {
     profile: me?.profile ?? null,
     profileLoading: meLoading,
     unread: me?.unread ?? 0,
+    /** The builder fee this user pays per fill (tier-resolved server-side). */
+    fee: me?.fee ?? resolveFeeTier({}),
     refreshMe,
   };
 }

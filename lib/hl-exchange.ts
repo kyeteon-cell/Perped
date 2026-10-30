@@ -9,13 +9,14 @@ import type { WalletClient } from "viem";
 import {
   BUILDER_ADDRESS,
   BUILDER_CONFIGURED,
-  BUILDER_FEE_TENTHS_BPS,
+  BUILDER_FEE_STANDARD_TENTHS_BPS,
   BUILDER_MAX_FEE_RATE,
+  BUILDER_MAX_FEE_TENTHS_BPS,
   HL_NETWORK,
   HL_SIGNATURE_CHAIN_ID,
 } from "./config";
 import { fmtPx, fmtSize, roundSize } from "./format";
-import type { PerpAsset } from "./hl-info";
+import { resolveTradingAsset, type PerpAsset } from "./hl-info";
 
 const isTestnet = HL_NETWORK === "testnet";
 
@@ -51,6 +52,8 @@ export type MarketOrderInput = {
   /** Optional take-profit / stop-loss trigger prices; placed with the entry as a normalTpsl group. */
   takeProfitPx?: number;
   stopLossPx?: number;
+  /** Builder fee for this order in tenths of a bp (from the user's fee tier). Defaults to the standard rate. */
+  feeTenthsBps?: number;
 };
 
 export type OrderResult = {
@@ -67,7 +70,10 @@ export type OrderResult = {
  * Attaches the builder code when the app has one configured.
  */
 export async function placeMarketOrder(client: hl.ExchangeClient, input: MarketOrderInput): Promise<OrderResult> {
-  const { asset, side, usd, mid, leverage, slippage = 0.03, reduceOnly = false, orderType = "market", limitPx, takeProfitPx, stopLossPx } = input;
+  const { side, usd, mid, leverage, slippage = 0.03, reduceOnly = false, orderType = "market", limitPx, takeProfitPx, stopLossPx } = input;
+  // Market rows come from the data network; the asset index must be the trading network's.
+  const asset = await resolveTradingAsset(input.asset);
+  const feeTenthsBps = Math.min(BUILDER_MAX_FEE_TENTHS_BPS, Math.max(0, Math.round(input.feeTenthsBps ?? BUILDER_FEE_STANDARD_TENTHS_BPS)));
   const isBuy = side === "long";
 
   // Set leverage first (cross). Ignore failures — the order still goes through at current leverage.
@@ -107,8 +113,8 @@ export async function placeMarketOrder(client: hl.ExchangeClient, input: MarketO
   if (!reduceOnly && stopLossPx && stopLossPx > 0) exits.push(trigger(stopLossPx, "sl"));
 
   const params: Record<string, unknown> = { orders: [entry, ...exits], grouping: exits.length ? "normalTpsl" : "na" };
-  if (BUILDER_CONFIGURED && BUILDER_FEE_TENTHS_BPS > 0) {
-    params.builder = { b: BUILDER_ADDRESS.toLowerCase(), f: BUILDER_FEE_TENTHS_BPS };
+  if (BUILDER_CONFIGURED && feeTenthsBps > 0) {
+    params.builder = { b: BUILDER_ADDRESS.toLowerCase(), f: feeTenthsBps };
   }
 
   try {
@@ -137,6 +143,7 @@ export async function closePosition(
   asset: PerpAsset,
   signedSize: number,
   mid: number,
+  feeTenthsBps?: number,
 ): Promise<OrderResult> {
   const side: "long" | "short" = signedSize > 0 ? "short" : "long"; // opposite side to close
   return placeMarketOrder(client, {
@@ -148,11 +155,13 @@ export async function closePosition(
     reduceOnly: true,
     size: Math.abs(signedSize),
     slippage: 0.05,
+    feeTenthsBps,
   });
 }
 
 /**
- * Ask the user to approve our builder fee (one signature, revocable, max 10 builders per account).
+ * Ask the user to approve our maximum builder fee (one signature, revocable, max 10 builders per account).
+ * We charge at or below this per order depending on the user's tier (lib/fees.ts).
  * Must be signed by the user's main wallet, which is what the Privy embedded wallet is.
  */
 export async function approveBuilderFee(client: hl.ExchangeClient) {

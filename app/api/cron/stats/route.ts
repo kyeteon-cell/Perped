@@ -72,5 +72,15 @@ export async function GET(req: Request) {
       /* skip this user this run */
     }
   }
+  // Rank real traders on 30-day PnL (bots and demo accounts excluded); drives the top fee tier.
+  await db.execute(sql`
+    with ranked as (
+      select s.user_id, row_number() over (order by s.realized_pnl_30d desc, s.closed_trades desc) as rk
+      from stats s join users u on u.id = s.user_id
+      where u.is_demo = false and u.is_bot = false and s.closed_trades > 0
+    )
+    update stats set rank_30d = ranked.rk from ranked where stats.user_id = ranked.user_id
+  `);
+  await db.execute(sql`update stats set rank_30d = null where user_id in (select id from users where is_demo or is_bot) or closed_trades = 0`);
   return Response.json({ users: users.length, updated });
 }

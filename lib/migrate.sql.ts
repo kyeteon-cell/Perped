@@ -24,6 +24,9 @@ create table if not exists users (
 alter table users add column if not exists is_demo boolean not null default false;
 alter table users add column if not exists demo_balance numeric not null default 1000;
 alter table users add column if not exists is_bot boolean not null default false;
+alter table users add column if not exists referred_by text;
+alter table users add column if not exists referred_at timestamptz;
+create index if not exists users_referred_by_idx on users (referred_by);
 create unique index if not exists users_handle_idx on users (handle);
 create unique index if not exists users_address_idx on users (address);
 
@@ -147,6 +150,33 @@ create table if not exists stats (
   judgement numeric not null default 0,
   copied_count integer not null default 0,
   faded_count integer not null default 0,
+  rank_30d integer,
   updated_at timestamptz not null default now()
 );
+alter table stats add column if not exists rank_30d integer;
+
+create table if not exists referral_earnings (
+  id serial primary key,
+  referrer_id text not null references users(id),
+  referee_id text not null references users(id),
+  day text not null,
+  fills integer not null default 0,
+  volume_usd numeric not null default 0,
+  builder_fee_usd numeric not null default 0,
+  share_pct numeric not null default 0,
+  share_usd numeric not null default 0,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists referral_earnings_unique on referral_earnings (referee_id, day);
+create index if not exists referral_earnings_referrer_idx on referral_earnings (referrer_id);
+
+create table if not exists referral_payouts (
+  id serial primary key,
+  referrer_id text not null references users(id),
+  amount_usd numeric not null,
+  tx_hash text,
+  note text,
+  created_at timestamptz not null default now()
+);
+create index if not exists referral_payouts_referrer_idx on referral_payouts (referrer_id);
 `;

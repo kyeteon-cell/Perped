@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { HL_WS_URL } from "@/lib/config";
+import { HL_DATA_WS_URL } from "@/lib/config";
 
 /** Live mid prices for every coin via the Hyperliquid WebSocket `allMids` feed. */
 export function useMids() {
@@ -15,7 +15,7 @@ export function useMids() {
     let stopped = false;
 
     const connect = () => {
-      ws = new WebSocket(HL_WS_URL);
+      ws = new WebSocket(HL_DATA_WS_URL);
       ws.onopen = () => {
         retry.current = 0;
         setConnected(true);

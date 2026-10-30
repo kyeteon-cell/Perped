@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { PriceChart } from "@/components/PriceChart";
 import { TradeTicket } from "@/components/TradeTicket";
 import { FeedPost } from "@/components/FeedPost";
-import { CoinMark, Icon, I } from "@/components/ui";
+import { CoinMark, Icon, I, ticker } from "@/components/ui";
 import { fmtPct, fmtUsd } from "@/lib/format";
 import type { MarketRow } from "@/lib/hl-info";
 import { useMids } from "@/lib/hooks/useMids";
@@ -36,7 +36,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
       <section className="px-5">
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2.5"><CoinMark coin={coin} /><div className="text-[30px] font-bold leading-none tracking-tight">{coin}</div></div>
+            <div className="flex items-center gap-2.5"><CoinMark coin={coin} /><div className="text-[30px] font-bold leading-none tracking-tight">{ticker(coin, true)}</div></div>
             <div className="mono mt-2.5 text-[22px] font-semibold">{px ? px.toLocaleString("en-US", { maximumFractionDigits: 6 }) : "…"}{m && <span className={`ml-2 text-sm font-semibold ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</span>}</div>
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
 
       {(feed?.posts.length ?? 0) > 0 && (
         <section className="mt-2" data-tint="brand">
-          <div className="eyebrow px-5 pb-2 pt-4">Perped on {coin}</div>
+          <div className="eyebrow px-5 pb-2 pt-4">Perped on {ticker(coin)}</div>
           {feed!.posts.map((item) => <FeedPost key={item.post.id} item={item} mid={px || undefined} onChanged={() => mutate()} />)}
         </section>
       )}

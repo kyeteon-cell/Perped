@@ -24,9 +24,12 @@ export const users = pgTable(
     acceptDuels: boolean("accept_duels").default(true).notNull(),
     defaultLeverage: integer("default_leverage").default(3).notNull(),
     pnlDisplay: text("pnl_display", { enum: ["pct", "usd", "roi"] }).default("pct").notNull(),
+    // Referral: who brought them in (set once at signup, never changed). Their own code is their handle.
+    referredBy: text("referred_by"),
+    referredAt: timestamp("referred_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [uniqueIndex("users_handle_idx").on(t.handle), uniqueIndex("users_address_idx").on(t.address)],
+  (t) => [uniqueIndex("users_handle_idx").on(t.handle), uniqueIndex("users_address_idx").on(t.address), index("users_referred_by_idx").on(t.referredBy)],
 );
 
 export type PostKind = "trade" | "text" | "call" | "poll" | "system";
@@ -180,8 +183,45 @@ export const stats = pgTable("stats", {
   judgement: numeric("judgement").default("0").notNull(), // % of the user's votes on calls that were on the right side
   copiedCount: integer("copied_count").default(0).notNull(),
   fadedCount: integer("faded_count").default(0).notNull(),
+  // Position on the 30-day PnL board among real (non-demo, non-bot) traders; null = unranked. Drives the top fee tier.
+  rank30d: integer("rank_30d"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/**
+ * One row per referee per UTC day: the builder fees they paid on Hyperliquid (from their fills) and the
+ * referrer's share. Written by /api/cron/referrals; re-running a day overwrites it.
+ */
+export const referralEarnings = pgTable(
+  "referral_earnings",
+  {
+    id: serial("id").primaryKey(),
+    referrerId: text("referrer_id").notNull().references(() => users.id),
+    refereeId: text("referee_id").notNull().references(() => users.id),
+    day: text("day").notNull(), // YYYY-MM-DD (UTC)
+    fills: integer("fills").default(0).notNull(),
+    volumeUsd: numeric("volume_usd").default("0").notNull(),
+    builderFeeUsd: numeric("builder_fee_usd").default("0").notNull(),
+    sharePct: numeric("share_pct").default("0").notNull(),
+    shareUsd: numeric("share_usd").default("0").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("referral_earnings_unique").on(t.refereeId, t.day), index("referral_earnings_referrer_idx").on(t.referrerId)],
+);
+
+/** Payouts made to referrers (USDC sent to their Perped wallet). Owed = sum(share_usd) - sum(amount_usd). */
+export const referralPayouts = pgTable(
+  "referral_payouts",
+  {
+    id: serial("id").primaryKey(),
+    referrerId: text("referrer_id").notNull().references(() => users.id),
+    amountUsd: numeric("amount_usd").notNull(),
+    txHash: text("tx_hash"),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("referral_payouts_referrer_idx").on(t.referrerId)],
+);
 
 export type User = typeof users.$inferSelect;
 export type Post = typeof posts.$inferSelect;
@@ -189,3 +229,5 @@ export type Comment = typeof comments.$inferSelect;
 export type Stats = typeof stats.$inferSelect;
 export type Duel = typeof duels.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type ReferralEarning = typeof referralEarnings.$inferSelect;
+export type ReferralPayout = typeof referralPayouts.$inferSelect;

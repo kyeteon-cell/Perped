@@ -37,8 +37,35 @@ export const I = {
 };
 
 /** Coloured disc with the ticker's first letters. */
+/**
+ * Hyperliquid lists some low-priced coins in thousands with a "k" prefix (kPEPE = 1000 PEPE).
+ * Show the real ticker and keep the multiplier as a hint.
+ */
+export function coinInfo(coin: string): { base: string; ticker: string; mult: number } {
+  const base = coin.startsWith("k") && coin.length > 1 && coin[1] === coin[1].toUpperCase() ? coin.slice(1) : coin;
+  return { base, ticker: base, mult: base === coin ? 1 : 1000 };
+}
+
+/** Coin logo from Hyperliquid's own icon set, with a coloured letter badge as the fallback. */
 export function CoinMark({ coin, size }: { coin: string; size?: "xs" | "sm" | "lg" }) {
-  return <span className={`cm ${size ?? ""}`} data-c={coin}>{coin.slice(0, 3)}</span>;
+  const { base, mult } = coinInfo(coin);
+  return (
+    <span className={`cm ${size ?? ""}`} data-c={base} title={mult > 1 ? `${coin} = ${mult} ${base}` : base}>
+      <img
+        src={`https://app.hyperliquid.xyz/coins/${encodeURIComponent(coin)}.svg`}
+        alt=""
+        loading="lazy"
+        onError={(e) => { const img = e.currentTarget; img.style.display = "none"; (img.nextSibling as HTMLElement | null)?.removeAttribute("hidden"); }}
+      />
+      <b hidden>{base.slice(0, 4)}</b>
+    </span>
+  );
+}
+
+/** Human ticker for a Hyperliquid coin name: "kPEPE" → "PEPE" (with "1000×" when `withMult`). */
+export function ticker(coin: string, withMult = false) {
+  const { base, mult } = coinInfo(coin);
+  return withMult && mult > 1 ? `${base} ·1000×` : base;
 }
 
 /** Deterministic gradient avatar from a handle. */

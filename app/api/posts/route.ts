@@ -3,8 +3,8 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { queryFeed, notify } from "@/lib/feed";
-import { DEMO_ENABLED, MAX_LEVERAGE, MAX_POSITION_USD } from "@/lib/config";
-import { getMids } from "@/lib/hl-info";
+import { DEMO_ENABLED, MAX_POSITION_USD } from "@/lib/config";
+import { getMids, getPerpAssets } from "@/lib/hl-info";
 
 /**
  * GET /api/posts?tab=foryou|following|live&kind=&coin=&handle=&status=&cursor=&limit=
@@ -41,7 +41,7 @@ const Trade = z.object({
   side: z.enum(["long", "short"]),
   size: z.number().positive(),
   notionalUsd: z.number().positive().max(MAX_POSITION_USD * 100),
-  leverage: z.number().int().min(1).max(MAX_LEVERAGE),
+  leverage: z.number().int().min(1).max(50), // Hyperliquid's hard ceiling; the live HYPE cap is checked in POST
   entryPx: z.number().positive(),
   paper: z.boolean().optional(),
   oid: z.number().int().optional(),
@@ -82,6 +82,15 @@ export async function POST(req: Request) {
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "invalid" }, { status: 400 });
   const b = parsed.data;
   if (b.kind === "poll" && !profile.verified) return Response.json({ error: "polls are for verified traders (10+ closed trades and a linked X account)" }, { status: 403 });
+
+  if (b.kind === "trade") {
+    // Leverage cap = Hyperliquid's live max on the HYPE pair, and never above the coin's own max.
+    const assets = await getPerpAssets().catch(() => []);
+    const hypeCap = assets.find((a) => a.name === "HYPE")?.maxLeverage ?? 10;
+    const coinCap = assets.find((a) => a.name === b.coin.toUpperCase())?.maxLeverage ?? hypeCap;
+    const cap = Math.min(hypeCap, coinCap);
+    if (b.leverage > cap) return Response.json({ error: `max ${cap}× on ${b.coin.toUpperCase()}` }, { status: 400 });
+  }
 
   const values: typeof schema.posts.$inferInsert = { userId: profile.id, kind: b.kind, body: "body" in b ? b.body : undefined };
   if (b.kind === "trade" && (b.paper || profile.isDemo)) {

@@ -8,8 +8,8 @@ import { useMids } from "@/lib/hooks/useMids";
 import { makeExchangeClient, placeMarketOrder, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
 import { fmtUsd, roundSize, fmtSize, fmtPct } from "@/lib/format";
-import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_FEE_TENTHS_BPS, BUILDER_MAX_FEE_RATE, MAX_LEVERAGE, MAX_POSITION_USD } from "@/lib/config";
-import { CoinMark } from "./ui";
+import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, MAX_LEVERAGE, MAX_POSITION_USD } from "@/lib/config";
+import { CoinMark, ticker } from "./ui";
 
 const QUICK = [25, 50, 100, 250];
 
@@ -28,7 +28,7 @@ export type Seed = {
 /** The trade ticket: market or limit, leverage, TP/SL, builder-fee approval, copy and fade modes. */
 export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: boolean }) {
   const router = useRouter();
-  const { authenticated, login, walletClient, address, profile, authedFetch } = useSession();
+  const { authenticated, login, walletClient, address, profile, authedFetch, fee } = useSession();
   const { markets } = useMarkets();
   const { mids } = useMids();
 
@@ -37,7 +37,9 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
   const [coin, setCoin] = useState(seed.coin);
   const [side, setSide] = useState<"long" | "short">(seed.side ?? "long");
   const [usd, setUsd] = useState(50);
-  const fadeCap = isFade && (seed.closedTrades ?? 0) < 10 ? 2 : MAX_LEVERAGE;
+  // Perped's overall cap follows Hyperliquid's live max leverage on the HYPE pair (env MAX_LEVERAGE is the fallback).
+  const appCap = markets.find((m) => m.name === "HYPE")?.maxLeverage ?? MAX_LEVERAGE;
+  const fadeCap = isFade && (seed.closedTrades ?? 0) < 10 ? 2 : appCap;
   const [lev, setLev] = useState(Math.min(seed.leverage ?? profile?.defaultLeverage ?? 2, fadeCap));
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
   const [limitPx, setLimitPx] = useState("");
@@ -52,12 +54,12 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
 
   const market: Market | undefined = useMemo(() => markets.find((m) => m.name === coin), [markets, coin]);
   const mid = mids[coin] ?? market?.mid ?? 0;
-  const maxLev = Math.min(fadeCap, market?.maxLeverage ?? MAX_LEVERAGE);
+  const maxLev = Math.min(fadeCap, market?.maxLeverage ?? appCap);
   useEffect(() => { if (lev > maxLev) setLev(maxLev); }, [maxLev, lev]);
   useEffect(() => {
     if (isDemo || !address || !BUILDER_CONFIGURED) return setApproved(true);
-    getMaxBuilderFee(address, BUILDER_ADDRESS).then((f) => setApproved(f >= BUILDER_FEE_TENTHS_BPS));
-  }, [address]);
+    getMaxBuilderFee(address, BUILDER_ADDRESS).then((f) => setApproved(f >= fee.tenthsBps));
+  }, [address, fee.tenthsBps]);
   // Fades default to an automatic 5% stop.
   useEffect(() => { if (isFade && mid && !sl) setSl((side === "long" ? mid * 0.95 : mid * 1.05).toFixed(market?.szDecimals ? 6 - market.szDecimals : 2)); }, [isFade, mid, side, sl, market]);
 
@@ -113,6 +115,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
       limitPx: orderType === "limit" ? Number(limitPx) : undefined,
       takeProfitPx: tpslOn && Number(tp) > 0 ? Number(tp) : undefined,
       stopLossPx: tpslOn && Number(sl) > 0 ? Number(sl) : undefined,
+      feeTenthsBps: fee.tenthsBps,
     });
     if (!res.ok) { setBusy(null); return setErr(res.error ?? "Order failed"); }
     setBusy("Posting to feed…");
@@ -122,7 +125,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
     router.push("/");
   };
 
-  const cta = `${orderType === "limit" ? "Limit " : ""}${isFade ? "Fade · " : ""}${side === "long" ? "Long" : "Short"} ${coin} ${lev}× · ${fmtUsd(notional)}`;
+  const cta = `${orderType === "limit" ? "Limit " : ""}${isFade ? "Fade · " : ""}${side === "long" ? "Long" : "Short"} ${ticker(coin)} ${lev}× · ${fmtUsd(notional)}`;
 
   return (
     <div className="fade-in" data-tint="blue">
@@ -136,7 +139,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
       {!isDemo && approved === false && walletClient && (
         <div className="block"><div className="card p-4" style={{ border: "1.5px solid var(--brand)" }}>
           <div className="font-bold">One-time setup</div>
-          <p className="muted mt-1 text-sm">Approve a max {BUILDER_MAX_FEE_RATE} Perped fee so trades can be routed from here. One signature, revocable anytime, only on trades placed in Perped.</p>
+          <p className="muted mt-1 text-sm">Approve a max {BUILDER_MAX_FEE_RATE} Perped fee so trades can be routed from here. You pay {fee.label} per fill{fee.tier !== "standard" ? ` (${fee.tier === "top" ? "top-trader" : "referral"} rate)` : ""}. One signature, revocable anytime, only on trades placed in Perped.</p>
           <button className="btn brand mt-3" style={{ padding: 12, fontSize: 14 }} onClick={approve} disabled={!!busy}>{busy ?? `Approve ${BUILDER_MAX_FEE_RATE} fee`}</button>
         </div></div>
       )}
@@ -144,8 +147,8 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
       {!compact && (
         <div className="block">
           <input className="field mb-2.5" placeholder="Search markets" value={search} onChange={(e) => setSearch(e.target.value)} />
-          <div className="seg">{filtered.map((m) => <button key={m.name} className={`chip ${m.name === coin ? "on" : ""}`} onClick={() => setCoin(m.name)}><CoinMark coin={m.name} size="xs" />{m.name}</button>)}</div>
-          <div className="mt-3.5 flex items-baseline justify-between"><span className="text-[22px] font-bold tracking-tight">{coin}</span><span className="mono text-lg">{mid ? mid.toLocaleString("en-US", { maximumFractionDigits: 6 }) : "…"}</span></div>
+          <div className="seg">{filtered.map((m) => <button key={m.name} className={`chip ${m.name === coin ? "on" : ""}`} onClick={() => setCoin(m.name)}><CoinMark coin={m.name} size="xs" />{ticker(m.name)}</button>)}</div>
+          <div className="mt-3.5 flex items-baseline justify-between"><span className="text-[22px] font-bold tracking-tight">{ticker(coin, true)}</span><span className="mono text-lg">{mid ? mid.toLocaleString("en-US", { maximumFractionDigits: 6 }) : "…"}</span></div>
         </div>
       )}
 
@@ -169,6 +172,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
           <div className="stat"><small>Size</small><div className="v mono">{market ? fmtSize(size, market.szDecimals) : "—"}</div></div>
           <div className="stat"><small>Liq. at</small><div className="v mono">{estLiq ? estLiq.toLocaleString("en-US", { maximumFractionDigits: 4 }) : "—"}</div></div>
         </div>
+        {!isDemo && <div className="when mt-2.5 flex items-center justify-between"><span>Perped fee {fee.label}{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? "Top trader" : "Referral"}</span>}</span><span className="mono">{fmtUsd((notional * fee.tenthsBps) / 100000)}</span></div>}
       </div>
 
       <div className="block">

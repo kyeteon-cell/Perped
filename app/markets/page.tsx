@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { Sparkline } from "@/components/Sparkline";
-import { CoinMark, Icon, I } from "@/components/ui";
+import { CoinMark, Icon, I, ticker } from "@/components/ui";
 import { fmtPct, fmtUsd } from "@/lib/format";
 import type { MarketRow } from "@/lib/hl-info";
 import { useMids } from "@/lib/hooks/useMids";
@@ -60,7 +60,7 @@ export default function MarketsPage() {
       <div className="hstrip">
         {movers.map((m) => (
           <Link key={m.name} href={`/markets/${m.name}`} className="hcard" style={{ width: 104, padding: "12px 14px", borderTop: `3px solid ${m.change24h >= 0 ? "var(--green)" : "var(--red)"}` }}>
-            <div className="flex items-center gap-2"><CoinMark coin={m.name} size="sm" /><span className="name">{m.name}</span></div>
+            <div className="flex items-center gap-2"><CoinMark coin={m.name} size="sm" /><span className="name">{ticker(m.name)}</span></div>
             <div className={`mono text-lg font-bold ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</div>
             <div className="mono when">{(mids[m.name] ?? m.mid).toLocaleString("en-US", { maximumFractionDigits: 4 })}</div>
           </Link>
@@ -83,7 +83,7 @@ export default function MarketsPage() {
               <div className="flex min-w-0 items-center gap-3">
                 <CoinMark coin={m.name} />
                 <div className="min-w-0">
-                  <div className="name flex items-center gap-1.5">{m.name} <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.maxLeverage}×</span></div>
+                  <div className="name flex items-center gap-1.5">{ticker(m.name, true)} <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.maxLeverage}×</span></div>
                   <div className="when truncate text-xs">Vol {fmtUsd(m.volume24h, { compact: true })} · OI {fmtUsd(m.openInterest, { compact: true })}</div>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 // Read-only Hyperliquid "info" endpoint helpers. Plain fetch, no signing, safe on server and client.
 // Docs: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
 
-import { HL_API_URL } from "./config";
+import { HL_API_URL, HL_DATA_API_URL } from "./config";
 
 export type PerpAsset = {
   name: string; // e.g. "BTC"
@@ -47,8 +47,14 @@ export type Fill = {
   builderFee?: string;
 };
 
-async function info<T>(body: Record<string, unknown>, revalidate = 0): Promise<T> {
-  const res = await fetch(`${HL_API_URL}/info`, {
+/**
+ * "data" = public market data from the data network (mainnet by default, so prices are real).
+ * "user" = account-specific reads from the trading network (must match where orders are signed).
+ */
+type Scope = "data" | "user";
+
+async function info<T>(body: Record<string, unknown>, revalidate = 0, scope: Scope = "data"): Promise<T> {
+  const res = await fetch(`${scope === "user" ? HL_API_URL : HL_DATA_API_URL}/info`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
@@ -81,21 +87,21 @@ export async function getMids(): Promise<Mids> {
 }
 
 export async function getClearinghouseState(user: string): Promise<ClearinghouseState> {
-  return info<ClearinghouseState>({ type: "clearinghouseState", user });
+  return info<ClearinghouseState>({ type: "clearinghouseState", user }, 0, "user");
 }
 
 export async function getUserFills(user: string, aggregateByTime = true): Promise<Fill[]> {
-  return info<Fill[]>({ type: "userFills", user, aggregateByTime });
+  return info<Fill[]>({ type: "userFills", user, aggregateByTime }, 0, "user");
 }
 
 export async function getUserFillsByTime(user: string, startTime: number, endTime?: number): Promise<Fill[]> {
-  return info<Fill[]>({ type: "userFillsByTime", user, startTime, endTime, aggregateByTime: true });
+  return info<Fill[]>({ type: "userFillsByTime", user, startTime, endTime, aggregateByTime: true }, 0, "user");
 }
 
 /** Max builder fee (in tenths of a bp) the user has approved for a builder, or 0. */
 export async function getMaxBuilderFee(user: string, builder: string): Promise<number> {
   try {
-    const v = await info<number>({ type: "maxBuilderFee", user, builder });
+    const v = await info<number>({ type: "maxBuilderFee", user, builder }, 0, "user");
     return Number(v) || 0;
   } catch {
     return 0;
