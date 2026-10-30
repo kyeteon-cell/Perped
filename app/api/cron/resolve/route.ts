@@ -66,7 +66,7 @@ export async function GET(req: Request) {
       db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, winnerId)).limit(1),
       db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, challengerWins ? d.opponentId : d.challengerId)).limit(1),
     ]);
-    await systemPost("duel_settled", `${w[0]?.handle} beat ${l[0]?.handle} on ${d.coin}. ${start} → ${p}.`, { duelId: d.id, winner: w[0]?.handle, loser: l[0]?.handle, coin: d.coin }, d.coin);
+    await systemPost("duel_settled", `${w[0]?.handle} beat ${l[0]?.handle} on ${d.coin}. ${start} → ${p}.`, { duelId: d.id, winner: w[0]?.handle, loser: l[0]?.handle, coin: d.coin, start, end: p }, d.coin);
     for (const uid of [d.challengerId, d.opponentId]) await notify(uid, "duel", uid === winnerId ? "You won the duel" : "You lost the duel", `${d.coin} · ${start} → ${p}`, `/duels/${d.id}`);
     duelsSettled++;
   }

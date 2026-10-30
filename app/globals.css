@@ -98,24 +98,45 @@ body { font-family: var(--font-sans), ui-rounded, ui-sans-serif, system-ui, sans
 .av-3 { background: linear-gradient(135deg,#88c0d0,#5e81ac); } .av-4 { background: linear-gradient(135deg,#bf616a,#d08770); } .av-5 { background: linear-gradient(135deg,#b48ead,#88c0d0); }
 
 /* Feed posts */
-/* Feed cards: each post is a card with a colour accent per kind, so trades, calls, polls, chat and
-   system events read differently at a glance. --kind is set per article via data-kind. */
-.post { --kind: var(--muted); --kind-soft: var(--surface); position: relative; margin: 10px 12px 0; padding: 16px 18px 16px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
-.post::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--kind); }
-.post[data-kind="long"] { --kind: var(--green); --kind-soft: var(--green-soft); }
-.post[data-kind="short"] { --kind: var(--red); --kind-soft: var(--red-soft); }
-.post[data-kind="call"] { --kind: var(--blue); --kind-soft: var(--blue-soft); }
-.post[data-kind="poll"] { --kind: var(--violet); --kind-soft: var(--violet-soft); }
-.post[data-kind="text"] { --kind: var(--ink); --kind-soft: var(--surface); }
-.post[data-kind="liquidation"] { --kind: var(--red); --kind-soft: var(--red-soft); }
-.post[data-kind="milestone"], .post[data-kind="settled"] { --kind: var(--green); --kind-soft: var(--green-soft); }
-.post[data-kind="duel_settled"] { --kind: var(--gold); --kind-soft: var(--gold-soft); }
-.post[data-kind="story"], .post[data-kind="rank"] { --kind: var(--brand); --kind-soft: var(--brand-soft); }
-.post.closed { --kind: var(--muted); --kind-soft: var(--surface); }
-.kind { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 12px; padding: 4px 10px 4px 8px; border-radius: 999px; background: var(--kind-soft); color: var(--kind); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+/* Feed: every post kind has its own shape so the feed reads as a mix, not a list.
+   .post        full card on the surface colour (live trades)
+   .post.row    one-line compact card (closed trades)
+   .post.tint-* soft-coloured cards (calls blue, polls violet, liquidations red, settlements green, stories brand)
+   .post.bare   no card at all, tweet-style text on the page background
+   .post.duel   gold faceoff card
+   .ranks       horizontal strip of small gold cards (milestones, rank moves) */
+.post { position: relative; margin: 12px 14px 0; padding: 16px 18px; background: var(--surface); border-radius: var(--r); }
+.post:last-child { margin-bottom: 14px; }
+.post.row { padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+.post.row .coin { font-size: 15px; }
+.post.row .pnl { font-size: 17px; }
+.post.bare { background: transparent; border-radius: 0; margin: 4px 0 0; padding: 14px 20px 12px; border-bottom: 1px solid var(--line); }
+.post.bare + .post.bare { margin-top: 0; }
+.post.tint-blue { background: var(--blue-soft); }
+.post.tint-violet { background: var(--violet-soft); }
+.post.tint-red { background: var(--red-soft); }
+.post.tint-green { background: var(--green-soft); }
+.post.tint-brand { background: var(--brand-soft); }
+.post.tint-gold { background: var(--gold-soft); }
+.post.tint-blue .poll .opt, .post.tint-violet .poll .opt { background: var(--bg); }
+.post.alert { padding: 14px 16px; }
+.post.alert .say { margin-top: 10px; font-size: 14px; }
+.post.duel { border-top: 3px solid var(--gold); }
+.duel-head { display: flex; justify-content: space-between; align-items: center; }
+.duel-body { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; margin-top: 16px; text-align: center; }
+.duelist .lbl { display: inline-flex; }
+.duel-mid { text-align: center; min-width: 90px; }
+.duel-bar { height: 6px; border-radius: 999px; background: var(--red-soft); overflow: hidden; margin: 6px 0; }
+.duel-bar i { display: block; height: 100%; background: var(--green); border-radius: 999px; }
+.ranks { display: flex; gap: 10px; overflow-x: auto; padding: 4px 14px 2px; margin-top: 12px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+.ranks::-webkit-scrollbar { display: none; }
+.rankcard { flex: none; width: 170px; background: var(--surface); border-radius: var(--r); padding: 14px; scroll-snap-align: start; border-left: 3px solid var(--gold); }
+.story .faces { display: flex; align-items: center; margin-top: 12px; }
+.story .faces .av { width: 26px; height: 26px; border: 2px solid var(--brand-soft); margin-left: -8px; font-size: 9px; }
+.story .faces .av:first-child { margin-left: 0; }
+.kind { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.tint-blue .kind { color: var(--blue); } .tint-violet .kind { color: var(--violet); } .tint-red .kind { color: var(--red); } .tint-green .kind { color: var(--green); } .tint-brand .kind { color: var(--brand); } .tint-gold .kind { color: var(--gold); }
 .kind svg { width: 13px; height: 13px; }
-.post:last-child { margin-bottom: 12px; }
-.post + .post { margin-top: 10px; }
 .post .coin { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
 .post .pnl { font-size: 26px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
 .pnlpill { display: inline-flex; flex-direction: column; align-items: flex-end; padding: 8px 12px; border-radius: 14px; cursor: pointer; user-select: none; transition: background .4s; }

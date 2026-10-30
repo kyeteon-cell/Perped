@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
-import { FeedPost } from "@/components/FeedPost";
+import { FeedPost, RankStrip } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
 import { DepositSheet } from "@/components/DepositSheet";
 import { Avatar, Icon, I } from "@/components/ui";
@@ -63,9 +63,9 @@ export default function HomePage() {
         </div>
       )}
 
-      {posts.map((item, i) => (
-        <div key={item.post.id}>
-          <FeedPost item={item} mid={item.post.coin ? mids[item.post.coin] : undefined} onChanged={() => mutate()} />
+      {groupFeed(posts).map((g, i) => (
+        <div key={g.kind === "strip" ? `strip-${g.items[0].post.id}` : g.item.post.id}>
+          {g.kind === "strip" ? <RankStrip items={g.items} /> : <FeedPost item={g.item} mid={g.item.post.coin ? mids[g.item.post.coin] : undefined} onChanged={() => mutate()} />}
           {i === 4 && suggested.length > 0 && <Suggested rows={suggested} />}
         </div>
       ))}
@@ -74,6 +74,23 @@ export default function HomePage() {
       {deposit && <DepositSheet onClose={() => setDeposit(false)} />}
     </div>
   );
+}
+
+/** Runs of two or more milestone / rank system posts become one horizontal strip. */
+function groupFeed(rows: FeedRow[]): Array<{ kind: "one"; item: FeedRow } | { kind: "strip"; items: FeedRow[] }> {
+  const out: Array<{ kind: "one"; item: FeedRow } | { kind: "strip"; items: FeedRow[] }> = [];
+  const isSmall = (r: FeedRow) => r.post.kind === "system" && (r.post.systemType === "milestone" || r.post.systemType === "rank");
+  for (let i = 0; i < rows.length; i++) {
+    if (isSmall(rows[i])) {
+      const run = [rows[i]];
+      while (i + 1 < rows.length && isSmall(rows[i + 1])) run.push(rows[++i]);
+      if (run.length >= 2) { out.push({ kind: "strip", items: run }); continue; }
+      out.push({ kind: "one", item: run[0] });
+      continue;
+    }
+    out.push({ kind: "one", item: rows[i] });
+  }
+  return out;
 }
 
 function Suggested({ rows }: { rows: { handle: string; pnl: number; winRate: string }[] }) {

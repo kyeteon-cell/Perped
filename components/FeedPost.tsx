@@ -6,6 +6,7 @@ import type { FeedRow } from "@/lib/feed";
 import { fmtUsd, fmtPct, pnlForPosition, timeAgo, fmtPrice } from "@/lib/format";
 import { useSession } from "@/lib/hooks/useSession";
 import { Avatar, CoinMark, Icon, I, ticker } from "./ui";
+import { Sparkline } from "./Sparkline";
 
 type Props = { item: FeedRow; mid?: number; onChanged?: () => void; compact?: boolean };
 
@@ -97,35 +98,51 @@ function TradePost({ item, mid, onChanged }: Props) {
   const showSize = author?.showSizes !== false;
   const camps = item.copyCount + item.fadeCount;
 
+  if (!isOpen) {
+    // Closed trade: one compact row. The feed is about what's live; banked results are a footnote.
+    return (
+      <article className="post row">
+        {author ? <Link href={`/u/${author.handle}`}><Avatar handle={author.handle} url={author.avatarUrl} size={34} /></Link> : <span />}
+        <CoinMark coin={post.coin!} size="sm" />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14px]"><b>{author?.handle}</b> <span className="muted">closed</span> <b>{ticker(post.coin!)}</b> <span className={post.side === "long" ? "green" : "red"}>{post.side}</span> <span className="muted">{lev}×</span>{(author?.isDemo || post.paper) && <span className="lbl done ml-1.5" style={{ padding: "1px 7px", fontSize: 10 }}>Demo</span>}</div>
+          <div className="mono when text-[12px]">{fmtPrice(entry)} → {fmtPrice(mark)} · {timeAgo(post.closedAt ?? post.createdAt)} ago{camps ? ` · ${item.copyCount} copied, ${item.fadeCount} faded` : ""}</div>
+        </div>
+        <Link href={`/post/${post.id}`} className="text-right">
+          <div className={`pnl mono ${pos ? "green" : "red"}`}>{fmtPct(roi, 1)}</div>
+          <div className={`mono text-[12px] ${pos ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</div>
+        </Link>
+      </article>
+    );
+  }
+
   return (
-    <article className={`post ${isOpen ? "" : "closed"}`} data-kind={post.side}>
-      <KindTag icon={I.markets}>{post.copiedFromId ? "Copy trade" : post.fadedFromId ? "Fade" : isOpen ? "Live trade" : "Closed trade"}</KindTag>
-      <Who item={item} right={<span className={`lbl ${isOpen ? post.side : "done"}`}>{isOpen && <i />}{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
+    <article className="post">
+      <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
           <CoinMark coin={post.coin!} />
           <div>
             <Link href={`/markets/${post.coin}`} className="coin">{ticker(post.coin!, true)}</Link>
             <div className="mono when mt-2">
-              {showSize ? `${fmtUsd(Number(post.notionalUsd), { compact: true })} · ` : ""}
-              {isOpen ? `in at ${fmtPrice(entry)}` : `${fmtPrice(entry)} → ${fmtPrice(mark)}`}
+              {showSize ? `${fmtUsd(Number(post.notionalUsd), { compact: true })} · ` : ""}in at {fmtPrice(entry)}
             </div>
           </div>
         </div>
         <div ref={pillRef} className={`pnlpill ${pos ? "g" : "r"}`} onClick={() => setMode(((mode + 1) % 3) as 0 | 1 | 2)} title="Tap to switch % / $ / ROI">
           <div className={`pnl mono ${pos ? "green" : "red"}`}>{labels[0]}</div>
-          <div className={`mono text-[13px] ${pos ? "green" : "red"}`}>{labels[1]}{!isOpen && mode === 0 ? " banked" : ""}</div>
+          <div className={`mono text-[13px] ${pos ? "green" : "red"}`}>{labels[1]}</div>
         </div>
       </div>
       <div className="track"><b style={{ width: `${Math.min(100, Math.abs(roi))}%`, background: pos ? "var(--green)" : "var(--red)" }} /></div>
       {camps >= 3 ? (
         <div className="camps"><span><b>{item.copyCount} copied</b></span><span className="faint text-[11px] font-extrabold">vs</span><span><b>{item.fadeCount} faded</b></span></div>
-      ) : isOpen ? (
+      ) : (
         <div className="camps"><span>Be the first to copy or fade this one</span></div>
-      ) : null}
+      )}
       {post.body && <p className="say">{post.body}</p>}
       <Acts item={item} onChanged={onChanged}>
-        {isOpen && author && author.id !== profile?.id && (
+        {author && author.id !== profile?.id && (
           <>
             <Link href={`/trade?fade=${post.id}`} className="fade ml-auto">Fade</Link>
             <Link href={`/trade?copy=${post.id}`} className="copy">Copy</Link>
@@ -150,14 +167,14 @@ function CallPost({ item, mid, onChanged }: Props) {
   const left = deadline ? Math.max(0, deadline.getTime() - Date.now()) : 0;
   const leftTxt = left > 86_400_000 ? `${Math.round(left / 86_400_000)} d left` : left > 0 ? `${Math.round(left / 3_600_000)} h left` : "";
   return (
-    <article className={`post ${open ? "" : "closed"}`} data-kind="call">
-      <KindTag icon={I.trophy}>{open ? "Price call" : post.callStatus === "hit" ? "Call · hit" : "Call · missed"}</KindTag>
+    <article className={`post ${open ? "tint-blue" : post.callStatus === "hit" ? "tint-green" : "tint-red"}`}>
+      <KindTag icon={I.trophy}>{open ? "Price call" : post.callStatus === "hit" ? "Call hit" : "Call missed"}</KindTag>
       <Who item={item} right={<>{post.backedPostId && <span className="lbl backed">Backed</span>}<span className={`lbl ${open ? "call" : post.callStatus === "hit" ? "long" : "short"}`}><i />{open ? "Call" : post.callStatus === "hit" ? "Hit" : "Missed"}</span></>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
           <CoinMark coin={post.coin!} />
           <div>
-            <div className="coin">{ticker(post.coin!, true)} <span className="muted text-sm font-semibold tracking-normal">{up ? "↑" : "↓"} {fmtPrice(target)}</span></div>
+            <div className="coin" style={{ fontSize: 24 }}>{ticker(post.coin!, true)} <span className="muted text-sm font-semibold tracking-normal">{up ? "↑" : "↓"} {fmtPrice(target)}</span></div>
             <div className="mono when mt-2">{fromPx ? `from ${fmtPrice(fromPx)} · ${fmtPct(pctToTarget, 1)}` : up ? "up" : "down"}{deadline ? ` · by ${deadline.toLocaleDateString("en-US", { weekday: "short" })}` : ""}{post.invalidPx ? ` · invalid ${up ? "below" : "above"} ${fmtPrice(post.invalidPx)}` : ""}</div>
           </div>
         </div>
@@ -195,7 +212,7 @@ function PollPost({ item, onChanged }: Props) {
     onChanged?.();
   };
   return (
-    <article className="post" data-kind="poll">
+    <article className="post tint-violet">
       <KindTag icon={I.list}>Poll{closed ? " · closed" : ""}</KindTag>
       <Who item={item} right={<span className="lbl done">{post.settle ? "Settles on price" : `${total} votes`}</span>} />
       <p className="say font-bold">{post.body}</p>
@@ -220,8 +237,7 @@ function PollPost({ item, onChanged }: Props) {
 
 function TextPost({ item, onChanged }: Props) {
   return (
-    <article className="post" data-kind="text">
-      <KindTag icon={I.comment}>Post</KindTag>
+    <article className="post bare">
       <Who item={item} />
       <p className="say">{item.post.body}</p>
       <Acts item={item} onChanged={onChanged} />
@@ -234,20 +250,75 @@ function TextPost({ item, onChanged }: Props) {
 function SystemPost({ item, onChanged }: Props) {
   const { post } = item;
   const t = post.systemType ?? "";
-  const icon = t === "liquidation" ? I.bolt : t === "milestone" ? I.trophy : t === "settled" || t === "duel_settled" ? I.list : I.markets;
-  const title = t === "liquidation" ? "Liquidation" : t === "milestone" ? "Milestone" : t === "settled" ? "Settled" : t === "duel_settled" ? "Duel settled" : "Market";
-  const tint = t === "liquidation" ? "red" : t === "milestone" || t === "settled" ? "green" : t === "duel_settled" ? "gold" : "brand";
+  const meta = (post.meta ?? {}) as Record<string, unknown>;
+
+  if (t === "duel_settled") {
+    const winner = String(meta.winner ?? "?"), loser = String(meta.loser ?? "?");
+    return (
+      <article className="post duel">
+        <div className="duel-head"><span className="lbl gold">⚔ Duel settled</span><span className="when">{post.coin ?? ""} · {timeAgo(post.createdAt)} ago</span></div>
+        <div className="duel-body">
+          <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} /></Link><div className="name mt-1.5">{winner}</div><span className="lbl long mt-1"><i />Won</span></div>
+          <div className="duel-mid"><div className="mono muted text-xs">{post.coin}</div><div className="duel-bar"><i style={{ width: "100%" }} /></div><div className="when">{meta.start ? `${fmtPrice(Number(meta.start))} → ${fmtPrice(Number(meta.end))}` : "settled"}</div></div>
+          <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} /></Link><div className="name mt-1.5">{loser}</div><span className="lbl short mt-1"><i />Lost</span></div>
+        </div>
+        <Acts item={item} onChanged={onChanged}>
+          <Link href={`/u/${winner}`} className="chip ml-auto">Challenge {winner}</Link>
+        </Acts>
+      </article>
+    );
+  }
+
+  if (t === "story" && post.coin) {
+    return (
+      <article className="post tint-brand story">
+        <KindTag icon={I.markets}>Market</KindTag>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3"><CoinMark coin={post.coin} /><div><div className="name">{ticker(post.coin)} is moving</div><div className="when">{post.body}</div></div></div>
+          <Link href={`/markets/${post.coin}`} className="chip">Trade</Link>
+        </div>
+        <div className="mt-3"><Sparkline coin={post.coin} up={!/down|dump|−|-\d/.test(post.body ?? "")} wide /></div>
+      </article>
+    );
+  }
+
+  const isLiq = t === "liquidation";
+  const tint = isLiq ? "tint-red" : t === "settled" ? "tint-green" : t === "milestone" ? "tint-gold" : "tint-brand";
+  const icon = isLiq ? I.bolt : t === "milestone" ? I.trophy : t === "settled" ? I.list : I.markets;
+  const title = isLiq ? "Liquidation" : t === "milestone" ? "Milestone" : t === "settled" ? "Settled" : t === "rank" ? "Leaderboard" : "Perped";
   return (
-    <article className="post sys" data-kind={t || "story"}>
-      <KindTag icon={icon}>{title}</KindTag>
+    <article className={`post alert ${tint}`}>
       <div className="flex items-center gap-3">
-        <div className="sysico" style={{ background: `var(--${tint}-soft)`, color: `var(--${tint})` }}><Icon d={icon} /></div>
-        <div><div className="name">{title}</div><div className="when">{timeAgo(post.createdAt)} ago</div></div>
+        <div className="sysico" style={{ background: "var(--bg)", color: "inherit" }}><Icon d={icon} /></div>
+        <div><div className="kind" style={{ margin: 0 }}>{title}</div><div className="when">{timeAgo(post.createdAt)} ago</div></div>
       </div>
-      <p className="say mt-3">{post.body}</p>
+      <p className="say">{post.body}</p>
       <Acts item={item} onChanged={onChanged}>
-        {(post.meta as { postId?: number } | null)?.postId && <Link href={`/post/${(post.meta as { postId: number }).postId}`} className="chip ml-auto">Receipt</Link>}
+        {typeof meta.postId === "number" && <Link href={`/post/${meta.postId}`} className="chip ml-auto">Receipt</Link>}
+        {isLiq && <span className="muted ml-auto text-xs">Size small. Stops exist.</span>}
       </Acts>
     </article>
+  );
+}
+
+/** Horizontal strip of small cards for a run of milestone / rank posts, so they don't each take a full card. */
+export function RankStrip({ items }: { items: FeedRow[] }) {
+  return (
+    <div className="mt-3">
+      <div className="flex items-center justify-between px-5"><span className="eyebrow">Around Perped</span><span className="when">{timeAgo(items[0].post.createdAt)} ago</span></div>
+      <div className="ranks">
+        {items.map(({ post }) => {
+          const t = post.systemType ?? "";
+          const meta = (post.meta ?? {}) as Record<string, unknown>;
+          return (
+            <Link key={post.id} href={`/post/${post.id}`} className="rankcard">
+              <div className="when">{t === "milestone" ? "Milestone" : t === "rank" ? "Leaderboard" : "Perped"}</div>
+              <div className="name mt-1 line-clamp-2 text-[14px]">{typeof meta.handle === "string" ? `${meta.handle} ${t === "milestone" ? `hit ${((Number(meta.roi) || 0) / 100 + 1).toFixed(1)}×` : ""}` : post.body}</div>
+              {typeof meta.handle === "string" && <div className="muted mt-1 line-clamp-2 text-[12px]">{post.body}</div>}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }
