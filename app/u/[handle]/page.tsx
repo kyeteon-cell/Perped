@@ -31,6 +31,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const [sheet, setSheet] = useState<"deposit" | "withdraw" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [challenge, setChallenge] = useState(false);
 
   const postsKey = tab === "posts" ? `/api/posts?handle=${handle}&kind=text` : tab === "trades" ? `/api/posts?handle=${handle}&kind=trade&status=${tradeTab}` : null;
   const { data: feed, mutate: mutateFeed } = useSWR<{ posts: FeedRow[] }>(postsKey);
