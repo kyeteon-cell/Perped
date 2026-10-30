@@ -3,7 +3,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { queryFeed, notify } from "@/lib/feed";
-import { MAX_LEVERAGE, MAX_POSITION_USD } from "@/lib/config";
+import { DEMO_ENABLED, MAX_LEVERAGE, MAX_POSITION_USD } from "@/lib/config";
 import { getMids } from "@/lib/hl-info";
 
 /**
@@ -85,6 +85,7 @@ export async function POST(req: Request) {
 
   const values: typeof schema.posts.$inferInsert = { userId: profile.id, kind: b.kind, body: "body" in b ? b.body : undefined };
   if (b.kind === "trade" && (b.paper || profile.isDemo)) {
+    if (!DEMO_ENABLED && !profile.isBot) return Response.json({ error: "demo mode is off; switch to live trading in Settings" }, { status: 403 });
     // Demo: fill at the live mid on the server, deduct margin from the virtual balance.
     const mids = await getMids().catch(() => ({} as Record<string, string>));
     const mid = Number(mids[b.coin.toUpperCase()] ?? 0);

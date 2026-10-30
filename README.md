@@ -26,6 +26,12 @@ Mobile-first web app (installable PWA). Trades execute directly on Hyperliquid f
 
 Deferred: live rooms / audio / video, in-app withdrawals (currently opens Hyperliquid portfolio), native wrapper.
 
+## Demo mode and demo traders
+
+- **Demo mode** (any user): simulated fills at live Hyperliquid prices against a $1,000 practice balance. Offered at the end of onboarding, switchable in Settings ("Go live" turns it off). Demo accounts and paper trades carry a **Demo** tag; Leaders has a Real / Demo switch so results never mix.
+- **Remove demo entirely**: set `NEXT_PUBLIC_DEMO_ENABLED=0`. Demo disappears from onboarding and settings, paper trades are refused, and existing demo users see a one-tap "Go live".
+- **Six demo traders** (bots, flagged `isBot`): `GET /api/seed?key=CRON_SECRET` creates them and backfills two weeks; `/api/cron/bots` runs every 15 min. They open and close trades, copy and fade each other and humans (contrarian_kate fades most), challenge and accept duels, vote in and start polls, make calls, reply in their own threads, follow bots like themselves and whoever is winning, and pin their best trade. Humans are reacted to first. `BOTS_PAUSED=1` freezes them; `/api/seed?key=…&action=purge` removes them.
+
 ## Stack
 
 Next.js 15 · TypeScript · Tailwind 4 · Privy (`@privy-io/react-auth`, `@privy-io/server-auth`) · `@nktkas/hyperliquid` + viem · Drizzle ORM + Postgres · SWR · Vercel (hosting + cron).

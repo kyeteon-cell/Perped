@@ -41,3 +41,6 @@ function clampInt(n: number, lo: number, hi: number) {
   if (!Number.isFinite(n)) return lo;
   return Math.min(hi, Math.max(lo, Math.round(n)));
 }
+
+/** Demo mode availability. "0" hides demo from onboarding and settings and refuses paper trades (existing demo users get switched live on next settings save). */
+export const DEMO_ENABLED = (process.env.NEXT_PUBLIC_DEMO_ENABLED ?? "1") !== "0";

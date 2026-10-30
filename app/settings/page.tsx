@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "@/lib/hooks/useSession";
 import { Icon, I, getTheme, setTheme, type Theme } from "@/components/ui";
-import { BUILDER_MAX_FEE_RATE, MAX_POSITION_USD } from "@/lib/config";
+import { BUILDER_MAX_FEE_RATE, DEMO_ENABLED, MAX_POSITION_USD } from "@/lib/config";
 import type { User } from "@/lib/schema";
 
 type Key = "showLiquidations" | "showSizes" | "allowCopy" | "allowFade" | "showBottomBoard" | "acceptDuels";
@@ -47,7 +47,14 @@ export default function SettingsPage() {
       <Toggle k="acceptDuels" label="Accept duel challenges" />
 
       <div className="eyebrow px-5 pb-1.5 pt-4">Trading</div>
-      <label className="srow"><span>Demo mode<span className="when ml-1.5">simulated fills, practice balance</span></span><input type="checkbox" className="sw" checked={!!local.isDemo} onChange={(e) => save({ isDemo: e.target.checked })} /></label>
+      {DEMO_ENABLED ? (
+        <>
+          <label className="srow"><span>Demo mode<span className="when ml-1.5">simulated fills, practice balance</span></span><input type="checkbox" className="sw" checked={!!local.isDemo} onChange={(e) => save({ isDemo: e.target.checked })} /></label>
+          {local.isDemo && <div className="srow"><span className="muted text-sm">Ready for real money? Turn demo off, then deposit from your profile.</span><button className="chip" style={{ color: "var(--brand)", background: "var(--brand-soft)" }} onClick={() => save({ isDemo: false })}>Go live</button></div>}
+        </>
+      ) : (
+        local.isDemo && <div className="srow"><span className="muted text-sm">Demo mode has been retired. Switch to live trading to continue.</span><button className="chip" style={{ color: "var(--brand)", background: "var(--brand-soft)" }} onClick={() => save({ isDemo: false })}>Go live</button></div>
+      )}
       <div className="srow"><span>Default leverage</span><Seg value={String(local.defaultLeverage ?? 3)} options={[["1", "1×"], ["2", "2×"], ["3", "3×"], ["5", "5×"]]} onChange={(v) => save({ defaultLeverage: Number(v) })} /></div>
       <div className="srow"><span>Max per trade</span><span className="mono">${MAX_POSITION_USD}</span></div>
       <div className="srow"><span>Perped fee approval</span><span className="chip" style={{ color: "var(--green)", background: "var(--green-soft)" }}>{BUILDER_MAX_FEE_RATE} max</span></div>

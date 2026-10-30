@@ -18,6 +18,17 @@ const NOTES_CLOSE_WIN = ["Banked. Never going broke taking a win.", "Target hit.
 const NOTES_CLOSE_LOSS = ["Got perped. Stop did its job.", "Wrong. Small loss, moving on.", "Chopped. Should've waited for the close.", "Taking the L before it becomes a bigger L.", "Invalidation hit, out."];
 const COMMENTS = ["Same setup I'm watching.", "Stop's too tight imo", "copied at your entry, pray for me", "This aged well", "fading this 🫡", "size?", "Funding says otherwise", "Nice one", "Why 5×", "respect for posting the loss", "calling it now: this reverses at the daily open", "👀"];
 
+const REPLIES_OWN = ["Still holding. Thesis unchanged.", "Fair point, but I'm sticking with it.", "Moved my stop to entry.", "If it loses the level I'm out.", "Size is small, relax.", "Told you 😌", "Yeah that one hurt.", "Reply in receipts, not comments."];
+const DUEL_LINES = ["Let's settle this on the chart.", "Put your size where your mouth is.", "You've faded me twice. Duel.", "Opposite sides, same coin, 48 hours."];
+const POLLS = [["Does BTC close the week green?", ["Yes", "No"], "BTC", "gte"], ["ETH above {px} in 3 days?", ["Yes", "No"], "ETH", "gte"], ["SOL back below {px} by Friday?", ["Yes", "No"], "SOL", "lte"]] as const;
+
+/** 0..1 how alike two bots are: shared coins and similar leverage. Drives who follows whom. */
+function similarity(a: (typeof BOTS)[number], b: (typeof BOTS)[number]) {
+  const shared = a.coins.filter((c) => b.coins.includes(c)).length / Math.max(a.coins.length, b.coins.length);
+  const levGap = Math.abs((a.lev[0] + a.lev[1]) / 2 - (b.lev[0] + b.lev[1]) / 2) / 4;
+  return Math.max(0, shared * 0.7 + (1 - levGap) * 0.3);
+}
+
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 const hours = (h: number) => h * 3_600_000;
@@ -28,8 +39,8 @@ export async function ensureBots() {
       .onConflictDoNothing();
     await db.insert(schema.stats).values({ userId: b.id }).onConflictDoNothing();
   }
-  // follow graph
-  for (const a of BOTS) for (const b of BOTS) if (a !== b && Math.random() < 0.6) await db.insert(schema.follows).values({ followerId: a.id, followeeId: b.id }).onConflictDoNothing();
+  // follow graph: bots follow the bots most like them (shared coins, similar leverage), plus a little randomness
+  for (const a of BOTS) for (const b of BOTS) if (a !== b && Math.random() < 0.25 + similarity(a, b) * 0.7) await db.insert(schema.follows).values({ followerId: a.id, followeeId: b.id }).onConflictDoNothing();
 }
 
 /** Backfill ~2 weeks of closed trades, a few open ones, calls, polls, comments and votes. */
@@ -180,6 +191,98 @@ export async function botTick() {
         await db.insert(schema.posts).values({ userId: b.id, kind: "call", coin, side: up ? "long" : "short", targetPx: String(mid * (up ? 1 + rnd(0.03, 0.1) : 1 - rnd(0.03, 0.1))), invalidPx: String(mid * (up ? 0.96 : 1.04)), deadline: new Date(now + hours(pick([24, 72, 168]))), callStatus: "open", status: "open", body: pick(["Range is compressing, this resolves up.", "Lower highs all week. Target is the range low.", "Funding too hot. Reset incoming.", "Breakout retest holding. Continuation."]), meta: { fromPx: mid } });
         log.push(`${b.handle} called ${coin}`);
       }
+    }
+
+    // 4b. Reply in threads on own posts when others commented (keeps call-outs alive)
+    const myRecent = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), gte(schema.posts.createdAt, new Date(now - hours(24))))).limit(10);
+    for (const mp of myRecent) {
+      const [latest] = await db.select().from(schema.comments).where(and(eq(schema.comments.postId, mp.id), ne(schema.comments.userId, b.id))).orderBy(desc(schema.comments.id)).limit(1);
+      if (!latest) continue;
+      const [already] = await db.select({ id: schema.comments.id }).from(schema.comments).where(and(eq(schema.comments.postId, mp.id), eq(schema.comments.userId, b.id), eq(schema.comments.parentId, latest.id))).limit(1);
+      if (!already && Math.random() < b.chatty * 0.6) await db.insert(schema.comments).values({ postId: mp.id, userId: b.id, parentId: latest.id, body: pick(REPLIES_OWN) });
+    }
+
+    // 4c. Copy or fade another bot's live trade (contrarians fade the crowd, similar bots copy each other)
+    const botLive = await db.select({ id: schema.posts.id, userId: schema.posts.userId, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage })
+      .from(schema.posts).innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
+      .where(and(eq(schema.users.isBot, true), ne(schema.posts.userId, b.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), gte(schema.posts.createdAt, new Date(now - hours(3)))))
+      .orderBy(sql`random()`).limit(2);
+    for (const t of botLive) {
+      const other = BOTS.find((x) => x.id === t.userId);
+      if (!other || !t.coin || !t.side) continue;
+      const mid = Number(mids[t.coin] ?? 0);
+      if (!mid || Number(me.demoBalance) < 60) continue;
+      const alike = similarity(b, other);
+      const fade = b.fader ? Math.random() < 0.65 : Math.random() < 0.15;
+      const copy = !fade && Math.random() < alike * 0.4;
+      if (!fade && !copy) continue;
+      const [dup] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), sql`(${schema.posts.copiedFromId} = ${t.id} or ${schema.posts.fadedFromId} = ${t.id})`)).limit(1);
+      if (dup) continue;
+      const side = fade ? (t.side === "long" ? "short" : "long") : t.side;
+      const lev = Math.min(t.leverage ?? 2, b.lev[1]);
+      const margin = pick([25, 50, 75]);
+      await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin: t.coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, copiedFromId: copy ? t.id : undefined, fadedFromId: fade ? t.id : undefined, body: fade ? pick(["Fading this. Sorry not sorry.", "Other side of this one.", "Respectfully, no."]) : pick(["Copied. Let's ride.", "In with you.", "Copied at market."]), slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
+      await db.update(schema.users).set({ demoBalance: (Number(me.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, b.id));
+      await notify(t.userId!, fade ? "faded" : "copied", `${b.handle} ${fade ? "faded" : "copied"} your ${t.coin} trade`, `$${margin * lev} at ${mid}`, `/post/${t.id}`);
+      if (Math.random() < 0.5) await db.insert(schema.comments).values({ postId: t.id, userId: b.id, body: fade ? pick(["fading this 🫡", "see you on the other side", "nope"]) : pick(["copied at your entry", "in", "same read"]) });
+      log.push(`${b.handle} ${fade ? "faded" : "copied"} ${other.handle} ${t.coin}`);
+    }
+
+    // 4d. Duels: challenge someone who faded you recently (or a rival); accept pending challenges
+    const pending = await db.select().from(schema.duels).where(and(eq(schema.duels.opponentId, b.id), eq(schema.duels.status, "pending"))).limit(2);
+    for (const d of pending) {
+      const mid = Number(mids[d.coin] ?? 0);
+      if (!mid) continue;
+      const accept = Math.random() < 0.8;
+      if (!accept) { await db.update(schema.duels).set({ status: "declined" }).where(eq(schema.duels.id, d.id)); log.push(`${b.handle} declined duel`); continue; }
+      const side = d.challengerSide === "long" ? "short" : "long";
+      const stake = Number(d.stakeUsd);
+      const [post] = await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin: d.coin, side, size: String((stake * 2) / mid), notionalUsd: String(stake * 2), leverage: 2, entryPx: String(mid), status: "open", paper: true, body: `Duel accepted. ${pick(DUEL_LINES)}`, meta: { duelId: d.id } }).returning({ id: schema.posts.id });
+      await db.update(schema.duels).set({ status: "live", opponentPostId: post.id, startPx: String(mid) }).where(eq(schema.duels.id, d.id));
+      await notify(d.challengerId, "duel", `${b.handle} accepted your duel`, `${d.coin} · $${stake}`, `/duels/${d.id}`);
+      log.push(`${b.handle} accepted duel ${d.coin}`);
+    }
+    const myLiveDuels = await db.select({ id: schema.duels.id }).from(schema.duels).where(and(sql`(${schema.duels.challengerId} = ${b.id} or ${schema.duels.opponentId} = ${b.id})`, sql`${schema.duels.status} in ('pending','live')`));
+    if (myLiveDuels.length === 0 && Math.random() < 0.12) {
+      // prefer whoever faded me most recently
+      const [fader] = await db.select({ userId: schema.posts.userId }).from(schema.posts).innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
+        .where(and(eq(schema.users.isBot, true), sql`${schema.posts.fadedFromId} in (select id from posts where user_id = ${b.id})`)).orderBy(desc(schema.posts.id)).limit(1);
+      const target = BOTS.find((x) => x.id === fader?.userId) ?? pick(BOTS.filter((x) => x.id !== b.id));
+      const coin = pick(b.coins.filter((c) => target.coins.includes(c)).length ? b.coins.filter((c) => target.coins.includes(c)) : b.coins);
+      const mid = Number(mids[coin] ?? 0);
+      if (mid && Number(me.demoBalance) > 120) {
+        const side = Math.random() < b.bias ? "long" : "short";
+        const stake = pick([50, 100]);
+        const [post] = await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String((stake * 2) / mid), notionalUsd: String(stake * 2), leverage: 2, entryPx: String(mid), status: "open", paper: true, body: `⚔ Challenging ${target.handle}. ${pick(DUEL_LINES)}` }).returning({ id: schema.posts.id });
+        const [duel] = await db.insert(schema.duels).values({ challengerId: b.id, opponentId: target.id, coin, challengerSide: side, stakeUsd: String(stake), settlesAt: new Date(now + hours(48)), challengerPostId: post.id, startPx: String(mid) }).returning({ id: schema.duels.id });
+        await db.update(schema.posts).set({ meta: { duelId: duel.id } }).where(eq(schema.posts.id, post.id));
+        await db.update(schema.users).set({ demoBalance: (Number(me.demoBalance) - stake).toFixed(2) }).where(eq(schema.users.id, b.id));
+        await notify(target.id, "duel", `${b.handle} challenged you to a duel`, `${coin} · $${stake} · 48h`, `/duels/${duel.id}`);
+        log.push(`${b.handle} challenged ${target.handle} on ${coin}`);
+      }
+    }
+
+    // 4e. Vote in open polls; occasionally start one
+    const openPolls = await db.select({ id: schema.posts.id, options: schema.posts.options }).from(schema.posts).where(and(eq(schema.posts.kind, "poll"), eq(schema.posts.status, "open"), ne(schema.posts.userId, b.id))).limit(3);
+    for (const pl of openPolls) if (Math.random() < 0.5) await db.insert(schema.pollVotes).values({ postId: pl.id, userId: b.id, option: Math.floor(Math.random() * (pl.options?.length ?? 2)) }).onConflictDoNothing();
+    if (Math.random() < 0.04) {
+      const [q, opts, coin, op] = pick([...POLLS]);
+      const mid = Number(mids[coin] ?? 0);
+      if (mid) {
+        const px = Math.round(mid * (op === "gte" ? 1.04 : 0.96) * 100) / 100;
+        await db.insert(schema.posts).values({ userId: b.id, kind: "poll", body: q.replace("{px}", String(px)), options: [...opts], closesAt: new Date(now + hours(72)), settle: { coin, op, px }, status: "open", coin, paper: true });
+        log.push(`${b.handle} started a poll`);
+      }
+    }
+
+    // 4f. Follow bots who've been doing well lately; occasionally pin a best trade
+    if (Math.random() < 0.1) {
+      const [best] = await db.select({ userId: schema.stats.userId }).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(and(eq(schema.users.isBot, true), ne(schema.users.id, b.id))).orderBy(desc(schema.stats.realizedPnl7d)).limit(1);
+      if (best) await db.insert(schema.follows).values({ followerId: b.id, followeeId: best.userId }).onConflictDoNothing();
+    }
+    if (Math.random() < 0.05) {
+      const [top] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "closed"))).orderBy(desc(sql`${schema.posts.realizedPnl}::numeric`)).limit(1);
+      if (top) await db.update(schema.posts).set({ pinned: true }).where(eq(schema.posts.id, top.id));
     }
 
     // 5. Vote/comment on other bots' recent posts (keeps the feed social)
