@@ -179,7 +179,9 @@ body { font-family: var(--font-sans), ui-rounded, ui-sans-serif, system-ui, sans
 .hero-actions .solid { background: #fff; color: var(--hero-a); }
 
 /* Sticky tabs */
-.tabs { display: grid; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.tabs { display: grid; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; background: var(--bg); }
+/* Solid curtain above the sticky tabs so nothing scrolls into view behind the browser's top bar. */
+.tabs::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 160px; background: var(--bg); pointer-events: none; }
 .tabs button, .tabs a { background: none; border: 0; padding: 12px 0; font: inherit; font-size: 14px; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
 .tabs .on { color: var(--text); border-bottom-color: var(--tint, var(--text)); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse 2.4s ease-in-out infinite; }
