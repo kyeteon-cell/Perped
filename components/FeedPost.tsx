@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import { fmtUsd, fmtPct, pnlForPosition, timeAgo, fmtPrice } from "@/lib/format";
@@ -74,11 +75,43 @@ function Acts({ item, onChanged, children }: { item: FeedRow; onChanged?: () => 
   );
 }
 
+/* ---------- swipe to copy / fade ---------- */
+
+/**
+ * Horizontal swipe on a live trade card: drag right to copy, left to fade. The card slides over a
+ * coloured backdrop that labels the action; past the threshold it commits (with a haptic tick where
+ * supported). Vertical movement hands control back to the scroller.
+ */
+function useSwipeToAct(onCopy: () => void, onFade: () => void, enabled: boolean) {
+  const [dx, setDx] = useState(0);
+  const [armed, setArmed] = useState<"copy" | "fade" | null>(null);
+  const start = useRef<{ x: number; y: number; locked: null | "h" | "v" } | null>(null);
+  const THRESH = 96, MAX = 150;
+  const onTouchStart = (e: React.TouchEvent) => { if (!enabled) return; const t = e.touches[0]; start.current = { x: t.clientX, y: t.clientY, locked: null }; };
+  const onTouchMove = (e: React.TouchEvent) => {
+    const s0 = start.current; if (!s0) return;
+    const t = e.touches[0]; const mx = t.clientX - s0.x, my = t.clientY - s0.y;
+    if (!s0.locked) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; s0.locked = Math.abs(mx) > Math.abs(my) * 1.2 ? "h" : "v"; }
+    if (s0.locked === "v") return;
+    const clamped = Math.max(-MAX, Math.min(MAX, mx * 0.9));
+    setDx(clamped);
+    const next = clamped > THRESH ? "copy" : clamped < -THRESH ? "fade" : null;
+    if (next !== armed) { setArmed(next); if (next && typeof navigator !== "undefined" && "vibrate" in navigator) try { navigator.vibrate(12); } catch {} }
+  };
+  const onTouchEnd = () => {
+    if (!start.current) return;
+    const a = armed; start.current = null; setDx(0); setArmed(null);
+    if (a === "copy") onCopy(); else if (a === "fade") onFade();
+  };
+  return { dx, armed, handlers: { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel: onTouchEnd } };
+}
+
 /* ---------- trade ---------- */
 
 function TradePost({ item, mid, onChanged }: Props) {
   const { post, author } = item;
   const { profile } = useSession();
+  const router = useRouter();
   const entry = Number(post.entryPx), size = Number(post.size), lev = post.leverage ?? 1;
   const isOpen = post.status === "open";
   const mark = isOpen ? (mid ?? entry) : Number(post.exitPx ?? entry);
@@ -97,6 +130,8 @@ function TradePost({ item, mid, onChanged }: Props) {
   const labels = [[fmtPct(pct, 1), fmtUsd(pnl, { sign: true })], [fmtUsd(pnl, { sign: true }), fmtPct(pct, 1)], [`${fmtPct(roi, 1)} ROI`, `${fmtUsd(pnl, { sign: true })} on ${fmtUsd(Number(post.notionalUsd) / lev, { compact: true })}`]][mode];
   const showSize = author?.showSizes !== false;
   const camps = item.copyCount + item.fadeCount;
+  const canAct = isOpen && !!author && author.id !== profile?.id;
+  const swipe = useSwipeToAct(() => router.push(`/trade?copy=${post.id}`), () => router.push(`/trade?fade=${post.id}`), canAct);
 
   if (!isOpen) {
     // Closed trade: one compact row. The feed is about what's live; banked results are a footnote.
@@ -117,7 +152,12 @@ function TradePost({ item, mid, onChanged }: Props) {
   }
 
   return (
-    <article className="post">
+    <article className={`post swipe ${swipe.armed ?? ""}`} {...(canAct ? swipe.handlers : {})}>
+      <div className="swipe-bg" aria-hidden>
+        <span className="sb-copy" style={{ opacity: Math.min(1, Math.max(0, swipe.dx / 60)) }}><Icon d={I.copy} size={20} /> Copy{swipe.armed === "copy" ? " ✓" : ""}</span>
+        <span className="sb-fade" style={{ opacity: Math.min(1, Math.max(0, -swipe.dx / 60)) }}>{swipe.armed === "fade" ? "✓ " : ""}Fade <Icon d={I.bolt} size={20} /></span>
+      </div>
+      <div className="swipe-fg" style={{ transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined, transition: swipe.dx ? "none" : "transform .25s cubic-bezier(.2,.8,.2,1)" }}>
       <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -141,14 +181,15 @@ function TradePost({ item, mid, onChanged }: Props) {
         <div className="camps"><span>Be the first to copy or fade this one</span></div>
       )}
       {post.body && <p className="say">{post.body}</p>}
-      <Acts item={item} onChanged={onChanged}>
-        {author && author.id !== profile?.id && (
-          <>
-            <Link href={`/trade?fade=${post.id}`} className="fade ml-auto">Fade</Link>
-            <Link href={`/trade?copy=${post.id}`} className="copy">Copy</Link>
-          </>
-        )}
-      </Acts>
+      {canAct && (
+        <div className="cf">
+          <Link href={`/trade?fade=${post.id}`} className="cf-fade"><Icon d={I.bolt} size={18} />Fade<small>take the other side</small></Link>
+          <Link href={`/trade?copy=${post.id}`} className="cf-copy"><Icon d={I.copy} size={18} />Copy<small>same trade, your size</small></Link>
+        </div>
+      )}
+      <Acts item={item} onChanged={onChanged} />
+      {canAct && <div className="swipe-hint">← swipe to fade · swipe to copy →</div>}
+      </div>
     </article>
   );
 }
