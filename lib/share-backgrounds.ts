@@ -7,3 +7,9 @@ export const SHARE_BACKGROUNDS: { key: string; name: string; url: string; textCo
   { key: "rocket", name: "Rocket", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_101451_fec2a7ae-bc7f-49d1-a4b9-339490978401.png", textColor: "#fff", muted: "rgba(255,255,255,.7)", accent: "#4ade80", scrim: "top" },
   { key: "bar", name: "Gold bar", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_101451_31e520f4-7a0f-4fe0-a03f-a863207d1249.png", textColor: "#fff", muted: "rgba(255,255,255,.72)", accent: "#ffd166", scrim: "top" },
 ];
+
+/** Hero banner backgrounds (16:9). Served through the same /api/share-bg/:key proxy. */
+export const HERO_BACKGROUNDS = [
+  { key: "hero-fightnight", name: "Fight night", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131121_3bf994e3-0ac8-4fd5-92b3-e218bd132082.png" },
+  { key: "hero-chrome", name: "Liquid chrome", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131121_865ca019-fe8e-4e99-a79d-c6bb2155fb3f.png" },
+];

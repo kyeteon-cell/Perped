@@ -340,3 +340,11 @@ button:active { transform: scale(.97); }
 .h2h-row .k { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 0 12px; }
 .h2h-row .win { color: var(--green); font-weight: 800; }
 .kind.battle-link { color: var(--violet); text-decoration: none; }
+
+
+/* ---------- Hero with a photo background ---------- */
+.hero.photo { background-size: cover; background-position: right center; background-repeat: no-repeat; background-color: #0b0b0f; }
+.hero.photo::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(90deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.62) 55%, rgba(0,0,0,.18) 100%), linear-gradient(180deg, rgba(0,0,0,.1), rgba(0,0,0,.45)); }
+.hero.photo::after { display: none; }
+.hero.photo > * { position: relative; z-index: 1; }
+.hero.photo .k, .hero.photo .big, .hero.photo .row2 { text-shadow: 0 2px 10px rgba(0,0,0,.6); }
