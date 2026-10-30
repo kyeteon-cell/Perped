@@ -44,16 +44,20 @@ export default function HomePage() {
 
   return (
     <div data-tint="brand" className="fade-in">
-      <header className="flex items-center justify-between px-5 pt-4">
+      <header className="home-banner">
+        <img src="/api/share-bg/banner-candles" alt="" className="home-banner-img" />
+        <div className="home-banner-shade" />
+        <div className="home-banner-row">
         <div>
-          <h1 className="h1">Perped</h1>
-          <div className="faint text-[11px] font-semibold uppercase tracking-wide">Powered by Hyperliquid</div>
+          <h1 className="wordmark">PERPED</h1>
+          <div className="home-banner-sub">Powered by Hyperliquid</div>
         </div>
         <div className="flex gap-2">
           {authenticated && (
-            <Link href="/notifications" className="iconbtn" aria-label="Notifications"><Icon d={I.bell} />{unread > 0 && <span className="badge">{unread}</span>}</Link>
+            <Link href="/notifications" className="iconbtn glass" aria-label="Notifications"><Icon d={I.bell} />{unread > 0 && <span className="badge">{unread}</span>}</Link>
           )}
-          <Link href="/markets" className="iconbtn" aria-label="Search"><Icon d={I.search} /></Link>
+          <Link href="/markets" className="iconbtn glass" aria-label="Search"><Icon d={I.search} /></Link>
+        </div>
         </div>
       </header>
 

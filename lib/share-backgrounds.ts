@@ -28,6 +28,9 @@ export const ART = [
   { key: "medal-1", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174100_afbab611-2b09-423a-b13b-c28322434d84.png" },
   { key: "medal-2", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174059_6379c01a-cf07-49c1-91d2-c9db5914f448.png" },
   { key: "medal-3", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174056_7aa61e38-f543-448e-a9e8-4cf2f09bb0af.png" },
+  { key: "banner-candles", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_225736_c2f162fa-be0a-4342-beca-f7e7a10b7698.png" },
+  { key: "banner-chrome", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_225735_29add364-3016-4279-9353-8faf2a4f65ee.png" },
+  { key: "banner-arena", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_225735_454b3b4c-8a55-49ae-955a-c953141bd8bc.png" },
   { key: "arena", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_174059_b1ab2049-9324-4976-a4ae-37ce0915009b.png" },
 ];
 
