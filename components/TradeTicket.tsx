@@ -8,7 +8,7 @@ import { useMids } from "@/lib/hooks/useMids";
 import { makeExchangeClient, placeMarketOrder, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
 import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice } from "@/lib/format";
-import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, MAX_LEVERAGE, MAX_POSITION_USD } from "@/lib/config";
+import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, MAX_POSITION_USD } from "@/lib/config";
 import { CoinMark, ticker } from "./ui";
 
 const QUICK = [25, 50, 100, 250];
@@ -53,7 +53,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
 
   const market: Market | undefined = useMemo(() => markets.find((m) => m.name === coin), [markets, coin]);
   const mid = mids[coin] ?? market?.mid ?? 0;
-  const maxLev = Math.min(fadeCap, market?.maxLeverage ?? MAX_LEVERAGE);
+  const maxLev = Math.min(fadeCap, market?.maxLeverage ?? 50);
   useEffect(() => { if (lev > maxLev) setLev(maxLev); }, [maxLev, lev]);
   useEffect(() => {
     if (isDemo || !address || !BUILDER_CONFIGURED) return setApproved(true);

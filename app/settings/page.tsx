@@ -6,7 +6,7 @@ import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { Icon, I, getTheme, setTheme, type Theme } from "@/components/ui";
 import useSWR from "swr";
-import { BUILDER_FEE_REFERRED_TENTHS_BPS, BUILDER_FEE_STANDARD_TENTHS_BPS, BUILDER_FEE_TOP_TENTHS_BPS, BUILDER_MAX_FEE_RATE, DEMO_ENABLED, MAX_LEVERAGE, MAX_POSITION_USD, TOP_TIER_RANK } from "@/lib/config";
+import { BUILDER_FEE_REFERRED_TENTHS_BPS, BUILDER_FEE_STANDARD_TENTHS_BPS, BUILDER_FEE_TOP_TENTHS_BPS, BUILDER_MAX_FEE_RATE, DEMO_ENABLED, MAX_POSITION_USD, TOP_TIER_RANK } from "@/lib/config";
 import { fmtUsd } from "@/lib/format";
 import { tenthsBpsToLabel, type FeeInfo } from "@/lib/fees";
 import type { ReferralSummary } from "@/lib/referrals";
@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const { profile, authedFetch, refreshMe, logout, address, fee, hasExternalWallet, linkWallet, linkError, isGuest, login } = useSession();
   const [copied, setCopied] = useState(false);
   const { markets } = useMarkets();
-  const topCap = markets.reduce((m, x) => Math.max(m, x.maxLeverage), 0) || MAX_LEVERAGE;
+  const topCap = markets.reduce((m, x) => Math.max(m, x.maxLeverage), 0) || 50;
   const levOptions = [1, 2, 3, 5, 10, 20, 25, 40, 50].filter((n) => n <= topCap).map((n) => [String(n), `${n}×`] as [string, string]);
   const [theme, setThemeState] = useState<Theme>("auto");
   const [local, setLocal] = useState<Partial<User>>({});
