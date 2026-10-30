@@ -7,7 +7,7 @@ import { useMarkets, type Market } from "@/lib/hooks/useMarkets";
 import { useMids } from "@/lib/hooks/useMids";
 import { makeExchangeClient, placeMarketOrder, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
-import { fmtUsd, roundSize, fmtSize, fmtPct } from "@/lib/format";
+import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice } from "@/lib/format";
 import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, MAX_LEVERAGE, MAX_POSITION_USD } from "@/lib/config";
 import { CoinMark, ticker } from "./ui";
 
@@ -148,7 +148,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
         <div className="block">
           <input className="field mb-2.5" placeholder="Search markets" value={search} onChange={(e) => setSearch(e.target.value)} />
           <div className="seg">{filtered.map((m) => <button key={m.name} className={`chip ${m.name === coin ? "on" : ""}`} onClick={() => setCoin(m.name)}><CoinMark coin={m.name} size="xs" />{ticker(m.name)}</button>)}</div>
-          <div className="mt-3.5 flex items-baseline justify-between"><span className="text-[22px] font-bold tracking-tight">{ticker(coin, true)}</span><span className="mono text-lg">{mid ? mid.toLocaleString("en-US", { maximumFractionDigits: 6 }) : "…"}</span></div>
+          <div className="mt-3.5 flex items-baseline justify-between"><span className="text-[22px] font-bold tracking-tight">{ticker(coin, true)}</span><span className="mono text-lg">{mid ? fmtPrice(mid) : "…"}</span></div>
         </div>
       )}
 
@@ -170,7 +170,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
         <div className="grid grid-cols-3 gap-2.5">
           <div className="stat"><small>Position</small><div className="v mono">{fmtUsd(notional, { compact: notional >= 10000 })}</div></div>
           <div className="stat"><small>Size</small><div className="v mono">{market ? fmtSize(size, market.szDecimals) : "—"}</div></div>
-          <div className="stat"><small>Liq. at</small><div className="v mono">{estLiq ? estLiq.toLocaleString("en-US", { maximumFractionDigits: 4 }) : "—"}</div></div>
+          <div className="stat"><small>Liq. at</small><div className="v mono">{estLiq ? fmtPrice(estLiq) : "—"}</div></div>
         </div>
         {!isDemo && <div className="when mt-2.5 flex items-center justify-between"><span>Perped fee {fee.label}{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? "Top trader" : "Referral"}</span>}</span><span className="mono">{fmtUsd((notional * fee.tenthsBps) / 100000)}</span></div>}
       </div>

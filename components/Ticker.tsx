@@ -3,7 +3,7 @@
 import { useMids } from "@/lib/hooks/useMids";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { CoinMark, ticker } from "./ui";
-import { fmtPct } from "@/lib/format";
+import { fmtPct, fmtPrice } from "@/lib/format";
 
 const SHOW = ["BTC", "ETH", "SOL", "HYPE", "XRP", "DOGE", "SUI", "LINK", "AVAX", "ARB"];
 
@@ -35,5 +35,5 @@ export function Ticker() {
 }
 
 function fmtPxShort(v: number) {
-  return v >= 1000 ? Math.round(v).toLocaleString("en-US") : v >= 10 ? v.toFixed(2) : v.toFixed(4);
+  return fmtPrice(v);
 }

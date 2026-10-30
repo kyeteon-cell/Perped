@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { createChart, ColorType, CrosshairMode, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
 import type { Candle } from "@/lib/hl-info";
+import { fmtPrice } from "@/lib/format";
 
 type Interval = "1m" | "5m" | "15m" | "1h" | "4h" | "1d";
 type Mode = "candles" | "line";
@@ -95,8 +96,7 @@ export function PriceChart({ coin, livePx }: { coin: string; livePx?: number }) 
 
   const setIv = (iv: Interval) => { setInterval_(iv); setLegend(null); try { localStorage.setItem("perped-chart-iv", iv); } catch {} };
   const setModeP = (m: Mode) => { setMode(m); try { localStorage.setItem("perped-chart", m); } catch {} };
-  const digits = (legend?.c ?? 0) >= 1000 ? 1 : (legend?.c ?? 0) >= 10 ? 2 : (legend?.c ?? 0) >= 1 ? 3 : 5;
-  const f = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const f = (n: number) => fmtPrice(n);
   const ch = legend && legend.o ? ((legend.c - legend.o) / legend.o) * 100 : 0;
 
   return (

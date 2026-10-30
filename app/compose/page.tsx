@@ -8,7 +8,7 @@ import { useMarkets } from "@/lib/hooks/useMarkets";
 import { useMids } from "@/lib/hooks/useMids";
 import { Avatar, CoinMark, Icon, I } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
-import { fmtPct } from "@/lib/format";
+import { fmtPct, fmtPrice } from "@/lib/format";
 
 type Mode = "post" | "call" | "poll";
 
@@ -107,7 +107,7 @@ function ComposeInner() {
           <>
             <div className="eyebrow mb-2">Market</div>
             <div className="seg">{[...new Set([coin, ...top])].map((c) => <button key={c} className={`chip ${c === coin ? "on" : ""}`} onClick={() => setCoin(c)}><CoinMark coin={c} size="xs" />{c}</button>)}</div>
-            <div className="mono when mt-2">now {mid ? mid.toLocaleString("en-US", { maximumFractionDigits: 6 }) : "…"}</div>
+            <div className="mono when mt-2">now {mid ? fmtPrice(mid) : "…"}</div>
             <div className="mt-3.5 grid grid-cols-2 gap-2.5"><button className={`btn ${dir === "long" ? "long" : ""}`} style={{ padding: 12 }} onClick={() => setDir("long")}>Up</button><button className={`btn ${dir === "short" ? "short" : ""}`} style={{ padding: 12 }} onClick={() => setDir("short")}>Down</button></div>
             <div className="mt-3.5 grid grid-cols-2 gap-2.5">
               <div><div className="eyebrow mb-2">Target</div><input className="field mono" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} placeholder={mid ? (dir === "long" ? (mid * 1.1).toFixed(2) : (mid * 0.9).toFixed(2)) : ""} />{tgt > 0 && <div className={`mt-1.5 text-xs font-semibold ${tgtPct >= 0 ? "green" : "red"}`}>{fmtPct(tgtPct, 1)} from here</div>}</div>

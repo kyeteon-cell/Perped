@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
-import { fmtPct, fmtUsd } from "@/lib/format";
+import { fmtPct, fmtUsd, fmtPrice } from "@/lib/format";
 import { Avatar, CoinMark, ticker } from "./ui";
 import { APP_URL } from "@/lib/config";
 
@@ -31,7 +31,7 @@ export function Receipt({ item, onClose }: { item: FeedRow; onClose: () => void 
     g.font = "600 48px sans-serif"; g.fillText(`${author?.handle} · ${post.side === "long" ? "Long" : "Short"} ${lev}×`, 80, 320);
     g.font = "bold 96px sans-serif"; g.fillText(post.coin ?? "", 80, 460);
     g.font = "600 220px monospace"; g.fillText(fmtPct(roi, 1), 80, 760);
-    g.font = "48px monospace"; g.fillText(`${entry} → ${exit}   ${fmtUsd(pnl, { sign: true })}`, 80, 880);
+    g.font = "48px monospace"; g.fillText(`${fmtPrice(entry)} → ${fmtPrice(exit)}   ${fmtUsd(pnl, { sign: true })}`, 80, 880);
     g.font = "40px sans-serif"; g.fillText(`Held ${held}h · ${item.copyCount} copied · ${item.fadeCount} faded`, 80, 980);
     g.globalAlpha = 0.7; g.font = "36px sans-serif"; g.fillText(`Verified on Hyperliquid · ${url.replace(/^https?:\/\//, "")}`, 80, 1260);
     const a = document.createElement("a"); a.download = `perped-${post.coin}-${post.id}.png`; a.href = c.toDataURL("image/png"); a.click();
@@ -48,7 +48,7 @@ export function Receipt({ item, onClose }: { item: FeedRow; onClose: () => void 
             <div className="mt-4 flex items-center gap-2.5 text-sm">{author && <Avatar handle={author.handle} url={author.avatarUrl} size={32} />}<b>{author?.handle}</b><span className="lbl ml-auto" style={{ background: "rgba(255,255,255,.18)", color: "#fff" }}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span></div>
             <div className="mt-4 flex items-center gap-2.5 text-[22px] font-bold tracking-tight"><CoinMark coin={post.coin!} />{ticker(post.coin!, true)}</div>
             <div className="mono mt-1.5 text-[56px] font-semibold leading-none tracking-tighter">{style === "roast" && loss ? "got perped" : fmtPct(roi, 1)}</div>
-            <div className="mono mt-3 flex justify-between text-sm opacity-90"><span>{entry} → {exit}</span><span>{fmtUsd(pnl, { sign: true })}</span></div>
+            <div className="mono mt-3 flex justify-between text-sm opacity-90"><span>{fmtPrice(entry)} → {fmtPrice(exit)}</span><span>{fmtUsd(pnl, { sign: true })}</span></div>
             <div className="mt-3 flex justify-between text-sm opacity-90"><span>Held {held} h</span><span>{item.copyCount} copied · {item.fadeCount} faded</span></div>
             <div className="mt-4 text-[11px] opacity-60">Verified on Hyperliquid · {url.replace(/^https?:\/\//, "")}</div>
           </div>

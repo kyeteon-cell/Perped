@@ -5,7 +5,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { Sparkline } from "@/components/Sparkline";
 import { CoinMark, Icon, I, ticker } from "@/components/ui";
-import { fmtPct, fmtUsd } from "@/lib/format";
+import { fmtPct, fmtUsd, fmtPrice } from "@/lib/format";
 import type { MarketRow } from "@/lib/hl-info";
 import { useMids } from "@/lib/hooks/useMids";
 import type { FeedRow } from "@/lib/feed";
@@ -62,7 +62,7 @@ export default function MarketsPage() {
           <Link key={m.name} href={`/markets/${m.name}`} className="hcard" style={{ width: 104, padding: "12px 14px", borderTop: `3px solid ${m.change24h >= 0 ? "var(--green)" : "var(--red)"}` }}>
             <div className="flex items-center gap-2"><CoinMark coin={m.name} size="sm" /><span className="name">{ticker(m.name)}</span></div>
             <div className={`mono text-lg font-bold ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</div>
-            <div className="mono when">{(mids[m.name] ?? m.mid).toLocaleString("en-US", { maximumFractionDigits: 4 })}</div>
+            <div className="mono when">{fmtPrice(mids[m.name] ?? m.mid)}</div>
           </Link>
         ))}
       </div>
@@ -88,7 +88,7 @@ export default function MarketsPage() {
                 </div>
               </div>
               <Sparkline coin={m.name} up={up} />
-              <div className="text-right"><div className="mono font-semibold">{px.toLocaleString("en-US", { maximumFractionDigits: 6 })}</div><div className={`mono text-[13px] ${up ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</div></div>
+              <div className="text-right"><div className="mono font-semibold">{fmtPrice(px)}</div><div className={`mono text-[13px] ${up ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</div></div>
               <div className={`mono text-right text-[13px] font-semibold ${m.funding8h >= 0 ? "green" : "red"}`}>{fmtPct(m.funding8h, 3)}</div>
             </div>
             {lv && <div className="when mt-2 flex gap-3.5 text-xs"><span>Perped <b style={{ color: "var(--text)" }}>{lv.n} live</b></span><span>L/S <b className="mono" style={{ color: "var(--text)" }}>{Math.round((lv.longs / lv.n) * 100)}/{100 - Math.round((lv.longs / lv.n) * 100)}</b></span></div>}

@@ -19,6 +19,20 @@ export function fmtPct(n: number | null | undefined, digits = 2) {
   return `${sign}${n.toFixed(digits)}%`;
 }
 
+/**
+ * Display price: 5 significant figures like Hyperliquid's UI, thousands separators, no trailing zeros,
+ * never more than 6 decimals. 102.12488804590004 → "102.12", 0.1715259763 → "0.17153", 67890.12 → "67,890".
+ */
+export function fmtPrice(n: number | string | null | undefined) {
+  const v = typeof n === "string" ? Number(n) : n;
+  if (v == null || !Number.isFinite(v) || v === 0) return v === 0 ? "0" : "—";
+  const abs = Math.abs(v);
+  const sig = Number(abs.toPrecision(5));
+  const decimals = Math.min(6, Math.max(0, decimalsOf(sig)));
+  const out = sig.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+  return (v < 0 ? "-" : "") + out;
+}
+
 // Hyperliquid prices: up to 5 significant figures, and at most (6 - szDecimals) decimals for perps.
 export function fmtPx(px: number, szDecimals = 0) {
   if (!Number.isFinite(px)) return "0";

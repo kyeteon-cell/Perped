@@ -7,7 +7,7 @@ import { PriceChart } from "@/components/PriceChart";
 import { TradeTicket } from "@/components/TradeTicket";
 import { FeedPost } from "@/components/FeedPost";
 import { CoinMark, Icon, I, ticker } from "@/components/ui";
-import { fmtPct, fmtUsd } from "@/lib/format";
+import { fmtPct, fmtUsd, fmtPrice } from "@/lib/format";
 import type { MarketRow } from "@/lib/hl-info";
 import { useMids } from "@/lib/hooks/useMids";
 import type { FeedRow } from "@/lib/feed";
@@ -37,7 +37,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2.5"><CoinMark coin={coin} /><div className="text-[30px] font-bold leading-none tracking-tight">{ticker(coin, true)}</div></div>
-            <div className="mono mt-2.5 text-[22px] font-semibold">{px ? px.toLocaleString("en-US", { maximumFractionDigits: 6 }) : "…"}{m && <span className={`ml-2 text-sm font-semibold ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</span>}</div>
+            <div className="mono mt-2.5 text-[22px] font-semibold">{px ? fmtPrice(px) : "…"}{m && <span className={`ml-2 text-sm font-semibold ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</span>}</div>
           </div>
         </div>
         <div className="mt-3.5"><PriceChart coin={coin} livePx={px || undefined} /></div>

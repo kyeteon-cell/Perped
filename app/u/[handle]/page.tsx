@@ -10,7 +10,7 @@ import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { makeExchangeClient, closePosition } from "@/lib/hl-exchange";
-import { fmtUsd, fmtPct } from "@/lib/format";
+import { fmtUsd, fmtPct, fmtPrice } from "@/lib/format";
 import type { User, Stats } from "@/lib/schema";
 import type { AssetPosition } from "@/lib/hl-info";
 import type { FeedRow } from "@/lib/feed";
@@ -172,7 +172,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
             return (
               <div key={p.coin} className="post">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3"><CoinMark coin={p.coin} /><div><div className="name">{ticker(p.coin, true)} <span className={`lbl ${szi > 0 ? "long" : "short"}`} style={{ padding: "2px 8px", fontSize: 11 }}><i />{szi > 0 ? "Long" : "Short"} {p.leverage.value}×</span></div><div className="mono when text-xs">{Math.abs(szi)} · in at {p.entryPx ? Number(p.entryPx).toLocaleString() : "—"} · now {mid ? mid.toLocaleString() : "…"}{p.liquidationPx ? ` · liq ${Number(p.liquidationPx).toLocaleString()}` : ""}</div></div></div>
+                  <div className="flex items-center gap-3"><CoinMark coin={p.coin} /><div><div className="name">{ticker(p.coin, true)} <span className={`lbl ${szi > 0 ? "long" : "short"}`} style={{ padding: "2px 8px", fontSize: 11 }}><i />{szi > 0 ? "Long" : "Short"} {p.leverage.value}×</span></div><div className="mono when text-xs">{Math.abs(szi)} · in at {fmtPrice(p.entryPx)} · now {mid ? fmtPrice(mid) : "…"}{p.liquidationPx ? ` · liq ${fmtPrice(p.liquidationPx)}` : ""}</div></div></div>
                   <div className={`mono text-xl font-bold ${upnl >= 0 ? "green" : "red"}`}>{fmtUsd(upnl, { sign: true })}</div>
                 </div>
                 {isMe && <div className="mt-3.5 flex gap-2"><button className="chip danger" disabled={busy === p.coin} onClick={() => closePos(p, 0.5)}>Close 50%</button><button className="chip danger" disabled={busy === p.coin} onClick={() => closePos(p, 1)}>{busy === p.coin ? "Closing…" : "Close all"}</button><Link href={`/markets/${p.coin}`} className="chip info">Add</Link></div>}
