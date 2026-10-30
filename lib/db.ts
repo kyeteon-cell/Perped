@@ -63,6 +63,27 @@ export function ensureSchema(): Promise<void> {
   return globalForDb.__perpedMigrated;
 }
 
+/**
+ * Unjam: terminate our own backends that are stuck waiting on a lock (old migration runners queued behind
+ * live queries, and anything they blocked) or sitting idle inside a transaction. Needs no table locks itself,
+ * so it works even when everything else is frozen. Returns how many it killed.
+ */
+export async function unjam(): Promise<number> {
+  const sql = getSql();
+  const rows = (await sql.unsafe(`
+    select pg_terminate_backend(pid) as killed
+    from pg_stat_activity
+    where datname = current_database()
+      and pid <> pg_backend_pid()
+      and (
+        (wait_event_type = 'Lock' and now() - query_start > interval '3 seconds')
+        or (state = 'idle in transaction' and now() - state_change > interval '20 seconds')
+        or (state = 'active' and query ilike 'alter table%' and now() - query_start > interval '10 seconds')
+      )
+  `)) as unknown as { killed: boolean }[];
+  return rows.filter((r) => r.killed).length;
+}
+
 // Lazy: nothing touches DATABASE_URL until the first real query, so `next build` (which imports every
 // route to collect page data) never needs a database connection.
 type Db = ReturnType<typeof drizzle<typeof schema>>;
