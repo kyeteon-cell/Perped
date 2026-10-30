@@ -98,7 +98,24 @@ body { font-family: var(--font-sans), ui-rounded, ui-sans-serif, system-ui, sans
 .av-3 { background: linear-gradient(135deg,#88c0d0,#5e81ac); } .av-4 { background: linear-gradient(135deg,#bf616a,#d08770); } .av-5 { background: linear-gradient(135deg,#b48ead,#88c0d0); }
 
 /* Feed posts */
-.post { padding: 20px 20px 18px; border-bottom: 1px solid var(--line); background: var(--bg); }
+/* Feed cards: each post is a card with a colour accent per kind, so trades, calls, polls, chat and
+   system events read differently at a glance. --kind is set per article via data-kind. */
+.post { --kind: var(--muted); --kind-soft: var(--surface); position: relative; margin: 10px 12px 0; padding: 16px 18px 16px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.post::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--kind); }
+.post[data-kind="long"] { --kind: var(--green); --kind-soft: var(--green-soft); }
+.post[data-kind="short"] { --kind: var(--red); --kind-soft: var(--red-soft); }
+.post[data-kind="call"] { --kind: var(--blue); --kind-soft: var(--blue-soft); }
+.post[data-kind="poll"] { --kind: var(--violet); --kind-soft: var(--violet-soft); }
+.post[data-kind="text"] { --kind: var(--ink); --kind-soft: var(--surface); }
+.post[data-kind="liquidation"] { --kind: var(--red); --kind-soft: var(--red-soft); }
+.post[data-kind="milestone"], .post[data-kind="settled"] { --kind: var(--green); --kind-soft: var(--green-soft); }
+.post[data-kind="duel_settled"] { --kind: var(--gold); --kind-soft: var(--gold-soft); }
+.post[data-kind="story"], .post[data-kind="rank"] { --kind: var(--brand); --kind-soft: var(--brand-soft); }
+.post.closed { --kind: var(--muted); --kind-soft: var(--surface); }
+.kind { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 12px; padding: 4px 10px 4px 8px; border-radius: 999px; background: var(--kind-soft); color: var(--kind); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.kind svg { width: 13px; height: 13px; }
+.post:last-child { margin-bottom: 12px; }
+.post + .post { margin-top: 10px; }
 .post .coin { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
 .post .pnl { font-size: 26px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
 .pnlpill { display: inline-flex; flex-direction: column; align-items: flex-end; padding: 8px 12px; border-radius: 14px; cursor: pointer; user-select: none; transition: background .4s; }

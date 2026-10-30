@@ -24,6 +24,11 @@ export function FeedPost(props: Props) {
 
 /* ---------- shared bits ---------- */
 
+/** Small coloured label at the top of every card naming what kind of post it is. */
+function KindTag({ icon, children }: { icon: string; children: React.ReactNode }) {
+  return <div className="kind"><Icon d={icon} size={13} />{children}</div>;
+}
+
 function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
   const { post, author } = item;
   return (
@@ -93,7 +98,8 @@ function TradePost({ item, mid, onChanged }: Props) {
   const camps = item.copyCount + item.fadeCount;
 
   return (
-    <article className="post">
+    <article className={`post ${isOpen ? "" : "closed"}`} data-kind={post.side}>
+      <KindTag icon={I.markets}>{post.copiedFromId ? "Copy trade" : post.fadedFromId ? "Fade" : isOpen ? "Live trade" : "Closed trade"}</KindTag>
       <Who item={item} right={<span className={`lbl ${isOpen ? post.side : "done"}`}>{isOpen && <i />}{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -144,7 +150,8 @@ function CallPost({ item, mid, onChanged }: Props) {
   const left = deadline ? Math.max(0, deadline.getTime() - Date.now()) : 0;
   const leftTxt = left > 86_400_000 ? `${Math.round(left / 86_400_000)} d left` : left > 0 ? `${Math.round(left / 3_600_000)} h left` : "";
   return (
-    <article className="post">
+    <article className={`post ${open ? "" : "closed"}`} data-kind="call">
+      <KindTag icon={I.trophy}>{open ? "Price call" : post.callStatus === "hit" ? "Call · hit" : "Call · missed"}</KindTag>
       <Who item={item} right={<>{post.backedPostId && <span className="lbl backed">Backed</span>}<span className={`lbl ${open ? "call" : post.callStatus === "hit" ? "long" : "short"}`}><i />{open ? "Call" : post.callStatus === "hit" ? "Hit" : "Missed"}</span></>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -188,8 +195,9 @@ function PollPost({ item, onChanged }: Props) {
     onChanged?.();
   };
   return (
-    <article className="post">
-      <Who item={item} right={<span className="lbl done">Poll{post.settle ? " · settles on price" : ""}</span>} />
+    <article className="post" data-kind="poll">
+      <KindTag icon={I.list}>Poll{closed ? " · closed" : ""}</KindTag>
+      <Who item={item} right={<span className="lbl done">{post.settle ? "Settles on price" : `${total} votes`}</span>} />
       <p className="say font-bold">{post.body}</p>
       <div className="poll mt-3 flex flex-col gap-2">
         {(post.options ?? []).map((o, i) => {
@@ -212,7 +220,8 @@ function PollPost({ item, onChanged }: Props) {
 
 function TextPost({ item, onChanged }: Props) {
   return (
-    <article className="post">
+    <article className="post" data-kind="text">
+      <KindTag icon={I.comment}>Post</KindTag>
       <Who item={item} />
       <p className="say">{item.post.body}</p>
       <Acts item={item} onChanged={onChanged} />
@@ -229,7 +238,8 @@ function SystemPost({ item, onChanged }: Props) {
   const title = t === "liquidation" ? "Liquidation" : t === "milestone" ? "Milestone" : t === "settled" ? "Settled" : t === "duel_settled" ? "Duel settled" : "Market";
   const tint = t === "liquidation" ? "red" : t === "milestone" || t === "settled" ? "green" : t === "duel_settled" ? "gold" : "brand";
   return (
-    <article className="post sys">
+    <article className="post sys" data-kind={t || "story"}>
+      <KindTag icon={icon}>{title}</KindTag>
       <div className="flex items-center gap-3">
         <div className="sysico" style={{ background: `var(--${tint}-soft)`, color: `var(--${tint})` }}><Icon d={icon} /></div>
         <div><div className="name">{title}</div><div className="when">{timeAgo(post.createdAt)} ago</div></div>

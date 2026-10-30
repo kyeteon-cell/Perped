@@ -8,7 +8,7 @@ Mobile-first web app (installable PWA). Trades execute directly on Hyperliquid f
 
 **Shell** — live price ticker on every page (Hyperliquid WebSocket), bottom nav, Day / Night / Auto theme with a different brand colour per theme (coral by day, mint-teal by night), per-page colour tints, semantic button colours.
 
-**Home** — For you / Following / Live tabs, hero card (balance, 7-day PnL, open count, streak, Trade / Deposit / Post), feed of every post type with live P&L that flashes on ticks, tap P&L to cycle % / $ / ROI, like and dislike, Copy and Fade on every live trade, copied-vs-faded camps (hidden below 3 participants), "Traders like you" suggestions.
+**Home** — For you / Following / Live tabs, hero card (balance, 7-day PnL, open count, streak, Trade / Deposit / Post), feed of every post type as colour-coded cards (green/red trades, blue calls, violet polls, ink text, tinted system events, each with a kind tag) with live P&L that flashes on ticks, tap P&L to cycle % / $ / ROI, like and dislike, Copy and Fade on every live trade, copied-vs-faded camps (hidden below 3 participants), "Traders like you" suggestions.
 
 **Post types** — trade, text, call (coin, up/down, target, invalidation, deadline, optional "backed" trade), poll (verified users; optional price settlement), system (liquidation, milestone, settled, duel settled).
 
