@@ -120,7 +120,6 @@ function groupFeed(rows: FeedRow[]): Array<{ kind: "one"; item: FeedRow } | { ki
 }
 
 function Suggested({ rows }: { rows: { handle: string; pnl: number; winRate: string }[] }) {
-  const { authedFetch, authenticated, login, profile } = useSession();
   return (
     <div className="hairline py-4" data-tint="violet">
       <div className="flex items-center justify-between px-5"><span className="eyebrow">Traders like you</span><span className="when">doing well this week</span></div>
