@@ -18,10 +18,10 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
   if (!authenticated || !profile) {
     return (
       <div className="hero">
-        <div className="k">Welcome to Perped</div>
-        <div className="big" style={{ fontSize: 24 }}>Trade in public. Copy the best.</div>
-        <div className="mt-2 text-[13px] opacity-95">Every trade is a post. Every record is on-chain. Your money stays on Hyperliquid.</div>
-        <div className="hero-actions"><button className="solid" onClick={login}>Get started</button><Link href="/markets">Browse markets</Link></div>
+        <div className="k">Perped · PvP perps</div>
+        <div className="big" style={{ fontSize: 26, lineHeight: 1.1 }}>Trade in public.<br />Get perped or get paid.</div>
+        <div className="mt-2.5 text-[13px] opacity-95">Post your position. Someone will copy it, someone will fade it, and the chain decides who was right.</div>
+        <div className="hero-actions"><button className="solid" onClick={login}>Enter the arena</button><Link href="/markets">Browse markets</Link></div>
       </div>
     );
   }
