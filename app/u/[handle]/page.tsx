@@ -152,7 +152,6 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           {tradeTab === "open" && user.isDemo && (feed?.posts ?? []).map((item) => (
             <div key={item.post.id} className="relative">
               <FeedPost item={item} mid={item.post.coin ? mids[item.post.coin] : undefined} onChanged={() => mutateFeed()} />
-              {isMe && <button className="chip danger absolute right-5 top-4" style={{ padding: "4px 10px", fontSize: 12 }} onClick={async () => { await authedFetch(`/api/posts/${item.post.id}/close`, { method: "POST", body: JSON.stringify({ exitPx: mids[item.post.coin!] ?? Number(item.post.entryPx), reason: "manual" }) }); mutate(); mutateFeed(); }}>Close</button>}
             </div>
           ))}
           {tradeTab === "open" && !user.isDemo && data.positions.map((p) => {

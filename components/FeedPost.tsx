@@ -9,6 +9,7 @@ import { useSession } from "@/lib/hooks/useSession";
 import { Avatar, CoinMark, Icon, I, ticker } from "./ui";
 import { Sparkline } from "./Sparkline";
 import { ShareSheet } from "./ShareSheet";
+import { ManageTrade } from "./ManageTrade";
 import { HL_NETWORK } from "@/lib/config";
 
 /** Hyperliquid's own explorer page for an account: every fill, visible to anyone. */
@@ -62,9 +63,10 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
   );
 }
 
-function Acts({ item, onChanged, children, mid, challenge }: { item: FeedRow; onChanged?: () => void; children?: React.ReactNode; mid?: number; challenge?: boolean }) {
+function Acts({ item, onChanged, children, mid, challenge, manage }: { item: FeedRow; onChanged?: () => void; children?: React.ReactNode; mid?: number; challenge?: boolean; manage?: boolean }) {
   const { authenticated, authedFetch, login } = useSession();
   const [share, setShare] = useState(false);
+  const [managing, setManaging] = useState(false);
   const [likes, setLikes] = useState(item.likes);
   const [dislikes, setDislikes] = useState(item.dislikes);
   const [mine, setMine] = useState<number | null>(item.myVote ?? null);
@@ -86,8 +88,10 @@ function Acts({ item, onChanged, children, mid, challenge }: { item: FeedRow; on
       <Link href={`/post/${item.post.id}`}><Icon d={I.comment} size={18} />{item.commentCount}</Link>
       <button onClick={() => setShare(true)} aria-label="Share"><Icon d={I.share} size={18} /></button>
       {children}
-      {challenge && <button className="copy ml-auto" onClick={() => setShare(true)}>Challenge a friend</button>}
+      {manage && <button className="fade ml-auto" onClick={() => setManaging(true)}>Manage</button>}
+      {challenge && <button className={manage ? "copy" : "copy ml-auto"} onClick={() => setShare(true)}>Challenge</button>}
       {share && <ShareSheet item={item} mid={mid} onClose={() => setShare(false)} />}
+      {managing && <ManageTrade post={item.post} mid={mid} onChanged={onChanged} onClose={() => setManaging(false)} />}
     </div>
   );
 }
@@ -194,6 +198,7 @@ function TradePost({ item, mid, onChanged }: Props) {
         </div>
       </div>
       <div className="track"><b style={{ width: `${Math.min(100, Math.abs(roi))}%`, background: pos ? "var(--green)" : "var(--red)" }} /></div>
+      {isOpen && (post.tpPx || post.slPx) && <div className="mono when mt-2 text-[11px]">{post.tpPx ? `TP ${fmtPrice(post.tpPx)}` : ""}{post.tpPx && post.slPx ? " · " : ""}{post.slPx ? `SL ${fmtPrice(post.slPx)}` : ""}</div>}
       <div className="mt-2 flex items-center justify-between">
         {isDemoPost(item)
           ? <Link href="/how-it-works#demo" className="verify">Demo · simulated at live Hyperliquid prices</Link>
@@ -205,7 +210,7 @@ function TradePost({ item, mid, onChanged }: Props) {
         <div className="camps"><span>Be the first to copy or fade this one</span></div>
       )}
       {post.body && <p className="say">{post.body}</p>}
-      <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id}>
+      <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id} manage={isOpen && !!author && author.id === profile?.id}>
         {canAct && (
           <>
             {author?.allowFade !== false && <Link href={`/trade?fade=${post.id}`} className="fade ml-auto">Fade</Link>}

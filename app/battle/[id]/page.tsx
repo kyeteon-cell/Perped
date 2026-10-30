@@ -1,10 +1,11 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
+import { ManageTrade } from "@/components/ManageTrade";
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
 import { Avatar, CoinMark, Icon, I, ticker, SkeletonList } from "@/components/ui";
 import type { Post, Stats } from "@/lib/schema";
@@ -25,7 +26,8 @@ function roi(p: Post, mid: number) {
 /** /battle/:id — a fade as a head-to-head: live score, the two positions, trader vs trader stats, and their history. */
 export default function BattlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data } = useSWR<Res>(`/api/battle/${id}`, { refreshInterval: 15_000 });
+  const { data, mutate } = useSWR<Res>(`/api/battle/${id}`, { refreshInterval: 15_000 });
+  const [manage, setManage] = useState<Res["fade"] | null>(null);
   const { mids } = useMids();
   const { profile } = useSession();
   if (!data) return <SkeletonList n={2} />;
@@ -73,6 +75,10 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         </div>
         <div className="tug mt-5" style={{ height: 10 }}><i style={{ width: `${share}%` }} /></div>
         <div className="when mt-2 text-center">{live ? `${faderLeads ? fader.user.handle : tu.user.handle} is ahead by ${fmtPct(Math.abs(a.roi - b.roi), 1)}` : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
+        {live && profile && (profile.id === fader.user.id || profile.id === tu.user.id) && (
+          <button className="btn ink mt-4" style={{ padding: 11, fontSize: 13 }} onClick={() => setManage(profile.id === fader.user.id ? fade : target)}>Manage my position · close, stop loss, add</button>
+        )}
+        {manage && <ManageTrade post={manage} mid={mid || undefined} onChanged={() => mutate()} onClose={() => setManage(null)} />}
         {live && profile && profile.id !== fader.user.id && profile.id !== tu.user.id && (
           <div className="mt-4 grid grid-cols-2 gap-2.5">
             <Link href={`/trade?copy=${fade.id}`} className="btn" style={{ padding: 11, fontSize: 13 }}>Side with {fader.user.handle}</Link>

@@ -16,7 +16,7 @@ import {
   HL_SIGNATURE_CHAIN_ID,
 } from "./config";
 import { fmtPx, fmtSize, roundSize } from "./format";
-import { resolveTradingAsset, type PerpAsset } from "./hl-info";
+import { getFrontendOpenOrders, resolveTradingAsset, type PerpAsset } from "./hl-info";
 
 const isTestnet = HL_NETWORK === "testnet";
 
@@ -167,4 +167,41 @@ export async function closePosition(
 export async function approveBuilderFee(client: hl.ExchangeClient) {
   if (!BUILDER_CONFIGURED) throw new Error("No builder address configured");
   return client.approveBuilderFee({ builder: BUILDER_ADDRESS.toLowerCase() as `0x${string}`, maxFeeRate: BUILDER_MAX_FEE_RATE as `${string}%` });
+}
+
+/**
+ * Replace the take-profit / stop-loss on an open Hyperliquid position: cancels this coin's existing reduce-only
+ * trigger orders, then places new ones for the whole position (positionTpsl grouping). Pass null to clear a leg.
+ */
+export async function setPositionTpSl(
+  client: hl.ExchangeClient,
+  user: string,
+  asset: PerpAsset,
+  side: "long" | "short",
+  size: number,
+  tp: number | null,
+  sl: number | null,
+): Promise<OrderResult> {
+  const a = await resolveTradingAsset(asset);
+  const isBuy = side === "long";
+  try {
+    // 1. Cancel existing trigger exits on this coin.
+    const open = await getFrontendOpenOrders(user);
+    const stale = open.filter((o) => o.coin === a.name && o.reduceOnly && o.isTrigger);
+    if (stale.length) await client.cancel({ cancels: stale.map((o) => ({ a: a.index, o: o.oid })) });
+    // 2. Place the new ones.
+    const sz = fmtSize(roundSize(Math.abs(size), a.szDecimals), a.szDecimals);
+    const trigger = (triggerPx: number, tpsl: "tp" | "sl") => ({
+      a: a.index, b: !isBuy, p: fmtPx(isBuy ? triggerPx * 0.95 : triggerPx * 1.05, a.szDecimals), s: sz, r: true,
+      t: { trigger: { isMarket: true, triggerPx: fmtPx(triggerPx, a.szDecimals), tpsl } },
+    });
+    const orders = [...(tp ? [trigger(tp, "tp")] : []), ...(sl ? [trigger(sl, "sl")] : [])];
+    if (!orders.length) return { ok: true };
+    const res = (await client.order({ orders, grouping: "positionTpsl" } as unknown as Parameters<hl.ExchangeClient["order"]>[0])) as unknown as { response?: { data?: { statuses?: Array<Record<string, unknown>> } } };
+    const bad = res.response?.data?.statuses?.find((s) => "error" in s);
+    if (bad) return { ok: false, error: String(bad.error), raw: res };
+    return { ok: true, raw: res };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
 }

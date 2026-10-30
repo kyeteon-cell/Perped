@@ -114,6 +114,12 @@ export async function getUserFillsByTime(user: string, startTime: number, endTim
 }
 
 /** Max builder fee (in tenths of a bp) the user has approved for a builder, or 0. */
+export type OpenOrder = { coin: string; oid: number; side: "A" | "B"; sz: string; limitPx: string; reduceOnly?: boolean; isTrigger?: boolean; triggerPx?: string; orderType?: string };
+/** Open orders on the trading network, with trigger / reduce-only flags. */
+export async function getFrontendOpenOrders(user: string): Promise<OpenOrder[]> {
+  return info<OpenOrder[]>({ type: "frontendOpenOrders", user }, 0, "user");
+}
+
 export async function getMaxBuilderFee(user: string, builder: string): Promise<number> {
   try {
     const v = await info<number>({ type: "maxBuilderFee", user, builder }, 0, "user");

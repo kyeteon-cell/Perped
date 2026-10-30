@@ -2,6 +2,7 @@ import { and, eq, isNull, lte, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getMids } from "@/lib/hl-info";
 import { notify, systemPost } from "@/lib/feed";
+import { closeTradePost, demoLiqPx } from "@/lib/trades";
 
 /**
  * GET /api/cron/resolve → every 5 min: resolve calls (hit / missed / invalidated), close polls, settle duels,
@@ -17,7 +18,23 @@ export async function GET(req: Request) {
   const mids = await getMids();
   const now = new Date();
   const px = (coin: string | null) => (coin ? Number(mids[coin] ?? 0) : 0);
-  let hit = 0, missed = 0, polls = 0, duelsSettled = 0;
+  let hit = 0, missed = 0, polls = 0, duelsSettled = 0, demoClosed = 0;
+
+  // Demo trades by people: take-profit, stop-loss and liquidation, checked against the live mid.
+  const openDemo = await db.select({ p: schema.posts, isBot: schema.users.isBot }).from(schema.posts).innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
+    .where(and(eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), eq(schema.posts.paper, true), eq(schema.users.isBot, false)));
+  for (const { p: t } of openDemo) {
+    const mid = px(t.coin); if (!mid || !t.userId) continue;
+    const up = t.side === "long", entry = Number(t.entryPx), lev = t.leverage ?? 1;
+    const liq = demoLiqPx(t.side as "long" | "short", entry, lev);
+    let reason: "tp" | "sl" | "liquidation" | null = null;
+    if (up ? mid <= liq : mid >= liq) reason = "liquidation";
+    else if (t.slPx && (up ? mid <= Number(t.slPx) : mid >= Number(t.slPx))) reason = "sl";
+    else if (t.tpPx && (up ? mid >= Number(t.tpPx) : mid <= Number(t.tpPx))) reason = "tp";
+    if (!reason) continue;
+    await closeTradePost(t.id, t.userId, { exitPx: reason === "liquidation" ? liq : reason === "sl" ? Number(t.slPx) : Number(t.tpPx), reason });
+    demoClosed++;
+  }
 
   // Calls: hit when target printed (we check current mid each run; a 1m-candle check would be stricter), missed on invalidation or deadline.
   const openCalls = await db.select().from(schema.posts).where(and(eq(schema.posts.kind, "call"), eq(schema.posts.callStatus, "open")));
@@ -78,7 +95,7 @@ export async function GET(req: Request) {
     duelsSettled++;
   }
 
-  return Response.json({ hit, missed, polls, duelsSettled, at: now.toISOString() });
+  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, at: now.toISOString() });
 }
 
 // keep isNull imported for future invalidation-by-candle checks
