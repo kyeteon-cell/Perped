@@ -338,3 +338,28 @@ export async function purgeBots() {
   await db.delete(schema.posts).where(and(eq(schema.posts.kind, "system"), sql`${schema.posts.meta}->>'handle' in (${sql.join(BOTS.map((b) => sql`${b.handle}`), sql`, `)})`));
   return ids.length;
 }
+
+/**
+ * Placeholder ranks: give every account with no XP history a random XP total and battle record, so the
+ * ladder, emblems and the Ranks board look lived-in before real battles have settled. Skips anyone who has
+ * earned XP for real (an xp_log row exists). Safe to call every tick.
+ */
+export async function seedRanks() {
+  const rows = await db.select({ id: schema.users.id, xp: schema.users.xp, isBot: schema.users.isBot })
+    .from(schema.users)
+    .where(sql`${schema.users.xp} = 0 and not exists (select 1 from xp_log x where x.user_id = ${schema.users.id})`);
+  let n = 0;
+  for (const u of rows) {
+    // Skewed: most people low-mid, a few high. Bots get the full spread so the top of the ladder isn't empty.
+    const r = Math.random();
+    const xp = Math.round(u.isBot
+      ? (r < 0.4 ? rnd(150, 1200) : r < 0.8 ? rnd(1200, 5000) : rnd(5000, 23000))
+      : (r < 0.6 ? rnd(50, 500) : r < 0.9 ? rnd(500, 2500) : rnd(2500, 7000)));
+    const won = Math.round(rnd(0, Math.max(1, xp / 150))), lost = Math.round(rnd(0, Math.max(1, xp / 220)));
+    await db.update(schema.users).set({ xp }).where(eq(schema.users.id, u.id));
+    await db.insert(schema.stats).values({ userId: u.id, battlesWon: won, battlesLost: lost }).onConflictDoUpdate({ target: schema.stats.userId, set: { battlesWon: won, battlesLost: lost } });
+    await db.insert(schema.xpLog).values({ userId: u.id, delta: xp, reason: "season_start", ref: "seed" });
+    n++;
+  }
+  return n;
+}

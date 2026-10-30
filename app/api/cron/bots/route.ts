@@ -1,4 +1,4 @@
-import { botTick, ensureBots, seedHistory } from "@/lib/bots";
+import { botTick, ensureBots, seedHistory, seedRanks } from "@/lib/bots";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { getMarkets, getCandles } from "@/lib/hl-info";
@@ -19,9 +19,10 @@ export async function GET(req: Request) {
     const posts = await seedHistory();
     return Response.json({ ok: true, seeded: true, posts });
   }
+  const ranked = await seedRanks().catch(() => 0);
   const log = await botTick();
   const stories = await marketStories().catch(() => 0);
-  return Response.json({ ok: true, actions: log, stories });
+  return Response.json({ ok: true, actions: log, stories, ranked });
 }
 
 /**
