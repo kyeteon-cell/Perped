@@ -72,8 +72,3 @@ export async function closeTradePost(postId: number, userId: string, opts: { exi
   }
   return { post: updated } as const;
 }
-
-/** Demo liquidation price: where the loss equals the margin (no maintenance margin, for simplicity). */
-export function demoLiqPx(side: "long" | "short", entry: number, lev: number) {
-  return side === "long" ? entry * (1 - 1 / lev) : entry * (1 + 1 / lev);
-}

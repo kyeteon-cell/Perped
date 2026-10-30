@@ -6,9 +6,8 @@ import { createPortal } from "react-dom";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
-import { fmtPct, fmtPrice, fmtStake, fmtUsd, pnlForPosition } from "@/lib/format";
+import { demoLiqPx, fmtPct, fmtPrice, fmtStake, fmtUsd, pnlForPosition } from "@/lib/format";
 import { closePosition, makeExchangeClient, setPositionTpSl } from "@/lib/hl-exchange";
-import { demoLiqPx } from "@/lib/trades";
 import { CoinMark, ticker } from "./ui";
 
 /**

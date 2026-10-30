@@ -2,7 +2,8 @@ import { and, eq, isNull, lte, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getMids } from "@/lib/hl-info";
 import { notify, systemPost } from "@/lib/feed";
-import { closeTradePost, demoLiqPx } from "@/lib/trades";
+import { closeTradePost } from "@/lib/trades";
+import { demoLiqPx } from "@/lib/format";
 
 /**
  * GET /api/cron/resolve → every 5 min: resolve calls (hit / missed / invalidated), close polls, settle duels,
