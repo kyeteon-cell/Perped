@@ -74,8 +74,8 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         <div className="flex items-center gap-4">
           <div className="rounded-full" style={{ border: "4px solid var(--bg)" }}><Avatar handle={user.handle} url={user.avatarUrl} size={84} /></div>
           <div className="min-w-0 flex-1 pt-[46px]">
-            <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1">✓</span>}</div>
-            <div className="mono when text-xs">{user.address.slice(0, 6)}…{user.address.slice(-4)} · verified on-chain</div>
+            <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1">✓</span>}{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
+            <div className="mono when text-xs">{user.isDemo ? "practice account · simulated fills" : `${user.address.slice(0, 6)}…${user.address.slice(-4)} · verified on-chain`}</div>
             <div className="mt-2.5 flex gap-4 text-sm">
               <button className="muted" onClick={() => setTab("followers")}><b style={{ color: "var(--text)" }}>{data.followers}</b> followers</button>
               <button className="muted" onClick={() => setTab("following")}><b style={{ color: "var(--text)" }}>{data.following}</b> following</button>
@@ -89,7 +89,15 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         </div>
       </section>
 
-      {isMe && (
+      {isMe && user.isDemo && (
+        <section className="block">
+          <div className="flex items-center justify-between"><span className="eyebrow">Demo balance</span><span className="when">practice USDC</span></div>
+          <div className="mono mt-2 text-[36px] font-semibold tracking-tight">{fmtUsd(Number(user.demoBalance))}</div>
+          <p className="muted mt-2 text-[13px]">Simulated fills at live prices. When you&apos;re ready for real trades, turn demo off in Settings and deposit.</p>
+          <div className="mt-3.5 grid grid-cols-2 gap-2.5"><Link href="/settings" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Go live</Link><button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ resetDemo: true }) }); mutate(); }}>Reset to $1,000</button></div>
+        </section>
+      )}
+      {isMe && !user.isDemo && (
         <section className="block">
           <div className="flex items-center justify-between"><span className="eyebrow">Account balance</span><span className="when">USDC on Hyperliquid</span></div>
           <div className="mono mt-2 text-[36px] font-semibold tracking-tight">{fmtUsd(data.accountValue ?? 0)}</div>
@@ -152,8 +160,14 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
       {tab === "trades" && (
         <>
-          <div className="seg px-5 pb-1 pt-3.5"><button className={`chip ${tradeTab === "open" ? "on" : ""}`} onClick={() => setTradeTab("open")}>Open · {data.positions.length}</button><button className={`chip ${tradeTab === "closed" ? "on" : ""}`} onClick={() => setTradeTab("closed")}>Closed · {s?.closedTrades ?? 0}</button></div>
-          {tradeTab === "open" && data.positions.map((p) => {
+          <div className="seg px-5 pb-1 pt-3.5"><button className={`chip ${tradeTab === "open" ? "on" : ""}`} onClick={() => setTradeTab("open")}>Open · {user.isDemo ? (feed?.posts.length ?? 0) : data.positions.length}</button><button className={`chip ${tradeTab === "closed" ? "on" : ""}`} onClick={() => setTradeTab("closed")}>Closed · {s?.closedTrades ?? 0}</button></div>
+          {tradeTab === "open" && user.isDemo && (feed?.posts ?? []).map((item) => (
+            <div key={item.post.id} className="relative">
+              <FeedPost item={item} mid={item.post.coin ? mids[item.post.coin] : undefined} onChanged={() => mutateFeed()} />
+              {isMe && <button className="chip danger absolute right-5 top-4" style={{ padding: "4px 10px", fontSize: 12 }} onClick={async () => { await authedFetch(`/api/posts/${item.post.id}/close`, { method: "POST", body: JSON.stringify({ exitPx: mids[item.post.coin!] ?? Number(item.post.entryPx), reason: "manual" }) }); mutate(); mutateFeed(); }}>Close</button>}
+            </div>
+          ))}
+          {tradeTab === "open" && !user.isDemo && data.positions.map((p) => {
             const szi = Number(p.szi), mid = mids[p.coin], upnl = Number(p.unrealizedPnl);
             return (
               <div key={p.coin} className="post">
@@ -165,7 +179,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
               </div>
             );
           })}
-          {tradeTab === "open" && data.positions.length === 0 && <p className="muted p-5 text-sm">No open positions.</p>}
+          {tradeTab === "open" && (user.isDemo ? (feed?.posts.length ?? 0) === 0 : data.positions.length === 0) && <p className="muted p-5 text-sm">No open positions.</p>}
           {tradeTab === "closed" && (feed?.posts ?? []).map((item) => (
             <div key={item.post.id} className="relative">
               <FeedPost item={item} onChanged={() => mutateFeed()} />

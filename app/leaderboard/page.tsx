@@ -11,7 +11,8 @@ type Row = { handle: string; avatarUrl: string | null; pnl?: number; winRate: st
 export default function LeaderboardPage() {
   const [mode, setMode] = useState<"trades" | "calls">("trades");
   const [period, setPeriod] = useState<"7d" | "30d" | "all">("7d");
-  const { data, isLoading } = useSWR<{ rows: Row[]; bottom?: Row[] }>(`/api/leaderboard?mode=${mode}&period=${period}`);
+  const [demo, setDemo] = useState(false);
+  const { data, isLoading } = useSWR<{ rows: Row[]; bottom?: Row[] }>(`/api/leaderboard?mode=${mode}&period=${period}&demo=${demo ? 1 : 0}`);
   const rows = data?.rows ?? [];
   const podium = mode === "trades" ? rows.slice(0, 3) : [];
 
@@ -20,7 +21,10 @@ export default function LeaderboardPage() {
       <header className="px-5 pt-4"><h1 className="h1 dot">Leaders</h1><div className="when">{mode === "trades" ? "Realised PnL from Hyperliquid fills" : "Public predictions, scored against the chart"}</div></header>
       <div className="px-5 pb-3 pt-4">
         <div className="modes"><button className={mode === "trades" ? "on" : ""} onClick={() => setMode("trades")}>Trades</button><button className={mode === "calls" ? "on" : ""} onClick={() => setMode("calls")}>Calls</button></div>
-        {mode === "trades" && <div className="seg mt-3">{(["7d", "30d", "all"] as const).map((p) => <button key={p} className={`chip ${p === period ? "on" : ""}`} onClick={() => setPeriod(p)}>{p === "all" ? "All time" : p === "7d" ? "7 days" : "30 days"}</button>)}</div>}
+        <div className="seg mt-3">
+          {mode === "trades" && (["7d", "30d", "all"] as const).map((p) => <button key={p} className={`chip ${p === period ? "on" : ""}`} onClick={() => setPeriod(p)}>{p === "all" ? "All time" : p === "7d" ? "7 days" : "30 days"}</button>)}
+          <button className={`chip ${demo ? "on" : ""}`} style={{ marginLeft: "auto" }} onClick={() => setDemo((v) => !v)}>{demo ? "Demo accounts" : "Real accounts"}</button>
+        </div>
       </div>
 
       {isLoading && <p className="muted px-5 py-4 text-sm">Loading…</p>}

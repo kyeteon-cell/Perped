@@ -32,7 +32,7 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
         <Link href={`/u/${author.handle}`} className="flex items-center gap-3">
           <Avatar handle={author.handle} url={author.avatarUrl} />
           <div>
-            <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}</div>
+            <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}{(author.isDemo || post.paper) && <span className="lbl done ml-1.5" style={{ padding: "1px 7px", fontSize: 10 }}>Demo</span>}</div>
             <div className="when">{timeAgo(post.createdAt)} ago{post.copiedFromId ? " · copied" : ""}{post.fadedFromId ? " · faded" : ""}{post.kind === "trade" && post.status === "closed" ? " · closed" : ""}</div>
           </div>
         </Link>

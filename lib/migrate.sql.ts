@@ -16,8 +16,14 @@ create table if not exists users (
   accept_duels boolean not null default true,
   default_leverage integer not null default 3,
   pnl_display text not null default 'pct',
+  is_demo boolean not null default false,
+  demo_balance numeric not null default 1000,
+  is_bot boolean not null default false,
   created_at timestamptz not null default now()
 );
+alter table users add column if not exists is_demo boolean not null default false;
+alter table users add column if not exists demo_balance numeric not null default 1000;
+alter table users add column if not exists is_bot boolean not null default false;
 create unique index if not exists users_handle_idx on users (handle);
 create unique index if not exists users_address_idx on users (address);
 
@@ -54,8 +60,10 @@ create table if not exists posts (
   system_type text,
   meta jsonb,
   pinned boolean not null default false,
+  paper boolean not null default false,
   created_at timestamptz not null default now()
 );
+alter table posts add column if not exists paper boolean not null default false;
 create index if not exists posts_created_idx on posts (created_at);
 create index if not exists posts_user_idx on posts (user_id);
 create index if not exists posts_kind_idx on posts (kind);

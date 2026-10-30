@@ -33,6 +33,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
   const { mids } = useMids();
 
   const isFade = !!seed.fadedFromId;
+  const isDemo = !!profile?.isDemo;
   const [coin, setCoin] = useState(seed.coin);
   const [side, setSide] = useState<"long" | "short">(seed.side ?? "long");
   const [usd, setUsd] = useState(50);
@@ -54,7 +55,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
   const maxLev = Math.min(fadeCap, market?.maxLeverage ?? MAX_LEVERAGE);
   useEffect(() => { if (lev > maxLev) setLev(maxLev); }, [maxLev, lev]);
   useEffect(() => {
-    if (!address || !BUILDER_CONFIGURED) return setApproved(true);
+    if (isDemo || !address || !BUILDER_CONFIGURED) return setApproved(true);
     getMaxBuilderFee(address, BUILDER_ADDRESS).then((f) => setApproved(f >= BUILDER_FEE_TENTHS_BPS));
   }, [address]);
   // Fades default to an automatic 5% stop.
@@ -82,15 +83,30 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
     setBusy(null);
   };
 
+  const postTrade = async (entryPx: number, filledSz: number, oid?: number, paper = false) => {
+    const r = await authedFetch("/api/posts", {
+      method: "POST",
+      body: JSON.stringify({ kind: "trade", coin, side, size: filledSz, notionalUsd: filledSz * entryPx, leverage: lev, entryPx, oid, paper, body: note.trim() || undefined, copiedFromId: seed.copiedFromId, fadedFromId: seed.fadedFromId, backsCallId: seed.backsCallId, tpPx: tpslOn && Number(tp) > 0 ? Number(tp) : undefined, slPx: tpslOn && Number(sl) > 0 ? Number(sl) : undefined }),
+    });
+    return r;
+  };
+
   const submit = async () => {
     if (!authenticated) return login();
-    if (!walletClient || !address) return setErr("Wallet still loading, try again in a second.");
     if (!profile) return router.push("/onboarding");
     if (!market || !mid) return setErr("Market not ready.");
     if (usd > MAX_POSITION_USD) return setErr(`Max ${fmtUsd(MAX_POSITION_USD)} margin per trade during beta.`);
     if (orderType === "limit" && !(Number(limitPx) > 0)) return setErr("Enter a limit price.");
     if (!tpslValid) return setErr(side === "long" ? "Take profit must be above entry and stop loss below." : "Take profit must be below entry and stop loss above.");
     setErr(null);
+    if (isDemo) {
+      setBusy("Filling (demo)…");
+      const r = await postTrade(mid, size, undefined, true);
+      setBusy(null);
+      if (!r.ok) return setErr((await r.json()).error ?? "Couldn't place demo trade");
+      return router.push("/");
+    }
+    if (!walletClient || !address) return setErr("Wallet still loading, try again in a second.");
     setBusy("Signing order…");
     const res = await placeMarketOrder(makeExchangeClient(walletClient), {
       asset: market, side, usd: notional, mid, leverage: lev, orderType,
@@ -100,11 +116,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
     });
     if (!res.ok) { setBusy(null); return setErr(res.error ?? "Order failed"); }
     setBusy("Posting to feed…");
-    const entryPx = res.avgPx ?? refPx, filledSz = res.totalSz ?? size;
-    const r = await authedFetch("/api/posts", {
-      method: "POST",
-      body: JSON.stringify({ kind: "trade", coin, side, size: filledSz, notionalUsd: filledSz * entryPx, leverage: lev, entryPx, oid: res.oid, body: note.trim() || undefined, copiedFromId: seed.copiedFromId, fadedFromId: seed.fadedFromId, backsCallId: seed.backsCallId, tpPx: tpslOn && Number(tp) > 0 ? Number(tp) : undefined, slPx: tpslOn && Number(sl) > 0 ? Number(sl) : undefined }),
-    });
+    const r = await postTrade(res.avgPx ?? refPx, res.totalSz ?? size, res.oid);
     setBusy(null);
     if (!r.ok) return setErr("Filled on Hyperliquid but posting failed; refresh your profile.");
     router.push("/");
@@ -118,7 +130,10 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
         <div className="px-5 pt-3 text-[13px]"><span className="muted">{isFade ? "Fading" : "Copying"}</span> <b>{seed.handle}</b> <span className="muted">· {seed.side === "long" ? "Long" : "Short"} {seed.coin}{isFade ? " → you go the other way" : ""}</span></div>
       )}
 
-      {approved === false && walletClient && (
+      {isDemo && (
+        <div className="px-5 pt-3"><div className="warn"><b>Demo mode.</b> Fills are simulated at live prices against your ${Number(profile?.demoBalance ?? 0).toFixed(0)} practice balance. Nothing touches Hyperliquid. Switch off in Settings when you&apos;re ready.</div></div>
+      )}
+      {!isDemo && approved === false && walletClient && (
         <div className="block"><div className="card p-4" style={{ border: "1.5px solid var(--brand)" }}>
           <div className="font-bold">One-time setup</div>
           <p className="muted mt-1 text-sm">Approve a max {BUILDER_MAX_FEE_RATE} Perped fee so trades can be routed from here. One signature, revocable anytime, only on trades placed in Perped.</p>
@@ -144,7 +159,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
       </div>
 
       <div className="block">
-        <div className="flex items-center justify-between text-sm"><span className="muted">Margin (USDC)</span><span className="when">Max {fmtUsd(MAX_POSITION_USD)} in beta</span></div>
+        <div className="flex items-center justify-between text-sm"><span className="muted">Margin ({isDemo ? "demo USDC" : "USDC"})</span><span className="when">{isDemo ? `Balance ${fmtUsd(Number(profile?.demoBalance ?? 0))}` : `Max ${fmtUsd(MAX_POSITION_USD)} in beta`}</span></div>
         <div className="mono my-2 text-[40px] font-semibold tracking-tight"><span className="muted text-2xl align-top">$</span><input type="number" inputMode="decimal" className="mono inline-block w-40 border-0 bg-transparent p-0 text-[40px] font-semibold tracking-tight outline-none" value={usd} min={5} max={MAX_POSITION_USD} onChange={(e) => setUsd(Math.max(0, Number(e.target.value)))} /></div>
         <div className="seg">{QUICK.map((q) => <button key={q} className={`chip ${usd === q ? "on" : ""}`} onClick={() => setUsd(q)}>{q}</button>)}</div>
         <div className="mt-4 flex items-center justify-between text-sm"><span className="muted">Leverage</span><span className="mono font-bold">{lev}×{isFade && fadeCap === 2 ? <span className="when ml-2">capped at 2× for new accounts</span> : null}</span></div>
@@ -173,8 +188,8 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
         {isFade && <div className="warn mb-3.5">Fading is a real {side} on Hyperliquid at your size. If they're right, you're the one who gets perped, publicly: your name goes on their post.</div>}
         <input className="field mb-3.5" placeholder="Add a note for the feed" value={note} maxLength={280} onChange={(e) => setNote(e.target.value)} />
         {err && <p className="red mb-3 text-sm">{err}</p>}
-        <button onClick={submit} disabled={!!busy || !market || size <= 0 || approved === false} className={`btn ${side}`}>{busy ?? (authenticated ? cta : "Log in to trade")}</button>
-        <p className="faint mt-3 text-center text-xs leading-relaxed">Filled on Hyperliquid. {orderType === "market" ? "Market order, up to 3% slippage." : "Limit order rests until filled or cancelled."} You can lose your margin. Not financial advice.</p>
+        <button onClick={submit} disabled={!!busy || !market || size <= 0 || (!isDemo && approved === false)} className={`btn ${side}`}>{busy ?? (authenticated ? (isDemo ? `Demo · ${cta}` : cta) : "Log in to trade")}</button>
+        <p className="faint mt-3 text-center text-xs leading-relaxed">{isDemo ? "Simulated fill at the live price." : "Filled on Hyperliquid."} {orderType === "market" ? "Market order, up to 3% slippage." : "Limit order rests until filled or cancelled."} You can lose your margin. Not financial advice.</p>
       </div>
     </div>
   );

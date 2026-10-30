@@ -13,6 +13,8 @@ const Body = z.object({
   defaultLeverage: z.number().int().min(1).max(10).optional(),
   pnlDisplay: z.enum(["pct", "usd", "roi"]).optional(),
   xHandle: z.string().max(30).nullable().optional(),
+  isDemo: z.boolean().optional(),
+  resetDemo: z.boolean().optional(),
 });
 
 /** PATCH /api/me/settings → update any subset of settings. */
@@ -21,6 +23,9 @@ export async function PATCH(req: Request) {
   if (!auth) return unauthorized();
   const parsed = Body.safeParse(await req.json());
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
-  const [row] = await db.update(schema.users).set(parsed.data).where(eq(schema.users.id, auth.privyId)).returning();
+  const { resetDemo, ...patch } = parsed.data;
+  const set: Record<string, unknown> = { ...patch };
+  if (resetDemo) set.demoBalance = "1000";
+  const [row] = await db.update(schema.users).set(set).where(eq(schema.users.id, auth.privyId)).returning();
   return Response.json({ profile: row });
 }

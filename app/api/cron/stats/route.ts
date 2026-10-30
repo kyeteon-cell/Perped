@@ -9,16 +9,31 @@ import { getUserFillsByTime, summariseFills } from "@/lib/hl-info";
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const users = await db.select({ id: schema.users.id, address: schema.users.address, xHandle: schema.users.xHandle }).from(schema.users);
+  const users = await db.select({ id: schema.users.id, address: schema.users.address, xHandle: schema.users.xHandle, isDemo: schema.users.isDemo }).from(schema.users);
   const now = Date.now();
   const DAY = 86_400_000;
   let updated = 0;
 
   for (const u of users) {
     try {
-      const fills = await getUserFillsByTime(u.address, now - 90 * DAY);
-      const all = summariseFills(fills), d30 = summariseFills(fills.filter((f) => f.time >= now - 30 * DAY)), d7 = summariseFills(fills.filter((f) => f.time >= now - 7 * DAY));
-      const liquidations = fills.filter((f) => /liquidat/i.test(f.dir)).length;
+      let all, d30, d7, liquidations = 0;
+      if (u.isDemo) {
+        // Paper trades: summarise from our own closed posts.
+        const closed = await db.select({ pnl: schema.posts.realizedPnl, notional: schema.posts.notionalUsd, closedAt: schema.posts.closedAt, meta: schema.posts.meta })
+          .from(schema.posts).where(and(eq(schema.posts.userId, u.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "closed")));
+        const sum = (rows: typeof closed) => {
+          const r = { realized: 0, volume: 0, wins: 0, losses: 0, closed: rows.length, winRate: 0 };
+          for (const c of rows) { const p = Number(c.pnl ?? 0); r.realized += p; r.volume += Number(c.notional ?? 0) * 2; if (p > 0) r.wins++; else if (p < 0) r.losses++; }
+          r.winRate = r.closed ? (r.wins / r.closed) * 100 : 0;
+          return r;
+        };
+        all = sum(closed); d30 = sum(closed.filter((c) => (c.closedAt?.getTime() ?? 0) >= now - 30 * DAY)); d7 = sum(closed.filter((c) => (c.closedAt?.getTime() ?? 0) >= now - 7 * DAY));
+        liquidations = closed.filter((c) => (c.meta as { closeReason?: string } | null)?.closeReason === "liquidation").length;
+      } else {
+        const fills = await getUserFillsByTime(u.address, now - 90 * DAY);
+        all = summariseFills(fills); d30 = summariseFills(fills.filter((f) => f.time >= now - 30 * DAY)); d7 = summariseFills(fills.filter((f) => f.time >= now - 7 * DAY));
+        liquidations = fills.filter((f) => /liquidat/i.test(f.dir)).length;
+      }
 
       const calls = await db.select({ callStatus: schema.posts.callStatus, targetPx: schema.posts.targetPx, resolvedPx: schema.posts.resolvedPx, createdAt: schema.posts.createdAt, side: schema.posts.side })
         .from(schema.posts).where(and(eq(schema.posts.userId, u.id), eq(schema.posts.kind, "call")));
@@ -41,7 +56,7 @@ export async function GET(req: Request) {
         faded: sql<number>`(select count(*) from posts c join posts s on c.faded_from_id = s.id where s.user_id = ${u.id})`.mapWith(Number),
       }).from(sql`(select 1) t`);
 
-      const verified = all.closed >= 10 && !!u.xHandle;
+      const verified = !u.isDemo && all.closed >= 10 && !!u.xHandle;
       const row = {
         userId: u.id,
         realizedPnl7d: d7.realized.toFixed(4), realizedPnl30d: d30.realized.toFixed(4), realizedPnlAll: all.realized.toFixed(4),

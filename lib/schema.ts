@@ -11,6 +11,10 @@ export const users = pgTable(
     avatarUrl: text("avatar_url"),
     xHandle: text("x_handle"),
     verified: boolean("verified").default(false).notNull(), // 10+ closed trades and a linked X account
+    // Demo mode: trades are simulated at live prices against a virtual USDC balance. No wallet funding needed.
+    isDemo: boolean("is_demo").default(false).notNull(),
+    demoBalance: numeric("demo_balance").default("1000").notNull(),
+    isBot: boolean("is_bot").default(false).notNull(),
     // Settings (consent-based heat)
     showLiquidations: boolean("show_liquidations").default(true).notNull(),
     showSizes: boolean("show_sizes").default(true).notNull(),
@@ -74,6 +78,7 @@ export const posts = pgTable(
     systemType: text("system_type"),
     meta: jsonb("meta").$type<Record<string, unknown>>(),
     pinned: boolean("pinned").default(false).notNull(),
+    paper: boolean("paper").default(false).notNull(), // simulated (demo) trade, never hit Hyperliquid
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("posts_created_idx").on(t.createdAt), index("posts_user_idx").on(t.userId), index("posts_kind_idx").on(t.kind), index("posts_coin_idx").on(t.coin)],

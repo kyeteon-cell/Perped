@@ -47,6 +47,7 @@ export default function SettingsPage() {
       <Toggle k="acceptDuels" label="Accept duel challenges" />
 
       <div className="eyebrow px-5 pb-1.5 pt-4">Trading</div>
+      <label className="srow"><span>Demo mode<span className="when ml-1.5">simulated fills, practice balance</span></span><input type="checkbox" className="sw" checked={!!local.isDemo} onChange={(e) => save({ isDemo: e.target.checked })} /></label>
       <div className="srow"><span>Default leverage</span><Seg value={String(local.defaultLeverage ?? 3)} options={[["1", "1×"], ["2", "2×"], ["3", "3×"], ["5", "5×"]]} onChange={(v) => save({ defaultLeverage: Number(v) })} /></div>
       <div className="srow"><span>Max per trade</span><span className="mono">${MAX_POSITION_USD}</span></div>
       <div className="srow"><span>Perped fee approval</span><span className="chip" style={{ color: "var(--green)", background: "var(--green-soft)" }}>{BUILDER_MAX_FEE_RATE} max</span></div>

@@ -25,11 +25,11 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
       </div>
     );
   }
-  const bal = data?.accountValue ?? 0;
+  const bal = profile.isDemo ? Number(profile.demoBalance) : (data?.accountValue ?? 0);
   const openN = data?.positions?.length ?? 0;
   return (
     <div className="hero">
-      <div className="k">{greet}, {profile.handle}</div>
+      <div className="k">{greet}, {profile.handle}{profile.isDemo ? " · demo" : ""}</div>
       <div className="big mono">{fmtUsd(bal)}</div>
       <div className="mt-2.5 flex gap-4 text-[13px] opacity-95">
         <span>7 days <b className="mono">{fmtUsd(Number(data?.stats?.realizedPnl7d ?? 0), { sign: true })}</b></span>
@@ -38,10 +38,10 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
       </div>
       <div className="hero-actions">
         <Link href="/markets" className="solid">Trade</Link>
-        <button onClick={onDeposit}>Deposit</button>
+        {profile.isDemo ? <Link href="/settings">Go live</Link> : <button onClick={onDeposit}>Deposit</button>}
         <Link href="/compose">Post</Link>
       </div>
-      {bal === 0 && <div className="relative mt-3 text-[12px] opacity-90">Fund your account to place your first trade.</div>}
+      {bal === 0 && !profile.isDemo && <div className="relative mt-3 text-[12px] opacity-90">Fund your account to place your first trade.</div>}
     </div>
   );
 }

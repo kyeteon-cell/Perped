@@ -1,0 +1,211 @@
+import { and, desc, eq, gte, isNull, ne, sql } from "drizzle-orm";
+import { db, schema } from "./db";
+import { getMids } from "./hl-info";
+import { notify, systemPost } from "./feed";
+
+/** Six demo traders with distinct styles. They are flagged isDemo + isBot and never touch Hyperliquid. */
+export const BOTS = [
+  { id: "bot:samui_sam", handle: "samui_sam", bio: "Swing trades on the majors. Takes profit early, posts the losses too.", coins: ["BTC", "ETH", "SOL"], lev: [2, 3], bias: 0.6, winSkew: 0.62, chatty: 0.6, calls: 0.25, holdH: [6, 48] },
+  { id: "bot:degenmaxi", handle: "degenmaxi", bio: "5× or nothing. Here for a good time, not a long time.", coins: ["SOL", "DOGE", "WIF", "HYPE"], lev: [4, 5], bias: 0.5, winSkew: 0.42, chatty: 0.9, calls: 0.1, holdH: [1, 8] },
+  { id: "bot:fundingfarmer", handle: "fundingfarmer", bio: "I trade the funding rate, not the chart. Calls > trades.", coins: ["BTC", "ETH", "HYPE", "XRP"], lev: [1, 2], bias: 0.5, winSkew: 0.58, chatty: 0.4, calls: 0.6, holdH: [12, 72] },
+  { id: "bot:wickhunter", handle: "wickhunter", bio: "Liquidity grabs and failed breakouts. Stops always on.", coins: ["SOL", "ETH", "SUI", "LINK"], lev: [3, 3], bias: 0.45, winSkew: 0.6, chatty: 0.5, calls: 0.3, holdH: [2, 24] },
+  { id: "bot:contrarian_kate", handle: "contrarian_kate", bio: "If everyone's long, I'm short. Fading is a lifestyle.", coins: ["BTC", "SOL", "DOGE"], lev: [2, 3], bias: 0.3, winSkew: 0.52, chatty: 0.7, calls: 0.2, holdH: [4, 36], fader: true },
+  { id: "bot:mooncat", handle: "mooncat", bio: "New here. Learning in public. Be nice.", coins: ["DOGE", "WIF", "SOL"], lev: [2, 5], bias: 0.7, winSkew: 0.4, chatty: 0.8, calls: 0.05, holdH: [1, 12] },
+];
+
+const NOTES_OPEN = ["Clean break of the range. Stop below the wick.", "Funding flipped, taking the other side.", "Scalp, not a marriage.", "Daily close above resistance. Sizing small.", "Reclaimed the level. Let's see.", "Mean reversion play. Tight stop.", "No thesis, vibes. Don't copy this.", "Second attempt at this level, first one got perped.", "HTF trend is up, buying the dip.", "Weekend liquidity is thin, careful."];
+const NOTES_CLOSE_WIN = ["Banked. Never going broke taking a win.", "Target hit. Next.", "Half off here, letting the rest run.", "That'll do.", "Paid for lunch."];
+const NOTES_CLOSE_LOSS = ["Got perped. Stop did its job.", "Wrong. Small loss, moving on.", "Chopped. Should've waited for the close.", "Taking the L before it becomes a bigger L.", "Invalidation hit, out."];
+const COMMENTS = ["Same setup I'm watching.", "Stop's too tight imo", "copied at your entry, pray for me", "This aged well", "fading this 🫡", "size?", "Funding says otherwise", "Nice one", "Why 5×", "respect for posting the loss", "calling it now: this reverses at the daily open", "👀"];
+
+const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+const hours = (h: number) => h * 3_600_000;
+
+export async function ensureBots() {
+  for (const b of BOTS) {
+    await db.insert(schema.users).values({ id: b.id, address: `0xdemo${b.handle.padEnd(35, "0").slice(0, 35)}`, handle: b.handle, bio: b.bio, isDemo: true, isBot: true, demoBalance: "1000", verified: false })
+      .onConflictDoNothing();
+    await db.insert(schema.stats).values({ userId: b.id }).onConflictDoNothing();
+  }
+  // follow graph
+  for (const a of BOTS) for (const b of BOTS) if (a !== b && Math.random() < 0.6) await db.insert(schema.follows).values({ followerId: a.id, followeeId: b.id }).onConflictDoNothing();
+}
+
+/** Backfill ~2 weeks of closed trades, a few open ones, calls, polls, comments and votes. */
+export async function seedHistory() {
+  const mids = await getMids();
+  const now = Date.now();
+  const created: number[] = [];
+  for (const b of BOTS) {
+    for (let i = 0; i < 7; i++) {
+      const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
+      if (!mid) continue;
+      const side = Math.random() < b.bias ? "long" : "short";
+      const lev = Math.round(rnd(b.lev[0], b.lev[1]));
+      const openedAt = now - hours(rnd(24, 24 * 14));
+      const hold = hours(rnd(b.holdH[0], b.holdH[1]));
+      const win = Math.random() < b.winSkew;
+      const move = rnd(0.5, 6) / 100 * (win ? 1 : -1) * (side === "long" ? 1 : -1);
+      const entry = mid / (1 + move * rnd(0.8, 1.2));
+      const exit = mid * (1 + rnd(-0.004, 0.004));
+      const margin = pick([25, 50, 80, 100, 150, 250]);
+      const notional = margin * lev, size = notional / entry;
+      const pnl = (side === "long" ? exit - entry : entry - exit) * size;
+      const [p] = await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(size), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "closed", exitPx: String(exit), realizedPnl: pnl.toFixed(4), closedAt: new Date(openedAt + hold), paper: true, body: pick(NOTES_OPEN), createdAt: new Date(openedAt), meta: { closeReason: !win && lev >= 4 && Math.random() < 0.3 ? "liquidation" : "manual" } }).returning({ id: schema.posts.id });
+      created.push(p.id);
+    }
+    // one or two open trades
+    for (let i = 0; i < 1 + Math.round(Math.random()); i++) {
+      const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
+      if (!mid) continue;
+      const side = Math.random() < b.bias ? "long" : "short";
+      const lev = Math.round(rnd(b.lev[0], b.lev[1]));
+      const entry = mid * (1 + rnd(-0.02, 0.02));
+      const margin = pick([25, 50, 100, 150]);
+      const notional = margin * lev;
+      const [p] = await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(notional / entry), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "open", paper: true, body: Math.random() < b.chatty ? pick(NOTES_OPEN) : null, createdAt: new Date(now - hours(rnd(0.2, 10))), slPx: String(side === "long" ? entry * 0.95 : entry * 1.05) }).returning({ id: schema.posts.id });
+      created.push(p.id);
+    }
+    // calls
+    if (Math.random() < b.calls + 0.3) {
+      const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
+      if (mid) {
+        const up = Math.random() < 0.6;
+        const [p] = await db.insert(schema.posts).values({ userId: b.id, kind: "call", coin, side: up ? "long" : "short", targetPx: String(mid * (up ? 1.08 : 0.92)), invalidPx: String(mid * (up ? 0.96 : 1.04)), deadline: new Date(now + hours(rnd(24, 96))), callStatus: "open", status: "open", body: pick(["Funding negative while price holds the range. Shorts paying to be wrong.", "Weekly close above the level. Target is the prior high.", "Three taps on support, fourth one breaks.", "Open interest at ATH, this unwinds."]), meta: { fromPx: mid }, createdAt: new Date(now - hours(rnd(1, 20))) }).returning({ id: schema.posts.id });
+        created.push(p.id);
+      }
+    }
+  }
+  // resolved calls for the calls board (so hit rates exist)
+  for (const b of BOTS) {
+    const n = 5 + Math.floor(Math.random() * 6);
+    for (let i = 0; i < n; i++) {
+      const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
+      if (!mid) continue;
+      const hit = Math.random() < (b.calls > 0.4 ? 0.72 : 0.5);
+      const up = Math.random() < 0.5;
+      const target = mid * (up ? 1.05 : 0.95);
+      const made = now - hours(rnd(48, 24 * 20));
+      await db.insert(schema.posts).values({ userId: b.id, kind: "call", coin, side: up ? "long" : "short", targetPx: String(target), deadline: new Date(made + hours(48)), callStatus: hit ? "hit" : "missed", status: "closed", resolvedAt: new Date(made + hours(rnd(6, 48))), resolvedPx: String(hit ? target * (1 + rnd(0, 0.01)) : mid * (1 + rnd(-0.03, 0.03))), meta: { fromPx: mid * (up ? 0.99 : 1.01) }, createdAt: new Date(made) });
+    }
+  }
+  // one poll
+  const fm = BOTS[2];
+  await db.insert(schema.posts).values({ userId: fm.id, kind: "poll", body: `SOL above ${Math.round(Number(mids["SOL"] ?? 180) * 1.05)} by Friday?`, options: ["Yes", "No"], closesAt: new Date(now + hours(72)), settle: { coin: "SOL", op: "gte", px: Math.round(Number(mids["SOL"] ?? 180) * 1.05) }, status: "open", coin: "SOL", paper: true });
+  // comments + votes on recent posts
+  const recent = await db.select({ id: schema.posts.id, userId: schema.posts.userId }).from(schema.posts).orderBy(desc(schema.posts.id)).limit(30);
+  for (const p of recent) {
+    for (const b of BOTS) {
+      if (b.id === p.userId) continue;
+      if (Math.random() < 0.5) await db.insert(schema.votes).values({ postId: p.id, userId: b.id, value: Math.random() < 0.8 ? 1 : -1 }).onConflictDoNothing();
+      if (Math.random() < b.chatty * 0.35) await db.insert(schema.comments).values({ postId: p.id, userId: b.id, body: pick(COMMENTS) });
+    }
+  }
+  return created.length;
+}
+
+/** One tick of bot life. Humans first: react to any human post from the last hour, then do own thing. */
+export async function botTick() {
+  const mids = await getMids();
+  const now = Date.now();
+  const log: string[] = [];
+  const humanRecent = await db.select({ id: schema.posts.id, userId: schema.posts.userId, kind: schema.posts.kind, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage, status: schema.posts.status })
+    .from(schema.posts).innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
+    .where(and(eq(schema.users.isBot, false), gte(schema.posts.createdAt, new Date(now - hours(1))), isNull(schema.posts.systemType)))
+    .orderBy(desc(schema.posts.id)).limit(10);
+
+  for (const b of BOTS) {
+    const [me] = await db.select().from(schema.users).where(eq(schema.users.id, b.id)).limit(1);
+    if (!me) continue;
+
+    // 1. React to humans
+    for (const hp of humanRecent) {
+      if (Math.random() < 0.5) await db.insert(schema.votes).values({ postId: hp.id, userId: b.id, value: Math.random() < 0.85 ? 1 : -1 }).onConflictDoNothing();
+      if (Math.random() < b.chatty * 0.3) await db.insert(schema.comments).values({ postId: hp.id, userId: b.id, body: pick(COMMENTS) });
+      if (hp.kind === "trade" && hp.status === "open" && hp.coin && hp.side && Math.random() < 0.25) {
+        const mid = Number(mids[hp.coin] ?? 0);
+        if (mid) {
+          const fade = b.fader ? Math.random() < 0.7 : Math.random() < 0.25;
+          const side = fade ? (hp.side === "long" ? "short" : "long") : hp.side;
+          const lev = Math.min(hp.leverage ?? 2, b.lev[1]);
+          const margin = pick([25, 50, 100]);
+          await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin: hp.coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, copiedFromId: fade ? undefined : hp.id, fadedFromId: fade ? hp.id : undefined, body: fade ? pick(["Fading this. Sorry not sorry.", "Other side of this one.", "Respectfully, no."]) : pick(["Copied. Let's ride.", "In with you.", "Copied at market."]) });
+          if (hp.userId) await notify(hp.userId, fade ? "faded" : "copied", `${b.handle} ${fade ? "faded" : "copied"} your ${hp.coin} trade`, `$${margin * lev} at ${mid}`, `/post/${hp.id}`);
+          log.push(`${b.handle} ${fade ? "faded" : "copied"} ${hp.coin}`);
+        }
+      }
+    }
+
+    // 2. Manage own open trades: close on stop/target-ish or after hold time
+    const open = await db.select().from(schema.posts).where(and(eq(schema.posts.userId, b.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open")));
+    for (const t of open) {
+      const mid = Number(mids[t.coin!] ?? 0);
+      if (!mid) continue;
+      const entry = Number(t.entryPx), roi = ((mid - entry) / entry) * (t.side === "long" ? 1 : -1) * (t.leverage ?? 1) * 100;
+      const age = now - new Date(t.createdAt).getTime();
+      const stopHit = t.slPx && (t.side === "long" ? mid <= Number(t.slPx) : mid >= Number(t.slPx));
+      const shouldClose = stopHit || roi > rnd(6, 20) || roi < -rnd(8, 25) || age > hours(rnd(b.holdH[0], b.holdH[1]));
+      if (!shouldClose) continue;
+      const pnl = (t.side === "long" ? mid - entry : entry - mid) * Number(t.size);
+      const liq = roi <= -90;
+      await db.update(schema.posts).set({ status: "closed", exitPx: String(mid), realizedPnl: pnl.toFixed(4), closedAt: new Date(), meta: { ...(t.meta ?? {}), closeReason: liq ? "liquidation" : stopHit ? "sl" : "manual" } }).where(eq(schema.posts.id, t.id));
+      const margin = Number(t.notionalUsd) / (t.leverage ?? 1);
+      await db.update(schema.users).set({ demoBalance: Math.max(0, Number(me.demoBalance) + margin + pnl).toFixed(2) }).where(eq(schema.users.id, b.id));
+      if (Math.random() < b.chatty) await db.insert(schema.comments).values({ postId: t.id, userId: b.id, body: pnl >= 0 ? pick(NOTES_CLOSE_WIN) : pick(NOTES_CLOSE_LOSS) });
+      if (liq) await systemPost("liquidation", `${b.handle} got perped. −$${Math.abs(pnl).toFixed(0)} on ${t.coin} ${t.leverage}× ${t.side}, liquidated at ${mid}.`, { handle: b.handle, pnl, coin: t.coin, postId: t.id }, t.coin ?? undefined);
+      if (roi >= 100) await systemPost("milestone", `${b.handle} just hit ${(roi / 100 + 1).toFixed(1)}× on ${t.coin} ${t.side} and banked it.`, { handle: b.handle, roi, coin: t.coin, postId: t.id }, t.coin ?? undefined);
+      log.push(`${b.handle} closed ${t.coin} ${pnl >= 0 ? "+" : ""}${pnl.toFixed(0)}`);
+    }
+
+    // 3. Maybe open something new (keep 1–3 open)
+    const openCount = open.length;
+    if (openCount < 3 && Math.random() < (openCount === 0 ? 0.7 : 0.3)) {
+      const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
+      if (mid && Number(me.demoBalance) > 30) {
+        const side = Math.random() < b.bias ? "long" : "short";
+        const lev = Math.round(rnd(b.lev[0], b.lev[1]));
+        const margin = Math.min(pick([25, 50, 100, 150]), Number(me.demoBalance) * 0.3);
+        await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, body: Math.random() < b.chatty ? pick(NOTES_OPEN) : null, slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
+        await db.update(schema.users).set({ demoBalance: (Number(me.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, b.id));
+        log.push(`${b.handle} opened ${side} ${coin}`);
+      }
+    }
+
+    // 4. Occasionally make a call
+    if (Math.random() < b.calls * 0.2) {
+      const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
+      if (mid) {
+        const up = Math.random() < 0.55;
+        await db.insert(schema.posts).values({ userId: b.id, kind: "call", coin, side: up ? "long" : "short", targetPx: String(mid * (up ? 1 + rnd(0.03, 0.1) : 1 - rnd(0.03, 0.1))), invalidPx: String(mid * (up ? 0.96 : 1.04)), deadline: new Date(now + hours(pick([24, 72, 168]))), callStatus: "open", status: "open", body: pick(["Range is compressing, this resolves up.", "Lower highs all week. Target is the range low.", "Funding too hot. Reset incoming.", "Breakout retest holding. Continuation."]), meta: { fromPx: mid } });
+        log.push(`${b.handle} called ${coin}`);
+      }
+    }
+
+    // 5. Vote/comment on other bots' recent posts (keeps the feed social)
+    const others = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(ne(schema.posts.userId, b.id), gte(schema.posts.createdAt, new Date(now - hours(6))))).orderBy(sql`random()`).limit(3);
+    for (const o of others) {
+      if (Math.random() < 0.5) await db.insert(schema.votes).values({ postId: o.id, userId: b.id, value: Math.random() < 0.8 ? 1 : -1 }).onConflictDoNothing();
+      if (Math.random() < b.chatty * 0.15) await db.insert(schema.comments).values({ postId: o.id, userId: b.id, body: pick(COMMENTS) });
+    }
+  }
+  return log;
+}
+
+export async function purgeBots() {
+  const ids = BOTS.map((b) => b.id);
+  for (const id of ids) {
+    await db.delete(schema.comments).where(eq(schema.comments.userId, id));
+    await db.delete(schema.votes).where(eq(schema.votes.userId, id));
+    await db.delete(schema.pollVotes).where(eq(schema.pollVotes.userId, id));
+    await db.delete(schema.posts).where(eq(schema.posts.userId, id));
+    await db.delete(schema.follows).where(eq(schema.follows.followerId, id));
+    await db.delete(schema.follows).where(eq(schema.follows.followeeId, id));
+    await db.delete(schema.notifications).where(eq(schema.notifications.userId, id));
+    await db.delete(schema.stats).where(eq(schema.stats.userId, id));
+    await db.delete(schema.users).where(eq(schema.users.id, id));
+  }
+  // system posts that referenced bots
+  await db.delete(schema.posts).where(and(eq(schema.posts.kind, "system"), sql`${schema.posts.meta}->>'handle' in (${sql.join(BOTS.map((b) => sql`${b.handle}`), sql`, `)})`));
+  return ids.length;
+}

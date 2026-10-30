@@ -43,6 +43,7 @@ const Trade = z.object({
   notionalUsd: z.number().positive().max(MAX_POSITION_USD * 100),
   leverage: z.number().int().min(1).max(MAX_LEVERAGE),
   entryPx: z.number().positive(),
+  paper: z.boolean().optional(),
   oid: z.number().int().optional(),
   body: z.string().max(280).optional(),
   copiedFromId: z.number().int().optional(),
@@ -83,6 +84,18 @@ export async function POST(req: Request) {
   if (b.kind === "poll" && !profile.verified) return Response.json({ error: "polls are for verified traders (10+ closed trades and a linked X account)" }, { status: 403 });
 
   const values: typeof schema.posts.$inferInsert = { userId: profile.id, kind: b.kind, body: "body" in b ? b.body : undefined };
+  if (b.kind === "trade" && (b.paper || profile.isDemo)) {
+    // Demo: fill at the live mid on the server, deduct margin from the virtual balance.
+    const mids = await getMids().catch(() => ({} as Record<string, string>));
+    const mid = Number(mids[b.coin.toUpperCase()] ?? 0);
+    if (!mid) return Response.json({ error: "no price for that market" }, { status: 400 });
+    const margin = b.notionalUsd / b.leverage;
+    if (margin > Number(profile.demoBalance)) return Response.json({ error: `demo balance is $${Number(profile.demoBalance).toFixed(2)}` }, { status: 400 });
+    b.entryPx = mid;
+    b.size = b.notionalUsd / mid;
+    values.paper = true;
+    await db.update(schema.users).set({ demoBalance: (Number(profile.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, profile.id));
+  }
   if (b.kind === "trade") {
     Object.assign(values, {
       coin: b.coin.toUpperCase(), side: b.side, size: String(b.size), notionalUsd: String(b.notionalUsd), leverage: b.leverage, entryPx: String(b.entryPx),

@@ -4,6 +4,7 @@ import { db, schema } from "@/lib/db";
 import { getAuth, unauthorized } from "@/lib/auth";
 import { pnlForPosition } from "@/lib/format";
 import { systemPost, notify } from "@/lib/feed";
+import { getMids } from "@/lib/hl-info";
 
 const Body = z.object({ exitPx: z.number().positive(), reason: z.enum(["manual", "tp", "sl", "liquidation"]).default("manual") });
 
@@ -18,10 +19,20 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!post || post.kind !== "trade") return Response.json({ error: "not found" }, { status: 404 });
   if (post.status === "closed") return Response.json({ post });
 
-  const { pnl, pct } = pnlForPosition(post.side!, Number(post.entryPx), parsed.data.exitPx, Number(post.size));
+  let exitPx = parsed.data.exitPx;
+  if (post.paper) {
+    const mids = await getMids().catch(() => ({} as Record<string, string>));
+    exitPx = Number(mids[post.coin!] ?? exitPx);
+  }
+  const { pnl, pct } = pnlForPosition(post.side!, Number(post.entryPx), exitPx, Number(post.size));
+  if (post.paper) {
+    const margin = Number(post.notionalUsd) / (post.leverage ?? 1);
+    const [u] = await db.select({ demoBalance: schema.users.demoBalance }).from(schema.users).where(eq(schema.users.id, auth.privyId)).limit(1);
+    await db.update(schema.users).set({ demoBalance: (Number(u?.demoBalance ?? 0) + margin + pnl).toFixed(2) }).where(eq(schema.users.id, auth.privyId));
+  }
   const [updated] = await db
     .update(schema.posts)
-    .set({ status: "closed", exitPx: String(parsed.data.exitPx), realizedPnl: pnl.toFixed(4), closedAt: new Date(), meta: { ...(post.meta ?? {}), closeReason: parsed.data.reason } })
+    .set({ status: "closed", exitPx: String(exitPx), realizedPnl: pnl.toFixed(4), closedAt: new Date(), meta: { ...(post.meta ?? {}), closeReason: parsed.data.reason } })
     .where(eq(schema.posts.id, post.id))
     .returning();
 
@@ -29,7 +40,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const roi = pct * (post.leverage ?? 1);
 
   if (parsed.data.reason === "liquidation" && me?.showLiquidations) {
-    await systemPost("liquidation", `${me.handle} got perped. ${pnl < 0 ? "−" : "+"}$${Math.abs(pnl).toFixed(0)} on ${post.coin} ${post.leverage}× ${post.side}, liquidated at ${parsed.data.exitPx}.`, { handle: me.handle, pnl, coin: post.coin, postId: post.id }, post.coin ?? undefined);
+    await systemPost("liquidation", `${me.handle} got perped. ${pnl < 0 ? "−" : "+"}$${Math.abs(pnl).toFixed(0)} on ${post.coin} ${post.leverage}× ${post.side}, liquidated at ${exitPx}.`, { handle: me.handle, pnl, coin: post.coin, postId: post.id }, post.coin ?? undefined);
   }
   if (roi >= 100) {
     await systemPost("milestone", `${me?.handle} just hit ${(roi / 100 + 1).toFixed(1)}× on ${post.coin} ${post.side} and banked it.`, { handle: me?.handle, roi, coin: post.coin, postId: post.id }, post.coin ?? undefined);
