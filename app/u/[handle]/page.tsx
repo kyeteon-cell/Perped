@@ -5,6 +5,8 @@ import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
 import { DepositSheet } from "@/components/DepositSheet";
+import { ChallengeSheet } from "@/components/ChallengeSheet";
+import { PerformanceCard } from "@/components/Performance";
 import { Avatar, CoinMark, Icon, I, ticker } from "@/components/ui";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
