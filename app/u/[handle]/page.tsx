@@ -110,22 +110,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         </section>
       )}
 
-      <section className="block">
-        <div className="statrow">
-          <div><small>7 days</small><b className={`mono ${Number(s?.realizedPnl7d ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(Number(s?.realizedPnl7d ?? 0), { sign: true, compact: true })}</b></div>
-          <div><small>All time</small><b className={`mono ${Number(s?.realizedPnlAll ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(Number(s?.realizedPnlAll ?? 0), { sign: true, compact: true })}</b></div>
-          <div><small>Win rate</small><b className="mono">{fmtPct(Number(s?.winRate ?? 0), 0).replace("+", "")}</b></div>
-          <div><small>Volume</small><b className="mono">{fmtUsd(Number(s?.volume30d ?? 0), { compact: true })}</b></div>
-        </div>
-        <div className="record">
-          <span><b>{s?.closedTrades ?? 0}</b> trades</span>
-          <span><b>{s?.copiedCount ?? 0}</b> copied · <b>{s?.fadedCount ?? 0}</b> faded</span>
-          <span>Calls <b>{callHit == null ? "—" : `${Math.round(callHit)}%`}</b> hit{s?.callsResolved ? ` · ${s.callsResolved}` : ""}{(s?.callStreak ?? 0) >= 3 ? ` · 🔥 ${s!.callStreak}` : ""}</span>
-          {s && Number(s.judgement) > 0 && <span>Judgement <b>{Math.round(Number(s.judgement))}%</b></span>}
-          {data.rivalries?.length ? <span>Rivalry <b>{data.rivalries[0].wins}–{data.rivalries[0].losses}</b> vs {data.rivalries[0].opponent}</span> : null}
-          {(s?.liquidations ?? 0) > 0 && <span className="red"><b>{s!.liquidations}</b> liquidated</span>}
-        </div>
-      </section>
+      <PerformanceCard handle={handle} stats={s} />
 
       {(pins.length > 0 || isMe) && (
         <section className="block pb-3">
