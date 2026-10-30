@@ -1,5 +1,8 @@
 import { sql } from "drizzle-orm";
 import { db, ensureSchema } from "@/lib/db";
+import { ensureBots, seedHistory } from "@/lib/bots";
+import { eq } from "drizzle-orm";
+import { schema } from "@/lib/db";
 import { APP_NAME, BUILDER_CONFIGURED, HL_DATA_NETWORK, HL_NETWORK } from "@/lib/config";
 
 export const revalidate = 0;
@@ -42,7 +45,13 @@ export async function GET(req: Request) {
     const tables = Array.from(rows as Iterable<{ table_name: string }>).map((r) => r.table_name);
     const required = ["users", "posts", "stats", "referral_earnings", "referral_payouts"];
     const missing = required.filter((t) => !tables.includes(t));
-    return Response.json({ ok: missing.length === 0, app: APP_NAME, version: "0.4.0", trading: HL_NETWORK, prices: HL_DATA_NETWORK, builderConfigured: BUILDER_CONFIGURED, privy, tables, missing });
+    // Demo traders: seed on first visit so the feed is never empty (same as the bots cron does).
+    let bots: unknown = "present";
+    if (!missing.length && process.env.BOTS_PAUSED !== "1") {
+      const [any] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.isBot, true)).limit(1);
+      if (!any) { await ensureBots(); bots = { seeded: true, posts: await seedHistory() }; }
+    }
+    return Response.json({ ok: missing.length === 0, app: APP_NAME, version: "0.4.0", trading: HL_NETWORK, prices: HL_DATA_NETWORK, builderConfigured: BUILDER_CONFIGURED, privy, bots, tables, missing });
   } catch (e) {
     return Response.json({ ok: false, privy, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
