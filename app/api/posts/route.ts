@@ -8,6 +8,27 @@ import { DEMO_ENABLED, MAX_POSITION_USD } from "@/lib/config";
 import { getMids, getPerpAssets } from "@/lib/hl-info";
 
 /**
+ * Keep the For-you feed mixed: system cards (battle / duel results, milestones, settlements, market stories)
+ * are capped to one in every three items and never two of the same type in a row, so a burst of settlements
+ * can't bury people's trades, calls and posts. Order stays chronological within what survives.
+ */
+function diversify<T extends { post: { kind: string; systemType?: string | null } }>(rows: T[], limit: number): T[] {
+  const out: T[] = [];
+  let sinceSystem = 3, lastSys = "";
+  for (const r of rows) {
+    const sys = r.post.kind === "system";
+    if (sys) {
+      const t = r.post.systemType ?? "";
+      if (sinceSystem < 2 || t === lastSys) continue;
+      sinceSystem = 0; lastSys = t;
+    } else sinceSystem++;
+    out.push(r);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/**
  * GET /api/posts?tab=foryou|following|live&kind=&coin=&handle=&status=&cursor=&limit=
  * Feed, newest first (pinned first on a profile), with author, votes, copies, fades, poll counts.
  */
@@ -39,8 +60,10 @@ export async function GET(req: Request) {
     conds.push(inArray(schema.posts.userId, ids));
   }
   try {
-    const posts = await queryFeed({ where: and(...conds.filter(Boolean)), limit, viewerId: auth?.privyId, pinnedFirst: !!q.handle });
-    return Response.json({ posts, nextCursor: posts.length === limit ? new Date(posts[posts.length - 1].post.createdAt).getTime() : null });
+    const forYou = q.tab === "foryou" || (!q.tab && !q.handle && !q.coin && !q.status);
+    let posts = await queryFeed({ where: and(...conds.filter(Boolean)), limit: forYou ? limit * 3 : limit, viewerId: auth?.privyId, pinnedFirst: !!q.handle });
+    if (forYou) posts = diversify(posts, limit);
+    return Response.json({ posts, nextCursor: posts.length >= limit ? new Date(posts[posts.length - 1].post.createdAt).getTime() : null });
   } catch (e) {
     console.error("[posts] feed query failed", e);
     return Response.json({ posts: [], nextCursor: null, error: e instanceof Error ? e.message : String(e) }, { status: 500 });

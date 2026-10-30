@@ -104,6 +104,8 @@ export async function GET(req: Request) {
     duelsSettled++;
   }
 
+  // Clean up any burst of battle cards (backfill settled many at once): keep the 3 newest, drop the rest.
+  await db.execute(sql`delete from posts where kind = 'system' and system_type = 'battle_settled' and id not in (select id from posts where kind = 'system' and system_type = 'battle_settled' order by created_at desc limit 3) and created_at > now() - interval '12 hours'`).catch(() => null);
   // Battles (fades): make sure every fade has one, then settle the decided ones.
   await backfillBattles().catch(() => 0);
   const battles = await settleBattles(mids).catch(() => 0);

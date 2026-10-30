@@ -103,7 +103,9 @@ export async function settleBattles(mids: Record<string, string | number>) {
       const wx = winnerId === b.faderId ? xpF : xpT, lx = winnerId === b.faderId ? xpT : xpF;
       await notify(winnerId, "battle", `You won the battle vs ${lh}`, `${b.coin} · ${line} · +${wx} XP${reason === "liquidation" ? " · they got liquidated" : ""}`, href);
       await notify(loserId!, "battle", `You got perped by ${wh}`, `${b.coin} · ${line}${lx ? ` · +${lx} XP for showing up` : " · liquidated, no XP"}`, href);
-      await systemPost("battle_settled", `${wh} perped ${lh} on ${b.coin}. ${line}.`, { battleId: b.id, faderPostId: b.faderPostId, winner: wh, loser: lh, coin: b.coin, winnerRoi: winnerId === b.faderId ? fr.roi : tr.roi, loserRoi: winnerId === b.faderId ? tr.roi : fr.roi, reason }, b.coin);
+      const lastClose = Math.max(...[f.closedAt, t.closedAt].filter(Boolean).map((d) => new Date(d as Date).getTime()), 0);
+      const fresh = reason === "timeout" || Date.now() - lastClose < 6 * 60 * 60 * 1000;
+      if (fresh) await systemPost("battle_settled", `${wh} perped ${lh} on ${b.coin}. ${line}.`, { battleId: b.id, faderPostId: b.faderPostId, winner: wh, loser: lh, coin: b.coin, winnerRoi: winnerId === b.faderId ? fr.roi : tr.roi, loserRoi: winnerId === b.faderId ? tr.roi : fr.roi, reason }, b.coin);
     }
     settled++;
   }
