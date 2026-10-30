@@ -26,13 +26,14 @@ export function Banked() {
           const roi = pct * (post.leverage ?? 1);
           const win = pnl >= 0;
           return (
-            <Link key={`${post.id}-${i}`} href={`/post/${post.id}`} className={`bk ${win ? "win" : "loss"}`}>
+            <Link key={`${post.id}-${i}`} href={`/post/${post.id}`} className={`bk ${win ? "win" : "loss"} ${author!.isDemo || post.paper ? "demo" : ""}`}>
               <Avatar handle={author!.handle} url={author!.avatarUrl} size={22} />
               <b>{author!.handle}</b>
               <CoinMark coin={post.coin!} size="xs" />
               <span className="muted">{ticker(post.coin!)} {post.side} {post.leverage}×</span>
               <span className={`mono font-bold ${win ? "green" : "red"}`}>{fmtPct(roi, 1)}</span>
               <span className={`mono ${win ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</span>
+              {(author!.isDemo || post.paper) && <span className="demo-tag">Demo</span>}
               <span className="when">{timeAgo(post.closedAt ?? post.createdAt)}</span>
             </Link>
           );

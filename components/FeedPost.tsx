@@ -31,6 +31,11 @@ function KindTag({ icon, children }: { icon: string; children: React.ReactNode }
   return <div className="kind"><Icon d={icon} size={13} />{children}</div>;
 }
 
+/** True when a post is simulated: demo account or paper trade. */
+export function isDemoPost(item: FeedRow) {
+  return !!(item.author?.isDemo || item.post.paper);
+}
+
 function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
   const { post, author } = item;
   return (
@@ -39,7 +44,7 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
         <Link href={`/u/${author.handle}`} className="flex items-center gap-3">
           <Avatar handle={author.handle} url={author.avatarUrl} />
           <div>
-            <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}{(author.isDemo || post.paper) && <span className="lbl done ml-1.5" style={{ padding: "1px 7px", fontSize: 10 }}>Demo</span>}</div>
+            <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</div>
             <div className="when">{timeAgo(post.createdAt)} ago{post.copiedFromId ? " · copied" : ""}{post.fadedFromId ? " · faded" : ""}{post.kind === "trade" && post.status === "closed" ? " · closed" : ""}</div>
           </div>
         </Link>
@@ -136,11 +141,11 @@ function TradePost({ item, mid, onChanged }: Props) {
   if (!isOpen) {
     // Closed trade: one compact row. The feed is about what's live; banked results are a footnote.
     return (
-      <article className="post row">
+      <article className={`post row ${isDemoPost(item) ? "demo" : ""}`}>
         {author ? <Link href={`/u/${author.handle}`}><Avatar handle={author.handle} url={author.avatarUrl} size={34} /></Link> : <span />}
         <CoinMark coin={post.coin!} size="sm" />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px]"><b>{author?.handle}</b> <span className="muted">closed</span> <b>{ticker(post.coin!)}</b> <span className={post.side === "long" ? "green" : "red"}>{post.side}</span> <span className="muted">{lev}×</span>{(author?.isDemo || post.paper) && <span className="lbl done ml-1.5" style={{ padding: "1px 7px", fontSize: 10 }}>Demo</span>}</div>
+          <div className="truncate text-[14px]"><b>{author?.handle}</b> <span className="muted">closed</span> <b>{ticker(post.coin!)}</b> <span className={post.side === "long" ? "green" : "red"}>{post.side}</span> <span className="muted">{lev}×</span>{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : <span className="real-tag ml-1.5">Real</span>}</div>
           <div className="mono when text-[12px]">{fmtPrice(entry)} → {fmtPrice(mark)} · {timeAgo(post.closedAt ?? post.createdAt)} ago{camps ? ` · ${item.copyCount} copied, ${item.fadeCount} faded` : ""}</div>
         </div>
         <Link href={`/post/${post.id}`} className="text-right">
@@ -152,7 +157,7 @@ function TradePost({ item, mid, onChanged }: Props) {
   }
 
   return (
-    <article className={`post swipe ${swipe.armed ?? ""}`} {...(canAct ? swipe.handlers : {})}>
+    <article className={`post swipe ${swipe.armed ?? ""} ${isDemoPost(item) ? "demo" : ""}`} {...(canAct ? swipe.handlers : {})}>
       <div className="swipe-bg" aria-hidden>
         <span className="sb-copy" style={{ opacity: Math.min(1, Math.max(0, swipe.dx / 60)) }}><Icon d={I.copy} size={20} /> Copy{swipe.armed === "copy" ? " ✓" : ""}</span>
         <span className="sb-fade" style={{ opacity: Math.min(1, Math.max(0, -swipe.dx / 60)) }}>{swipe.armed === "fade" ? "✓ " : ""}Fade <Icon d={I.bolt} size={20} /></span>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
-import { FeedPost, RankStrip } from "@/components/FeedPost";
+import { FeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
 import { Pulse } from "@/components/Pulse";
 import { Banked } from "@/components/Banked";
@@ -20,6 +20,8 @@ export default function HomePage() {
   const { authenticated, profile, authedFetch, unread } = useSession();
   const { mids, connected } = useMids();
   const [tab, setTab] = useState<Tab>("foryou");
+  const [realness, setRealness] = useState<"all" | "real" | "demo">(() => { try { return (localStorage.getItem("perped:realness") as "all" | "real" | "demo") || "all"; } catch { return "all"; } });
+  const setRealnessP = (v: "all" | "real" | "demo") => { setRealness(v); try { localStorage.setItem("perped:realness", v); } catch {} };
   const [deposit, setDeposit] = useState(false);
   // Referral links land here (/?ref=handle). Remember the code until onboarding uses it.
   useEffect(() => {
@@ -27,7 +29,8 @@ export default function HomePage() {
   }, []);
   const key = `/api/posts?tab=${tab}`;
   const { data, mutate, isLoading } = useSWR<{ posts: FeedRow[] }>(key, async () => (await authedFetch(key)).json(), { refreshInterval: 15_000 });
-  const posts = data?.posts ?? [];
+  const allPosts = data?.posts ?? [];
+  const posts = realness === "all" ? allPosts : allPosts.filter((p) => p.post.kind !== "trade" || (realness === "demo") === isDemoPost(p));
   const { data: board } = useSWR<{ rows: { handle: string; pnl: number; winRate: string }[] }>("/api/leaderboard?period=7d");
   const suggested = (board?.rows ?? []).filter((r) => r.handle !== profile?.handle).slice(0, 5);
 
@@ -57,6 +60,11 @@ export default function HomePage() {
       {tab === "foryou" && <Hero onDeposit={() => setDeposit(true)} />}
       {tab !== "following" && <Pulse mids={mids} />}
       {tab === "foryou" && <Banked />}
+
+      <div className="realness">
+        {(["all", "real", "demo"] as const).map((v) => <button key={v} className={`chip ${realness === v ? (v === "demo" ? "on demo-on" : v === "real" ? "on real-on" : "on") : ""}`} onClick={() => setRealnessP(v)}>{v === "all" ? "All trades" : v === "real" ? "Real money" : "Demo"}</button>)}
+        <span className="when ml-auto">{realness === "all" ? "" : realness === "real" ? "showing live trades only" : "showing practice trades only"}</span>
+      </div>
 
       {isLoading && <p className="muted px-5 py-6 text-sm">Loading…</p>}
       {!isLoading && posts.length === 0 && (

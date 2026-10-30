@@ -57,7 +57,7 @@ function DuelCard({ d, mids }: { d: PulseData["duels"][number]; mids: Record<str
       <div className="duel-body" style={{ marginTop: 12 }}>
         <div className="duelist">
           <div className={`avring ${a.roi >= b.roi ? "lead" : ""}`}><Avatar handle={d.a.handle} url={d.a.avatarUrl} size={44} /></div>
-          <div className="name mt-1.5 truncate text-[13px]">{d.a.handle}</div>
+          <div className="name mt-1.5 truncate text-[13px]">{d.a.handle}{d.a.isDemo && <span className="demo-tag ml-1">D</span>}</div>
           <Side side={d.a.side} />
           <Ticking value={a.roi} fmt={(n) => fmtPct(n, 1)} className={`block text-lg font-bold ${a.roi >= 0 ? "green" : "red"}`} />
         </div>
@@ -68,7 +68,7 @@ function DuelCard({ d, mids }: { d: PulseData["duels"][number]; mids: Record<str
         </div>
         <div className="duelist">
           <div className={`avring ${b.roi > a.roi ? "lead" : ""}`}><Avatar handle={d.b.handle} url={d.b.avatarUrl} size={44} /></div>
-          <div className="name mt-1.5 truncate text-[13px]">{d.b.handle}</div>
+          <div className="name mt-1.5 truncate text-[13px]">{d.b.handle}{d.b.isDemo && <span className="demo-tag ml-1">D</span>}</div>
           <Side side={d.b.side} />
           <Ticking value={b.roi} fmt={(n) => fmtPct(n, 1)} className={`block text-lg font-bold ${b.roi >= 0 ? "green" : "red"}`} />
         </div>
@@ -90,7 +90,7 @@ function BoardCard({ title, tag, rows, mids, up }: { title: string; tag: string;
               <span className="rk">{i + 1}</span>
               <Avatar handle={t.handle} url={t.avatarUrl} size={26} />
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5 text-[13px]"><b className="truncate">{t.handle}</b><CoinMark coin={t.coin} size="xs" /><span className="muted">{t.leverage}×</span></span>
+                <span className="flex items-center gap-1.5 text-[13px]"><b className="truncate">{t.handle}</b>{t.isDemo && <span className="demo-tag">Demo</span>}<CoinMark coin={t.coin} size="xs" /><span className="muted">{t.leverage}×</span></span>
                 <span className="bbar"><i style={{ width: `${w}%`, background: l.roi >= 0 ? "var(--green)" : "var(--red)" }} /></span>
               </span>
               <Ticking value={l.roi} fmt={(n) => fmtPct(n, 1)} className={`text-[14px] font-bold ${l.roi >= 0 ? "green" : "red"}`} />
