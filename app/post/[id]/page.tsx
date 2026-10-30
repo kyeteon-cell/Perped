@@ -58,7 +58,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     <div data-tint="brand" className="fade-in pb-20">
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Thread</div>{post ? <button className="iconbtn" aria-label="Share" onClick={() => setReceipt(true)}><Icon d={I.share} /></button> : <span className="w-9" />}</header>
       {!post && <SkeletonList n={1} />}
-      {post && <FeedPost item={post} mid={post.post.coin ? mids[post.post.coin] : undefined} onChanged={() => mutate()} />}
+      {post && <FeedPost item={post} full mid={post.post.coin ? mids[post.post.coin] : undefined} onChanged={() => mutate()} />}
       {roots.map((c) => (<div key={c.comment.id}><Row c={c} />{children(c.comment.id).map((r) => <Row key={r.comment.id} c={r} reply />)}</div>))}
       {cm && roots.length === 0 && <p className="muted p-5 text-sm">No comments yet. Respect or roast.</p>}
       <div className="fixed bottom-[72px] left-1/2 flex w-full max-w-md -translate-x-1/2 items-center gap-2.5 border-t px-4 py-2.5" style={{ background: "var(--bg)", borderColor: "var(--line)" }}>

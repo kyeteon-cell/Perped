@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSWRConfig } from "swr";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
@@ -22,7 +23,8 @@ export function explorerUrl(address?: string | null) {
   return address ? `${base}/address/${address}` : base;
 }
 
-type Props = { item: FeedRow; mid?: number; onChanged?: () => void; compact?: boolean };
+type Props = { item: FeedRow; mid?: number; onChanged?: () => void; compact?: boolean; full?: boolean };
+export type BattleStamp = { battleId: number; faderPostId: number; vs?: string; won: boolean | null; myRoi: number; theirRoi: number; reason?: string };
 
 // Dates arrive as ISO strings over JSON; normalise once.
 const d = (x: Date | string | null | undefined) => (x ? new Date(x) : null);
@@ -152,9 +154,72 @@ function useSwipeToAct(onCopy: () => void, onFade: () => void, enabled: boolean)
   return { armed, refs: { fg, bgCopy, bgFade }, handlers: { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel: onTouchEnd } };
 }
 
+/** Pin / unpin one of your own closed trades to the top of your profile. Updates every profile list on the page. */
+function PinButton({ item }: { item: FeedRow }) {
+  const { authedFetch, profile } = useSession();
+  const { mutate } = useSWRConfig();
+  const [on, setOn] = useState(!!item.post.pinned);
+  const [busy, setBusy] = useState(false);
+  if (!profile || item.author?.id !== profile.id || item.post.kind !== "trade" || item.post.status !== "closed") return null;
+  const toggle = async () => {
+    setBusy(true); setOn((v) => !v);
+    const r = await authedFetch(`/api/posts/${item.post.id}/pin`, { method: "POST" });
+    if (!r.ok) setOn((v) => !v); else { const j = await r.json(); setOn(!!j.pinned); }
+    mutate((k) => typeof k === "string" && k.startsWith("/api/posts?handle="), undefined, { revalidate: true });
+    setBusy(false);
+  };
+  return <button className={`pinbtn ${on ? "on" : ""}`} disabled={busy} onClick={toggle} aria-pressed={on}>{on ? "📌 Pinned" : "Pin to profile"}</button>;
+}
+
+/** Closed trade, full size: the result, the numbers, the battle verdict if it was one, and pin / share. */
+function ClosedTradeCard({ item, onChanged }: Props) {
+  const { post, author } = item;
+  const entry = Number(post.entryPx), exit = Number(post.exitPx ?? entry), size = Number(post.size), lev = post.leverage ?? 1;
+  const { pnl, pct } = pnlForPosition(post.side!, entry, exit, size);
+  const roi = pct * lev, win = pnl >= 0;
+  const margin = Number(post.notionalUsd) / lev;
+  const held = post.closedAt ? Math.max(1, Math.round((new Date(post.closedAt).getTime() - new Date(post.createdAt).getTime()) / 60_000)) : 0;
+  const heldTxt = held >= 1440 ? `${Math.round(held / 1440)}d` : held >= 60 ? `${Math.round(held / 60)}h` : `${held}m`;
+  const reason = (post.meta as { closeReason?: string } | null)?.closeReason;
+  const battle = (post.meta as { battle?: BattleStamp } | null)?.battle;
+  return (
+    <article className={`post ${win ? "tint-green" : "tint-red"} ${isDemoPost(item) ? "demo" : ""}`}>
+      <KindTag icon={I.check}>{reason === "liquidation" ? "Liquidated" : reason === "tp" ? "Take profit hit" : reason === "sl" ? "Stop loss hit" : "Closed trade"}</KindTag>
+      <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
+      <div className="mt-4 flex items-end justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <CoinMark coin={post.coin!} />
+          <div>
+            <Link href={`/markets/${post.coin}`} className="coin">{ticker(post.coin!, true)}</Link>
+            <div className="mono when mt-2">{fmtStake(margin)} × {lev} · {fmtPrice(entry)} → {fmtPrice(exit)} · held {heldTxt}</div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className={`pnl mono ${win ? "green" : "red"}`}>{fmtPct(roi, 1)}</div>
+          <div className={`mono text-[13px] ${win ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })} banked</div>
+        </div>
+      </div>
+      {battle && (
+        <Link href={`/battle/${battle.faderPostId}`} className={`bres ${battle.won === true ? "win" : battle.won === false ? "loss" : "draw"}`}>
+          <span>⚡ {battle.won === true ? `Perped ${battle.vs ?? "them"}` : battle.won === false ? `Perped by ${battle.vs ?? "them"}` : `Drew with ${battle.vs ?? "them"}`}</span>
+          <span className="mono">{fmtPct(battle.myRoi, 1)} vs {fmtPct(battle.theirRoi, 1)}</span>
+        </Link>
+      )}
+      <div className="mt-2 flex items-center justify-between">
+        {isDemoPost(item) ? <Link href="/how-it-works#demo" className="verify">Demo · simulated at live Hyperliquid prices</Link> : <a href={explorerUrl(author?.address)} target="_blank" rel="noreferrer" className="verify real"><Icon d={I.shield} size={12} />Verified on Hyperliquid ↗</a>}
+        <span className="when">{item.copyCount} copied · {item.fadeCount} faded</span>
+      </div>
+      {post.body && <RichText text={post.body} />}
+      <Acts item={item} onChanged={onChanged}>
+        <span className="ml-auto" /><PinButton item={item} />
+      </Acts>
+    </article>
+  );
+}
+
 /* ---------- trade ---------- */
 
-function TradePost({ item, mid, onChanged }: Props) {
+function TradePost({ item, mid, onChanged, full }: Props) {
   const { post, author } = item;
   const { profile } = useSession();
   const router = useRouter();
@@ -180,10 +245,11 @@ function TradePost({ item, mid, onChanged }: Props) {
   const [quick, setQuick] = useState<"copy" | "fade" | null>(null);
   const swipe = useSwipeToAct(() => setQuick("copy"), () => setQuick("fade"), canAct);
 
+  if (!isOpen && full) return <ClosedTradeCard item={item} mid={mid} onChanged={onChanged} />;
   if (!isOpen) {
     // Closed trade: one compact row. The feed is about what's live; banked results are a footnote.
     return (
-      <article className={`post row ${isDemoPost(item) ? "demo" : ""}`}>
+      <article className={`post row ${isDemoPost(item) ? "demo" : ""}`} onClick={() => router.push(`/post/${post.id}`)} role="link">
         {author ? <Link href={`/u/${author.handle}`}><Avatar handle={author.handle} url={author.avatarUrl} size={34} link={false} /></Link> : <span />}
         <CoinMark coin={post.coin!} size="sm" />
         <div className="min-w-0 flex-1">

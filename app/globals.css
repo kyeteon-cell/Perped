@@ -527,3 +527,14 @@ html { scroll-behavior: smooth; }
 /* Leaderboard mode pills: always one row */
 .modes { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
 .modes button { white-space: nowrap; padding-left: 8px; padding-right: 8px; }
+
+/* ---------- Closed trade card, pins ---------- */
+.pinbtn { border: 1.5px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.pinbtn.on { border-color: var(--gold); background: var(--gold-soft); color: var(--text); }
+.bres { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding: 9px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; text-decoration: none; color: inherit; }
+.bres.win { background: var(--gold-soft); border: 1px solid var(--gold); }
+.bres.loss { background: var(--red-soft); color: var(--red); }
+.bres.draw { background: var(--surface); color: var(--muted); }
+.pincard.won { box-shadow: inset 0 0 0 1.5px var(--gold); }
+.pin-battle { font-size: 10px; font-weight: 800; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.post.row { cursor: pointer; }

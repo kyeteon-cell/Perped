@@ -39,7 +39,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const postsKey = tab === "posts" ? `/api/posts?handle=${handle}&kind=text` : tab === "trades" ? `/api/posts?handle=${handle}&kind=trade&status=${tradeTab}` : null;
   const { data: feed, mutate: mutateFeed } = useSWR<{ posts: FeedRow[] }>(postsKey);
   const { data: calls } = useSWR<{ posts: FeedRow[] }>(tab === "posts" ? `/api/posts?handle=${handle}&kind=call&limit=10` : null);
-  const { data: pinned } = useSWR<{ posts: FeedRow[] }>(`/api/posts?handle=${handle}&kind=trade&status=closed&limit=20`);
+  const { data: pinned, mutate: mutatePinned } = useSWR<{ posts: FeedRow[] }>(`/api/posts?handle=${handle}&kind=trade&status=closed&limit=50`);
   const { data: people } = useSWR<{ users: { handle: string; avatarUrl: string | null; pnl7d: string | null; winRate: string | null }[] }>(tab === "followers" || tab === "following" ? `/api/follows?handle=${handle}&dir=${tab}` : null);
 
   const demoEq = useDemoEquity(data?.user.isDemo ? data.user.handle : null, Number(data?.user.demoBalance ?? 0), mids);
@@ -62,7 +62,6 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
     }
     setBusy(null); mutate(); mutateFeed();
   };
-  const pin = async (id: number) => { await authedFetch(`/api/posts/${id}/pin`, { method: "POST" }); mutateFeed(); };
 
   return (
     <div className="fade-in profile">
@@ -125,12 +124,13 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
       {(pins.length > 0 || isMe) && (
         <section className="block pb-3">
-          <div className="flex items-center justify-between"><span className="eyebrow">Best trades</span>{isMe && <span className="when">pin from your closed trades</span>}</div>
+          <div className="flex items-center justify-between"><span className="eyebrow">Pinned · best trades &amp; battles</span>{isMe && <span className="when">pin from Trades → Closed</span>}</div>
           <div className="hstrip mt-3" style={{ margin: "12px -20px 0", padding: "0 20px 6px" }}>
             {pins.map((p) => {
               const roi = ((Number(p.post.exitPx) - Number(p.post.entryPx)) / Number(p.post.entryPx)) * 100 * (p.post.side === "long" ? 1 : -1) * (p.post.leverage ?? 1);
               return (
-                <Link key={p.post.id} href={`/post/${p.post.id}`} className="pincard">
+                <Link key={p.post.id} href={`/post/${p.post.id}`} className={`pincard ${(p.post.meta as { battle?: { won: boolean | null } } | null)?.battle?.won === true ? "won" : ""}`}>
+                  {(p.post.meta as { battle?: { won: boolean | null; vs?: string } } | null)?.battle && <div className={`pin-battle ${(p.post.meta as { battle: { won: boolean | null } }).battle.won === true ? "green" : (p.post.meta as { battle: { won: boolean | null } }).battle.won === false ? "red" : "muted"}`}>⚡ {(p.post.meta as { battle: { won: boolean | null; vs?: string } }).battle.won === true ? "Perped" : (p.post.meta as { battle: { won: boolean | null } }).battle.won === false ? "Perped by" : "Drew with"} {(p.post.meta as { battle: { vs?: string } }).battle.vs}</div>}
                   <div className="flex items-center gap-2"><CoinMark coin={p.post.coin!} size="sm" /><b>{ticker(p.post.coin!)}</b><span className={`ml-auto text-[11px] font-bold ${p.post.side === "long" ? "green" : "red"}`}>{p.post.side === "long" ? "Long" : "Short"} {p.post.leverage}×</span></div>
                   <div className={`mono mt-2 text-[26px] font-bold leading-none ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 0)}</div>
                   <div className="when mt-1.5 text-[11px]">{new Date(p.post.closedAt ?? p.post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {fmtUsd(Number(p.post.notionalUsd) / (p.post.leverage ?? 1), { compact: true })} margin</div>
@@ -175,12 +175,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
             );
           })}
           {tradeTab === "open" && (user.isDemo ? (feed?.posts.length ?? 0) === 0 : data.positions.length === 0) && <p className="muted p-5 text-sm">No open positions.</p>}
-          {tradeTab === "closed" && (feed?.posts ?? []).map((item) => (
-            <div key={item.post.id} className="relative">
-              <FeedPost item={item} onChanged={() => mutateFeed()} />
-              {isMe && <button className={`chip absolute right-5 top-4 ${item.post.pinned ? "on" : ""}`} style={{ padding: "4px 10px", fontSize: 12 }} onClick={() => pin(item.post.id)}>{item.post.pinned ? "Pinned" : "Pin"}</button>}
-            </div>
-          ))}
+          {tradeTab === "closed" && (feed?.posts ?? []).map((item) => <FeedPost key={item.post.id} item={item} full onChanged={() => { mutateFeed(); mutatePinned(); }} />)}
           {err && <p className="red px-5 text-sm">{err}</p>}
         </>
       )}

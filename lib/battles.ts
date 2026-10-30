@@ -88,6 +88,10 @@ export async function settleBattles(mids: Record<string, string | number>) {
     const xpF = xpFor(b.faderId), xpT = xpFor(b.targetId);
 
     await db.update(schema.battles).set({ status: "settled", winnerId, faderRoi: fr.roi.toFixed(2), targetRoi: tr.roi.toFixed(2), reason, xpFader: xpF, xpTarget: xpT, settledAt: new Date() }).where(eq(schema.battles.id, b.id));
+    // Stamp the result on both trade posts (meta.battle) so cards, pins and share cards can show it directly.
+    const stamp = (mine: { roi: number }, theirs: { roi: number }, vs: string | undefined, won: boolean | null) => ({ battleId: b.id, faderPostId: b.faderPostId, vs, won, myRoi: Number(mine.roi.toFixed(2)), theirRoi: Number(theirs.roi.toFixed(2)), reason });
+    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${JSON.stringify({ battle: stamp(fr, tr, tu?.handle, winnerId ? winnerId === b.faderId : null) })}::jsonb` }).where(eq(schema.posts.id, b.faderPostId));
+    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${JSON.stringify({ battle: stamp(tr, fr, fu?.handle, winnerId ? winnerId === b.targetId : null) })}::jsonb` }).where(eq(schema.posts.id, b.targetPostId));
     await awardXp(b.faderId, xpF, winnerId ? (winnerId === b.faderId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
     await awardXp(b.targetId, xpT, winnerId ? (winnerId === b.targetId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
     if (winnerId && loserId) {
