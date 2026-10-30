@@ -107,7 +107,7 @@ function FadeCard({ f, mids }: { f: PulseData["fades"][number]; mids: Record<str
   const fl = live(f.fader, mids, f.coin), tl = live(f.target, mids, f.coin);
   const faderWinning = fl.roi > tl.roi;
   return (
-    <Link href={`/post/${f.fader.postId}`} className={`pcard fadec ${faderWinning ? "fader-wins" : "target-wins"}`}>
+    <Link href={`/battle/${f.fader.postId}`} className={`pcard fadec ${faderWinning ? "fader-wins" : "target-wins"}`}>
       <div className="pc-head"><span className="pc-tag violet">Fade · {ticker(f.coin)}</span><span className="when">{faderWinning ? "fader winning" : "getting perped"}</span></div>
       <div className="mt-3 flex items-center gap-3">
         <div className="text-center">
