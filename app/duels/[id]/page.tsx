@@ -34,7 +34,7 @@ export default function DuelPage({ params }: { params: Promise<{ id: string }> }
 
   const Side = ({ u, side, roi, post }: { u: U; side: "long" | "short"; roi: number | null; post: Post | null }) => (
     <div className="duelist">
-      <Link href={`/u/${u.handle}`}><div className={`avring ${roi !== null && roi >= (roi === a ? (b ?? -Infinity) : (a ?? -Infinity)) ? "lead" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={56} /></div></Link>
+      <Link href={`/u/${u.handle}`}><div className={`avring ${roi !== null && roi >= (roi === a ? (b ?? -Infinity) : (a ?? -Infinity)) ? "lead" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={56} link={false} /></div></Link>
       <div className="name mt-2">{u.handle}{u.isDemo && <span className="demo-tag ml-1">Demo</span>}</div>
       <span className={`lbl ${side} mt-1`}><i />{side === "long" ? "Long" : "Short"}</span>
       <div className={`mono mt-2 text-2xl font-bold ${roi === null ? "muted" : roi >= 0 ? "green" : "red"}`}>{roi === null ? (post ? "…" : "not in yet") : fmtPct(roi, 1)}</div>

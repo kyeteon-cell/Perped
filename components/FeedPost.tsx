@@ -51,7 +51,7 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
     <div className="flex items-center gap-3">
       {author ? (
         <Link href={`/u/${author.handle}`} className="flex items-center gap-3">
-          <Avatar handle={author.handle} url={author.avatarUrl} />
+          <Avatar handle={author.handle} url={author.avatarUrl} link={false} />
           <div>
             <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}<RankChip xp={author.xp} compact />{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</div>
             <div className="when">{timeAgo(post.createdAt)} ago{post.copiedFromId ? " · copied" : ""}{post.fadedFromId ? " · faded" : ""}{post.kind === "trade" && post.status === "closed" ? " · closed" : ""}</div>
@@ -158,7 +158,7 @@ function TradePost({ item, mid, onChanged }: Props) {
     // Closed trade: one compact row. The feed is about what's live; banked results are a footnote.
     return (
       <article className={`post row ${isDemoPost(item) ? "demo" : ""}`}>
-        {author ? <Link href={`/u/${author.handle}`}><Avatar handle={author.handle} url={author.avatarUrl} size={34} /></Link> : <span />}
+        {author ? <Link href={`/u/${author.handle}`}><Avatar handle={author.handle} url={author.avatarUrl} size={34} link={false} /></Link> : <span />}
         <CoinMark coin={post.coin!} size="sm" />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px]"><b>{author?.handle}</b> <span className="muted">closed</span> <b>{ticker(post.coin!)}</b> <span className={post.side === "long" ? "green" : "red"}>{post.side}</span> <span className="muted">{lev}×</span>{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : <span className="real-tag ml-1.5">Real</span>}</div>
@@ -332,9 +332,9 @@ function SystemPost({ item, onChanged }: Props) {
       <article className="post duel">
         <div className="duel-head"><span className="lbl gold">⚔ Duel settled</span><span className="when">{post.coin ?? ""} · {timeAgo(post.createdAt)} ago</span></div>
         <div className="duel-body">
-          <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} /></Link><div className="name mt-1.5">{winner}</div><span className="lbl long mt-1"><i />Won</span></div>
+          <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} link={false} /></Link><div className="name mt-1.5">{winner}</div><span className="lbl long mt-1"><i />Won</span></div>
           <div className="duel-mid"><div className="mono muted text-xs">{post.coin}</div><div className="duel-bar"><i style={{ width: "100%" }} /></div><div className="when">{meta.start ? `${fmtPrice(Number(meta.start))} → ${fmtPrice(Number(meta.end))}` : "settled"}</div></div>
-          <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} /></Link><div className="name mt-1.5">{loser}</div><span className="lbl short mt-1"><i />Lost</span></div>
+          <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} link={false} /></Link><div className="name mt-1.5">{loser}</div><span className="lbl short mt-1"><i />Lost</span></div>
         </div>
         <Acts item={item} onChanged={onChanged}>
           <Link href={`/u/${winner}`} className="chip ml-auto">Challenge {winner}</Link>
@@ -350,9 +350,9 @@ function SystemPost({ item, onChanged }: Props) {
       <article className="post duel">
         <div className="duel-head"><span className="lbl gold">⚡ Battle settled</span><span className="when">{post.coin ?? ""} · {timeAgo(post.createdAt)} ago</span></div>
         <div className="duel-body">
-          <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} /></Link><div className="name mt-1.5">{winner}</div><span className="mono green text-[13px] font-bold">{fmtPct(wr, 1)}</span></div>
+          <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} link={false} /></Link><div className="name mt-1.5">{winner}</div><span className="mono green text-[13px] font-bold">{fmtPct(wr, 1)}</span></div>
           <div className="duel-mid"><div className="mono muted text-xs">perped</div><div className="duel-bar"><i style={{ width: "100%" }} /></div><div className="when">{meta.reason === "liquidation" ? "by liquidation" : `${fmtPct(Math.abs(wr - lr), 1)} gap`}</div></div>
-          <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} /></Link><div className="name mt-1.5">{loser}</div><span className="mono red text-[13px] font-bold">{fmtPct(lr, 1)}</span></div>
+          <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} link={false} /></Link><div className="name mt-1.5">{loser}</div><span className="mono red text-[13px] font-bold">{fmtPct(lr, 1)}</span></div>
         </div>
         <Acts item={item} onChanged={onChanged}>
           {typeof meta.faderPostId === "number" && <Link href={`/battle/${meta.faderPostId}`} className="chip ml-auto">See the battle</Link>}

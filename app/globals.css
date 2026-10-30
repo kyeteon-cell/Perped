@@ -475,3 +475,5 @@ html { scroll-behavior: smooth; }
 .hw-dia { width: 100%; height: auto; margin: 14px 0 4px; }
 .hw-table th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
 .hw-table td:nth-child(2) { white-space: normal; }
+.avlink { display: inline-flex; border-radius: 50%; line-height: 0; }
+.avlink:active { transform: scale(.95); }

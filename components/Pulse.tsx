@@ -56,7 +56,7 @@ function DuelCard({ d, mids }: { d: PulseData["duels"][number]; mids: Record<str
       <div className="pc-head"><span className="pc-tag gold">⚔ Duel · {ticker(d.coin)}</span><span className="when">{fmtUsd(d.stakeUsd, { compact: true })} · {leftTxt} left</span></div>
       <div className="duel-body" style={{ marginTop: 12 }}>
         <div className="duelist">
-          <div className={`avring ${a.roi >= b.roi ? "lead" : ""}`}><Avatar handle={d.a.handle} url={d.a.avatarUrl} size={44} /></div>
+          <div className={`avring ${a.roi >= b.roi ? "lead" : ""}`}><Avatar handle={d.a.handle} url={d.a.avatarUrl} size={44} link={false} /></div>
           <div className="name mt-1.5 truncate text-[13px]">{d.a.handle}{d.a.isDemo && <span className="demo-tag ml-1">D</span>}</div>
           <Side side={d.a.side} />
           <Ticking value={a.roi} fmt={(n) => fmtPct(n, 1)} className={`block text-lg font-bold ${a.roi >= 0 ? "green" : "red"}`} />
@@ -67,7 +67,7 @@ function DuelCard({ d, mids }: { d: PulseData["duels"][number]; mids: Record<str
           <div className="when text-[11px]">{leader.handle} leads</div>
         </div>
         <div className="duelist">
-          <div className={`avring ${b.roi > a.roi ? "lead" : ""}`}><Avatar handle={d.b.handle} url={d.b.avatarUrl} size={44} /></div>
+          <div className={`avring ${b.roi > a.roi ? "lead" : ""}`}><Avatar handle={d.b.handle} url={d.b.avatarUrl} size={44} link={false} /></div>
           <div className="name mt-1.5 truncate text-[13px]">{d.b.handle}{d.b.isDemo && <span className="demo-tag ml-1">D</span>}</div>
           <Side side={d.b.side} />
           <Ticking value={b.roi} fmt={(n) => fmtPct(n, 1)} className={`block text-lg font-bold ${b.roi >= 0 ? "green" : "red"}`} />
@@ -88,7 +88,7 @@ function BoardCard({ title, tag, rows, mids, up }: { title: string; tag: string;
           return (
             <Link key={t.postId} href={`/post/${t.postId}`} className="brow" style={{ animationDelay: `${i * 80}ms` }}>
               <span className="rk">{i + 1}</span>
-              <Avatar handle={t.handle} url={t.avatarUrl} size={26} />
+              <Avatar handle={t.handle} url={t.avatarUrl} size={26} link={false} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5 text-[13px]"><b className="truncate">{t.handle}</b>{t.isDemo && <span className="demo-tag">Demo</span>}<CoinMark coin={t.coin} size="xs" /><span className="muted">{t.leverage}×</span></span>
                 <span className="bbar"><i style={{ width: `${w}%`, background: l.roi >= 0 ? "var(--green)" : "var(--red)" }} /></span>
@@ -111,7 +111,7 @@ function FadeCard({ f, mids }: { f: PulseData["fades"][number]; mids: Record<str
       <div className="pc-head"><span className="pc-tag violet">Fade · {ticker(f.coin)}</span><span className="when">{faderWinning ? "fader winning" : "getting perped"}</span></div>
       <div className="mt-3 flex items-center gap-3">
         <div className="text-center">
-          <div className={`avring ${faderWinning ? "lead" : "losing"}`}><Avatar handle={f.fader.handle} url={f.fader.avatarUrl} size={40} /></div>
+          <div className={`avring ${faderWinning ? "lead" : "losing"}`}><Avatar handle={f.fader.handle} url={f.fader.avatarUrl} size={40} link={false} /></div>
           <div className="mt-1 truncate text-[12px] font-bold">{f.fader.handle}</div>
           <Ticking value={fl.roi} fmt={(n) => fmtPct(n, 1)} className={`block text-[15px] font-bold ${fl.roi >= 0 ? "green" : "red"}`} />
         </div>
@@ -121,7 +121,7 @@ function FadeCard({ f, mids }: { f: PulseData["fades"][number]; mids: Record<str
           <div className="muted text-[11px]"><Side side={f.fader.side} /> vs <Side side={f.target.side} /></div>
         </div>
         <div className="text-center">
-          <div className={`avring ${faderWinning ? "losing" : "lead"}`}><Avatar handle={f.target.handle} url={f.target.avatarUrl} size={40} /></div>
+          <div className={`avring ${faderWinning ? "losing" : "lead"}`}><Avatar handle={f.target.handle} url={f.target.avatarUrl} size={40} link={false} /></div>
           <div className="mt-1 truncate text-[12px] font-bold">{f.target.handle}</div>
           <Ticking value={tl.roi} fmt={(n) => fmtPct(n, 1)} className={`block text-[15px] font-bold ${tl.roi >= 0 ? "green" : "red"}`} />
         </div>
@@ -137,7 +137,7 @@ function StreakCard({ s }: { s: PulseData["streaks"] }) {
       <div className="mt-3 flex flex-col gap-2">
         {s.map((r, i) => (
           <Link key={r.handle} href={`/u/${r.handle}`} className="brow" style={{ animationDelay: `${i * 80}ms` }}>
-            <Avatar handle={r.handle} url={r.avatarUrl} size={26} />
+            <Avatar handle={r.handle} url={r.avatarUrl} size={26} link={false} />
             <b className="flex-1 truncate text-[13px]">{r.handle}</b>
             <span className="flames">{"🔥".repeat(Math.min(5, r.streak))}<b className="mono ml-1">{r.streak}</b></span>
           </Link>

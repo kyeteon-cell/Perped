@@ -40,7 +40,7 @@ export default function LeaderboardPage() {
             return (
               <Link key={r.handle} href={`/u/${r.handle}`} className="card relative p-3.5 text-center" style={{ background: place === 1 ? "var(--gold-soft)" : undefined, paddingTop: place === 1 ? 18 : 14 }}>
                 <img src={`/api/share-bg/medal-${place}`} alt="" className="medal" style={{ width: place === 1 ? 44 : 36, height: place === 1 ? 44 : 36 }} />
-                <div className="flex justify-center"><Avatar handle={r.handle} url={r.avatarUrl} size={place === 1 ? 60 : 48} /></div>
+                <div className="flex justify-center"><Avatar handle={r.handle} url={r.avatarUrl} size={place === 1 ? 60 : 48} link={false} /></div>
                 <div className="mt-2 text-[13px] font-bold">{r.handle}</div>
                 {mode === "ranks" ? (
                   <><div className="mt-1 flex justify-center"><RankEmblem level={rankFor(r.xp ?? 0).level} size={place === 1 ? 40 : 32} /></div><div className="when mt-1">{rankFor(r.xp ?? 0).title}</div><div className="mono text-[14px] font-semibold">{(r.xp ?? 0).toLocaleString()} XP</div></>
@@ -56,7 +56,7 @@ export default function LeaderboardPage() {
       {rows.map((r, i) => (
         <Link key={r.handle} href={`/u/${r.handle}`} className="lb">
           <span className="rank">{i + 1}</span>
-          <Avatar handle={r.handle} url={r.avatarUrl} size={44} />
+          <Avatar handle={r.handle} url={r.avatarUrl} size={44} link={false} />
           <div className="min-w-0 flex-1">
             <div className="name">{r.handle}<RankChip xp={r.xp} compact /></div>
             <div className="when truncate">{mode === "ranks" ? `${rankFor(r.xp ?? 0).title} · battles ${r.battlesWon ?? 0}–${r.battlesLost ?? 0} · ${fmtPct(Number(r.winRate), 0)} win` : mode === "trades" ? `${r.closedTrades} trades · ${fmtPct(Number(r.winRate), 0)} win · ${fmtUsd(Number(r.volume30d), { compact: true })} volume` : `${r.callsResolved} calls · ${r.callsHit} hit · avg ${fmtPct(Number(r.callAvgMove), 1)}${r.callStreak > 1 ? ` · 🔥 ${r.callStreak}` : ""} · trades ${fmtPct(Number(r.winRate), 0)} win`}</div>
@@ -71,7 +71,7 @@ export default function LeaderboardPage() {
           {data!.bottom!.map((r, i) => (
             <Link key={r.handle} href={`/u/${r.handle}`} className="lb">
               <span className="rank">↓{i + 1}</span>
-              <Avatar handle={r.handle} url={r.avatarUrl} size={44} />
+              <Avatar handle={r.handle} url={r.avatarUrl} size={44} link={false} />
               <div className="min-w-0 flex-1"><div className="name">{r.handle}</div><div className="when truncate">{r.closedTrades} trades · {fmtPct(Number(r.winRate), 0)} win{r.liquidations ? ` · ${r.liquidations} liquidation${r.liquidations === 1 ? "" : "s"}` : ""}{r.fadedCount ? ` · faded ${r.fadedCount}×` : ""}</div></div>
               <div className="mono red text-[17px] font-bold">{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div>
             </Link>

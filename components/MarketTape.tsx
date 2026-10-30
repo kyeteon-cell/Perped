@@ -72,7 +72,7 @@ export function MarketTape({ coin, traders, lens, setLens, followingAny, mid, se
           const roi = pct * t.leverage; const hot = t.fadeCount >= 3;
           return (
             <div key={t.postId} id={`tape-${t.postId}`} className={`trow ${selected === String(t.postId) ? "sel" : ""} ${t.status === "closed" ? "closed" : ""}`} onClick={() => onSelect(selected === String(t.postId) ? null : String(t.postId))}>
-              <Link href={`/u/${t.handle}`} onClick={(e) => e.stopPropagation()}><Avatar handle={t.handle} url={t.avatarUrl} size={30} /></Link>
+              <Link href={`/u/${t.handle}`} onClick={(e) => e.stopPropagation()}><Avatar handle={t.handle} url={t.avatarUrl} size={30} link={false} /></Link>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 text-[13px]"><b className="truncate">{t.handle}</b>{t.top && <span className="pill gold">top</span>}{t.following && <span className="pill">following</span>}{t.isDemo && <span className="demo-tag">Demo</span>}{hot && <Link href={`/battle/${t.fadedFromId ?? t.postId}`} onClick={(e) => e.stopPropagation()} className="pill hot">⚔ {t.fadeCount} fading</Link>}</div>
                 <div className="mono when text-[12px]"><span className={t.side === "long" ? "green" : "red"}>{t.side} {t.leverage}×</span> · in at {fmtPrice(t.entryPx)}{t.status === "closed" ? ` → ${fmtPrice(t.exitPx)}` : ""} · {fmtStake(t.notionalUsd / t.leverage)} margin · {timeAgo(t.status === "closed" && t.closedAt ? t.closedAt : t.openedAt)}</div>

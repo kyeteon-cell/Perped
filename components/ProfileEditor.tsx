@@ -62,7 +62,7 @@ export function ProfileEditor() {
         </div>
         <div className="-mt-9 flex items-end gap-3 px-2">
           <button type="button" className="pe-av" onClick={() => avatarIn.current?.click()} aria-label="Change profile picture">
-            <Avatar handle={profile.handle} url={profile.avatarUrl} size={76} />
+            <Avatar handle={profile.handle} url={profile.avatarUrl} size={76} link={false} />
             <span className="pe-cam">{busy === "avatar" ? "…" : "✎"}</span>
           </button>
           <div className="flex flex-wrap gap-2 pb-1">

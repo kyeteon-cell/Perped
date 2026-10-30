@@ -185,7 +185,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
       {(tab === "followers" || tab === "following") && (
         <>
           {(people?.users ?? []).map((u) => (
-            <Link key={u.handle} href={`/u/${u.handle}`} className="lb"><Avatar handle={u.handle} url={u.avatarUrl} size={44} /><div className="min-w-0 flex-1"><div className="name">{u.handle}</div><div className="when">{fmtUsd(Number(u.pnl7d ?? 0), { sign: true, compact: true })} · 7 days · {fmtPct(Number(u.winRate ?? 0), 0)} win</div></div></Link>
+            <Link key={u.handle} href={`/u/${u.handle}`} className="lb"><Avatar handle={u.handle} url={u.avatarUrl} size={44} link={false} /><div className="min-w-0 flex-1"><div className="name">{u.handle}</div><div className="when">{fmtUsd(Number(u.pnl7d ?? 0), { sign: true, compact: true })} · 7 days · {fmtPct(Number(u.winRate ?? 0), 0)} win</div></div></Link>
           ))}
           {(people?.users.length ?? 0) === 0 && <p className="muted p-5 text-sm">Nobody here yet.</p>}
         </>

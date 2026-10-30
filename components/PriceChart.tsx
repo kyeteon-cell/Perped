@@ -174,7 +174,7 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
         <div className="pins">
           {pins.map((p) => (
             <Link key={p.id} href={p.m.href ?? "#"} className={`pin ${p.m.side} ${p.m.hot ? "hot" : ""}`} style={{ left: p.x, top: p.y }} title={p.m.label} onClick={() => onMarkerClick?.(p.id)}>
-              <Avatar handle={p.m.handle ?? "?"} url={p.m.avatarUrl ?? undefined} size={22} />
+              <Avatar handle={p.m.handle ?? "?"} url={p.m.avatarUrl ?? undefined} size={22} link={false} />
               {p.n > 1 && <b className="pin-n">{p.n}</b>}
             </Link>
           ))}

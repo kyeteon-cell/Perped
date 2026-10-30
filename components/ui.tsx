@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import useSWR from "swr";
 import { rankFor } from "@/lib/rank";
 
@@ -78,12 +79,16 @@ export function ticker(coin: string, withMult = false) {
  * Avatar. Pass `url` (string or null) when the caller has the profile; leave it undefined and the picture is
  * looked up by handle (one small request per handle, cached), so system cards and suggestions get photos too.
  */
-export function Avatar({ handle, size = 40, url }: { handle: string; size?: number; url?: string | null }) {
+export function Avatar({ handle, size = 40, url, link = true }: { handle: string; size?: number; url?: string | null; link?: boolean }) {
   const idx = [...handle].reduce((a, c) => a + c.charCodeAt(0), 0) % 6;
   const { data } = useSWR<{ url: string | null }>(url === undefined && handle && handle !== "?" ? `/api/avatar?handle=${encodeURIComponent(handle)}` : null, { dedupingInterval: 300_000, revalidateOnFocus: false });
   const src = url ?? data?.url ?? null;
-  if (src) return <img src={src} alt="" className="av" style={{ width: size, height: size, objectFit: "cover" }} />;
-  return <span className={`av av-${idx}`} style={{ width: size, height: size, fontSize: Math.round(size / 3) }}>{handle.slice(0, 2).toUpperCase()}</span>;
+  const pic = src
+    ? <img src={src} alt="" className="av" style={{ width: size, height: size, objectFit: "cover" }} />
+    : <span className={`av av-${idx}`} style={{ width: size, height: size, fontSize: Math.round(size / 3) }}>{handle.slice(0, 2).toUpperCase()}</span>;
+  // Every profile picture is a link to that profile, unless the caller already sits inside a link.
+  if (!link || !handle || handle === "?") return pic;
+  return <Link href={`/u/${handle}`} className="avlink" aria-label={`${handle}'s profile`} onClick={(e) => e.stopPropagation()}>{pic}</Link>;
 }
 
 export type Theme = "light" | "dark" | "auto";

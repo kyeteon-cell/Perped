@@ -27,7 +27,7 @@ export function Banked() {
           const win = pnl >= 0;
           return (
             <Link key={`${post.id}-${i}`} href={`/post/${post.id}`} className={`bk ${win ? "win" : "loss"} ${author!.isDemo || post.paper ? "demo" : ""}`}>
-              <Avatar handle={author!.handle} url={author!.avatarUrl} size={22} />
+              <Avatar handle={author!.handle} url={author!.avatarUrl} size={22} link={false} />
               <b>{author!.handle}</b>
               <CoinMark coin={post.coin!} size="xs" />
               <span className="muted">{ticker(post.coin!)} {post.side} {post.leverage}×</span>
