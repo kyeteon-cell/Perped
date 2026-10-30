@@ -33,7 +33,7 @@ export async function queryFeed(opts: { where?: SQL | undefined; limit: number; 
     .leftJoin(schema.users, eq(schema.users.id, schema.posts.userId))
     .where(opts.where)
     .orderBy(desc(schema.posts.pinned), desc(schema.posts.id))
-    .limit(opts.limit)) as FeedRow[];
+    .limit(opts.limit)) as unknown as FeedRow[];
 
   if (opts.viewerId && rows.length) {
     const ids = rows.map((r) => r.post.id);

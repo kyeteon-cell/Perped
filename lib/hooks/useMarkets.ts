@@ -1,11 +1,11 @@
 "use client";
 
 import useSWR from "swr";
-import type { PerpAsset } from "@/lib/hl-info";
+import type { MarketRow } from "@/lib/hl-info";
 
-export type Market = PerpAsset & { mid: number };
+export type Market = MarketRow;
 
 export function useMarkets() {
-  const { data, error, isLoading } = useSWR<{ markets: Market[] }>("/api/markets", { refreshInterval: 60_000 });
+  const { data, error, isLoading } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 60_000 });
   return { markets: data?.markets ?? [], error, isLoading };
 }
