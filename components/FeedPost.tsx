@@ -8,6 +8,7 @@ import { fmtUsd, fmtPct, pnlForPosition, timeAgo, fmtPrice } from "@/lib/format"
 import { useSession } from "@/lib/hooks/useSession";
 import { Avatar, CoinMark, Icon, I, ticker } from "./ui";
 import { Sparkline } from "./Sparkline";
+import { ShareSheet } from "./ShareSheet";
 
 type Props = { item: FeedRow; mid?: number; onChanged?: () => void; compact?: boolean };
 
@@ -54,8 +55,9 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
   );
 }
 
-function Acts({ item, onChanged, children }: { item: FeedRow; onChanged?: () => void; children?: React.ReactNode }) {
+function Acts({ item, onChanged, children, mid }: { item: FeedRow; onChanged?: () => void; children?: React.ReactNode; mid?: number }) {
   const { authenticated, authedFetch, login } = useSession();
+  const [share, setShare] = useState(false);
   const [likes, setLikes] = useState(item.likes);
   const [dislikes, setDislikes] = useState(item.dislikes);
   const [mine, setMine] = useState<number | null>(item.myVote ?? null);
@@ -75,7 +77,9 @@ function Acts({ item, onChanged, children }: { item: FeedRow; onChanged?: () => 
       <button className={`vote up ${mine === 1 ? "on" : ""}`} onClick={() => vote(1)}><Icon d={I.like} size={18} /><b>{likes}</b></button>
       <button className={`vote down ${mine === -1 ? "on" : ""}`} onClick={() => vote(-1)}><Icon d={I.dislike} size={18} /><b>{dislikes}</b></button>
       <Link href={`/post/${item.post.id}`}><Icon d={I.comment} size={18} />{item.commentCount}</Link>
+      <button onClick={() => setShare(true)} aria-label="Share"><Icon d={I.share} size={18} /></button>
       {children}
+      {share && <ShareSheet item={item} mid={mid} onClose={() => setShare(false)} />}
     </div>
   );
 }
@@ -186,7 +190,7 @@ function TradePost({ item, mid, onChanged }: Props) {
         <div className="camps"><span>Be the first to copy or fade this one</span></div>
       )}
       {post.body && <p className="say">{post.body}</p>}
-      <Acts item={item} onChanged={onChanged}>
+      <Acts item={item} onChanged={onChanged} mid={mid}>
         {canAct && (
           <>
             <Link href={`/trade?fade=${post.id}`} className="fade ml-auto">Fade</Link>

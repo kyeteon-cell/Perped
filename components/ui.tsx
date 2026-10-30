@@ -33,6 +33,7 @@ export const I = {
   down: "M12 3v12M7 10l5 5 5-5M4 21h16",
   wallet: "M3 7h18v12H3zM3 7l3-3h12l3 3M16 13h2",
   x: "M4 4l16 16M20 4L4 20",
+  share: "M12 3v12M8 7l4-4 4 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7",
   mail: "M4 7h16v10H4zM4 7l8 6 8-6",
   circle: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",
 };

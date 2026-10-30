@@ -4,7 +4,7 @@ import { use, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
-import { Receipt } from "@/components/Receipt";
+import { ShareSheet } from "@/components/ShareSheet";
 import { Avatar, Icon, I } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
@@ -49,7 +49,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div data-tint="brand" className="fade-in pb-20">
-      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Thread</div>{post?.post.kind === "trade" && post.post.status === "closed" ? <button className="chip" onClick={() => setReceipt(true)}>Receipt</button> : <span className="w-9" />}</header>
+      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Thread</div>{post ? <button className="iconbtn" aria-label="Share" onClick={() => setReceipt(true)}><Icon d={I.share} /></button> : <span className="w-9" />}</header>
       {!post && <p className="muted p-5 text-sm">Loading…</p>}
       {post && <FeedPost item={post} mid={post.post.coin ? mids[post.post.coin] : undefined} onChanged={() => mutate()} />}
       {roots.map((c) => (<div key={c.comment.id}><Row c={c} />{children(c.comment.id).map((r) => <Row key={r.comment.id} c={r} reply />)}</div>))}
@@ -60,7 +60,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         {replyTo && <button className="chip" onClick={() => setReplyTo(null)}>×</button>}
         <button className="copy" onClick={send}>Send</button>
       </div>
-      {receipt && post && <Receipt item={post} onClose={() => setReceipt(false)} />}
+      {receipt && post && <ShareSheet item={post} mid={post.post.coin ? mids[post.post.coin] : undefined} onClose={() => setReceipt(false)} />}
     </div>
   );
 }
