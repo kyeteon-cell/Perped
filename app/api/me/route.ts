@@ -48,9 +48,11 @@ export async function POST(req: Request) {
     if (ref && ref.id !== auth.privyId && !ref.isBot) referredBy = ref.id;
   }
 
+  // Signed up with X only (no wallet connected) → demo until they connect one. Wallet signups start live.
+  const isDemo = !auth.hasExternalWallet;
   const [row] = await db
     .insert(schema.users)
-    .values({ id: auth.privyId, address: auth.address, handle, bio, avatarUrl, referredBy, referredAt: referredBy ? new Date() : null })
+    .values({ id: auth.privyId, address: auth.address, handle, bio, avatarUrl, referredBy, referredAt: referredBy ? new Date() : null, isDemo })
     .onConflictDoUpdate({ target: schema.users.id, set: { handle, bio, avatarUrl, address: auth.address } })
     .returning();
   await db.insert(schema.stats).values({ userId: row.id }).onConflictDoNothing();

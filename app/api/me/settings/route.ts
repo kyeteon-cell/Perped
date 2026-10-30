@@ -25,6 +25,10 @@ export async function PATCH(req: Request) {
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const { resetDemo, ...patch } = parsed.data;
   const set: Record<string, unknown> = { ...patch };
+  if (patch.isDemo === false) {
+    if (!auth.hasExternalWallet) return Response.json({ error: "connect a wallet first to trade real money" }, { status: 400 });
+    if (auth.address) set.address = auth.address; // their connected wallet becomes the Hyperliquid account
+  }
   if (resetDemo) set.demoBalance = "1000";
   const [row] = await db.update(schema.users).set(set).where(eq(schema.users.id, auth.privyId)).returning();
   return Response.json({ profile: row });

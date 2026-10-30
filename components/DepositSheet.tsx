@@ -12,7 +12,7 @@ type Mode = "deposit" | "withdraw";
  * Withdrawals are signed on Hyperliquid by the user's wallet (withdraw3 action) — stubbed here until wired.
  */
 export function DepositSheet({ onClose, initial = "deposit" }: { onClose: () => void; initial?: Mode }) {
-  const { address } = useSession();
+  const { address, hasExternalWallet, linkWallet, profile } = useSession();
   const [mode, setMode] = useState<Mode>(initial);
   const [route, setRoute] = useState<"card" | "transfer">("card");
   const [thb, setThb] = useState(3500);
@@ -29,6 +29,14 @@ export function DepositSheet({ onClose, initial = "deposit" }: { onClose: () => 
       <div className="sheet-bg" onClick={onClose} />
       <div className="sheet" role="dialog" aria-label="Deposit or withdraw">
         <div className="grab" />
+        {(!hasExternalWallet || profile?.isDemo) && (
+          <div className="block"><div className="card p-4" style={{ border: "1.5px solid var(--brand)" }}>
+            <div className="font-bold">Connect a wallet to trade real money</div>
+            <p className="muted mt-1 text-sm">{profile?.isDemo ? "You're in demo mode. " : ""}Connect MetaMask, Rabby, Rainbow or any WalletConnect wallet; it becomes your Hyperliquid account and you deposit to it directly.</p>
+            <div className="mt-3 flex gap-2"><button className="btn brand" style={{ padding: 12, fontSize: 14 }} onClick={linkWallet}>Connect wallet</button><button className="btn ghost" style={{ padding: 12, fontSize: 14 }} onClick={onClose}>Not now</button></div>
+          </div></div>
+        )}
+        {hasExternalWallet && !profile?.isDemo && <>
         <div className="modes mx-5"><button className={mode === "deposit" ? "on" : ""} onClick={() => setMode("deposit")}>Deposit</button><button className={mode === "withdraw" ? "on" : ""} onClick={() => setMode("withdraw")}>Withdraw</button></div>
 
         {mode === "deposit" && (
@@ -73,6 +81,7 @@ export function DepositSheet({ onClose, initial = "deposit" }: { onClose: () => 
             <p className="faint mt-2.5 text-center text-xs">In-app withdrawals are next on the list; for now this opens your Hyperliquid portfolio with the same wallet.</p>
           </div>
         )}
+        </>}
       </div>
     </>
   );

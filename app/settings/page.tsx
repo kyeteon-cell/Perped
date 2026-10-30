@@ -15,7 +15,7 @@ import type { User } from "@/lib/schema";
 type Key = "showLiquidations" | "showSizes" | "allowCopy" | "allowFade" | "showBottomBoard" | "acceptDuels";
 
 export default function SettingsPage() {
-  const { profile, authedFetch, refreshMe, logout, address, fee } = useSession();
+  const { profile, authedFetch, refreshMe, logout, address, fee, hasExternalWallet, linkWallet, linkError } = useSession();
   const [copied, setCopied] = useState(false);
   const { markets } = useMarkets();
   const hypeCap = markets.find((m) => m.name === "HYPE")?.maxLeverage ?? MAX_LEVERAGE;
@@ -28,11 +28,14 @@ export default function SettingsPage() {
   const { data: ref } = useSWR<Ref>(profile ? "/api/referrals" : null, async () => (await authedFetch("/api/referrals")).json());
   const copyLink = async () => { try { await navigator.clipboard.writeText(ref?.link ?? ""); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} };
 
+  const [saveErr, setSaveErr] = useState<string | null>(null);
   const save = async (patch: Partial<User>) => {
     setLocal((l) => ({ ...l, ...patch }));
-    await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify(patch) });
+    const r = await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify(patch) });
+    if (!r.ok) { setSaveErr((await r.json()).error ?? "Couldn't save"); setLocal((l) => ({ ...l, ...(profile ?? {}) })); } else setSaveErr(null);
     refreshMe();
   };
+  const goLive = () => (hasExternalWallet ? save({ isDemo: false }) : linkWallet());
   const Toggle = ({ k, label, note }: { k: Key; label: string; note?: string }) => (
     <label className="srow"><span>{label}{note && <span className="when ml-1.5">{note}</span>}</span><input type="checkbox" className="sw" checked={!!local[k]} onChange={(e) => save({ [k]: e.target.checked } as Partial<User>)} /></label>
   );
@@ -59,14 +62,14 @@ export default function SettingsPage() {
       <Toggle k="acceptDuels" label="Accept duel challenges" />
 
       <div className="eyebrow px-5 pb-1.5 pt-4">Trading</div>
-      {DEMO_ENABLED ? (
-        <>
-          <label className="srow"><span>Demo mode<span className="when ml-1.5">simulated fills, practice balance</span></span><input type="checkbox" className="sw" checked={!!local.isDemo} onChange={(e) => save({ isDemo: e.target.checked })} /></label>
-          {local.isDemo && <div className="srow"><span className="muted text-sm">Ready for real money? Turn demo off, then deposit from your profile.</span><button className="chip" style={{ color: "var(--brand)", background: "var(--brand-soft)" }} onClick={() => save({ isDemo: false })}>Go live</button></div>}
-        </>
+      <div className="srow"><span>Mode</span><span className="chip" style={local.isDemo ? {} : { color: "var(--green)", background: "var(--green-soft)" }}>{local.isDemo ? "Demo · practice money" : "Live · real money"}</span></div>
+      {local.isDemo ? (
+        <div className="srow"><span className="muted text-sm">{hasExternalWallet ? "Your wallet is connected. Switch to live to trade with real money." : "Connect a wallet to trade real money. Your wallet becomes your Hyperliquid account."}</span><button className="chip" style={{ color: "var(--brand)", background: "var(--brand-soft)" }} onClick={goLive}>{hasExternalWallet ? "Go live" : "Connect wallet"}</button></div>
       ) : (
-        local.isDemo && <div className="srow"><span className="muted text-sm">Demo mode has been retired. Switch to live trading to continue.</span><button className="chip" style={{ color: "var(--brand)", background: "var(--brand-soft)" }} onClick={() => save({ isDemo: false })}>Go live</button></div>
+        DEMO_ENABLED && <div className="srow"><span className="muted text-sm">Back to practice money? Your real positions stay on Hyperliquid.</span><button className="chip" onClick={() => save({ isDemo: true })}>Switch to demo</button></div>
       )}
+      {!hasExternalWallet && !local.isDemo && <div className="srow"><span className="muted text-sm">No wallet connected.</span><button className="chip" onClick={linkWallet}>Connect wallet</button></div>}
+      {(saveErr || linkError) && <p className="red px-5 pb-1 text-sm">{saveErr ?? linkError}</p>}
       <div className="srow"><span>Default leverage</span><Seg value={String(local.defaultLeverage ?? 3)} options={levOptions} onChange={(v) => save({ defaultLeverage: Number(v) })} /></div>
       <div className="srow"><span>Max per trade</span><span className="mono">${MAX_POSITION_USD}</span></div>
       <div className="srow"><span>Max leverage<span className="when ml-1.5">follows HYPE on Hyperliquid</span></span><span className="mono">{hypeCap}×</span></div>
@@ -92,7 +95,7 @@ export default function SettingsPage() {
 
       <div className="eyebrow px-5 pb-1.5 pt-4">Account</div>
       <div className="srow"><span>Linked X account</span><input className="field mono !w-40 !py-2 text-right text-sm" placeholder="@handle" value={local.xHandle ?? ""} onChange={(e) => setLocal((l) => ({ ...l, xHandle: e.target.value }))} onBlur={() => save({ xHandle: local.xHandle?.replace(/^@/, "") || null })} /></div>
-      <div className="srow"><span>Wallet</span><span className="mono muted text-[13px]">{address?.slice(0, 6)}…{address?.slice(-4)}</span></div>
+      <div className="srow"><span>Wallet{hasExternalWallet ? "" : <span className="when ml-1.5">built-in · not connected</span>}</span><span className="mono muted text-[13px]">{address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "—"}</span></div>
       <div className="srow"><span>Verified status</span><span className="when">{profile.verified ? "Verified ✓" : "10+ closed trades and a linked X account"}</span></div>
       <button className="srow w-full text-left" onClick={logout}><span style={{ color: "var(--red)" }}>Log out</span><span /></button>
       <div className="when px-5 pt-4 text-center">Perped 0.4 · Powered by Hyperliquid · Not financial advice</div>

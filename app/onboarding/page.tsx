@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/hooks/useSession";
 import { makeExchangeClient, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
-import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, BUILDER_MAX_FEE_TENTHS_BPS, DEMO_ENABLED, HL_NETWORK, REFERRAL_SHARE_PCT } from "@/lib/config";
+import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, BUILDER_MAX_FEE_TENTHS_BPS, HL_NETWORK, REFERRAL_SHARE_PCT } from "@/lib/config";
 import { normaliseReferralCode, referralLink } from "@/lib/fees";
 import { Icon, I } from "@/components/ui";
 
@@ -15,7 +15,7 @@ import { Icon, I } from "@/components/ui";
  */
 export default function OnboardingPage() {
   const router = useRouter();
-  const { ready, authenticated, login, address, walletClient, profile, profileLoading, authedFetch, refreshMe, fee, loginError } = useSession();
+  const { ready, authenticated, login, address, walletClient, profile, profileLoading, authedFetch, refreshMe, fee, loginError, hasExternalWallet, linkWallet, linkError } = useSession();
   const [step, setStep] = useState(1);
   const [handle, setHandle] = useState("");
   const [bio, setBio] = useState("");
@@ -78,10 +78,9 @@ export default function OnboardingPage() {
             <div className="mt-5 flex flex-wrap gap-2"><span className="lbl long"><i />kiloklips · SOL +8.3%</span><span className="lbl short"><i />degenmaxi · ETH −2.1%</span><span className="lbl long"><i />samui_sam · HYPE +12.6%</span></div>
           </div>
           <div className="flex flex-col gap-2.5 px-6 pb-8 pt-3">
-            <button className="btn ink" onClick={login}><Icon d={I.circle} size={18} />Continue with Google</button>
-            <button className="btn" onClick={login}><Icon d={I.mail} size={18} />Continue with email</button>
+            <button className="btn ink" onClick={login}><Icon d={I.x} size={18} />Continue with X</button>
             <button className="btn" onClick={login}><Icon d={I.wallet} size={18} />Connect a wallet</button>
-            <p className="faint mt-1.5 text-center text-xs">No seed phrases. A wallet is created for you and only you control it.</p>
+            <p className="faint mt-1.5 text-center text-xs">X gets you a demo account with $1,000 to practise. Connect a wallet when you want to trade real money.</p>
             {loginError && <p className="red mt-2 text-center text-xs">{loginError}</p>}
             {authenticated && !address && ready && <p className="muted mt-2 text-center text-xs">Logged in — creating your wallet…</p>}
           </div>
@@ -123,7 +122,7 @@ export default function OnboardingPage() {
               ))}
             </div>
           </div>
-          <div className="px-6 pb-8"><button className="btn ink" onClick={() => setStep(4)}>Got it</button></div>
+          <div className="px-6 pb-8"><button className="btn ink" onClick={() => setStep(hasExternalWallet ? 4 : 5)}>Got it</button></div>
         </>
       )}
 
@@ -151,16 +150,25 @@ export default function OnboardingPage() {
         <>
           <div className="flex-1 px-6 pb-3 pt-6">
             <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">You&apos;re in{profile ? `, ${profile.handle}` : ""}.</h2>
-            <p className="muted mt-2.5">Your trading wallet is ready. Add funds when you want to trade, or go look around first.</p>
-            <div className="card mt-4 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>Your Hyperliquid wallet {HL_NETWORK === "testnet" ? "(testnet)" : ""}</div><div className="mono mt-1.5 break-all text-[13px]">{address}</div><button className="chip info mt-3" onClick={copy}>{copied ? "Copied" : "Copy address"}</button></div>
+            {hasExternalWallet ? (
+              <>
+                <p className="muted mt-2.5">Your wallet is connected and set as your Hyperliquid account. Fund it when you want to trade, or go look around first.</p>
+                <div className="card mt-4 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>Your Hyperliquid wallet {HL_NETWORK === "testnet" ? "(testnet)" : ""}</div><div className="mono mt-1.5 break-all text-[13px]">{address}</div><button className="chip info mt-3" onClick={copy}>{copied ? "Copied" : "Copy address"}</button></div>
+                <div className="mt-3.5 flex flex-col gap-2.5">
+                  <div className="card flex items-start gap-3.5 p-3.5"><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--green-soft)", color: "var(--green)" }}><Icon d={I.card} /></div><div><b>Buy USDC with a card</b><p className="muted mt-1 text-[13px]">Apple Pay, card or bank. Lands in your wallet in minutes. Available from your profile.</p></div></div>
+                  <div className="card flex items-start gap-3.5 p-3.5"><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--blue-soft)", color: "var(--blue)" }}><Icon d={I.down} /></div><div><b>Send USDC from an exchange</b><p className="muted mt-1 text-[13px]">Withdraw to the address above on Arbitrum. It's bridged to Hyperliquid for you.</p></div></div>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="muted mt-2.5">You&apos;re in <b>demo mode</b> with $1,000 of practice money. Fills are simulated at live Hyperliquid prices and tagged Demo in the feed. Nothing is at risk.</p>
+                <button className="card mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" style={{ border: "1.5px solid var(--brand)" }} onClick={linkWallet}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}><Icon d={I.wallet} /></div><div><b>Connect a wallet to trade real money</b><p className="muted mt-1 text-[13px]">MetaMask, Rabby, Rainbow or WalletConnect. Your wallet becomes your Hyperliquid account. You can do this any time from Settings.</p></div></button>
+                {linkError && <p className="red mt-2 text-sm">{linkError}</p>}
+              </>
+            )}
             {profile && <div className="card mt-2.5 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>Your referral code</div><div className="mt-1.5 flex items-center justify-between"><b className="mono text-lg uppercase">{profile.handle}</b><button className="chip" onClick={async () => { try { await navigator.clipboard.writeText(referralLink(window.location.origin, profile.handle)); } catch {} }}>Copy link</button></div><p className="muted mt-1.5 text-[13px]">Friends who join with it pay a lower fee. You earn {REFERRAL_SHARE_PCT}% of the Perped fee on every trade they make, for life.</p></div>}
-            <div className="mt-3.5 flex flex-col gap-2.5">
-              {DEMO_ENABLED && <button className="card flex items-start gap-3.5 p-3.5 text-left" style={{ border: "1.5px solid var(--brand)" }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ isDemo: true }) }); await refreshMe(); router.push("/"); }}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}><Icon d={I.bolt} /></div><div><b>Start in demo with $1,000</b><p className="muted mt-1 text-[13px]">Practice with simulated fills at live prices. No money needed. Switch to real whenever you like.</p></div></button>}
-              <div className="card flex items-start gap-3.5 p-3.5"><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--green-soft)", color: "var(--green)" }}><Icon d={I.card} /></div><div><b>Buy USDC with a card</b><p className="muted mt-1 text-[13px]">Apple Pay, card or bank. Lands in your wallet in minutes. Available from your profile.</p></div></div>
-              <div className="card flex items-start gap-3.5 p-3.5"><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--blue-soft)", color: "var(--blue)" }}><Icon d={I.down} /></div><div><b>Send USDC from an exchange</b><p className="muted mt-1 text-[13px]">Withdraw to the address above on Arbitrum. It's bridged to Hyperliquid for you.</p></div></div>
-            </div>
           </div>
-          <div className="px-6 pb-8"><button className="btn ink" onClick={() => router.push("/")}>Explore the feed</button></div>
+          <div className="px-6 pb-8"><button className="btn ink" onClick={() => router.push("/")}>Go to the feed</button></div>
         </>
       )}
     </div>

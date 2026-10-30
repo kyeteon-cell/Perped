@@ -51,9 +51,10 @@ The tier is resolved server-side (`lib/fees.ts`, `/api/me` → `fee`) and the ti
 
 **Leverage cap** follows Hyperliquid's live max leverage on the HYPE pair (read from `metaAndAssetCtxs`), per-market caps still apply on top; `NEXT_PUBLIC_MAX_LEVERAGE` is only the fallback before markets load.
 
-## Demo mode and demo traders
+## Sign-up, demo mode and demo traders
 
-- **Demo mode** (any user): simulated fills at live Hyperliquid prices against a $1,000 practice balance. Offered at the end of onboarding, switchable in Settings ("Go live" turns it off). Demo accounts and paper trades carry a **Demo** tag; Leaders has a Real / Demo switch so results never mix.
+- **Two ways in**: Continue with X, or Connect a wallet. X signups land in **demo** automatically (embedded wallet only); to trade real money they connect an external wallet (MetaMask, Rabby, Rainbow, WalletConnect) from Settings, the deposit sheet or the home hero. That wallet becomes their Hyperliquid account. Wallet signups start live. The server refuses `isDemo:false` for accounts with no external wallet.
+- **Demo mode**: simulated fills at live Hyperliquid prices against a $1,000 practice balance. Switchable in Settings once a wallet is connected. Demo accounts and paper trades carry a **Demo** tag; Leaders has a Real / Demo switch so results never mix.
 - **Remove demo entirely**: set `NEXT_PUBLIC_DEMO_ENABLED=0`. Demo disappears from onboarding and settings, paper trades are refused, and existing demo users see a one-tap "Go live".
 - **Six demo traders** (bots, flagged `isBot`): `GET /api/seed?key=CRON_SECRET` creates them and backfills two weeks; `/api/cron/bots` runs every 15 min. They open and close trades, copy and fade each other and humans (contrarian_kate fades most), challenge and accept duels, vote in and start polls, make calls, reply in their own threads, follow bots like themselves and whoever is winning, and pin their best trade. Humans are reacted to first. `BOTS_PAUSED=1` freezes them; `/api/seed?key=…&action=purge` removes them.
 
@@ -64,7 +65,7 @@ Next.js 15 · TypeScript · Tailwind 4 · Privy (`@privy-io/react-auth`, `@privy
 ## Setup
 
 ### Accounts (all free tiers)
-1. **Privy** — https://dashboard.privy.io → New app → App ID + App secret. Enable Email, Google, Twitter, Wallet; embedded wallets → create on login for all users. Add `http://localhost:3000` and your domain to Allowed origins.
+1. **Privy** — https://dashboard.privy.io → New app → App ID + App secret. Enable Twitter (X) and Wallet login methods; embedded wallets → create on login for all users. Add `http://localhost:3000` and your domain to Allowed origins.
 2. **Postgres** — Neon (https://neon.tech) or Supabase. Copy the connection string.
 3. **Builder wallet** — any EVM wallet you control, funded with ≥ 100 USDC in its Hyperliquid perps account on the network you run (testnet faucet: https://app.hyperliquid-testnet.xyz/drip). This address earns the builder fees.
 4. **On-ramp (optional)** — MoonPay or Transak account; put the hosted widget URL in `NEXT_PUBLIC_ONRAMP_URL`. Without it the card button shows "coming soon" and the USDC-transfer route still works.
@@ -79,7 +80,7 @@ npm run dev                  # http://localhost:3000
 ```
 
 ### First session on testnet
-1. Open on your phone → Get started → Google → handle → read the four cards → approve the fee → copy your wallet address.
+1. Open on your phone → Get started → Continue with X (demo) or Connect a wallet (live) → handle → read the four cards → approve the fee → copy your wallet address.
 2. Get testnet USDC from the faucet to that address, deposit into perps on the Hyperliquid testnet app.
 3. Markets → SOL → Long $25 2× → it appears in Home with live P&L.
 4. Second account in a private window → Copy, then Fade. Close the first position from your profile → a Settled post appears if 3+ people joined.

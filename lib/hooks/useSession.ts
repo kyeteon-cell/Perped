@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLogin, usePrivy, useWallets } from "@privy-io/react-auth";
+import { useLinkAccount, useLogin, usePrivy, useWallets } from "@privy-io/react-auth";
 import { createWalletClient, custom, type WalletClient } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import useSWR from "swr";
@@ -31,11 +31,13 @@ export function useSession() {
   const { wallets } = useWallets();
   const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
 
-  // Prefer the Privy embedded wallet; fall back to the first connected external wallet.
-  const wallet = useMemo(
-    () => wallets.find((w) => w.walletClientType === "privy") ?? wallets[0] ?? null,
-    [wallets],
-  );
+  // A wallet the user connected themselves (MetaMask, Rabby, WalletConnect…) is their real trading account.
+  // X-only signups have just the Privy embedded wallet and stay in demo until they connect one.
+  const externalWallet = useMemo(() => wallets.find((w) => w.walletClientType !== "privy") ?? null, [wallets]);
+  const wallet = useMemo(() => externalWallet ?? wallets.find((w) => w.walletClientType === "privy") ?? wallets[0] ?? null, [externalWallet, wallets]);
+  const hasExternalWallet = !!externalWallet;
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const { linkWallet } = useLinkAccount({ onError: (err) => { if (String(err) !== "exited_link_flow") setLinkError(`Couldn't connect wallet: ${String(err)}`); }, onSuccess: () => setLinkError(null) });
   const address = (wallet?.address?.toLowerCase() ?? null) as `0x${string}` | null;
 
   useEffect(() => {
@@ -87,6 +89,11 @@ export function useSession() {
     fee: me?.fee ?? resolveFeeTier({}),
     /** Why the last login attempt failed, in words the person can act on. */
     loginError,
+    /** True once the user has connected their own wallet (required for real-money trading). */
+    hasExternalWallet,
+    /** Open Privy's connect-wallet flow to add an external wallet to this account. */
+    linkWallet,
+    linkError,
     refreshMe,
   };
 }

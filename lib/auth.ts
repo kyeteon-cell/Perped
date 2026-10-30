@@ -4,7 +4,7 @@ import { db, schema, ensureSchema } from "./db";
 
 const privy = new PrivyClient(process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "", process.env.PRIVY_APP_SECRET ?? "");
 
-export type AuthedUser = { privyId: string; address: string | null };
+export type AuthedUser = { privyId: string; address: string | null; hasExternalWallet: boolean };
 
 /** Verify the Privy access token sent as `Authorization: Bearer <token>`. */
 export async function getAuth(req: Request): Promise<AuthedUser | null> {
@@ -17,14 +17,15 @@ export async function getAuth(req: Request): Promise<AuthedUser | null> {
     // The embedded wallet address is sent by the client as a header; we verify it belongs to the user.
     const claimedAddress = req.headers.get("x-wallet-address");
     let address: string | null = null;
+    let hasExternalWallet = false;
+    const user = await privy.getUser(claims.userId);
+    const wallets = user.linkedAccounts.filter((a) => a.type === "wallet") as Array<{ address?: string; walletClientType?: string; connectorType?: string }>;
+    hasExternalWallet = wallets.some((w) => w.walletClientType !== "privy" && w.connectorType !== "embedded");
     if (claimedAddress) {
-      const user = await privy.getUser(claims.userId);
-      const owns = user.linkedAccounts.some(
-        (a) => a.type === "wallet" && "address" in a && a.address.toLowerCase() === claimedAddress.toLowerCase(),
-      );
+      const owns = wallets.some((w) => w.address?.toLowerCase() === claimedAddress.toLowerCase());
       if (owns) address = claimedAddress.toLowerCase();
     }
-    return { privyId: claims.userId, address };
+    return { privyId: claims.userId, address, hasExternalWallet };
   } catch {
     return null;
   }

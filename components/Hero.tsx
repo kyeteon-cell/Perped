@@ -38,7 +38,7 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
       </div>
       <div className="hero-actions">
         <Link href="/markets" className="solid">Trade</Link>
-        {profile.isDemo ? <Link href="/settings">Go live</Link> : <button onClick={onDeposit}>Deposit</button>}
+        {profile.isDemo ? <Link href="/settings">Connect wallet</Link> : <button onClick={onDeposit}>Deposit</button>}
         <Link href="/compose">Post</Link>
       </div>
       {bal === 0 && !profile.isDemo && <div className="relative mt-3 text-[12px] opacity-90">Fund your account to place your first trade.</div>}
