@@ -66,20 +66,35 @@ async function info<T>(body: Record<string, unknown>, revalidate = 0, scope: Sco
   return (await res.json()) as T;
 }
 
-let metaCache: { at: number; assets: PerpAsset[] } | null = null;
+const metaCache: Record<Scope, { at: number; assets: PerpAsset[] } | null> = { data: null, user: null };
 
-/** Perp universe with asset indices. Cached for 5 minutes. */
-export async function getPerpAssets(): Promise<PerpAsset[]> {
-  if (metaCache && Date.now() - metaCache.at < 5 * 60_000) return metaCache.assets;
+/** Perp universe with asset indices (data network by default). Cached for 5 minutes per network. */
+export async function getPerpAssets(scope: Scope = "data"): Promise<PerpAsset[]> {
+  const c = metaCache[scope];
+  if (c && Date.now() - c.at < 5 * 60_000) return c.assets;
   const meta = await info<{ universe: { name: string; szDecimals: number; maxLeverage: number; onlyIsolated?: boolean; isDelisted?: boolean }[] }>(
     { type: "meta" },
     300,
+    scope,
   );
   const assets = meta.universe
     .map((u, index) => ({ ...u, index }))
     .filter((u) => !u.isDelisted);
-  metaCache = { at: Date.now(), assets };
+  metaCache[scope] = { at: Date.now(), assets };
   return assets;
+}
+
+/**
+ * Asset indices differ between mainnet and testnet, so orders must use the trading network's universe.
+ * Looks the coin up by name on the trading network; falls back to the given row if it isn't listed there.
+ */
+export async function resolveTradingAsset(asset: PerpAsset): Promise<PerpAsset> {
+  try {
+    const a = (await getPerpAssets("user")).find((x) => x.name === asset.name);
+    return a ?? asset;
+  } catch {
+    return asset;
+  }
 }
 
 export async function getMids(): Promise<Mids> {
