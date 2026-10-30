@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { db, schema } from "@/lib/db";
+import { db, schema, ensureSchema } from "@/lib/db";
 import { getUserFillsByTime, summariseFills } from "@/lib/hl-info";
 
 /**
@@ -7,6 +7,7 @@ import { getUserFillsByTime, summariseFills } from "@/lib/hl-info";
  * call stats, judgement, copied/faded counts and verification status from our tables.
  */
 export async function GET(req: Request) {
+  await ensureSchema();
   const secret = process.env.CRON_SECRET;
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) return Response.json({ error: "unauthorized" }, { status: 401 });
   const users = await db.select({ id: schema.users.id, address: schema.users.address, xHandle: schema.users.xHandle, isDemo: schema.users.isDemo }).from(schema.users);

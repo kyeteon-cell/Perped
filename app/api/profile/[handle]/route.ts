@@ -1,10 +1,11 @@
 import { and, eq, sql } from "drizzle-orm";
-import { db, schema } from "@/lib/db";
+import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { getClearinghouseState } from "@/lib/hl-info";
 
 /** GET /api/profile/:handle → profile, stats, follow counts, whether the viewer follows, live positions + account value. */
 export async function GET(req: Request, ctx: { params: Promise<{ handle: string }> }) {
+  await ensureSchema();
   const { handle } = await ctx.params;
   const auth = await getAuth(req).catch(() => null);
   const [row] = await db

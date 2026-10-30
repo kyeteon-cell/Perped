@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { asc, eq } from "drizzle-orm";
-import { db, schema } from "@/lib/db";
+import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { notify } from "@/lib/feed";
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  await ensureSchema();
   const { id } = await ctx.params;
   const rows = await db
     .select({ comment: schema.comments, author: { handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified } })

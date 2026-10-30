@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db, schema } from "@/lib/db";
+import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { queryFeed, notify } from "@/lib/feed";
 import { DEMO_ENABLED, MAX_POSITION_USD } from "@/lib/config";
@@ -11,6 +11,7 @@ import { getMids, getPerpAssets } from "@/lib/hl-info";
  * Feed, newest first (pinned first on a profile), with author, votes, copies, fades, poll counts.
  */
 export async function GET(req: Request) {
+  await ensureSchema();
   const url = new URL(req.url);
   const q = Object.fromEntries(url.searchParams);
   const limit = Math.min(50, Number(q.limit ?? 30));

@@ -86,7 +86,7 @@ npm run dev                  # http://localhost:3000
 5. Compose → Call → HYPE up to a target, 24 h → wait for the resolver (or hit `/api/cron/resolve` with the secret).
 
 ## Env
-See `.env.example`. New in v0.4: `NEXT_PUBLIC_BUILDER_MAX_FEE_TENTHS_BPS`, `NEXT_PUBLIC_BUILDER_FEE_REFERRED_TENTHS_BPS`, `NEXT_PUBLIC_BUILDER_FEE_TOP_TENTHS_BPS`, `NEXT_PUBLIC_TOP_TIER_RANK`, `NEXT_PUBLIC_REFERRAL_SHARE_PCT`, `NEXT_PUBLIC_REFERRAL_TOP_SHARE_PCT`, `NEXT_PUBLIC_REFERRAL_TOP_THRESHOLD`. After deploying, hit `/api/setup?key=CRON_SECRET` once to add the new columns and tables.
+See `.env.example`. New in v0.4: `NEXT_PUBLIC_BUILDER_MAX_FEE_TENTHS_BPS`, `NEXT_PUBLIC_BUILDER_FEE_REFERRED_TENTHS_BPS`, `NEXT_PUBLIC_BUILDER_FEE_TOP_TENTHS_BPS`, `NEXT_PUBLIC_TOP_TIER_RANK`, `NEXT_PUBLIC_REFERRAL_SHARE_PCT`, `NEXT_PUBLIC_REFERRAL_TOP_SHARE_PCT`, `NEXT_PUBLIC_REFERRAL_TOP_THRESHOLD`. The schema now migrates itself on the first database call after each deploy (idempotent SQL; `AUTO_MIGRATE=0` turns it off). Open `/api/health` to confirm — no key needed.
 
 ## Layout
 ```

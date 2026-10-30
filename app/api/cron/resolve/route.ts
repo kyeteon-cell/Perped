@@ -1,5 +1,5 @@
 import { and, eq, isNull, lte, sql } from "drizzle-orm";
-import { db, schema } from "@/lib/db";
+import { db, schema, ensureSchema } from "@/lib/db";
 import { getMids } from "@/lib/hl-info";
 import { notify, systemPost } from "@/lib/feed";
 
@@ -9,6 +9,7 @@ import { notify, systemPost } from "@/lib/feed";
  * Protected by CRON_SECRET like the stats cron.
  */
 export async function GET(req: Request) {
+  await ensureSchema();
   const secret = process.env.CRON_SECRET;
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) return Response.json({ error: "unauthorized" }, { status: 401 });
   const mids = await getMids();

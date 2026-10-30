@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { db, schema } from "@/lib/db";
+import { db, schema, ensureSchema } from "@/lib/db";
 import { getUserFillsByTime } from "@/lib/hl-info";
 import { countActiveReferees } from "@/lib/referrals";
 import { referralSharePct } from "@/lib/fees";
@@ -13,6 +13,7 @@ import { BUILDER_CONFIGURED } from "@/lib/config";
  * Fees come from the `builderFee` field on each fill, so only fills routed through Perped count.
  */
 export async function GET(req: Request) {
+  await ensureSchema();
   const secret = process.env.CRON_SECRET;
   const url = new URL(req.url);
   const auth = req.headers.get("authorization") === `Bearer ${secret}` || url.searchParams.get("key") === secret;

@@ -1,6 +1,6 @@
 import { PrivyClient } from "@privy-io/server-auth";
 import { eq } from "drizzle-orm";
-import { db, schema } from "./db";
+import { db, schema, ensureSchema } from "./db";
 
 const privy = new PrivyClient(process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "", process.env.PRIVY_APP_SECRET ?? "");
 
@@ -8,6 +8,7 @@ export type AuthedUser = { privyId: string; address: string | null };
 
 /** Verify the Privy access token sent as `Authorization: Bearer <token>`. */
 export async function getAuth(req: Request): Promise<AuthedUser | null> {
+  await ensureSchema();
   const header = req.headers.get("authorization") ?? "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) return null;

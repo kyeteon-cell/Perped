@@ -1,10 +1,11 @@
 import { eq } from "drizzle-orm";
-import { db, schema } from "@/lib/db";
+import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { queryFeed } from "@/lib/feed";
 
 /** GET /api/posts/:id → one post in feed shape (with the viewer's vote state). */
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  await ensureSchema();
   const { id } = await ctx.params;
   const auth = await getAuth(req).catch(() => null);
   const [row] = await queryFeed({ where: eq(schema.posts.id, Number(id)), limit: 1, viewerId: auth?.privyId });
