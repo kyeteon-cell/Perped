@@ -63,7 +63,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const pin = async (id: number) => { await authedFetch(`/api/posts/${id}/pin`, { method: "POST" }); mutateFeed(); };
 
   return (
-    <div data-tint="violet" className="fade-in">
+    <div className="fade-in profile">
       <header className="flex items-center justify-between px-4 py-3">
         <h1 className="text-xl font-bold">{user.handle}</h1>
         {isMe ? <Link href="/settings" className="iconbtn" aria-label="Settings"><Icon d={I.gear} /></Link> : <span className="w-9" />}
@@ -111,33 +111,33 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
       )}
 
       <section className="block">
-        <div className="grid grid-cols-3 gap-2.5">
-          <div className="stat"><small>7 day</small><div className={`v mono ${Number(s?.realizedPnl7d ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(Number(s?.realizedPnl7d ?? 0), { sign: true, compact: true })}</div></div>
-          <div className="stat"><small>All time</small><div className={`v mono ${Number(s?.realizedPnlAll ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(Number(s?.realizedPnlAll ?? 0), { sign: true, compact: true })}</div></div>
-          <div className="stat"><small>Volume 30d</small><div className="v mono">{fmtUsd(Number(s?.volume30d ?? 0), { compact: true })}</div></div>
+        <div className="statrow">
+          <div><small>7 days</small><b className={`mono ${Number(s?.realizedPnl7d ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(Number(s?.realizedPnl7d ?? 0), { sign: true, compact: true })}</b></div>
+          <div><small>All time</small><b className={`mono ${Number(s?.realizedPnlAll ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(Number(s?.realizedPnlAll ?? 0), { sign: true, compact: true })}</b></div>
+          <div><small>Win rate</small><b className="mono">{fmtPct(Number(s?.winRate ?? 0), 0).replace("+", "")}</b></div>
+          <div><small>Volume</small><b className="mono">{fmtUsd(Number(s?.volume30d ?? 0), { compact: true })}</b></div>
         </div>
-        <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-          <div className="stat"><small>Copied vs faded</small><div className="v mono">{s?.copiedCount ?? 0} <span className="muted text-xs">/</span> {s?.fadedCount ?? 0}</div></div>
-          <div className="stat"><small>Rivalries</small><div className="v">{data.rivalries?.length ? `${data.rivalries[0].wins}–${data.rivalries[0].losses} ` : "—"}{data.rivalries?.length ? <span className="muted text-xs font-semibold">vs {data.rivalries[0].opponent}</span> : null}</div></div>
-        </div>
-        <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-          <div className="stat"><small>Trades · {s?.closedTrades ?? 0} closed</small><div className="v mono">{fmtPct(Number(s?.winRate ?? 0), 0)} <span className="muted text-xs font-semibold">win</span></div></div>
-          <div className="stat"><small>Calls · {s?.callsResolved ?? 0} resolved{s && Number(s.judgement) > 0 ? ` · Judgement ${Math.round(Number(s.judgement))}%` : ""}</small><div className="v mono">{callHit == null ? "—" : `${Math.round(callHit)}%`} <span className="muted text-xs font-semibold">hit</span>{(s?.callStreak ?? 0) > 1 && <span className="green ml-1 text-xs font-bold">🔥{s!.callStreak}</span>}</div></div>
+        <div className="record">
+          <span><b>{s?.closedTrades ?? 0}</b> trades</span>
+          <span><b>{s?.copiedCount ?? 0}</b> copied · <b>{s?.fadedCount ?? 0}</b> faded</span>
+          <span>Calls <b>{callHit == null ? "—" : `${Math.round(callHit)}%`}</b> hit{s?.callsResolved ? ` · ${s.callsResolved}` : ""}{(s?.callStreak ?? 0) >= 3 ? ` · 🔥 ${s!.callStreak}` : ""}</span>
+          {s && Number(s.judgement) > 0 && <span>Judgement <b>{Math.round(Number(s.judgement))}%</b></span>}
+          {data.rivalries?.length ? <span>Rivalry <b>{data.rivalries[0].wins}–{data.rivalries[0].losses}</b> vs {data.rivalries[0].opponent}</span> : null}
+          {(s?.liquidations ?? 0) > 0 && <span className="red"><b>{s!.liquidations}</b> liquidated</span>}
         </div>
       </section>
 
       {(pins.length > 0 || isMe) && (
         <section className="block pb-3">
-          <div className="flex items-center justify-between"><span className="eyebrow">Pinned trades</span>{isMe && <span className="when">closed trades only</span>}</div>
+          <div className="flex items-center justify-between"><span className="eyebrow">Best trades</span>{isMe && <span className="when">pin from your closed trades</span>}</div>
           <div className="hstrip mt-3" style={{ margin: "12px -20px 0", padding: "0 20px 6px" }}>
             {pins.map((p) => {
               const roi = ((Number(p.post.exitPx) - Number(p.post.entryPx)) / Number(p.post.entryPx)) * 100 * (p.post.side === "long" ? 1 : -1) * (p.post.leverage ?? 1);
               return (
-                <Link key={p.post.id} href={`/post/${p.post.id}`} className="hcard violet">
-                  <div className="when">{new Date(p.post.closedAt ?? p.post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
-                  <div className="mt-0.5 flex items-center gap-1.5 text-base font-extrabold tracking-tight">{p.post.coin} <span className={`lbl ${p.post.side}`} style={{ padding: "2px 8px", fontSize: 11 }}><i />{p.post.side === "long" ? "Long" : "Short"} {p.post.leverage}×</span></div>
-                  <div className={`mono mt-1.5 text-[22px] font-bold ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 0)}</div>
-                  <div className="mono when text-xs">{fmtUsd(Number(p.post.notionalUsd) / (p.post.leverage ?? 1), { compact: true })} margin</div>
+                <Link key={p.post.id} href={`/post/${p.post.id}`} className="pincard">
+                  <div className="flex items-center gap-2"><CoinMark coin={p.post.coin!} size="sm" /><b>{ticker(p.post.coin!)}</b><span className={`ml-auto text-[11px] font-bold ${p.post.side === "long" ? "green" : "red"}`}>{p.post.side === "long" ? "Long" : "Short"} {p.post.leverage}×</span></div>
+                  <div className={`mono mt-2 text-[26px] font-bold leading-none ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 0)}</div>
+                  <div className="when mt-1.5 text-[11px]">{new Date(p.post.closedAt ?? p.post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {fmtUsd(Number(p.post.notionalUsd) / (p.post.leverage ?? 1), { compact: true })} margin</div>
                 </Link>
               );
             })}
