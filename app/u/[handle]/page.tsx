@@ -46,7 +46,13 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   if (!data) return <SkeletonList n={2} />;
   if ("error" in (data as unknown as Record<string, unknown>)) return <div className="p-5"><p className="muted">No trader with that handle.</p></div>;
   const { user, stats: s, isMe } = data;
-  const pins = (pinned?.posts ?? []).filter((p) => p.post.pinned);
+  const roiOf = (p: FeedRow) => ((Number(p.post.exitPx) - Number(p.post.entryPx)) / Number(p.post.entryPx)) * 100 * (p.post.side === "long" ? 1 : -1) * (p.post.leverage ?? 1);
+  const wonBattle = (p: FeedRow) => (p.post.meta as { battle?: { won: boolean | null } } | null)?.battle?.won === true;
+  const closedAll = pinned?.posts ?? [];
+  const pinsOnly = closedAll.filter((p) => p.post.pinned);
+  // Always something in view: pinned trades if they've chosen any, otherwise their best results (battle wins first).
+  const pins = pinsOnly.length ? pinsOnly : [...closedAll].sort((a, b) => Number(wonBattle(b)) - Number(wonBattle(a)) || roiOf(b) - roiOf(a)).slice(0, 6);
+  const showingTop = pinsOnly.length === 0;
   const callHit = s && s.callsResolved ? (s.callsHit / s.callsResolved) * 100 : null;
 
   const closePos = async (p: AssetPosition, fraction: number) => {
@@ -92,6 +98,27 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         </div>
       </section>
 
+      {(pins.length > 0 || isMe) && (
+        <section className="block pb-3">
+          <div className="flex items-center justify-between"><span className="eyebrow">{showingTop ? "Top trades" : "Pinned"}</span>{isMe && <span className="when">{showingTop ? "pin your own picks from Trades → Closed" : "your picks"}</span>}</div>
+          <div className="hstrip mt-3" style={{ margin: "12px -20px 0", padding: "0 20px 6px" }}>
+            {pins.map((p) => {
+              const roi = ((Number(p.post.exitPx) - Number(p.post.entryPx)) / Number(p.post.entryPx)) * 100 * (p.post.side === "long" ? 1 : -1) * (p.post.leverage ?? 1);
+              return (
+                <Link key={p.post.id} href={`/post/${p.post.id}`} className={`pincard ${(p.post.meta as { battle?: { won: boolean | null } } | null)?.battle?.won === true ? "won" : ""}`}>
+                  {(p.post.meta as { battle?: { won: boolean | null; vs?: string } } | null)?.battle && <div className={`pin-battle ${(p.post.meta as { battle: { won: boolean | null } }).battle.won === true ? "green" : (p.post.meta as { battle: { won: boolean | null } }).battle.won === false ? "red" : "muted"}`}>⚡ {(p.post.meta as { battle: { won: boolean | null; vs?: string } }).battle.won === true ? "Perped" : (p.post.meta as { battle: { won: boolean | null } }).battle.won === false ? "Perped by" : "Drew with"} {(p.post.meta as { battle: { vs?: string } }).battle.vs}</div>}
+                  <div className="flex items-center gap-2"><CoinMark coin={p.post.coin!} size="sm" /><b>{ticker(p.post.coin!)}</b><span className={`ml-auto text-[11px] font-bold ${p.post.side === "long" ? "green" : "red"}`}>{p.post.side === "long" ? "Long" : "Short"} {p.post.leverage}×</span></div>
+                  <div className={`mono mt-2 text-[26px] font-bold leading-none ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 0)}</div>
+                  <div className="when mt-1.5 text-[11px]">{new Date(p.post.closedAt ?? p.post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {fmtUsd(Number(p.post.notionalUsd) / (p.post.leverage ?? 1), { compact: true })} margin</div>
+                </Link>
+              );
+            })}
+            {isMe && <button className="hcard grid place-items-center text-center" style={{ background: "transparent", border: "1px dashed var(--line)" }} onClick={() => { setTab("trades"); setTradeTab("closed"); }}><div><Icon d={I.plus} /><div className="when mt-1.5">Pin a trade</div></div></button>}
+          </div>
+        </section>
+      )}
+
+
       <RankCard xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} recent={data.xpRecent ?? []} />
 
       {isMe && user.isDemo && (
@@ -121,26 +148,6 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
       )}
 
       <PerformanceCard handle={handle} stats={s} />
-
-      {(pins.length > 0 || isMe) && (
-        <section className="block pb-3">
-          <div className="flex items-center justify-between"><span className="eyebrow">Pinned · best trades &amp; battles</span>{isMe && <span className="when">pin from Trades → Closed</span>}</div>
-          <div className="hstrip mt-3" style={{ margin: "12px -20px 0", padding: "0 20px 6px" }}>
-            {pins.map((p) => {
-              const roi = ((Number(p.post.exitPx) - Number(p.post.entryPx)) / Number(p.post.entryPx)) * 100 * (p.post.side === "long" ? 1 : -1) * (p.post.leverage ?? 1);
-              return (
-                <Link key={p.post.id} href={`/post/${p.post.id}`} className={`pincard ${(p.post.meta as { battle?: { won: boolean | null } } | null)?.battle?.won === true ? "won" : ""}`}>
-                  {(p.post.meta as { battle?: { won: boolean | null; vs?: string } } | null)?.battle && <div className={`pin-battle ${(p.post.meta as { battle: { won: boolean | null } }).battle.won === true ? "green" : (p.post.meta as { battle: { won: boolean | null } }).battle.won === false ? "red" : "muted"}`}>⚡ {(p.post.meta as { battle: { won: boolean | null; vs?: string } }).battle.won === true ? "Perped" : (p.post.meta as { battle: { won: boolean | null } }).battle.won === false ? "Perped by" : "Drew with"} {(p.post.meta as { battle: { vs?: string } }).battle.vs}</div>}
-                  <div className="flex items-center gap-2"><CoinMark coin={p.post.coin!} size="sm" /><b>{ticker(p.post.coin!)}</b><span className={`ml-auto text-[11px] font-bold ${p.post.side === "long" ? "green" : "red"}`}>{p.post.side === "long" ? "Long" : "Short"} {p.post.leverage}×</span></div>
-                  <div className={`mono mt-2 text-[26px] font-bold leading-none ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 0)}</div>
-                  <div className="when mt-1.5 text-[11px]">{new Date(p.post.closedAt ?? p.post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {fmtUsd(Number(p.post.notionalUsd) / (p.post.leverage ?? 1), { compact: true })} margin</div>
-                </Link>
-              );
-            })}
-            {isMe && <button className="hcard grid place-items-center text-center" style={{ background: "transparent", border: "1px dashed var(--line)" }} onClick={() => { setTab("trades"); setTradeTab("closed"); }}><div><Icon d={I.plus} /><div className="when mt-1.5">Pin a trade</div></div></button>}
-          </div>
-        </section>
-      )}
 
       <div className="tabs" style={{ gridTemplateColumns: "repeat(4, 1fr)", top: 0 }}>
         {(["posts", "trades", "followers", "following"] as Tab[]).map((t) => <button key={t} className={`capitalize ${tab === t ? "on" : ""}`} onClick={() => setTab(t)}>{t}</button>)}
