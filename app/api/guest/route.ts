@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
-import { newGuestToken, guestAddress } from "@/lib/guest";
+import { newGuestToken, guestAddress, guestCookie, verifyGuestToken, tokenForGuestId } from "@/lib/guest";
 import { DEMO_ENABLED } from "@/lib/config";
 import { normaliseReferralCode } from "@/lib/fees";
 import { notify } from "@/lib/feed";
@@ -38,8 +38,24 @@ export async function POST(req: Request) {
       .returning();
     await db.insert(schema.stats).values({ userId: profile.id }).onConflictDoNothing();
     if (referredBy) await notify(referredBy, "referral", `@${handle} joined from your link`, "They're on demo for now. When they trade real money you earn a share of every fee.", "/settings");
-    return Response.json({ token, profile });
+    return Response.json({ token, profile }, { headers: { "set-cookie": guestCookie(token) } });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
+}
+
+/** DELETE /api/guest → sign the guest out on this device (clears the cookie; the account itself stays). */
+export async function DELETE() {
+  return Response.json({ ok: true }, { headers: { "set-cookie": guestCookie(null) } });
+}
+
+/** PUT /api/guest {token} → restore a guest account from its saved key; sets the cookie and returns the profile. */
+export async function PUT(req: Request) {
+  const { token } = await req.json().catch(() => ({ token: "" }));
+  const id = typeof token === "string" ? verifyGuestToken(token.trim()) : null;
+  if (!id) return Response.json({ error: "That key isn't valid" }, { status: 400 });
+  const [profile] = await db.select().from(schema.users).where(eq(schema.users.id, id)).limit(1);
+  if (!profile) return Response.json({ error: "No account for that key" }, { status: 404 });
+  const fresh = tokenForGuestId(id);
+  return Response.json({ token: fresh, profile }, { headers: { "set-cookie": guestCookie(fresh) } });
 }

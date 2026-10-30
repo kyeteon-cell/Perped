@@ -12,6 +12,19 @@ export function isGuestId(id: string) {
   return id.startsWith("guest:");
 }
 
+/** Re-mint the token for an existing guest id (account recovery; the token is deterministic). */
+export function tokenForGuestId(id: string) {
+  const sig = createHmac("sha256", secret()).update(id).digest("base64url");
+  return `${id}.${sig}`;
+}
+
+export const GUEST_COOKIE = "perped_guest";
+export function guestCookie(token: string | null) {
+  return token
+    ? `${GUEST_COOKIE}=${token}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax; Secure`
+    : `${GUEST_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax; Secure`;
+}
+
 export function newGuestToken(): { id: string; token: string } {
   const id = `guest:${randomUUID()}`;
   const sig = createHmac("sha256", secret()).update(id).digest("base64url");

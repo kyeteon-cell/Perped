@@ -18,7 +18,14 @@ export function useSession() {
   const [guestToken, setGuestToken] = useState<string | null>(null);
   const [guestReady, setGuestReady] = useState(false);
   useEffect(() => { try { setGuestToken(localStorage.getItem("perped:guest")); } catch {} setGuestReady(true); }, []);
-  const isGuest = !privyAuthed && !!guestToken;
+  // A guest is signed in if the browser still has the token, or if the server recognises the guest cookie.
+  const { data: cookieMe } = useSWR<{ profile: User | null; guest?: boolean; address?: string | null }>(
+    guestReady && privyReady && !privyAuthed && !guestToken ? "/api/me?via=cookie" : null,
+    async () => (await fetch("/api/me")).json(),
+    { revalidateOnFocus: false, dedupingInterval: 60_000 },
+  );
+  const cookieGuest = !!cookieMe?.guest && !!cookieMe?.profile;
+  const isGuest = !privyAuthed && (!!guestToken || cookieGuest);
   const authenticated = privyAuthed || isGuest;
   const ready = privyReady && guestReady;
   const startGuest = useCallback(async () => {
@@ -27,12 +34,23 @@ export function useSession() {
     const r = await fetch("/api/guest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ref }) });
     const j = await r.json();
     if (!r.ok || !j.token) throw new Error(j.error ?? "Couldn't start demo");
-    try { localStorage.setItem("perped:guest", j.token); } catch {}
+    try { localStorage.setItem("perped:guest", j.token); localStorage.setItem("perped:guest-prev", j.token); if (j.profile?.handle) localStorage.setItem("perped:guest-prev-handle", j.profile.handle); } catch {}
     setGuestToken(j.token);
   }, []);
+  /** Restore a guest account from its key (pasted, or the one saved on this device before logging out). */
+  const restoreGuest = useCallback(async (token: string) => {
+    const r = await fetch("/api/guest", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) });
+    const j = await r.json();
+    if (!r.ok || !j.token) throw new Error(j.error ?? "Couldn't restore that account");
+    try { localStorage.setItem("perped:guest", j.token); localStorage.setItem("perped:guest-prev", j.token); if (j.profile?.handle) localStorage.setItem("perped:guest-prev-handle", j.profile.handle); } catch {}
+    setGuestToken(j.token);
+    return j.profile as User;
+  }, []);
   const logout = useCallback(async () => {
-    try { localStorage.removeItem("perped:guest"); } catch {}
+    // Guests: keep a copy of the key on this device so "Continue as …" can bring them straight back.
+    try { const t = localStorage.getItem("perped:guest"); if (t) localStorage.setItem("perped:guest-prev", t); localStorage.removeItem("perped:guest"); } catch {}
     setGuestToken(null);
+    await fetch("/api/guest", { method: "DELETE" }).catch(() => null);
     if (privyAuthed) await privyLogout();
   }, [privyAuthed, privyLogout]);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -99,7 +117,7 @@ export function useSession() {
   );
 
   const { data: me, mutate: refreshMe, isLoading: meLoading } = useSWR<{ profile: User | null; unread: number; fee?: FeeInfo; address?: string | null; guest?: boolean }>(
-    (privyAuthed && address) || isGuest ? ["/api/me", address ?? guestToken] : null,
+    (privyAuthed && address) || isGuest ? ["/api/me", address ?? guestToken ?? "cookie"] : null,
     async () => (await authedFetch("/api/me")).json(),
     { refreshInterval: 30_000 },
   );
@@ -117,6 +135,10 @@ export function useSession() {
     isGuest,
     /** Start a no-login demo account. */
     startGuest,
+    /** Restore a guest account from its key. */
+    restoreGuest,
+    /** The guest key for this device's account (for the person to save). */
+    guestToken,
     authedFetch,
     profile: me?.profile ?? null,
     profileLoading: meLoading,

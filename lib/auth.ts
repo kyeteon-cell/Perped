@@ -1,7 +1,7 @@
 import { PrivyClient } from "@privy-io/server-auth";
 import { eq } from "drizzle-orm";
 import { db, schema, ensureSchema } from "./db";
-import { guestAddress, verifyGuestToken } from "./guest";
+import { GUEST_COOKIE, guestAddress, verifyGuestToken } from "./guest";
 
 const privy = new PrivyClient(process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cmvuadbdq07k40fl8a3hq3c3z", process.env.PRIVY_APP_SECRET ?? "");
 
@@ -16,7 +16,12 @@ export async function getAuth(req: Request): Promise<AuthedUser | null> {
     return id ? { privyId: id, address: guestAddress(id), hasExternalWallet: false, guest: true } : null;
   }
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-  if (!token) return null;
+  if (!token) {
+    // No header: a guest's cookie keeps them signed in even if the browser dropped localStorage.
+    const m = new RegExp(`(?:^|;\\s*)${GUEST_COOKIE}=([^;]+)`).exec(req.headers.get("cookie") ?? "");
+    const id = m ? verifyGuestToken(decodeURIComponent(m[1])) : null;
+    return id ? { privyId: id, address: guestAddress(id), hasExternalWallet: false, guest: true } : null;
+  }
   try {
     const claims = await privy.verifyAuthToken(token);
     // The embedded wallet address is sent by the client as a header; we verify it belongs to the user.

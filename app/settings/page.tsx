@@ -16,7 +16,8 @@ import type { User } from "@/lib/schema";
 type Key = "showLiquidations" | "showSizes" | "allowCopy" | "allowFade" | "showBottomBoard" | "acceptDuels";
 
 export default function SettingsPage() {
-  const { profile, authedFetch, refreshMe, logout, address, fee, hasExternalWallet, linkWallet, linkError, isGuest, login } = useSession();
+  const { profile, authedFetch, refreshMe, logout, address, fee, hasExternalWallet, linkWallet, linkError, isGuest, login, guestToken } = useSession();
+  const [keyCopied, setKeyCopied] = useState(false);
   const [copied, setCopied] = useState(false);
   const { markets } = useMarkets();
   const topCap = markets.reduce((m, x) => Math.max(m, x.maxLeverage), 0) || 50;
@@ -51,6 +52,16 @@ export default function SettingsPage() {
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href={`/u/${profile.handle}`} className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Settings</div><span className="w-9" /></header>
 
       <ProfileEditor />
+      {isGuest && guestToken && (
+        <div className="px-5 pb-2 pt-3">
+          <div className="card p-4" style={{ border: "1.5px solid var(--gold)" }}>
+            <div className="font-bold">Your guest key</div>
+            <p className="muted mt-1 text-sm">This device stays signed in automatically. Save the key to get back into <b>{profile.handle}</b> from another phone or browser, or if you clear your data. Anyone with the key can use this demo account.</p>
+            <div className="mt-2 flex gap-2"><input className="field mono" style={{ padding: "8px 12px", fontSize: 11 }} readOnly value={guestToken} onFocus={(e) => e.currentTarget.select()} /><button className="chip on" onClick={async () => { try { await navigator.clipboard.writeText(guestToken); setKeyCopied(true); setTimeout(() => setKeyCopied(false), 1500); } catch {} }}>{keyCopied ? "Copied" : "Copy"}</button></div>
+            <p className="faint mt-2 text-[11px]">Want it tied to something you can&rsquo;t lose? Sign in with X, Google or email instead and your record carries over.</p>
+          </div>
+        </div>
+      )}
 
       <div className="eyebrow px-5 pb-1.5 pt-4">Appearance</div>
       <div className="srow"><span>Theme</span><Seg value={theme} options={[["light", "Day"], ["dark", "Night"], ["auto", "Auto"]]} onChange={(v) => { setTheme(v); setThemeState(v); }} /></div>
