@@ -103,7 +103,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
           <li>• Both close → higher <b>leverage-adjusted ROI</b> wins. Under 0.5% apart is a draw.</li>
           <li>• Get liquidated → you lose on the spot, whatever the other side does.</li>
           <li>• One side closes and the other sits for 24h → the open side is marked at the live price.</li>
-          <li>• Winner +120 XP (+60 for a 20%+ margin, +80 for beating a higher rank). Loser +25. Liquidated loser 0.</li>
+          <li>• Winner +60 XP (+30 for a 20%+ margin, +40 for beating a higher rank). Loser +10, draw +20, liquidated loser 0. From Knife Catcher up, losing costs XP (−15 per rank above Wick Hunter for a battle, −25 for a liquidation) and you can drop a rank.</li>
         </ul>
       </section>
 

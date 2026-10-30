@@ -148,7 +148,7 @@ export default function HowItWorks() {
         <ul className="hw-list">
           <li><b>A battle starts when someone fades a trade</b> (takes the other side of the same coin). It settles when both positions are closed: higher leverage-adjusted ROI wins; under 0.5% apart is a draw. A liquidation loses on the spot. If one side closes and the other sits open for 24 hours, the open side is marked at the live price.</li>
           <li><b>A duel</b> is a timed head-to-head you accept by link: whoever is ahead when the clock runs out wins.</li>
-          <li><b>XP never goes down.</b> Battle win +120 (+60 for a 20%+ margin, +80 for beating someone two ranks above you), loss +25, draw +50. Duel +150 / +30. One-hour call +15 / +5. Closed trade +10 / +3. Liquidations earn nothing.</li>
+          <li><b>XP is slow and it can go down.</b> Battle win +60 (+30 for a 20%+ margin, +40 for beating someone two ranks above you), loss +10, draw +20. Duel +75 / +10. One-hour call +6 / +2. Closed trade +4 / +1. Liquidations earn nothing. From Knife Catcher up, losing costs XP — battle −15, duel −10, liquidation −25, multiplied by how many ranks you are above Wick Hunter — so a Liquidator who gets liquidated loses 75 XP, and ranks can be lost.</li>
           <li><b>Ranks.</b> Your emblem shows next to your name everywhere. Demo and real accounts earn XP the same way; the leaderboard still separates them.
             <div className="ladder mt-3">{RANKS.map((r) => <div key={r.level} className="lad"><img src={`/api/share-bg/rank-${r.level}`} alt="" /><div className="text-[12px] font-bold">{r.title}</div><div className="mono when text-[11px]">{r.min.toLocaleString()} XP</div></div>)}</div>
           </li>

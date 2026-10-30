@@ -1,14 +1,14 @@
-/** Ranks (client-safe). XP is earned from battles, duels, calls and closed trades; it never goes down. */
+/** Ranks (client-safe). XP is earned from battles, duels, calls and closed trades. From Knife Catcher up, losses cost XP and ranks can be lost. */
 
 export const RANKS = [
   { level: 1, title: "Paper Hands", min: 0 },
-  { level: 2, title: "Degen", min: 200 },
-  { level: 3, title: "Wick Hunter", min: 600 },
-  { level: 4, title: "Knife Catcher", min: 1_400 },
-  { level: 5, title: "Whale Fader", min: 3_000 },
-  { level: 6, title: "Liquidator", min: 6_000 },
-  { level: 7, title: "Market Maker", min: 11_000 },
-  { level: 8, title: "Perpetrator", min: 20_000 },
+  { level: 2, title: "Degen", min: 250 },
+  { level: 3, title: "Wick Hunter", min: 800 },
+  { level: 4, title: "Knife Catcher", min: 2_000 },
+  { level: 5, title: "Whale Fader", min: 4_500 },
+  { level: 6, title: "Liquidator", min: 9_000 },
+  { level: 7, title: "Market Maker", min: 16_000 },
+  { level: 8, title: "Perpetrator", min: 30_000 },
 ] as const;
 
 export type Rank = (typeof RANKS)[number];
@@ -21,15 +21,26 @@ export function rankFor(xp: number) {
   return { ...r, xp, next, progress: next ? Math.min(1, (xp - r.min) / span) : 1, toNext: next ? next.min - xp : 0 };
 }
 
-/** XP per event. Battles pay the most, and a bigger margin of victory pays more. */
+/** XP per event. Battles pay the most; a bigger margin of victory pays more. Values are deliberately modest. */
 export const XP = {
-  battleWin: 120, battleWinBigMargin: 60, // + when you beat them by 20% ROI or more
-  battleLoss: 25, battleDraw: 50, battleLiquidatedLoss: 0,
-  upsetBonus: 80, // beating someone two or more ranks above you
-  duelWin: 150, duelLoss: 30,
-  callHit: 15, callMiss: 5,
-  tradeWin: 10, tradeLoss: 3, liquidation: 0,
+  battleWin: 60, battleWinBigMargin: 30, // + when you beat them by 20% ROI or more
+  battleLoss: 10, battleDraw: 20, battleLiquidatedLoss: 0,
+  upsetBonus: 40, // beating someone two or more ranks above you
+  duelWin: 75, duelLoss: 10,
+  callHit: 6, callMiss: 2,
+  tradeWin: 4, tradeLoss: 1, liquidation: 0,
 } as const;
+
+/**
+ * From Knife Catcher (level 4) up, losing costs XP, and the cost grows with rank. Ranks can be lost.
+ * Returns a negative number (or 0 below level 4).
+ */
+export function lossPenalty(level: number, kind: "battle" | "duel" | "liquidation") {
+  if (level < 4) return 0;
+  const steps = level - 3; // L4 → 1, L5 → 2, …
+  const base = kind === "liquidation" ? 25 : kind === "battle" ? 15 : 10;
+  return -base * steps;
+}
 
 export const XP_REASON_LABEL: Record<string, string> = {
   battle_win: "Won a battle", battle_loss: "Lost a battle", battle_draw: "Drew a battle",

@@ -2,7 +2,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { notify, systemPost } from "./feed";
 import { pnlForPosition } from "./format";
-import { rankFor, XP } from "./rank";
+import { lossPenalty, rankFor, XP } from "./rank";
 import { awardXp } from "./xp";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -81,7 +81,9 @@ export async function settleBattles(mids: Record<string, string | number>) {
         if (rankFor(them?.xp ?? 0).level - rankFor(me?.xp ?? 0).level >= 2) x += XP.upsetBonus;
         return x;
       }
-      return myRoi.liq ? XP.battleLiquidatedLoss : XP.battleLoss;
+      const lvl = rankFor(me?.xp ?? 0).level;
+      const pen = lossPenalty(lvl, myRoi.liq ? "liquidation" : "battle");
+      return pen < 0 ? pen : myRoi.liq ? XP.battleLiquidatedLoss : XP.battleLoss;
     };
     const xpF = xpFor(b.faderId), xpT = xpFor(b.targetId);
 
@@ -102,7 +104,7 @@ export async function settleBattles(mids: Record<string, string | number>) {
       const wh = winnerId === b.faderId ? fu?.handle : tu?.handle, lh = winnerId === b.faderId ? tu?.handle : fu?.handle;
       const wx = winnerId === b.faderId ? xpF : xpT, lx = winnerId === b.faderId ? xpT : xpF;
       await notify(winnerId, "battle", `You won the battle vs ${lh}`, `${b.coin} · ${line} · +${wx} XP${reason === "liquidation" ? " · they got liquidated" : ""}`, href);
-      await notify(loserId!, "battle", `You got perped by ${wh}`, `${b.coin} · ${line}${lx ? ` · +${lx} XP for showing up` : " · liquidated, no XP"}`, href);
+      await notify(loserId!, "battle", `You got perped by ${wh}`, `${b.coin} · ${line}${lx > 0 ? ` · +${lx} XP for showing up` : lx < 0 ? ` · ${lx} XP (losses cost at your rank)` : " · liquidated, no XP"}`, href);
       const lastClose = Math.max(...[f.closedAt, t.closedAt].filter(Boolean).map((d) => new Date(d as Date).getTime()), 0);
       const fresh = reason === "timeout" || Date.now() - lastClose < 6 * 60 * 60 * 1000;
       if (fresh) await systemPost("battle_settled", `${wh} perped ${lh} on ${b.coin}. ${line}.`, { battleId: b.id, faderPostId: b.faderPostId, winner: wh, loser: lh, coin: b.coin, winnerRoi: winnerId === b.faderId ? fr.roi : tr.roi, loserRoi: winnerId === b.faderId ? tr.roi : fr.roi, reason }, b.coin);

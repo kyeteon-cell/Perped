@@ -5,7 +5,7 @@ import { notify, systemPost } from "@/lib/feed";
 import { closeTradePost } from "@/lib/trades";
 import { backfillBattles, settleBattles } from "@/lib/battles";
 import { awardXp } from "@/lib/xp";
-import { XP } from "@/lib/rank";
+import { lossPenalty, rankFor, XP } from "@/lib/rank";
 import { demoLiqPx } from "@/lib/format";
 
 /**
@@ -98,8 +98,11 @@ export async function GET(req: Request) {
     await systemPost("duel_settled", `${w[0]?.handle} beat ${l[0]?.handle} on ${d.coin}. ${start} → ${p}.`, { duelId: d.id, winner: w[0]?.handle, loser: l[0]?.handle, coin: d.coin, start, end: p }, d.coin);
     for (const uid of [d.challengerId, d.opponentId]) {
       const won = uid === winnerId;
-      await awardXp(uid, won ? XP.duelWin : XP.duelLoss, won ? "duel_win" : "duel_loss", `duel:${d.id}`);
-      await notify(uid, "duel", won ? "You won the duel" : "You lost the duel", `${d.coin} · ${start} → ${p} · +${won ? XP.duelWin : XP.duelLoss} XP`, `/duels/${d.id}`);
+      const [ux] = await db.select({ xp: schema.users.xp }).from(schema.users).where(eq(schema.users.id, uid)).limit(1);
+      const pen = won ? 0 : lossPenalty(rankFor(ux?.xp ?? 0).level, "duel");
+      const delta = won ? XP.duelWin : pen < 0 ? pen : XP.duelLoss;
+      await awardXp(uid, delta, won ? "duel_win" : "duel_loss", `duel:${d.id}`);
+      await notify(uid, "duel", won ? "You won the duel" : "You lost the duel", `${d.coin} · ${start} → ${p} · ${delta >= 0 ? "+" : ""}${delta} XP`, `/duels/${d.id}`);
     }
     duelsSettled++;
   }

@@ -33,7 +33,7 @@ export function RankCard({ xp, won, lost, recent }: { xp: number; won: number; l
               <span className="flex items-center gap-2"><RankEmblem level={x.level} size={28} />{x.title}</span><span className="mono">{x.min.toLocaleString()} XP</span>
             </div>
           ))}
-          <p className="faint mt-2 text-[11px]">Battles: win +120 (+60 for a 20%+ margin, +80 for beating a higher rank), loss +25, draw +50. Duels +150 / +30. Calls +15 / +5. Closed trades +10 / +3. Liquidations earn nothing.</p>
+          <p className="faint mt-2 text-[11px]">Battles: win +60 (+30 for a 20%+ margin, +40 for an upset), loss +10, draw +20. Duels +75 / +10. One-hour calls +6 / +2. Closed trades +4 / +1. Liquidations earn nothing. From Knife Catcher up, losses cost XP (battle −15, duel −10, liquidation −25 per rank above Wick Hunter) and ranks can be lost.</p>
         </div>
       )}
       {recent.length > 0 && (
