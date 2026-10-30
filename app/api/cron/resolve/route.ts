@@ -3,7 +3,7 @@ import { db, schema, ensureSchema, unjam } from "@/lib/db";
 import { getMids } from "@/lib/hl-info";
 import { notify, systemPost } from "@/lib/feed";
 import { closeTradePost } from "@/lib/trades";
-import { backfillBattles, settleBattles } from "@/lib/battles";
+import { backfillBattles, backfillBattleStamps, settleBattles } from "@/lib/battles";
 import { awardXp } from "@/lib/xp";
 import { lossPenalty, rankFor, XP } from "@/lib/rank";
 import { demoLiqPx } from "@/lib/format";
@@ -113,6 +113,7 @@ export async function GET(req: Request) {
   // Battles (fades): make sure every fade has one, then settle the decided ones.
   await backfillBattles().catch(() => 0);
   const battles = await settleBattles(mids).catch(() => 0);
+  await backfillBattleStamps().catch(() => 0);
 
   return Response.json({ hit, missed, polls, duelsSettled, demoClosed, battles, at: now.toISOString() });
 }

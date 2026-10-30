@@ -117,3 +117,19 @@ export async function settleBattles(mids: Record<string, string | number>) {
   }
   return settled;
 }
+
+/** Stamp already-settled battles onto their posts (one-off backfill; cheap and idempotent). */
+export async function backfillBattleStamps(limit = 100) {
+  const rows = await db.select().from(schema.battles).where(and(eq(schema.battles.status, "settled"), sql`not exists (select 1 from posts p where p.id = ${schema.battles.faderPostId} and p.meta ? 'battle')`)).limit(limit);
+  for (const b of rows) {
+    const [[fu], [tu]] = await Promise.all([
+      db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, b.faderId)).limit(1),
+      db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, b.targetId)).limit(1),
+    ]);
+    const fr = Number(b.faderRoi ?? 0), tr = Number(b.targetRoi ?? 0);
+    const stamp = (my: number, their: number, vs: string | undefined, won: boolean | null) => JSON.stringify({ battle: { battleId: b.id, faderPostId: b.faderPostId, vs, won, myRoi: my, theirRoi: their, reason: b.reason } });
+    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${stamp(fr, tr, tu?.handle, b.winnerId ? b.winnerId === b.faderId : null)}::jsonb` }).where(eq(schema.posts.id, b.faderPostId));
+    await db.update(schema.posts).set({ meta: sql`coalesce(${schema.posts.meta}, '{}'::jsonb) || ${stamp(tr, fr, fu?.handle, b.winnerId ? b.winnerId === b.targetId : null)}::jsonb` }).where(eq(schema.posts.id, b.targetPostId));
+  }
+  return rows.length;
+}
