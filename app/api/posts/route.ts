@@ -17,6 +17,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const q = Object.fromEntries(url.searchParams);
   const limit = Math.min(50, Number(q.limit ?? 30));
+  // Cursor is the createdAt (ms) of the last row seen, so paging follows the chronological order.
   const cursor = Number(q.cursor ?? 0);
   const auth = await getAuth(req).catch(() => null);
 
@@ -25,7 +26,7 @@ export async function GET(req: Request) {
     q.coin ? eq(schema.posts.coin, q.coin.toUpperCase()) : undefined,
     q.kind ? eq(schema.posts.kind, q.kind as "trade") : undefined,
     q.status === "open" || q.status === "closed" ? eq(schema.posts.status, q.status) : undefined,
-    cursor ? sql`${schema.posts.id} < ${cursor}` : undefined,
+    cursor ? sql`${schema.posts.createdAt} < ${new Date(cursor).toISOString()}::timestamptz` : undefined,
   ];
   if (q.tab === "live") conds.push(and(eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open")));
   // For you: closed trades live in the "Banked" banner, not the feed.
@@ -36,8 +37,8 @@ export async function GET(req: Request) {
     const ids = [...f.map((x) => x.id), auth.privyId];
     conds.push(inArray(schema.posts.userId, ids));
   }
-  const posts = await queryFeed({ where: and(...conds.filter(Boolean)), limit, viewerId: auth?.privyId });
-  return Response.json({ posts, nextCursor: posts.length === limit ? posts[posts.length - 1].post.id : null });
+  const posts = await queryFeed({ where: and(...conds.filter(Boolean)), limit, viewerId: auth?.privyId, pinnedFirst: !!q.handle });
+  return Response.json({ posts, nextCursor: posts.length === limit ? new Date(posts[posts.length - 1].post.createdAt).getTime() : null });
 }
 
 const Trade = z.object({

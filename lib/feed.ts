@@ -26,13 +26,14 @@ export type FeedRow = {
   myPollVote?: number | null;
 };
 
-export async function queryFeed(opts: { where?: SQL | undefined; limit: number; viewerId?: string | null }) {
+/** Feed is strictly chronological (newest first). Pinned-first only where a profile asks for it. */
+export async function queryFeed(opts: { where?: SQL | undefined; limit: number; viewerId?: string | null; pinnedFirst?: boolean }) {
   const rows = (await db
     .select(feedSelect)
     .from(schema.posts)
     .leftJoin(schema.users, eq(schema.users.id, schema.posts.userId))
     .where(opts.where)
-    .orderBy(desc(schema.posts.pinned), desc(schema.posts.id))
+    .orderBy(...(opts.pinnedFirst ? [desc(schema.posts.pinned)] : []), desc(schema.posts.createdAt), desc(schema.posts.id))
     .limit(opts.limit)) as unknown as FeedRow[];
 
   if (opts.viewerId && rows.length) {
