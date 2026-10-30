@@ -39,7 +39,7 @@ export default function LeaderboardPage() {
             const place = i === 1 ? 1 : i === 0 ? 2 : 3;
             return (
               <Link key={r.handle} href={`/u/${r.handle}`} className="card relative p-3.5 text-center" style={{ background: place === 1 ? "var(--gold-soft)" : undefined, paddingTop: place === 1 ? 18 : 14 }}>
-                <img src={`/api/share-bg/medal-${place}`} alt="" className="medal" style={{ width: place === 1 ? 44 : 36, height: place === 1 ? 44 : 36 }} />
+                <img src={`/api/share-bg/medal-${place}`} alt="" className="medal" />
                 <div className="flex justify-center"><Avatar handle={r.handle} url={r.avatarUrl} size={place === 1 ? 60 : 48} link={false} /></div>
                 <div className="mt-2 text-[13px] font-bold">{r.handle}</div>
                 {mode === "ranks" ? (

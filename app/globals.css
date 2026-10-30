@@ -449,7 +449,7 @@ html { scroll-behavior: smooth; }
 .rank-big.lv7, .rank-big.lv8 { box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 2px var(--gold), 0 0 18px rgba(242,182,58,.35); }
 .rank-big.lv6 { box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 2px var(--red); }
 .rank-big.lv5 { box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 2px var(--green); }
-.medal { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); border-radius: 50%; object-fit: cover; filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
+.medal { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 28px; height: 28px; border-radius: 50%; object-fit: cover; filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
 .lb-hero { margin: 8px 20px 0; padding: 22px 18px 16px; border-radius: 20px; background-size: cover; background-position: center 70%; background-color: #0b0b0f; position: relative; overflow: hidden; }
 .lb-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.15)); }
 .lb-hero > * { position: relative; }
@@ -523,3 +523,7 @@ html { scroll-behavior: smooth; }
 .qp { position: relative; margin: 0 20px 12px; padding: 12px 14px; border-radius: var(--r); background: var(--surface); }
 .qp-ta { width: 100%; resize: none; border: 0; background: transparent; padding: 7px 0; font: inherit; font-size: 15px; line-height: 1.45; color: var(--text); outline: none; }
 .qp-ta::placeholder { color: var(--faint); }
+
+/* Leaderboard mode pills: always one row */
+.modes { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.modes button { white-space: nowrap; padding-left: 8px; padding-right: 8px; }
