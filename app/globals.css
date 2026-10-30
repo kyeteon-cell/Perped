@@ -85,8 +85,14 @@ body { font-family: var(--font-sans), ui-rounded, ui-sans-serif, system-ui, sans
 .range { width: 100%; accent-color: var(--ink); }
 
 /* Coin monograms */
-.cm { width: 36px; height: 36px; border-radius: 50%; display: inline-grid; place-items: center; font-weight: 800; font-size: 12px; color: #fff; flex: none; letter-spacing: -.02em; background: var(--muted); overflow: hidden; position: relative; }
+.cm { width: 36px; height: 36px; border-radius: 50%; display: inline-grid; place-items: center; font-weight: 800; font-size: 12px; color: #fff; flex: none; letter-spacing: -.02em; background: var(--muted); overflow: hidden; position: relative;
+  /* lift the logo off the card: ring, soft shadow, inner highlight */
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--line), 0 4px 10px -4px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.35); }
 .cm img { width: 100%; height: 100%; object-fit: cover; display: block; background: #fff; }
+.cm::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(160deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 45%, rgba(0,0,0,.12) 100%); pointer-events: none; }
+.cm.xs { box-shadow: 0 0 0 1px var(--line), 0 1px 3px rgba(0,0,0,.3); } .cm.xs::after { display: none; }
+.cm.sm { box-shadow: 0 0 0 1.5px var(--bg), 0 0 0 2.5px var(--line), 0 2px 6px -2px rgba(0,0,0,.4); }
+.cm.lg { box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--line), 0 8px 20px -8px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.35); }
 .cm b { font-weight: 800; }
 .cm.sm { width: 22px; height: 22px; font-size: 9px; } .cm.xs { width: 16px; height: 16px; font-size: 7px; } .cm.lg { width: 56px; height: 56px; font-size: 18px; }
 .cm[data-c="BTC"] { background: #f7931a; } .cm[data-c="ETH"] { background: #627eea; } .cm[data-c="SOL"] { background: linear-gradient(135deg,#9945ff,#14f195); }
