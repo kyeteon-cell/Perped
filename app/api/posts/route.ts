@@ -10,6 +10,8 @@ import { getMids, getPerpAssets } from "@/lib/hl-info";
  * GET /api/posts?tab=foryou|following|live&kind=&coin=&handle=&status=&cursor=&limit=
  * Feed, newest first (pinned first on a profile), with author, votes, copies, fades, poll counts.
  */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   await ensureSchema();
   const url = new URL(req.url);

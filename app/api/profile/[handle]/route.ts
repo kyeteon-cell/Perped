@@ -4,6 +4,8 @@ import { getAuth } from "@/lib/auth";
 import { getClearinghouseState } from "@/lib/hl-info";
 
 /** GET /api/profile/:handle → profile, stats, follow counts, whether the viewer follows, live positions + account value. */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request, ctx: { params: Promise<{ handle: string }> }) {
   await ensureSchema();
   const { handle } = await ctx.params;

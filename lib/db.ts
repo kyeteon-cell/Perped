@@ -33,5 +33,19 @@ export function ensureSchema(): Promise<void> {
   return globalForDb.__perpedMigrated;
 }
 
-export const db = drizzle(getSql(), { schema });
+// Lazy: nothing touches DATABASE_URL until the first real query, so `next build` (which imports every
+// route to collect page data) never needs a database connection.
+type Db = ReturnType<typeof drizzle<typeof schema>>;
+let _db: Db | undefined;
+function getDb(): Db {
+  if (!_db) _db = drizzle(getSql(), { schema });
+  return _db;
+}
+export const db: Db = new Proxy({} as Db, {
+  get(_t, prop) {
+    const real = getDb() as unknown as Record<PropertyKey, unknown>;
+    const v = real[prop];
+    return typeof v === "function" ? (v as (...a: unknown[]) => unknown).bind(real) : v;
+  },
+});
 export { schema };

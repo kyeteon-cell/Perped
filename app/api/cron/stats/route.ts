@@ -6,6 +6,8 @@ import { getUserFillsByTime, summariseFills } from "@/lib/hl-info";
  * GET /api/cron/stats → every 15 min: refresh verified trade stats from Hyperliquid fills, plus
  * call stats, judgement, copied/faded counts and verification status from our tables.
  */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   await ensureSchema();
   const secret = process.env.CRON_SECRET;

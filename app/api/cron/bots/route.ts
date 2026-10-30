@@ -5,6 +5,8 @@ import { getMarkets, getCandles } from "@/lib/hl-info";
 import { systemPost } from "@/lib/feed";
 
 /** GET /api/cron/bots → one tick of demo-trader activity. Every 15 min via Vercel cron. Set BOTS_PAUSED=1 to stop. */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   await ensureSchema();
   const secret = process.env.CRON_SECRET;

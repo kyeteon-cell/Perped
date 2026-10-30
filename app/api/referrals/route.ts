@@ -8,6 +8,8 @@ import { getFeeInfo, getReferralSummary } from "@/lib/referrals";
 /**
  * GET /api/referrals → the logged-in user's code, link, fee tier, earnings summary, referee list and payouts.
  */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   const auth = await getAuth(req);
   if (!auth) return unauthorized();

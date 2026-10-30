@@ -5,6 +5,8 @@ import { MIGRATION_SQL } from "@/lib/migrate.sql";
  * GET /api/setup?key=<CRON_SECRET> → creates every table and index if missing. Safe to run repeatedly.
  * Replaces `npm run db:push` for phone-only operation.
  */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   const key = new URL(req.url).searchParams.get("key");
   if (!process.env.CRON_SECRET || key !== process.env.CRON_SECRET) return Response.json({ error: "unauthorized" }, { status: 401 });

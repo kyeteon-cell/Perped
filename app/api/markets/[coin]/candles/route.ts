@@ -13,6 +13,8 @@ const INTERVAL_MS: Record<string, number> = { "1m": 60_000, "5m": 300_000, "15m"
  * GET /api/markets/:coin/candles?interval=1m|5m|15m|1h|4h|1d[&limit=500]   (preferred, mainnet data)
  * GET /api/markets/:coin/candles?range=1h|4h|1d|1w|1m                      (legacy)
  */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request, ctx: { params: Promise<{ coin: string }> }) {
   const { coin } = await ctx.params;
   const q = new URL(req.url).searchParams;

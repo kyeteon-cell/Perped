@@ -5,6 +5,8 @@ import { db, schema, ensureSchema } from "@/lib/db";
  * GET /api/leaderboard?mode=trades|calls&period=7d|30d|all
  * trades: top 50 by realised PnL + bottom 5 of those who opted in. calls: hit rate, min 5 resolved.
  */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   await ensureSchema();
   const url = new URL(req.url);

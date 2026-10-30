@@ -8,6 +8,8 @@ import { notify, systemPost } from "@/lib/feed";
  * and detect market stories (5%+ moves in an hour among coins with live Perped positions).
  * Protected by CRON_SECRET like the stats cron.
  */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   await ensureSchema();
   const secret = process.env.CRON_SECRET;

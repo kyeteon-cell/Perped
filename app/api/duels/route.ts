@@ -27,6 +27,8 @@ export async function POST(req: Request) {
 }
 
 /** GET /api/duels?mine=1 → live and pending duels, newest first. */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   const auth = await getAuth(req).catch(() => null);
   const mine = new URL(req.url).searchParams.get("mine");

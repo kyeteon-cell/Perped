@@ -12,6 +12,8 @@ function authed(req: Request) {
  * GET /api/admin/referrals?key=CRON_SECRET → every referrer with what they've earned, been paid and are owed,
  * plus the wallet to send USDC to. Your weekly payout list.
  */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   if (!authed(req)) return Response.json({ error: "unauthorized" }, { status: 401 });
   const rows = await db

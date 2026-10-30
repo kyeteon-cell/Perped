@@ -6,6 +6,8 @@ import { normaliseReferralCode, resolveFeeTier, type FeeInfo } from "@/lib/fees"
 import { getFeeInfo } from "@/lib/referrals";
 
 /** GET /api/me → profile (null until a handle is chosen), wallet address, unread count, fee tier. */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   const auth = await getAuth(req);
   if (!auth) return unauthorized();

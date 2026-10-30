@@ -4,6 +4,8 @@ import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { notify } from "@/lib/feed";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   await ensureSchema();
   const { id } = await ctx.params;

@@ -28,6 +28,8 @@ export async function POST(req: Request) {
 }
 
 /** GET /api/follows?handle=&dir=followers|following → list with light stats. */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const handle = (url.searchParams.get("handle") ?? "").toLowerCase();

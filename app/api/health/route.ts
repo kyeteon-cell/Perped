@@ -36,6 +36,8 @@ async function privyCheck(origin: string) {
 }
 
 /** GET /api/health → runs the idempotent schema migration and reports what's in the database. No key needed; reveals nothing sensitive. */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   await ensureSchema();
   const origin = new URL(req.url).origin;

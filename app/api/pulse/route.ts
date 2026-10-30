@@ -15,6 +15,8 @@ export type Pulse = { duels: PulseDuel[]; open: PulseTrader[]; fades: PulseFade[
  * position (the client ranks them by live P&L), recent fades still open on both sides, and hot streaks.
  * Prices come from the client's WebSocket so this stays cheap and cacheable.
  */
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   await ensureSchema();
   const trader = (p: typeof schema.posts.$inferSelect, u: { handle: string; avatarUrl: string | null; isDemo: boolean }): PulseTrader => ({

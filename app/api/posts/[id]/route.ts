@@ -4,6 +4,8 @@ import { getAuth } from "@/lib/auth";
 import { queryFeed } from "@/lib/feed";
 
 /** GET /api/posts/:id → one post in feed shape (with the viewer's vote state). */
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   await ensureSchema();
   const { id } = await ctx.params;
