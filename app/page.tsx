@@ -7,6 +7,7 @@ import { FeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
 import { Pulse } from "@/components/Pulse";
 import { QuickCall } from "@/components/QuickCall";
+import { FeedFilters, EMPTY_FILTER, activeCount, filterQuery, filterSummary, type FeedFilter } from "@/components/FeedFilters";
 import { Banked } from "@/components/Banked";
 import { DepositSheet } from "@/components/DepositSheet";
 import { Avatar, Icon, I, SkeletonList } from "@/components/ui";
@@ -24,11 +25,15 @@ export default function HomePage() {
   const [realness, setRealness] = useState<"all" | "real" | "demo">(() => { try { return (localStorage.getItem("perped:realness") as "all" | "real" | "demo") || "all"; } catch { return "all"; } });
   const setRealnessP = (v: "all" | "real" | "demo") => { setRealness(v); try { localStorage.setItem("perped:realness", v); } catch {} };
   const [deposit, setDeposit] = useState(false);
+  const [filter, setFilter] = useState<FeedFilter>(() => { try { return { ...EMPTY_FILTER, ...JSON.parse(localStorage.getItem("perped:filter") || "{}") }; } catch { return EMPTY_FILTER; } });
+  const [filtering, setFiltering] = useState(false);
+  useEffect(() => { try { localStorage.setItem("perped:filter", JSON.stringify(filter)); } catch {} }, [filter]);
+  const nFilters = activeCount(filter);
   // Referral links land here (/?ref=handle). Remember the code until onboarding uses it.
   useEffect(() => {
     try { const ref = new URLSearchParams(window.location.search).get("ref"); if (ref) localStorage.setItem("perped:ref", ref.toLowerCase()); } catch {}
   }, []);
-  const key = `/api/posts?tab=${tab}`;
+  const key = `/api/posts?tab=${tab}${filterQuery(filter)}`;
   const { data, mutate, isLoading } = useSWR<{ posts: FeedRow[] }>(key, async () => (await authedFetch(key)).json(), { refreshInterval: 15_000 });
   const allPosts = data?.posts ?? [];
   const posts = realness === "all" ? allPosts : allPosts.filter((p) => p.post.kind !== "trade" || (realness === "demo") === isDemoPost(p));
@@ -65,13 +70,16 @@ export default function HomePage() {
 
       <div className="realness">
         {(["all", "real", "demo"] as const).map((v) => <button key={v} className={`chip ${realness === v ? (v === "demo" ? "on demo-on" : v === "real" ? "on real-on" : "on") : ""}`} onClick={() => setRealnessP(v)}>{v === "all" ? "All trades" : v === "real" ? "Real money" : "Demo"}</button>)}
-        <span className="when ml-auto">{realness === "all" ? "" : realness === "real" ? "showing live trades only" : "showing practice trades only"}</span>
+        <button className={`chip ml-auto ${nFilters ? "on" : ""}`} onClick={() => setFiltering(true)}><Icon d={I.list} size={14} />Filter{nFilters ? ` · ${nFilters}` : ""}</button>
       </div>
+      {nFilters > 0 && <div className="flex items-center gap-2 px-5 pb-1"><span className="when truncate">{filterSummary(filter)}</span><button className="when ml-auto underline" onClick={() => setFilter(EMPTY_FILTER)}>clear</button></div>}
+      {filtering && <FeedFilters value={filter} onChange={setFilter} onClose={() => setFiltering(false)} />}
 
       {isLoading && posts.length === 0 && <SkeletonList n={3} />}
       {!isLoading && posts.length === 0 && (
         <div className="block text-center" style={{ padding: "36px 24px" }}>
-          <h3 className="text-xl font-bold tracking-tight">{tab === "following" ? "Nobody you follow has posted yet" : "Your feed is quiet"}</h3>
+          <h3 className="text-xl font-bold tracking-tight">{nFilters ? "Nothing matches those filters" : tab === "following" ? "Nobody you follow has posted yet" : "Your feed is quiet"}</h3>
+          {nFilters > 0 && <button className="chip mt-3" onClick={() => setFilter(EMPTY_FILTER)}>Clear filters</button>}
           <p className="muted mx-auto mt-1.5 max-w-[28ch]">{tab === "following" ? "Follow a few traders and their trades show up here live." : "Open the first position and it shows up here for everyone to copy, fade, cheer or roast."}</p>
           <Link href="/markets" className="copy mt-4 inline-block">Place the first trade</Link>
         </div>

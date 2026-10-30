@@ -30,6 +30,8 @@ function diversify<T extends { post: { kind: string; systemType?: string | null 
 
 /**
  * GET /api/posts?tab=foryou|following|live&kind=&coin=&handle=&status=&cursor=&limit=
+ * Feed filters (Home filter sheet): coins=BTC,ETH · side=long|short · minMargin/maxMargin (USD) · minLev/maxLev ·
+ * kinds=trade,call,poll,text,system · money=real|demo · verified=1 · nobots=1 · hot=1 (3+ copies or fades)
  * Feed, newest first (pinned first on a profile), with author, votes, copies, fades, poll counts.
  */
 export const dynamic = "force-dynamic";
@@ -50,6 +52,24 @@ export async function GET(req: Request) {
     q.status === "open" || q.status === "closed" ? eq(schema.posts.status, q.status) : undefined,
     cursor ? sql`${schema.posts.createdAt} < ${new Date(cursor).toISOString()}::timestamptz` : undefined,
   ];
+  // Home filters. Trade-only filters (side, margin, leverage) let non-trade posts through only when the
+  // person hasn't restricted kinds to trades, so a coin filter still shows that coin's calls and polls.
+  const coins = (q.coins ?? "").split(",").map((c) => c.trim().toUpperCase()).filter(Boolean);
+  if (coins.length) conds.push(inArray(schema.posts.coin, coins));
+  const kinds = (q.kinds ?? "").split(",").map((k) => k.trim()).filter((k) => ["trade", "call", "poll", "text", "system"].includes(k)) as ("trade" | "call" | "poll" | "text" | "system")[];
+  if (kinds.length) conds.push(inArray(schema.posts.kind, kinds));
+  const tradeOnly = (c: ReturnType<typeof sql>) => sql`(${schema.posts.kind} <> 'trade' or ${c})`;
+  if (q.side === "long" || q.side === "short") conds.push(tradeOnly(sql`${schema.posts.side} = ${q.side}`));
+  const margin = sql`(${schema.posts.notionalUsd}::numeric / greatest(1, coalesce(${schema.posts.leverage}, 1)))`;
+  if (Number(q.minMargin) > 0) conds.push(tradeOnly(sql`${margin} >= ${Number(q.minMargin)}`));
+  if (Number(q.maxMargin) > 0) conds.push(tradeOnly(sql`${margin} <= ${Number(q.maxMargin)}`));
+  if (Number(q.minLev) > 0) conds.push(tradeOnly(sql`coalesce(${schema.posts.leverage}, 1) >= ${Number(q.minLev)}`));
+  if (Number(q.maxLev) > 0) conds.push(tradeOnly(sql`coalesce(${schema.posts.leverage}, 1) <= ${Number(q.maxLev)}`));
+  if (q.money === "real") conds.push(sql`(${schema.posts.kind} <> 'trade' or (${schema.posts.paper} = false and ${schema.users.isDemo} = false))`);
+  if (q.money === "demo") conds.push(sql`(${schema.posts.kind} <> 'trade' or ${schema.posts.paper} = true or ${schema.users.isDemo} = true)`);
+  if (q.verified === "1") conds.push(sql`(${schema.posts.kind} = 'system' or ${schema.users.verified} = true)`);
+  if (q.nobots === "1") conds.push(sql`(${schema.posts.kind} = 'system' or coalesce(${schema.users.isBot}, false) = false)`);
+  if (q.hot === "1") conds.push(sql`(${schema.posts.kind} <> 'trade' or (select count(*) from posts x where x.copied_from_id = ${schema.posts.id} or x.faded_from_id = ${schema.posts.id}) >= 3)`);
   if (q.tab === "live") conds.push(and(eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open")));
   // For you: closed trades live in the "Banked" banner, not the feed.
   if (q.tab === "foryou" || (!q.tab && !q.handle && !q.coin && !q.status)) conds.push(sql`not (${schema.posts.kind} = 'trade' and ${schema.posts.status} = 'closed')`);

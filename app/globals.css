@@ -495,3 +495,7 @@ html { scroll-behavior: smooth; }
 /* Closed-trade rows: the detail line truncates instead of spilling over the P&L. */
 .post.row .when { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .post.row > .text-right { flex: none; }
+
+/* ---------- Feed filter sheet ---------- */
+.ff-row { margin-top: 14px; }
+.ff-row .field { width: 100%; margin-bottom: 8px; }
