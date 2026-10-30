@@ -1,23 +1,42 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 
-/** GET /api/leaderboard?period=7d|30d|all → top traders by realised PnL (from chain fills). */
+/**
+ * GET /api/leaderboard?mode=trades|calls&period=7d|30d|all
+ * trades: top 50 by realised PnL + bottom 5 of those who opted in. calls: hit rate, min 5 resolved.
+ */
 export async function GET(req: Request) {
-  const period = new URL(req.url).searchParams.get("period") ?? "7d";
+  const url = new URL(req.url);
+  const mode = url.searchParams.get("mode") === "calls" ? "calls" : "trades";
+  const period = url.searchParams.get("period") ?? "7d";
+  const base = {
+    handle: schema.users.handle,
+    avatarUrl: schema.users.avatarUrl,
+    winRate: schema.stats.winRate,
+    closedTrades: schema.stats.closedTrades,
+    volume30d: schema.stats.volume30d,
+    liquidations: schema.stats.liquidations,
+    fadedCount: schema.stats.fadedCount,
+    callsResolved: schema.stats.callsResolved,
+    callsHit: schema.stats.callsHit,
+    callAvgMove: schema.stats.callAvgMove,
+    callStreak: schema.stats.callStreak,
+  };
+  if (mode === "calls") {
+    const rows = await db
+      .select({ ...base, hitRate: sql<number>`case when ${schema.stats.callsResolved} > 0 then ${schema.stats.callsHit}::numeric / ${schema.stats.callsResolved} * 100 else 0 end`.mapWith(Number) })
+      .from(schema.stats)
+      .innerJoin(schema.users, eq(schema.users.id, schema.stats.userId))
+      .where(gte(schema.stats.callsResolved, 5))
+      .orderBy(desc(sql`${schema.stats.callsHit}::numeric / ${schema.stats.callsResolved}`), desc(schema.stats.callsResolved))
+      .limit(50);
+    return Response.json({ mode, rows });
+  }
   const col = period === "30d" ? schema.stats.realizedPnl30d : period === "all" ? schema.stats.realizedPnlAll : schema.stats.realizedPnl7d;
-  const rows = await db
-    .select({
-      handle: schema.users.handle,
-      avatarUrl: schema.users.avatarUrl,
-      pnl: sql<number>`${col}`.mapWith(Number),
-      winRate: schema.stats.winRate,
-      closedTrades: schema.stats.closedTrades,
-      volume30d: schema.stats.volume30d,
-      updatedAt: schema.stats.updatedAt,
-    })
-    .from(schema.stats)
-    .innerJoin(schema.users, eq(schema.users.id, schema.stats.userId))
-    .orderBy(desc(col))
-    .limit(50);
-  return Response.json({ period, rows });
+  const sel = { ...base, pnl: sql<number>`${col}`.mapWith(Number) };
+  const [top, bottom] = await Promise.all([
+    db.select(sel).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).orderBy(desc(col)).limit(50),
+    db.select(sel).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(eq(schema.users.showBottomBoard, true)).orderBy(asc(col)).limit(5),
+  ]);
+  return Response.json({ mode, period, rows: top, bottom: bottom.filter((b) => b.pnl < 0) });
 }

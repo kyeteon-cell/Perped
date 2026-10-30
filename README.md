@@ -1,102 +1,75 @@
 # Perped — get perped
 
-Social perps on Hyperliquid. Every trade is a post. Copy the best, roast the rest.
+Social perps on Hyperliquid. Every trade is a post. Copy the best, fade the rest.
 
 Mobile-first web app (installable PWA). Trades execute directly on Hyperliquid from the user's own embedded wallet with Perped's **builder code** attached, so the app earns a fee on every fill. Perped never holds funds.
 
-## What's in the box (MVP)
+## What's in v0.3
 
-| Area | Status |
-|---|---|
-| Login + silent embedded wallet (Privy: email / Google / X / wallet) | ✅ |
-| Markets page: every perp with price, 24h change, volume, open interest, funding, sparkline | ✅ |
-| Market page with price chart (1h/1d/1w) and live Perped long/short sentiment | ✅ |
-| Market and limit orders (long/short, leverage, guardrails) | ✅ |
-| Take-profit / stop-loss placed with the entry (Hyperliquid normalTpsl group) | ✅ |
-| Builder-code fee attached to every order, one-time user approval flow | ✅ |
-| Live feed: every trade is a post with running P&L from the Hyperliquid WebSocket | ✅ |
-| Copy trade (one tap, pre-filled ticket, attribution tracked) | ✅ |
-| Comments + reactions | ✅ |
-| Profiles with verified on-chain stats and open positions, close from profile | ✅ |
-| Leaderboard (7d / 30d / all) from real Hyperliquid fills, refreshed by cron | ✅ |
-| Live rooms / audio / video streaming | ⏸ phase 2 |
-| Tipping, public bets, follower alerts | ⏸ phase 2 |
+**Shell** — live price ticker on every page (Hyperliquid WebSocket), bottom nav, Day / Night / Auto theme with a different brand colour per theme (coral by day, mint-teal by night), per-page colour tints, semantic button colours.
+
+**Home** — For you / Following / Live tabs, hero card (balance, 7-day PnL, open count, streak, Trade / Deposit / Post), feed of every post type with live P&L that flashes on ticks, tap P&L to cycle % / $ / ROI, like and dislike, Copy and Fade on every live trade, copied-vs-faded camps (hidden below 3 participants), "Traders like you" suggestions.
+
+**Post types** — trade, text, call (coin, up/down, target, invalidation, deadline, optional "backed" trade), poll (verified users; optional price settlement), system (liquidation, milestone, settled, duel settled).
+
+**Markets** — totals, 24h movers, sort by volume / gainers / losers / OI / funding / hot on Perped, rows with sparkline, funding and Perped long/short split. Market page with chart (1h/1d/1w), stats, sentiment and the ticket.
+
+**Ticket** — market or limit, margin presets, leverage slider with caps, TP/SL placed with the entry as a Hyperliquid `normalTpsl` group, builder-fee approval inline, copy mode, fade mode (auto 5% stop, 2× cap for accounts under 10 trades, public warning).
+
+**Leaders** — Trades (podium + list, 7d/30d/all) and Calls (hit rate, min 5 resolved, streak). "Exit liquidity" bottom five, **opt-in only**.
+
+**Profile** — cover, avatar, verified tick, followers/following (tappable), bio, Write a post / Edit profile or Follow / Challenge, account balance with Deposit / Withdraw, stat tiles (7d, all time, volume, copied vs faded, rivalries, trades win %, calls hit % + Judgement + streak), pinned trades (closed only), tabs: Posts · Trades (Open with Close 50% / Close all / Add · Closed with Pin) · Followers · Following.
+
+**Also** — full-screen composer (Post / Call / Poll), thread view with nested replies and Copied/Faded tags, Receipts (share card, Win / Honest / Clean / Roast, Share to X, Save image), notifications, settings (theme, P&L display, privacy toggles incl. fading/bottom-board/duels, default leverage, linked X, log out), five-step onboarding, deposit sheet (card via on-ramp URL, or USDC on Arbitrum with address), duels API (no spectator stakes).
+
+**Back end** — Postgres via Drizzle; crons: `/api/cron/stats` (15 min, fills → stats, verification) and `/api/cron/resolve` (5 min, calls hit/missed, polls close/settle, duels settle, "told you so" comments).
+
+Deferred: live rooms / audio / video, in-app withdrawals (currently opens Hyperliquid portfolio), native wrapper.
 
 ## Stack
 
-Next.js 15 (App Router) · TypeScript · Tailwind 4 · Privy (`@privy-io/react-auth`, `@privy-io/server-auth`) · `@nktkas/hyperliquid` + viem for signing · Drizzle ORM + Postgres · SWR · Vercel (hosting + cron).
+Next.js 15 · TypeScript · Tailwind 4 · Privy (`@privy-io/react-auth`, `@privy-io/server-auth`) · `@nktkas/hyperliquid` + viem · Drizzle ORM + Postgres · SWR · Vercel (hosting + cron).
 
-## Setup (≈20 minutes)
+## Setup
 
-### 1. Accounts you need (all free tiers)
+### Accounts (all free tiers)
+1. **Privy** — https://dashboard.privy.io → New app → App ID + App secret. Enable Email, Google, Twitter, Wallet; embedded wallets → create on login for all users. Add `http://localhost:3000` and your domain to Allowed origins.
+2. **Postgres** — Neon (https://neon.tech) or Supabase. Copy the connection string.
+3. **Builder wallet** — any EVM wallet you control, funded with ≥ 100 USDC in its Hyperliquid perps account on the network you run (testnet faucet: https://app.hyperliquid-testnet.xyz/drip). This address earns the builder fees.
+4. **On-ramp (optional)** — MoonPay or Transak account; put the hosted widget URL in `NEXT_PUBLIC_ONRAMP_URL`. Without it the card button shows "coming soon" and the USDC-transfer route still works.
+5. **Vercel** — hosting and the two crons in `vercel.json`. Set `CRON_SECRET`.
 
-1. **Privy** — https://dashboard.privy.io → New app → copy **App ID** and **App secret**. In the app settings enable login methods Email, Google, Twitter, Wallet, and turn on *Embedded wallets → create on login for all users*. Add `http://localhost:3000` and your production domain to *Allowed origins*.
-2. **Postgres** — Neon (https://neon.tech) or Supabase. Create a project, copy the connection string.
-3. **Hyperliquid testnet wallet for the builder** — any EVM wallet you control. Fund it on testnet (faucet at https://app.hyperliquid-testnet.xyz/drip) with ≥ 100 USDC in the perps account. This address goes in `NEXT_PUBLIC_BUILDER_ADDRESS` and is where builder fees accrue (claim via the referral rewards page).
-4. **Vercel** (later) — for hosting and the stats cron.
-
-### 2. Install and run
-
+### Run
 ```bash
-cp .env.example .env.local   # fill in the values from step 1
+cp .env.example .env.local   # fill in
 npm install
-npm run db:push              # creates the tables in your Postgres
+npm run db:push              # creates tables
 npm run dev                  # http://localhost:3000
 ```
 
-Open it on your phone via your computer's LAN IP (e.g. `http://192.168.1.20:3000`) to feel the real thing.
+### First session on testnet
+1. Open on your phone → Get started → Google → handle → read the four cards → approve the fee → copy your wallet address.
+2. Get testnet USDC from the faucet to that address, deposit into perps on the Hyperliquid testnet app.
+3. Markets → SOL → Long $25 2× → it appears in Home with live P&L.
+4. Second account in a private window → Copy, then Fade. Close the first position from your profile → a Settled post appears if 3+ people joined.
+5. Compose → Call → HYPE up to a target, 24 h → wait for the resolver (or hit `/api/cron/resolve` with the secret).
 
-### 3. First trade on testnet
+## Env
+See `.env.example`. New in v0.3: `NEXT_PUBLIC_ONRAMP_URL`, `CRON_SECRET`.
 
-1. Log in → a wallet is created for you → pick a handle.
-2. Fund that wallet with testnet USDC on Hyperliquid (profile page shows the address; use the testnet faucet, then deposit).
-3. Trade tab → approve the builder fee once → long or short → it appears in the feed.
-4. Open a second account in a private window and hit **Copy trade**.
-
-### 4. Deploy
-
-```bash
-vercel          # or connect the repo on vercel.com
+## Layout
 ```
-Set the same env vars in Vercel, plus `CRON_SECRET` (any random string). `vercel.json` already schedules `/api/cron/stats` every 15 minutes to refresh leaderboard stats from Hyperliquid fills.
-
-## Env vars
-
-See `.env.example`. Key ones:
-
-- `NEXT_PUBLIC_HL_NETWORK` — `testnet` while building; flip to `mainnet` for launch.
-- `NEXT_PUBLIC_BUILDER_ADDRESS` / `NEXT_PUBLIC_BUILDER_FEE_TENTHS_BPS` — your fee. 50 = 0.05%. Perps cap is 100 (0.1%). Lower converts better.
-- `NEXT_PUBLIC_MAX_LEVERAGE` / `NEXT_PUBLIC_MAX_POSITION_USD` — beta guardrails.
-
-## How the money flows
-
-1. User approves `ApproveBuilderFee` once (max fee, revocable).
-2. Every order the app sends includes `builder: { b: <your address>, f: <fee> }`.
-3. Hyperliquid deducts the builder fee on the fill and credits your builder address.
-4. You claim accumulated fees from the referral-rewards flow on Hyperliquid.
-
-## Project layout
-
-```
-app/                 pages (feed, markets, market detail, trade, leaderboard, profile) + API routes
-components/          TradeTicket, FeedPost, PriceChart, Sparkline, BuilderApproval, HandlePicker, Nav, Header
-lib/config.ts        env → typed config (network, builder fee, guardrails)
-lib/hl-info.ts       Hyperliquid read-only API (markets, candles, mids, state, fills) + stats summariser
-lib/hl-exchange.ts   signed actions: market/limit order with TP/SL + builder code, close, approve fee
-lib/schema.ts        Drizzle schema: users, posts, comments, reactions, follows, stats
-lib/hooks/           useSession (Privy + viem), useMids (WebSocket), useMarkets
+app/                 pages: home, markets, markets/[coin], trade, leaderboard, u/[handle], compose, post/[id], notifications, settings, onboarding
+app/api/             posts (+ vote, poll, pin, close, comments, [id]), me (+ settings), follows, notifications, profile, leaderboard, markets (+ candles), duels, cron (stats, resolve)
+components/          FeedPost (all kinds), Hero, TradeTicket, DepositSheet, Receipt, Ticker, Nav, PriceChart, Sparkline, ui (icons, CoinMark, Avatar, theme)
+lib/                 config, format, hl-info (read API), hl-exchange (signed actions), schema, db, auth, feed (query + system posts + notify), hooks
 ```
 
-## Notes / known gaps
-
-- Built against `@nktkas/hyperliquid` ^0.24. If `npm install` resolves a newer major and the `ExchangeClient` constructor or `order` signature changed, `lib/hl-exchange.ts` is the only file to touch.
-- Posts are created client-side after the fill; a future hardening step verifies the `oid` against `userFills` server-side before posting.
-- Deposits: users bridge USDC on Arbitrum → Hyperliquid themselves for now. An in-app on-ramp (MoonPay/Transak) is a phase-2 item.
-- Legal: this is an unlicensed interface to a derivatives venue. Get advice before marketing to any specific jurisdiction, and keep the "not advice" copy.
-
-## Roadmap
-
-1. ✅ Base (this repo)
-2. Live rooms (positions + chat, no video) → audio rooms → video with P&L overlay
-3. Tipping, public bets settled on Hyperliquid prices, follower alerts
-4. Native wrapper (Expo) for App Store / Play Store
+## Known gaps / honest notes
+- Build not yet verified by CI: run `npm install && npm run build` and fix anything the compiler flags (expected: a handful of type nits, not architecture).
+- `@nktkas/hyperliquid` version drift: if `ExchangeClient` / `order` signatures changed, `lib/hl-exchange.ts` is the only file to touch.
+- Calls resolve against the current mid at each 5-minute run, not against 1-minute candles; a wick between runs can be missed. Tighten with `candleSnapshot` later.
+- Liquidation detection relies on the client calling `/close` with `reason: "liquidation"` or the stats cron reading `dir` from fills; a dedicated fills watcher is the proper fix.
+- Trades are recorded client-side after the fill; server-side verification of `oid` against `userFills` is a hardening step.
+- Verification = 10+ closed trades and a linked X handle (typed, not OAuth-verified yet).
+- Legal: unlicensed interface to a derivatives venue; get advice before marketing to a specific jurisdiction. Keep the risk copy.

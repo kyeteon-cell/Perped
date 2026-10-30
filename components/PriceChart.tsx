@@ -23,7 +23,7 @@ export function PriceChart({ coin, livePx }: { coin: string; livePx?: number }) 
     <div>
       <div className="flex justify-end gap-1">
         {(["1h", "1d", "1w"] as Range[]).map((r) => (
-          <button key={r} onClick={() => setRange(r)} className="pill !px-2 !py-0.5 !text-[11px] uppercase" style={{ background: r === range ? "var(--ink)" : "var(--panel-2)", color: r === range ? "var(--ink-fg)" : "var(--text)" }}>{r}</button>
+          <button key={r} onClick={() => setRange(r)} className={`chip uppercase ${r === range ? "on" : ""}`} style={{ padding: "6px 10px", fontSize: 12 }}>{r}</button>
         ))}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 h-[90px] w-full" role="img" aria-label={`${coin} price, last ${range}`}>

@@ -1,301 +1,1108 @@
 <title>Perped Preview</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap">
 <style>
-  /* Layout: one phone frame, bottom tabs switch screens. Light, neutral, one ink accent; long/short are the only strong colours. */
+  /* Layout: social feed, not a dashboard. No boxed cards in the feed; posts are full-bleed blocks separated by hairlines, generous padding, one ink accent. */
   :root {
-    --bg: #f6f6f4; --panel: #ffffff; --panel-2: #f1f1ee; --line: #e4e4df;
-    --text: #15171a; --muted: #70737a; --faint: #a3a6ad;
-    --green: #0f9d6a; --green-bg: #e6f6ef; --red: #d93a4a; --red-bg: #fbe9eb;
-    --ink: #15171a; --ink-fg: #ffffff;
-    --display: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
-    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --bg: #ffffff; --surface: #f5f5f3; --line: #ebebe8;
+    --text: #111214; --muted: #74777e; --faint: #aeb1b8;
+    --green: #16a34a; --green-soft: #e9f8ef; --red: #e11d48; --red-soft: #fdecf1;
+    --ink: #111214; --ink-fg: #ffffff;
+    --brand: #ff5a36; --brand-soft: #ffece6; --brand-fg: #ffffff; --hero-a: #ff5a36; --hero-b: #ff8a5c;
+    --blue: #2f6fed; --blue-soft: #e8efff; --gold: #d99a06; --gold-soft: #fff4d6; --violet: #7c4dff; --violet-soft: #f0eaff;
+    --sans: "Nunito", ui-rounded, ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: "Fira Code", ui-monospace, Menlo, monospace;
+    --r: 16px;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --bg: #101113; --panel: #17181b; --panel-2: #1f2024; --line: #2a2b30;
-    --text: #f2f2f0; --muted: #9a9ca3; --faint: #5f6168;
-    --green: #2fc98a; --green-bg: #132a21; --red: #ff6b78; --red-bg: #311b1f;
-    --ink: #f2f2f0; --ink-fg: #101113; color-scheme: dark; } }
+    --bg: #0f1012; --surface: #17181b; --line: #232428;
+    --text: #f4f4f2; --muted: #9b9ea6; --faint: #5c5f66;
+    --green: #34d399; --green-soft: #12301f; --red: #fb7185; --red-soft: #35161d;
+    --brand: #2fd1b2; --brand-soft: #0f2a26; --brand-fg: #06201b; --hero-a: #17a88c; --hero-b: #3b6cf0;
+    --blue: #6f9bff; --blue-soft: #16233f; --gold: #f2b63a; --gold-soft: #332a12; --violet: #a78bfa; --violet-soft: #251b3f;
+    --ink: #f4f4f2; --ink-fg: #0f1012; color-scheme: dark; } }
   :root[data-theme="dark"] {
-    --bg: #101113; --panel: #17181b; --panel-2: #1f2024; --line: #2a2b30;
-    --text: #f2f2f0; --muted: #9a9ca3; --faint: #5f6168;
-    --green: #2fc98a; --green-bg: #132a21; --red: #ff6b78; --red-bg: #311b1f;
-    --ink: #f2f2f0; --ink-fg: #101113; color-scheme: dark; }
+    --bg: #0f1012; --surface: #17181b; --line: #232428;
+    --text: #f4f4f2; --muted: #9b9ea6; --faint: #5c5f66;
+    --green: #34d399; --green-soft: #12301f; --red: #fb7185; --red-soft: #35161d;
+    --brand: #2fd1b2; --brand-soft: #0f2a26; --brand-fg: #06201b; --hero-a: #17a88c; --hero-b: #3b6cf0;
+    --blue: #6f9bff; --blue-soft: #16233f; --gold: #f2b63a; --gold-soft: #332a12; --violet: #a78bfa; --violet-soft: #251b3f;
+    --ink: #f4f4f2; --ink-fg: #0f1012; color-scheme: dark; }
 
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--display); font-size: 14px; line-height: 1.45; padding-block: 16px 24px;
-    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); -webkit-font-smoothing: antialiased; }
-  .wrap { max-width: 420px; margin: 0 auto; }
+  body { margin: 0; background: var(--surface); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; padding-block: 16px 24px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width: 400px; margin: 0 auto; }
   .note { color: var(--muted); font-size: 12px; text-align: center; margin: 0 0 12px; }
-  .note b { color: var(--text); font-weight: 600; }
-  .phone { position: relative; border: 1px solid var(--line); border-radius: 24px; overflow: hidden; background: var(--bg); height: 780px; max-height: 88dvh; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 40px -20px rgba(0,0,0,.25); }
-  .screen { flex: 1; overflow-y: auto; padding: 18px 16px 92px; }
+  .phone { position: relative; border-radius: 32px; overflow: hidden; background: var(--bg); height: 800px; max-height: 88dvh; display: flex; flex-direction: column; box-shadow: 0 0 0 1px var(--line), 0 24px 60px -30px rgba(0,0,0,.35); }
+  .screen { flex: 1; overflow-y: auto; padding: 0 0 96px; scroll-behavior: smooth; }
   .screen[hidden] { display: none !important; }
-  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
-  .hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; min-height: 36px; }
-  .tag { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; vertical-align: middle; margin-left: 8px; }
-  .chip { border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; background: var(--panel-2); color: var(--text); border: 0; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-  .chip.on { background: var(--ink); color: var(--ink-fg); }
-  .chip.long { background: var(--green-bg); color: var(--green); } .chip.short { background: var(--red-bg); color: var(--red); }
+  .pad { padding-left: 20px; padding-right: 20px; }
+  .top { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); padding: 18px 20px 12px; display: flex; align-items: center; justify-content: space-between; }
+  h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .powered { color: var(--faint); font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-top: 2px; }
   .muted { color: var(--muted); } .faint { color: var(--faint); } .green { color: var(--green); } .red { color: var(--red); }
-  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
-  .stack { display: flex; flex-direction: column; gap: 10px; }
-  .row { display: flex; align-items: center; gap: 8px; }
-  .between { justify-content: space-between; }
-  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--panel-2); display: grid; place-items: center; font-weight: 600; font-size: 12px; color: var(--muted); }
-  .coin { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
-  .pnl { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
-  .bar { height: 4px; border-radius: 999px; background: var(--panel-2); overflow: hidden; margin-top: 12px; }
-  .bar i { display: block; height: 100%; border-radius: 999px; }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; padding: 12px 16px; font-weight: 600; border: 1px solid transparent; font-family: inherit; font-size: 15px; cursor: pointer; color: var(--text); background: var(--panel-2); }
-  .btn-long { background: var(--green); color: #fff; } .btn-short { background: var(--red); color: #fff; }
-  .btn-ink { background: var(--ink); color: var(--ink-fg); }
-  .btn-outline { background: transparent; border-color: var(--line); }
-  .btn.sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .input { width: 100%; border-radius: 10px; padding: 11px 12px; background: var(--panel); border: 1px solid var(--line); color: var(--text); font-family: inherit; font-size: 14px; }
-  .stat { background: var(--panel-2); border-radius: 10px; padding: 10px 8px; text-align: center; }
-  .stat small { display: block; color: var(--muted); font-size: 11px; margin-bottom: 2px; }
-  .range { width: 100%; accent-color: var(--ink); }
-  .nav { position: absolute; left: 0; right: 0; bottom: 0; background: var(--panel); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 0 10px; }
-  .nav button { background: none; border: 0; color: var(--muted); font-family: inherit; font-size: 11px; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 0; }
-  .nav button svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .badge { position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; border-radius: 999px; background: var(--brand); color: var(--brand-fg); font-size: 10px; font-weight: 800; display: grid; place-items: center; padding: 0 4px; }
+  .iconbtn { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--surface); display: grid; place-items: center; color: var(--text); cursor: pointer; }
+  svg.i { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Feed posts: no card, just rhythm */
+  .post { padding: 20px 20px 18px; border-bottom: 1px solid var(--line); }
+  .who { display: flex; align-items: center; gap: 12px; }
+  .av { width: 40px; height: 40px; border-radius: 50%; flex: none; }
+  .name { font-weight: 700; font-size: 15px; }
+  .when { color: var(--muted); font-size: 13px; }
+  .pos { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 16px; gap: 12px; }
+  .pos .coin { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+  .pos .detail { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .pos .pnl { font-size: 26px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
+  .pos .usd { font-size: 13px; margin-top: 8px; }
+  .lbl { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 700; }
+  .lbl.long { background: var(--green-soft); color: var(--green); } .lbl.short { background: var(--red-soft); color: var(--red); } .lbl.done { background: var(--surface); color: var(--muted); }
+  .lbl i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+  .track { height: 3px; border-radius: 999px; background: var(--line); margin-top: 18px; overflow: hidden; }
+  .track b { display: block; height: 100%; border-radius: 999px; }
+  .say { margin: 14px 0 0; font-size: 15px; line-height: 1.55; }
+  .acts { display: flex; align-items: center; gap: 22px; margin-top: 16px; color: var(--muted); font-size: 13px; }
+  .acts button { background: none; border: 0; color: inherit; font: inherit; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 0; }
+  .acts svg.i { width: 18px; height: 18px; }
+  .copy { margin-left: auto; background: var(--ink); color: var(--ink-fg); border: 0; border-radius: 999px; padding: 9px 16px; font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
+
+  /* Feed extras */
+  .ftabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); margin-top: 8px; }
+  .ftabs button { background: none; border: 0; padding: 12px 0; font: inherit; font-size: 14px; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .ftabs button.on { color: var(--text); border-bottom-color: var(--text); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+  .ptr { height: 0; overflow: hidden; text-align: center; color: var(--muted); font-size: 12px; transition: height .2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .ptr.show { height: 40px; }
+  .mine { padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .mine-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .pnlbox { cursor: pointer; user-select: none; border-radius: 10px; padding: 4px 6px; margin: -4px -6px; }
+  .pnlbox:active { background: var(--surface); }
+  .flash-up { animation: fu .6s ease; } .flash-down { animation: fd .6s ease; }
+  @keyframes fu { 0% { background: var(--green-soft); } 100% { background: transparent; } }
+  @keyframes fd { 0% { background: var(--red-soft); } 100% { background: transparent; } }
+  .vote b { font-weight: 600; } .vote.on.up { color: var(--green); } .vote.on.down { color: var(--red); }
+  .sys .say { font-size: 15px; } .sysico { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; color: var(--text); flex: none; }
+  .sysico.red-bg { background: var(--red-soft); color: var(--red); } .sysico.green-bg { background: var(--green-soft); color: var(--green); }
+  .vbadge { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--text); color: var(--bg); font-size: 10px; vertical-align: 2px; margin-left: 2px; }
+  .poll { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .opt { position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; border: 0; background: var(--surface); border-radius: 12px; padding: 12px 14px; font: inherit; font-weight: 600; color: var(--text); cursor: pointer; text-align: left; }
+  .opt i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--line); z-index: 0; border-radius: 12px; }
+  .opt span, .opt b { position: relative; z-index: 1; }
+  .opt.on { outline: 2px solid var(--text); }
+  .story { cursor: pointer; } .faces { display: flex; align-items: center; margin-top: 12px; } .faces .av { width: 26px; height: 26px; border: 2px solid var(--bg); margin-left: -8px; } .faces .av:first-child { margin-left: 0; }
+  .ranks { display: flex; gap: 10px; overflow-x: auto; padding: 16px 20px; border-bottom: 1px solid var(--line); scroll-snap-type: x mandatory; }
+  .rankcard { flex: none; width: 160px; background: var(--surface); border-radius: var(--r); padding: 14px; scroll-snap-align: start; }
+  .suggest { display: flex; gap: 10px; overflow-x: auto; margin: 12px -20px 0; padding: 0 20px 4px; }
+  .sug { flex: none; width: 140px; background: var(--surface); border-radius: var(--r); padding: 14px; text-align: center; }
+  .swipe { position: relative; padding: 0; overflow: hidden; }
+  .swipe-bg { position: absolute; inset: 0; background: var(--ink); color: var(--ink-fg); display: flex; align-items: center; padding-left: 24px; font-weight: 700; }
+  .swipe-fg { position: relative; background: var(--bg); padding: 20px 20px 18px; transition: transform .25s ease; touch-action: pan-y; }
+
+  /* Page tints: each tab has its own colour, used for eyebrows, active nav icon, header dot and key chips */
+  #s-feed { --tint: var(--brand); --tint-soft: var(--brand-soft); }
+  #s-markets, #s-trade { --tint: var(--blue); --tint-soft: var(--blue-soft); }
+  #s-board { --tint: var(--gold); --tint-soft: var(--gold-soft); }
+  #s-profile { --tint: var(--violet); --tint-soft: var(--violet-soft); }
+  .eyebrow { color: var(--tint, var(--muted)); }
+  .top h1::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--tint, var(--muted)); margin-right: 10px; vertical-align: 2px; }
+  .ftabs button.on, .ptabs button.on { border-bottom-color: var(--tint); }
+  .modes button.on { color: var(--tint); }
+  .stat small { color: var(--tint, var(--muted)); font-weight: 700; }
   .nav button.on { color: var(--text); }
-  .lb { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
-  .lb:first-child { border-top: 0; padding-top: 0; } .lb:last-child { padding-bottom: 0; }
-  .rank { width: 22px; text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); }
-  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 18px 0 8px; }
-  .cap { font-size: 14px; margin: 12px 0 0; color: var(--text); }
-  .meta { display: flex; gap: 14px; margin-top: 12px; font-size: 12px; color: var(--muted); align-items: center; }
-  .meta svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; vertical-align: -2px; margin-right: 4px; }
-  .meta button { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 0; }
-  .mkrow { display: grid; grid-template-columns: 1fr 60px auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
-  .mkrow:first-child { border-top: 0; }
-  .spark { width: 60px; height: 20px; } .spark polyline { fill: none; stroke-width: 1.6; stroke-linejoin: round; }
-  .hdr .chip { background: transparent; padding-left: 0; font-size: 14px; color: var(--muted); }
-  .divider { height: 1px; background: var(--line); margin: 12px 0; }
+  .nav button[data-tab="feed"].on { color: var(--brand); } .nav button[data-tab="markets"].on { color: var(--blue); }
+  .nav button[data-tab="board"].on { color: var(--gold); } .nav button[data-tab="profile"].on { color: var(--violet); }
+
+  /* Button roles: brand = the money action, ink = commit/select, soft green = adds funds / opens, soft red = removes / closes, surface = neutral */
+  .copy { background: var(--brand); color: var(--brand-fg); }
+  .btn.brand { background: var(--brand); color: var(--brand-fg); }
+  .btn.deposit, .chip.deposit { background: var(--green-soft); color: var(--green); }
+  .btn.withdraw, .chip.withdraw, .chip.danger { background: var(--red-soft); color: var(--red); }
+  .chip.follow { background: var(--tint-soft, var(--surface)); color: var(--tint, var(--text)); }
+  .chip.follow.on { background: var(--tint, var(--ink)); color: var(--bg); }
+  .chip.info { background: var(--blue-soft); color: var(--blue); }
+  .opt.on { outline-color: var(--brand); } .opt i { background: var(--brand-soft); }
+  .vote.on.up { color: var(--brand); }
+  .mover { border-top: 3px solid var(--line); } .mover.up { border-top-color: var(--green); } .mover.down { border-top-color: var(--red); }
+  .rankcard { border-left: 3px solid var(--gold); }
+  .sug { border-top: 3px solid var(--violet); }
+  .pin { border-top: 3px solid var(--violet); } .pin.add { border-top: 1px dashed var(--line); }
+  .story { background: var(--tint-soft); border-radius: var(--r); margin: 12px 20px; border-bottom: 0; }
+  .sys .sysico { background: var(--tint-soft); color: var(--tint); }
+
+  /* Coin monograms: a coloured disc with the ticker's first letters, so markets and posts have faces */
+  .cm { width: 36px; height: 36px; border-radius: 50%; display: inline-grid; place-items: center; font-weight: 800; font-size: 12px; color: #fff; flex: none; letter-spacing: -.02em; }
+  .cm.BTC { background: #f7931a; } .cm.ETH { background: #627eea; } .cm.SOL { background: linear-gradient(135deg,#9945ff,#14f195); } .cm.HYPE { background: #0f9d8a; }
+  .cm.XRP { background: #23292f; } .cm.DOGE { background: #c2a633; } .cm.SUI { background: #4da2ff; } .cm.LINK { background: #2a5ada; } .cm.AVAX { background: #e84142; } .cm.ARB { background: #28a0f0; }
+  .cm.sm { width: 22px; height: 22px; font-size: 9px; }
+
+  /* Home hero: your day in one card */
+  .hero { margin: 8px 20px 16px; padding: 18px; border-radius: 20px; background: linear-gradient(135deg, var(--hero-a) 0%, var(--hero-b) 100%); color: #fff; position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,.14); }
+  .hero .k { font-size: 12px; font-weight: 700; opacity: .85; letter-spacing: .04em; text-transform: uppercase; }
+  .hero .big { font-size: 34px; font-weight: 700; letter-spacing: -.03em; margin-top: 4px; }
+  .hero .row2 { display: flex; gap: 18px; margin-top: 10px; font-size: 13px; opacity: .95; }
+  .hero .row2 b { font-weight: 700; }
+  .hero svg { position: absolute; right: 16px; bottom: 14px; width: 110px; height: 44px; }
+  .hero-actions { display: flex; gap: 8px; margin-top: 14px; position: relative; }
+  .hero-actions button { border: 0; border-radius: 999px; padding: 9px 14px; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; background: rgba(255,255,255,.18); color: #fff; }
+  .hero-actions button.solid { background: #fff; color: var(--hero-a); }
+
+  /* Post layout polish */
+  .pnlpill { display: inline-flex; flex-direction: column; align-items: flex-end; padding: 8px 12px; border-radius: 14px; }
+  .pnlpill.g { background: var(--green-soft); } .pnlpill.r { background: var(--red-soft); }
+  .coinline { display: flex; align-items: center; gap: 10px; }
+
+  /* Leaders podium */
+  .podium { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 10px; align-items: end; padding: 6px 20px 18px; }
+  .pod { text-align: center; background: var(--surface); border-radius: 18px; padding: 14px 10px 12px; position: relative; }
+  .pod.first { background: var(--gold-soft); padding-top: 18px; }
+  .pod .av { margin: 0 auto; width: 48px; height: 48px; border: 3px solid var(--bg); }
+  .pod.first .av { width: 60px; height: 60px; border-color: var(--gold); }
+  .pod .n { font-weight: 700; font-size: 13px; margin-top: 8px; }
+  .pod .v { font-size: 15px; font-weight: 600; margin-top: 2px; }
+  .pod .medal { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; }
+  .pod.second .medal { background: #9aa3b2; } .pod.third .medal { background: #c98a5a; }
+
+  /* Profile cover */
+  .cover { height: 92px; margin: 0 0 -46px; background: linear-gradient(135deg, var(--violet) 0%, #b893ff 60%, #ffd6e8 100%); }
+  .cover + .block .av { border: 4px solid var(--bg); }
+
+  /* Nav: active pill */
+  .nav button { position: relative; }
+  .nav button.on::before { content: ""; position: absolute; top: -2px; width: 44px; height: 30px; border-radius: 999px; background: var(--surface); z-index: -1; }
+  .nav button svg.i { position: relative; }
+
+  /* Micro-interactions */
+  button { transition: transform .12s ease, background-color .15s ease, color .15s ease, opacity .15s ease; }
+  button:active { transform: scale(.97); }
+  .mk2:active, .mover:active, .lb:active, .post.swipe:active .swipe-fg { background: var(--surface); }
+  .ticker .cm { width: 16px; height: 16px; font-size: 7px; }
+
+  /* Onboarding */
+  .ob { display: flex; flex-direction: column; padding-bottom: 0; }
+  .ob-step { display: flex; flex-direction: column; min-height: 100%; }
+  .ob-hero { padding: 48px 24px 20px; background: linear-gradient(180deg, var(--brand-soft) 0%, var(--bg) 100%); flex: 1; }
+  .ob-mark { width: 56px; height: 56px; border-radius: 16px; background: var(--brand); color: var(--brand-fg); display: grid; place-items: center; font-weight: 800; font-size: 28px; }
+  .ob-title { font-size: 30px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; margin: 22px 0 0; text-wrap: balance; }
+  .ob-lead { color: var(--muted); font-size: 15px; margin: 12px 0 0; max-width: 32ch; }
+  .ob-ticker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px; }
+  .ob-body { padding: 24px 24px 12px; flex: 1; }
+  .ob-actions { padding: 12px 24px 28px; display: flex; flex-direction: column; gap: 10px; }
+  .ob-progress { display: flex; gap: 6px; margin-bottom: 18px; }
+  .ob-progress i { height: 4px; flex: 1; border-radius: 999px; background: var(--line); } .ob-progress i.on { background: var(--brand); }
+  .ob .ob-title + .ob-lead { margin-top: 10px; }
+  .ob-avatars { display: flex; gap: 10px; margin: 22px 0 18px; flex-wrap: wrap; }
+  .ob-avatars .av { width: 48px; height: 48px; border: 3px solid transparent; cursor: pointer; padding: 0; }
+  .ob-avatars .av.on { border-color: var(--text); }
+  .ob-avatars .av.add { background: var(--surface); color: var(--muted); display: grid; place-items: center; }
+  .ob-handle { display: flex; align-items: center; gap: 10px; background: var(--surface); border-radius: var(--r); padding: 0 16px; }
+  .ob-handle .field { background: transparent; padding-left: 0; padding-right: 0; }
+  .ob-handle .ok { color: var(--green); font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .ob-cards { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .ob-card { display: flex; gap: 14px; align-items: flex-start; background: var(--surface); border-radius: var(--r); padding: 14px; text-align: left; border: 0; font: inherit; color: var(--text); width: 100%; }
+  .ob-card b { font-weight: 700; font-size: 15px; } .ob-card p { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .ob-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+  .ob-opt { cursor: pointer; } .ob-opt:active { background: var(--line); }
+  .ob-fee { background: var(--surface); border-radius: var(--r); padding: 4px 16px; margin-top: 18px; }
+  .ob-fee-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .ob-list { margin: 16px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .ob-wallet { background: var(--surface); border-radius: var(--r); padding: 16px; margin-top: 18px; }
+  .phone.onboarding .nav, .phone.onboarding .ticker { display: none; }
+
+  /* Overlays (composer, thread, notifications, settings) */
+  .overlay { position: absolute; inset: 0; background: var(--bg); z-index: 15; display: flex; flex-direction: column; animation: fade .18s ease; }
+  .ov-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 10px; border-bottom: 1px solid var(--line); flex: none; }
+  .ov-body { flex: 1; overflow-y: auto; padding: 16px 20px 24px; }
+  .ov-bar { display: flex; gap: 10px; align-items: center; padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); flex: none; background: var(--bg); }
+  .modes.mini { padding: 3px; } .modes.mini button { padding: 7px 14px; font-size: 13px; }
+  .modes.mini { display: inline-grid; grid-template-columns: repeat(3, auto); }
+  .ta { width: 100%; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 17px; line-height: 1.5; resize: none; padding: 0; outline: none; }
+  .ta::placeholder { color: var(--faint); }
+  .attach { display: flex; align-items: center; gap: 12px; background: var(--surface); border-radius: var(--r); padding: 12px 14px; margin-top: 14px; }
+  .tog { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .tog input { width: 18px; height: 18px; accent-color: var(--brand); }
+  .cmt { display: flex; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+  .cmt.reply { padding-left: 52px; background: var(--surface); }
+  .cmt p { margin: 4px 0 0; font-size: 15px; line-height: 1.5; }
+  .av.sm { width: 32px; height: 32px; }
+  .ntf { display: flex; gap: 14px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+  .ntf b { font-weight: 700; font-size: 15px; }
+  .ntf.unread { background: var(--surface); } .ntf.unread b::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--brand); margin-right: 8px; vertical-align: 2px; }
+  .srow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; font-size: 15px; border-bottom: 1px solid var(--line); }
+  .srow .seg button { padding: 6px 10px; font-size: 12px; }
+  .sw { appearance: none; width: 46px; height: 28px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; transition: background .2s; flex: none; }
+  .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .sw:checked { background: var(--brand); } .sw:checked::after { left: 21px; }
+
+  /* Bottom sheet */
+  .sheet-bg { position: absolute; inset: 0; background: rgba(0,0,0,.35); z-index: 20; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88%; overflow-y: auto; background: var(--bg); border-radius: 24px 24px 0 0; z-index: 21; padding-top: 10px; box-shadow: 0 -10px 40px rgba(0,0,0,.18); animation: up .25s ease; }
+  @keyframes up { from { transform: translateY(40px); opacity: 0 } to { transform: none; opacity: 1 } }
+  .grab { width: 40px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 14px; }
+  .qr { display: flex; justify-content: center; margin-top: 16px; }
+  .qr-box { width: 164px; height: 164px; border-radius: 16px; background: repeating-conic-gradient(var(--text) 0 25%, var(--bg) 0 50%) 0 0 / 16px 16px; border: 10px solid var(--bg); outline: 1px solid var(--line); }
+  .warn { margin-top: 14px; background: var(--gold-soft); color: var(--text); border-radius: var(--r); padding: 12px 14px; font-size: 13px; line-height: 1.5; }
+  .warn b { color: var(--gold); }
+
+  /* Competitive layer */
+  .fade { margin-left: auto; background: var(--surface); color: var(--text); border: 1.5px solid var(--text); border-radius: 999px; padding: 8px 14px; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .fade + .copy { margin-left: 0; }
+  .camps { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 12px; color: var(--muted); }
+  .camp b { color: var(--text); font-weight: 700; } .camp.c b::before { content: "↗ "; color: var(--brand); } .camp.f b::before { content: "↙ "; }
+  .vs { font-weight: 800; color: var(--faint); font-size: 11px; }
+  .duel { background: var(--gold-soft); border-radius: var(--r); margin: 12px 20px; border-bottom: 0; }
+  .duel-head { display: flex; justify-content: space-between; align-items: center; }
+  .duel-body { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; margin-top: 16px; text-align: center; }
+  .duelist .lbl { display: inline-flex; }
+  .duel-mid { text-align: center; min-width: 90px; }
+  .duel-bar { height: 6px; border-radius: 999px; background: var(--red-soft); overflow: hidden; margin: 6px 0; }
+  .duel-bar i { display: block; height: 100%; background: var(--green); border-radius: 999px; }
+  .receipt { width: 100%; max-width: 320px; border-radius: 22px; padding: 20px; color: #fff; background: linear-gradient(160deg, #0f766e 0%, #065f46 55%, #052e2b 100%); box-shadow: 0 20px 50px -20px rgba(0,0,0,.5); }
+  .rc-top { display: flex; justify-content: space-between; align-items: center; } .rc-brand { font-weight: 800; letter-spacing: -.02em; }
+  .rc-who { display: flex; align-items: center; gap: 10px; margin-top: 18px; font-size: 14px; }
+  .rc-coin { display: flex; align-items: center; gap: 10px; margin-top: 18px; font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+  .rc-big { font-size: 56px; font-weight: 600; letter-spacing: -.04em; line-height: 1; margin-top: 6px; }
+  .rc-row { display: flex; justify-content: space-between; margin-top: 12px; font-size: 14px; color: rgba(255,255,255,.85); }
+  .rc-foot { margin-top: 18px; font-size: 11px; color: rgba(255,255,255,.6); }
+
+  /* Shared controls */
+  .seg { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+  .seg button, .chip { flex: none; border: 0; background: var(--surface); color: var(--muted); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .mono { font-weight: 500; }
+  .stat .v { font-weight: 600; }
+  .seg button.on, .chip.on { background: var(--ink); color: var(--ink-fg); }
+  .seg button.on.info { background: var(--blue); color: #fff; }
+  .field { width: 100%; border: 0; border-radius: var(--r); padding: 14px 16px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; }
+  .field::placeholder { color: var(--faint); }
+  .btn { display: flex; align-items: center; justify-content: center; width: 100%; border: 0; border-radius: var(--r); padding: 16px; font: inherit; font-weight: 600; font-size: 16px; cursor: pointer; color: var(--text); background: var(--surface); }
+  .btn.long { background: var(--green); color: #fff; } .btn.short { background: var(--red); color: #fff; } .btn.ink { background: var(--ink); color: var(--ink-fg); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .block { padding: 20px; }
+  .block + .block { border-top: 1px solid var(--line); }
+  .kv { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+  .kv .k { color: var(--muted); }
+  .stats3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat { background: var(--surface); border-radius: var(--r); padding: 14px 12px; }
+  .stat small { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+  .stat .v { font-size: 17px; font-weight: 700; }
+  .range { width: 100%; accent-color: var(--ink); margin: 6px 0; }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+  /* Ticker */
+  .ticker { position: relative; z-index: 6; flex: none; height: 32px; overflow: hidden; border-bottom: 1px solid var(--line); background: var(--bg); display: flex; align-items: center; }
+  .tk-track { display: flex; gap: 28px; white-space: nowrap; padding-left: 20px; animation: tk 42s linear infinite; }
+  .tk-track:hover { animation-play-state: paused; }
+  .tk { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
+  .tk .p { font-weight: 500; color: var(--text); }
+  @keyframes tk { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .tk-track { animation: none; overflow-x: auto; } }
+
+  /* Markets */
+  .movers { display: flex; gap: 10px; overflow-x: auto; margin: 0 -20px; padding: 0 20px 4px; scroll-snap-type: x mandatory; }
+  .mover { flex: none; width: 104px; background: var(--surface); border-radius: var(--r); padding: 12px 14px; scroll-snap-align: start; cursor: pointer; }
+  .mkhead { display: grid; grid-template-columns: 1fr 96px 52px; gap: 12px; padding: 6px 20px 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .mk2 { padding: 14px 20px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .mk2-main { display: grid; grid-template-columns: 1fr 56px auto 48px; gap: 12px; align-items: center; }
+  .mk2 .sym { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 6px; }
+  .mk2 .lev { font-size: 11px; font-weight: 700; color: var(--muted); background: var(--surface); border-radius: 6px; padding: 1px 6px; }
+  .mk2 .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .mk2 .px { font-weight: 600; font-size: 16px; } .mk2 .chg { font-size: 13px; margin-top: 2px; }
+  .mk2 .h1 { font-size: 13px; font-weight: 600; text-align: right; }
+  .mk2-sub { display: flex; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--muted); overflow-x: auto; white-space: nowrap; }
+  .mk2-sub b { font-weight: 600; color: var(--text); }
+  .spark { width: 64px; height: 24px; } .spark polyline { fill: none; stroke-width: 1.8; stroke-linejoin: round; }
+
+  /* Profile */
+  .cnt { background: none; border: 0; padding: 0; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; }
+  .cnt b { color: var(--text); font-weight: 700; }
+  .pins { display: flex; gap: 10px; overflow-x: auto; margin: 12px -20px 0; padding: 0 20px 6px; scroll-snap-type: x mandatory; }
+  .pin { flex: none; width: 150px; background: var(--surface); border-radius: var(--r); padding: 14px; scroll-snap-align: start; }
+  .pin-coin { font-size: 16px; font-weight: 800; letter-spacing: -.02em; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+  .pin.add { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed var(--line); background: transparent; color: var(--muted); }
+  .ptabs { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); position: sticky; top: 66px; background: var(--bg); z-index: 4; }
+  .ptabs button { background: none; border: 0; padding: 14px 0 12px; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .ptabs button.on { color: var(--text); border-bottom-color: var(--text); }
+
+  /* Board modes */
+  .modes { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border-radius: 999px; padding: 4px; }
+  .modes button { border: 0; background: none; border-radius: 999px; padding: 10px; font: inherit; font-weight: 700; font-size: 14px; color: var(--muted); cursor: pointer; }
+  .modes button.on { background: var(--bg); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .lbl.call { background: var(--surface); color: var(--text); }
+  .lbl.backed { background: var(--green-soft); color: var(--green); }
+
+  /* Leaderboard */
+  .lb { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .rank { width: 24px; color: var(--muted); font-weight: 700; font-size: 14px; text-align: center; }
+
+  /* Bottom nav */
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 0 14px; }
+  .nav button { background: none; border: 0; color: var(--faint); font: inherit; font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 0; }
+  .nav button svg.i { width: 24px; height: 24px; stroke-width: 1.7; }
+  .nav button.on { color: var(--text); }
   button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-  @media (prefers-reduced-motion: no-preference) { .bar i { transition: width .4s ease; } }
+  @media (prefers-reduced-motion: no-preference) { .track b { transition: width .5s ease; } .screen { animation: fade .18s ease; } @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } } }
 </style>
 
 <div class="wrap">
-  <p class="note"><b>Perped</b> · preview of the four screens. Example data, not real trades.</p>
-
+  <div class="seg" style="justify-content:center;margin-bottom:12px" id="theme-seg">
+    <button data-theme-pick="light">Day</button><button data-theme-pick="dark">Night</button><button data-theme-pick="auto" class="on">Auto</button><button id="ob-launch" style="margin-left:8px;background:var(--ink);color:var(--ink-fg)">Onboarding</button><button data-ov-open="ov-empty" style="background:var(--ink);color:var(--ink-fg)">New user</button>
+  </div>
+  <p class="note">Perped preview. Example data, not real trades.</p>
   <div class="phone">
+
+    <div class="ticker" aria-label="Live prices">
+      <div class="tk-track" id="tk-track"></div>
+    </div>
 
     <!-- FEED -->
     <section class="screen" id="s-feed">
-      <div class="hdr">
-        <h1>Perped<span class="tag">Testnet</span></h1>
-        <span class="muted" style="font-size:12px"><span class="green">●</span> Live</span>
+      <div class="ptr" id="ptr"><span class="mono">187.42</span> Pull to refresh</div>
+      <div class="top" style="padding-bottom:0;position:static;background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none">
+        <div><h1>Perped</h1><div class="powered">Powered by Hyperliquid</div></div>
+        <div style="display:flex;gap:8px"><button class="iconbtn" aria-label="Notifications" data-ov-open="ov-notifs" style="position:relative"><svg class="i" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0v5l2 3H4l2-3zM10 20a2 2 0 0 0 4 0"/></svg><span class="badge">2</span></button><button class="iconbtn" aria-label="Search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></div>
       </div>
-      <div class="stack">
+      <div class="ftabs"><button class="on" data-ftab="foryou">For you</button><button data-ftab="following">Following</button><button data-ftab="live">Live <span class="dot"></span></button></div>
 
-        <article class="panel">
-          <div class="row between" style="margin-bottom:14px">
-            <div class="row"><div class="avatar">KY</div><div><div style="font-weight:600">kiloklips</div><div class="muted" style="font-size:12px">4 min ago</div></div></div>
-            <span class="chip long">Long · 5×</span>
-          </div>
-          <div class="row between" style="align-items:flex-end">
-            <div>
-              <div class="coin">SOL</div>
-              <div class="muted mono" style="font-size:12px;margin-top:2px">$250 · entry 187.42</div>
-            </div>
-            <div style="text-align:right">
-              <div class="mono pnl green">+8.3%</div>
-              <div class="mono green" style="font-size:13px">+$20.75</div>
-            </div>
-          </div>
-          <div class="bar"><i style="width:8.3%;background:var(--green)"></i></div>
-          <p class="cap">NY open bounce. Stop at 182, out at 195.</p>
-          <div class="meta">
-            <button><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>14</button>
-            <button><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>6</button>
-            <span><svg viewBox="0 0 24 24"><path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/></svg>3 copied</span>
-            <button class="btn btn-ink sm" style="margin-left:auto">Copy trade</button>
-          </div>
-        </article>
-
-        <article class="panel">
-          <div class="row between" style="margin-bottom:14px">
-            <div class="row"><div class="avatar">DG</div><div><div style="font-weight:600">degenmaxi</div><div class="muted" style="font-size:12px">19 min ago · copied kiloklips</div></div></div>
-            <span class="chip short">Short · 3×</span>
-          </div>
-          <div class="row between" style="align-items:flex-end">
-            <div>
-              <div class="coin">ETH</div>
-              <div class="muted mono" style="font-size:12px;margin-top:2px">$1,500 · entry 3,412.00</div>
-            </div>
-            <div style="text-align:right">
-              <div class="mono pnl red">−2.1%</div>
-              <div class="mono red" style="font-size:13px">−$31.50</div>
-            </div>
-          </div>
-          <div class="bar"><i style="width:2.1%;background:var(--red)"></i></div>
-          <div class="meta">
-            <button><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>3</button>
-            <button><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>11</button>
-            <span><svg viewBox="0 0 24 24"><path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/></svg>1 copied</span>
-            <button class="btn btn-ink sm" style="margin-left:auto">Copy trade</button>
-          </div>
-        </article>
-
-        <article class="panel">
-          <div class="row between" style="margin-bottom:14px">
-            <div class="row"><div class="avatar">SA</div><div><div style="font-weight:600">samui_sam</div><div class="muted" style="font-size:12px">2 h ago · closed</div></div></div>
-            <span class="chip">Long · 2×</span>
-          </div>
-          <div class="row between" style="align-items:flex-end">
-            <div>
-              <div class="coin">HYPE</div>
-              <div class="muted mono" style="font-size:12px;margin-top:2px">$80 · 41.10 → 46.28</div>
-            </div>
-            <div style="text-align:right">
-              <div class="mono pnl green">+12.6%</div>
-              <div class="mono green" style="font-size:13px">+$10.08 realised</div>
-            </div>
-          </div>
-          <div class="bar"><i style="width:12.6%;background:var(--green)"></i></div>
-          <p class="cap">Banked. Never going broke taking a win.</p>
-          <div class="meta">
-            <button><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>22</button>
-            <button><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>4</button>
-            <span><svg viewBox="0 0 24 24"><path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M5 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/></svg>7 copied</span>
-          </div>
-        </article>
+      <div class="hero">
+        <div class="k">Good morning, Kye</div>
+        <div class="big mono">$1,284.10</div>
+        <div class="row2"><span>Today <b class="mono">+$18.40</b></span><span>Open <b class="mono">1</b></span><span>Streak <b>🔥 6</b></span></div>
+        <svg viewBox="0 0 110 44"><path d="M0 34 L14 30 L28 32 L42 24 L56 26 L70 16 L84 18 L98 8 L110 10" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <div class="hero-actions"><button class="solid" data-go="markets">Trade</button><button data-money-open="deposit">Deposit</button><button data-ov-open="ov-compose">Post</button></div>
       </div>
+      <div class="mine">
+        <div class="eyebrow">Your open · 1</div>
+        <div class="mine-row"><span class="cm SOL sm">SOL</span><span class="name">SOL</span><span class="lbl long"><i></i>Long 5×</span><span class="mono green" style="margin-left:auto;font-weight:700" id="mine-pnl">+$2.25</span></div>
+      </div>
+
+      <article class="post swipe" data-live="a" data-entry="187.42" data-size="1.33" data-lev="5">
+        <div class="swipe-bg"><span>Copy trade</span></div>
+        <div class="swipe-fg">
+        <div class="who"><div class="av" style="background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div><div class="name">kiloklips</div><div class="when">4 min ago</div></div><span class="lbl long" style="margin-left:auto"><i></i>Long 5×</span></div>
+        <div class="pos"><div class="coinline"><span class="cm SOL">SOL</span><div><div class="coin">SOL</div><div class="detail mono">$250 · in at 187.42</div></div></div><div style="text-align:right" class="pnlbox pnlpill g" title="Tap to switch % / $ / ROI"><div class="pnl mono green" id="pnl-a">+8.3%</div><div class="usd mono green" id="usd-a">+$20.75</div></div></div>
+        <div class="track"><b id="bar-a" style="width:8.3%;background:var(--green)"></b></div>
+        <div class="camps"><span class="camp c"><b>3 copied</b> <span class="mono green">+$61</span></span><span class="vs">vs</span><span class="camp f"><b>5 faded</b> <span class="mono red">−$102</span></span></div>
+        <p class="say">NY open bounce. Stop at 182, out at 195.</p>
+        <div class="acts">
+          <button class="vote up"><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2v4h5a2 2 0 0 1 2 2l-1.5 7a2 2 0 0 1-2 2H7"/></svg><b>14</b></button>
+          <button class="vote down"><svg class="i" viewBox="0 0 24 24"><path d="M17 13V4h3v9zM17 13l-4 8a2 2 0 0 1-3-2v-4H5a2 2 0 0 1-2-2l1.5-7a2 2 0 0 1 2-2H17"/></svg><b>2</b></button>
+          <button data-ov-open="ov-thread"><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>6</button>
+          <button class="fade" data-ov-open="ov-fade">Fade</button>
+          <button class="copy">Copy</button>
+        </div>
+        </div>
+      </article>
+
+      <!-- Liquidation alert -->
+      <article class="post sys">
+        <div class="who"><div class="sysico red-bg"><svg class="i" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div><div><div class="name">Liquidation</div><div class="when">7 min ago</div></div></div>
+        <p class="say" style="margin-top:12px"><b>degenmaxi</b> got perped. <b class="red mono">−$640</b> on ETH 10× short, liquidated at 3,471.</p>
+        <div class="acts"><button class="vote up"><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2v4h5a2 2 0 0 1 2 2l-1.5 7a2 2 0 0 1-2 2H7"/></svg><b>41</b></button><button><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>19</button><span class="muted">Size small. Stops exist.</span></div>
+      </article>
+
+
+      <!-- Settlement: copiers vs faders -->
+      <article class="post sys">
+        <div class="who"><div class="sysico"><svg class="i" viewBox="0 0 24 24"><path d="M8 7h8M8 12h8M8 17h5"/></svg></div><div><div class="name">Settled</div><div class="when">22 min ago</div></div></div>
+        <p class="say" style="margin-top:12px"><b>samui_sam</b> HYPE long closed <b class="green mono">+12.6%</b>. The 7 who copied made <b class="green mono">+$188</b>. The 4 who faded: <b class="red mono">−$96</b>. <span class="muted">Faders: degenmaxi, chadlord, mooncat, +1</span></p>
+        <div class="acts"><button class="vote up"><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2v4h5a2 2 0 0 1 2 2l-1.5 7a2 2 0 0 1-2 2H7"/></svg><b>64</b></button><button><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>31</button><button class="chip" data-ov-open="ov-receipt" style="margin-left:auto">Receipt</button></div>
+      </article>
+
+      <!-- Duel -->
+      <article class="post duel">
+        <div class="duel-head"><span class="lbl" style="background:var(--gold-soft);color:var(--gold)">⚔ Duel · $100 · settles Fri</span><span class="when">BTC · 24 h</span></div>
+        <div class="duel-body">
+          <div class="duelist"><div class="av" style="width:48px;height:48px;margin:0 auto;background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div class="name" style="margin-top:6px">kiloklips</div><span class="lbl long" style="margin-top:4px"><i></i>Long</span><div class="mono green" style="font-size:20px;font-weight:600;margin-top:8px">+1.8%</div></div>
+          <div class="duel-mid"><div class="mono muted" style="font-size:12px">98,412</div><div class="duel-bar"><i style="width:68%"></i></div><div class="when">68% of likes on kiloklips</div></div>
+          <div class="duelist"><div class="av" style="width:48px;height:48px;margin:0 auto;background:linear-gradient(135deg,#9ccfd8,#c4a7e7)"></div><div class="name" style="margin-top:6px">degenmaxi</div><span class="lbl short" style="margin-top:4px"><i></i>Short</span><div class="mono red" style="font-size:20px;font-weight:600;margin-top:8px">−1.8%</div></div>
+        </div>
+        <div class="acts" style="justify-content:center;gap:10px"><button class="vote up"><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2v4h5a2 2 0 0 1 2 2l-1.5 7a2 2 0 0 1-2 2H7"/></svg><b>88</b></button><button><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>42</button><button class="chip">Challenge kiloklips</button></div>
+        <div class="when" style="text-align:center;margin-top:8px">Record: kiloklips 4 – 2 degenmaxi · stakes are each trader's own position, nothing else</div>
+      </article>
+
+      <!-- Poll -->
+      <article class="post">
+        <div class="who"><div class="av" style="background:linear-gradient(135deg,#bf616a,#d08770)"></div><div><div class="name">fundingfarmer <span class="vbadge">✓</span></div><div class="when">15 min ago · poll · resolves Fri 20:00</div></div></div>
+        <p class="say" style="font-weight:700">SOL above 200 by Friday?</p>
+        <div class="poll" id="poll1">
+          <button class="opt" data-pct="64"><span>Yes</span><b class="mono">64%</b><i style="width:64%"></i></button>
+          <button class="opt" data-pct="36"><span>No</span><b class="mono">36%</b><i style="width:36%"></i></button>
+        </div>
+        <div class="when" style="margin-top:10px">212 votes · settles on the Hyperliquid price</div>
+      </article>
+
+      <article class="post swipe" data-live="b" data-entry="3412" data-size="0.44" data-lev="3">
+        <div class="swipe-bg"><span>Copy trade</span></div>
+        <div class="swipe-fg">
+        <div class="who"><div class="av" style="background:linear-gradient(135deg,#9ccfd8,#c4a7e7)"></div><div><div class="name">degenmaxi</div><div class="when">19 min ago · copied kiloklips</div></div><span class="lbl short" style="margin-left:auto"><i></i>Short 3×</span></div>
+        <div class="pos"><div class="coinline"><span class="cm ETH">ETH</span><div><div class="coin">ETH</div><div class="detail mono">$1,500 · in at 3,412.00</div></div></div><div style="text-align:right" class="pnlbox pnlpill r" title="Tap to switch % / $ / ROI"><div class="pnl mono red" id="pnl-b">−2.1%</div><div class="usd mono red" id="usd-b">−$31.50</div></div></div>
+        <div class="track"><b id="bar-b" style="width:2.1%;background:var(--red)"></b></div>
+        <div class="camps"><span class="muted">Be the first to copy or fade this one</span></div>
+        
+        <div class="acts">
+          <button class="vote up"><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2v4h5a2 2 0 0 1 2 2l-1.5 7a2 2 0 0 1-2 2H7"/></svg><b>3</b></button>
+          <button class="vote down"><svg class="i" viewBox="0 0 24 24"><path d="M17 13V4h3v9zM17 13l-4 8a2 2 0 0 1-3-2v-4H5a2 2 0 0 1-2-2l1.5-7a2 2 0 0 1 2-2H17"/></svg><b>9</b></button>
+          <button><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>11</button>
+          <button class="fade" data-ov-open="ov-fade">Fade</button>
+          <button class="copy">Copy</button>
+        </div>
+        </div>
+      </article>
+
+      <!-- Market story -->
+      <article class="post story" data-go="trade">
+        <div class="who"><div class="sysico"><svg class="i" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div><div><div class="name">HYPE is moving</div><div class="when">+4.2% in the last hour · 8 Perped traders in it</div></div><span class="lbl long" style="margin-left:auto"><i></i>71% long</span></div>
+        <svg viewBox="0 0 320 70" style="width:100%;height:70px;margin-top:14px"><path d="M0 55 L40 50 L80 52 L120 44 L160 46 L200 30 L240 34 L280 16 L320 8" fill="none" stroke="var(--green)" stroke-width="2"/><circle cx="320" cy="8" r="3.5" fill="var(--green)"/></svg>
+        <div class="faces"><div class="av" style="background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div class="av" style="background:linear-gradient(135deg,#bf616a,#d08770)"></div><div class="av" style="background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></div><div class="av" style="background:linear-gradient(135deg,#88c0d0,#5e81ac)"></div><span class="when" style="margin-left:8px">kiloklips, fundingfarmer and 6 more</span></div>
+      </article>
+
+      <!-- Around Perped: milestones, streaks, rank moves in one quiet strip -->
+      <div class="block" style="padding-top:14px;padding-bottom:14px;border-bottom:1px solid var(--line)">
+        <div class="kv"><span class="eyebrow">Around Perped</span><span class="when">last hour</span></div>
+        <div class="ranks" style="padding:12px 20px 0;border:0;margin:0 -20px">
+          <div class="rankcard"><div class="when">Milestone</div><div class="name" style="margin-top:4px">samui_sam hit 2×</div><div class="muted" style="font-size:12px">HYPE long, banked · 3 in a row</div></div>
+          <div class="rankcard"><div class="when">Calls board</div><div class="name" style="margin-top:4px">wickhunter → #3</div><div class="muted" style="font-size:12px">up 4 places</div></div>
+          <div class="rankcard"><div class="when">Streak</div><div class="name" style="margin-top:4px">kiloklips 🔥 6</div><div class="muted" style="font-size:12px">6 for 6 this week</div></div>
+        </div>
+      </div>
+
+      <article class="post swipe">
+        <div class="swipe-bg"><span>Copy trade</span></div>
+        <div class="swipe-fg">
+        <div class="who"><div class="av" style="background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></div><div><div class="name">samui_sam</div><div class="when">2 h ago</div></div><span class="lbl done" style="margin-left:auto">Closed</span></div>
+        <div class="pos"><div class="coinline"><span class="cm HYPE">HYP</span><div><div class="coin">HYPE</div><div class="detail mono">$80 · 41.10 → 46.28</div></div></div><div style="text-align:right" class="pnlbox pnlpill g" title="Tap to switch % / $ / ROI"><div class="pnl mono green">+12.6%</div><div class="usd mono green">+$10.08 banked</div></div></div>
+        <div class="track"><b style="width:12.6%;background:var(--green)"></b></div>
+        <p class="say">Never going broke taking a win.</p>
+        <div class="acts">
+          <button class="vote up"><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2v4h5a2 2 0 0 1 2 2l-1.5 7a2 2 0 0 1-2 2H7"/></svg><b>22</b></button>
+          <button class="vote down"><svg class="i" viewBox="0 0 24 24"><path d="M17 13V4h3v9zM17 13l-4 8a2 2 0 0 1-3-2v-4H5a2 2 0 0 1-2-2l1.5-7a2 2 0 0 1 2-2H17"/></svg><b>0</b></button>
+          <button><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>4</button>
+          <span style="display:inline-flex;align-items:center;gap:6px"><svg class="i" viewBox="0 0 24 24"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7"/></svg>7</span>
+          <button class="copy">Copy</button>
+        </div>
+        </div>
+      </article>
+      <!-- Traders like you -->
+      <div class="block" style="border-bottom:1px solid var(--line)">
+        <div class="kv"><span class="eyebrow">Traders like you</span><span class="when">SOL · HYPE · 3–5×</span></div>
+        <div class="suggest">
+          <div class="sug"><div class="av" style="width:48px;height:48px;background:linear-gradient(135deg,#88c0d0,#5e81ac)"></div><div class="name" style="margin-top:8px">wickhunter</div><div class="when">67% win · SOL</div><button class="chip follow" style="margin-top:10px;width:100%">Follow</button></div>
+          <div class="sug"><div class="av" style="width:48px;height:48px;background:linear-gradient(135deg,#bf616a,#d08770)"></div><div class="name" style="margin-top:8px">fundingfarmer</div><div class="when">73% hit · calls</div><button class="chip follow" style="margin-top:10px;width:100%">Follow</button></div>
+          <div class="sug"><div class="av" style="width:48px;height:48px;background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></div><div class="name" style="margin-top:8px">samui_sam</div><div class="when">70% win · HYPE</div><button class="chip follow" style="margin-top:10px;width:100%">Follow</button></div>
+        </div>
+      </div>
+
+      <div class="pad muted" style="padding:20px;font-size:13px;text-align:center">Earlier today ↓</div>
     </section>
-
 
     <!-- MARKETS -->
     <section class="screen" id="s-markets" hidden>
-      <div class="hdr"><h1>Markets<span class="tag">Testnet</span></h1><span class="muted" style="font-size:12px">142 perps</span></div>
-      <input class="input" placeholder="Search" style="margin-bottom:10px" id="mk-search">
-      <div class="row" style="margin-bottom:10px;gap:6px"><span class="chip on">Top</span><span class="chip">Gainers</span><span class="chip">Losers</span><span class="chip">New</span><span class="chip">Hot on Perped</span></div>
-      <div class="panel" style="padding:4px 16px">
-        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">BTC</div><div class="muted" style="font-size:11px">Vol $2.1B · OI $980M · 50×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,14 8,12 16,13 24,9 32,10 40,6 48,7 60,4" style="stroke:var(--green)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">98,412</div><div class="mono green" style="font-size:12px">+1.8%</div></div></div>
-        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">ETH</div><div class="muted" style="font-size:11px">Vol $1.4B · OI $610M · 50×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,6 8,8 16,7 24,11 32,10 40,13 48,12 60,15" style="stroke:var(--red)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">3,412.00</div><div class="mono red" style="font-size:12px">−2.4%</div></div></div>
-        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">SOL <span class="chip" style="padding:1px 6px;font-size:10px;margin-left:4px">12 live</span></div><div class="muted" style="font-size:11px">Vol $640M · OI $220M · 20×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,16 8,13 16,14 24,10 32,11 40,7 48,8 60,3" style="stroke:var(--green)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">187.42</div><div class="mono green" style="font-size:12px">+5.1%</div></div></div>
-        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">HYPE</div><div class="muted" style="font-size:11px">Vol $310M · OI $140M · 10×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,12 8,10 16,11 24,8 32,9 40,5 48,6 60,2" style="stroke:var(--green)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">46.28</div><div class="mono green" style="font-size:12px">+9.7%</div></div></div>
-        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">XRP</div><div class="muted" style="font-size:11px">Vol $280M · OI $120M · 20×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,9 8,9 16,10 24,8 32,9 40,9 48,10 60,9" style="stroke:var(--muted)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">2.14</div><div class="mono muted" style="font-size:12px">+0.2%</div></div></div>
-        <div class="mkrow" data-go="trade"><div><div style="font-weight:600">DOGE</div><div class="muted" style="font-size:11px">Vol $190M · OI $90M · 10×</div></div><svg class="spark" viewBox="0 0 60 20"><polyline points="0,5 8,7 16,6 24,9 32,8 40,12 48,11 60,16" style="stroke:var(--red)"/></svg><div style="text-align:right"><div class="mono" style="font-weight:600">0.2008</div><div class="mono red" style="font-size:12px">−4.0%</div></div></div>
+      <div class="top"><div><h1>Markets</h1><div class="sub">142 perps · Hyperliquid</div></div><button class="iconbtn" aria-label="Search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></div>
+
+      <div class="pad">
+        <div class="stats3">
+          <div class="stat"><small>24h volume</small><div class="v mono">$8.4B</div></div>
+          <div class="stat"><small>Open interest</small><div class="v mono">$3.1B</div></div>
+          <div class="stat"><small>Perped live</small><div class="v mono">61 <span class="green" style="font-size:12px;font-weight:700">64% long</span></div></div>
+        </div>
+        <div class="eyebrow" style="margin:18px 0 10px">Movers · 1h</div>
+        <div class="movers">
+          <div class="mover up" data-go="trade"><div style="display:flex;align-items:center;gap:8px"><span class="cm HYPE sm">HYP</span><span class="name">HYPE</span></div><div class="mono green" style="font-size:18px;font-weight:700">+4.2%</div><div class="muted mono" style="font-size:12px">46.28</div></div>
+          <div class="mover up" data-go="trade"><div style="display:flex;align-items:center;gap:8px"><span class="cm SOL sm">SOL</span><span class="name">SOL</span></div><div class="mono green" style="font-size:18px;font-weight:700">+2.1%</div><div class="muted mono" style="font-size:12px">187.42</div></div>
+          <div class="mover down" data-go="trade"><div style="display:flex;align-items:center;gap:8px"><span class="cm DOGE sm">DOG</span><span class="name">DOGE</span></div><div class="mono red" style="font-size:18px;font-weight:700">−1.9%</div><div class="muted mono" style="font-size:12px">0.2008</div></div>
+          <div class="mover up" data-go="trade"><div style="display:flex;align-items:center;gap:8px"><span class="cm SUI sm">SUI</span><span class="name">SUI</span></div><div class="mono green" style="font-size:18px;font-weight:700">+1.6%</div><div class="muted mono" style="font-size:12px">3.41</div></div>
+          <div class="mover down" data-go="trade"><div style="display:flex;align-items:center;gap:8px"><span class="cm LINK sm">LIN</span><span class="name">LINK</span></div><div class="mono red" style="font-size:18px;font-weight:700">−1.1%</div><div class="muted mono" style="font-size:12px">17.90</div></div>
+        </div>
+        <div class="seg" style="margin:18px 0 10px"><button class="on">Volume</button><button>Gainers</button><button>Losers</button><button>Open interest</button><button>Funding</button><button>Hot on Perped</button></div>
       </div>
+
+      <div class="mkhead"><span>Market</span><span style="text-align:right">Price · 24h</span><span style="text-align:right">1h</span></div>
+
+      <div class="mk2" data-go="trade">
+        <div class="mk2-main"><div style="display:flex;gap:12px;align-items:center"><span class="cm BTC">BTC</span><div><div class="sym">BTC <span class="lev">50×</span></div><div class="meta">Vol $2.1B · OI $980M</div></div></div><svg class="spark" viewBox="0 0 64 24"><polyline points="0,17 9,14 18,15 27,10 36,12 45,7 54,8 64,4" style="stroke:var(--green)"/></svg><div style="text-align:right"><div class="px mono">98,412</div><div class="chg mono green">+1.8%</div></div><div class="h1 mono green">+0.4%</div></div>
+        <div class="mk2-sub"><span>Funding <b class="mono green">+0.010%</b></span><span>Next in <b class="mono">2h 14m</b></span><span>L/S <b class="mono">52/48</b></span><span>Perped <b class="mono">9 live</b></span></div>
+      </div>
+      <div class="mk2" data-go="trade">
+        <div class="mk2-main"><div style="display:flex;gap:12px;align-items:center"><span class="cm ETH">ETH</span><div><div class="sym">ETH <span class="lev">50×</span></div><div class="meta">Vol $1.4B · OI $610M</div></div></div><svg class="spark" viewBox="0 0 64 24"><polyline points="0,7 9,9 18,8 27,13 36,12 45,15 54,14 64,18" style="stroke:var(--red)"/></svg><div style="text-align:right"><div class="px mono">3,412.00</div><div class="chg mono red">−2.4%</div></div><div class="h1 mono red">−0.6%</div></div>
+        <div class="mk2-sub"><span>Funding <b class="mono red">−0.004%</b></span><span>Next in <b class="mono">2h 14m</b></span><span>L/S <b class="mono">44/56</b></span><span>Perped <b class="mono">6 live</b></span></div>
+      </div>
+      <div class="mk2" data-go="trade">
+        <div class="mk2-main"><div style="display:flex;gap:12px;align-items:center"><span class="cm SOL">SOL</span><div><div class="sym">SOL <span class="lev">20×</span></div><div class="meta">Vol $640M · OI $220M</div></div></div><svg class="spark" viewBox="0 0 64 24"><polyline points="0,19 9,16 18,17 27,12 36,13 45,8 54,9 64,3" style="stroke:var(--green)"/></svg><div style="text-align:right"><div class="px mono">187.42</div><div class="chg mono green">+5.1%</div></div><div class="h1 mono green">+2.1%</div></div>
+        <div class="mk2-sub"><span>Funding <b class="mono green">+0.012%</b></span><span>Next in <b class="mono">2h 14m</b></span><span>L/S <b class="mono">67/33</b></span><span>Perped <b class="mono">12 live</b></span></div>
+      </div>
+      <div class="mk2" data-go="trade">
+        <div class="mk2-main"><div style="display:flex;gap:12px;align-items:center"><span class="cm HYPE">HYP</span><div><div class="sym">HYPE <span class="lev">10×</span></div><div class="meta">Vol $310M · OI $140M</div></div></div><svg class="spark" viewBox="0 0 64 24"><polyline points="0,14 9,12 18,13 27,9 36,10 45,6 54,7 64,2" style="stroke:var(--green)"/></svg><div style="text-align:right"><div class="px mono">46.28</div><div class="chg mono green">+9.7%</div></div><div class="h1 mono green">+4.2%</div></div>
+        <div class="mk2-sub"><span>Funding <b class="mono red">−0.021%</b></span><span>Next in <b class="mono">2h 14m</b></span><span>L/S <b class="mono">71/29</b></span><span>Perped <b class="mono">8 live</b></span></div>
+      </div>
+      <div class="mk2" data-go="trade">
+        <div class="mk2-main"><div style="display:flex;gap:12px;align-items:center"><span class="cm XRP">XRP</span><div><div class="sym">XRP <span class="lev">20×</span></div><div class="meta">Vol $280M · OI $120M</div></div></div><svg class="spark" viewBox="0 0 64 24"><polyline points="0,11 9,11 18,12 27,10 36,11 45,11 54,12 64,11" style="stroke:var(--faint)"/></svg><div style="text-align:right"><div class="px mono">2.14</div><div class="chg mono muted">+0.2%</div></div><div class="h1 mono muted">0.0%</div></div>
+        <div class="mk2-sub"><span>Funding <b class="mono">+0.001%</b></span><span>Next in <b class="mono">2h 14m</b></span><span>L/S <b class="mono">50/50</b></span><span>Perped <b class="mono">1 live</b></span></div>
+      </div>
+      <div class="mk2" data-go="trade">
+        <div class="mk2-main"><div style="display:flex;gap:12px;align-items:center"><span class="cm DOGE">DOG</span><div><div class="sym">DOGE <span class="lev">10×</span></div><div class="meta">Vol $190M · OI $90M</div></div></div><svg class="spark" viewBox="0 0 64 24"><polyline points="0,6 9,8 18,7 27,11 36,10 45,14 54,13 64,19" style="stroke:var(--red)"/></svg><div style="text-align:right"><div class="px mono">0.2008</div><div class="chg mono red">−4.0%</div></div><div class="h1 mono red">−1.9%</div></div>
+        <div class="mk2-sub"><span>Funding <b class="mono">+0.006%</b></span><span>Next in <b class="mono">2h 14m</b></span><span>L/S <b class="mono">38/62</b></span><span>Perped <b class="mono">3 live</b></span></div>
+      </div>
+      <div class="pad muted" style="padding:16px 20px;font-size:12px;line-height:1.5">Prices and funding from Hyperliquid, updating live. L/S is the long/short split of open Perped positions on that market.</div>
     </section>
 
     <!-- TRADE -->
     <section class="screen" id="s-trade" hidden>
-      <div class="hdr"><button class="chip" data-go="markets">‹ Markets</button><span class="muted mono" style="font-size:12px">Balance $1,284.10</span></div>
-      <div class="stack">
-        <div class="panel">
-          <div class="row between" style="align-items:flex-start">
-            <div><div class="coin">SOL <span class="muted" style="font-size:12px;font-weight:500">SOL-USD perp</span></div><div class="mono" style="font-size:26px;font-weight:600;letter-spacing:-.02em;margin-top:2px">187.42 <span class="green" style="font-size:13px;font-weight:500">+5.1%</span></div></div>
-            <div class="row" style="gap:4px"><span class="chip on" style="padding:3px 8px;font-size:11px">1H</span><span class="chip" style="padding:3px 8px;font-size:11px">1D</span><span class="chip" style="padding:3px 8px;font-size:11px">1W</span></div>
-          </div>
-          <svg viewBox="0 0 320 90" style="width:100%;height:90px;margin-top:8px" aria-label="SOL price, last hour">
-            <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--green)" stop-opacity=".25"/><stop offset="1" stop-color="var(--green)" stop-opacity="0"/></linearGradient></defs>
-            <path d="M0 70 L30 62 L60 66 L90 50 L120 54 L150 40 L180 44 L210 30 L240 34 L270 18 L300 22 L320 12 L320 90 L0 90 Z" fill="url(#g)"/>
-            <path d="M0 70 L30 62 L60 66 L90 50 L120 54 L150 40 L180 44 L210 30 L240 34 L270 18 L300 22 L320 12" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linejoin="round"/>
-            <circle cx="320" cy="12" r="3" fill="var(--green)"/>
-          </svg>
-          <div class="grid3" style="font-size:11px;color:var(--muted);margin-top:6px">
-            <div>24h volume<br><span class="mono" style="color:var(--text);font-size:13px">$640M</span></div>
-            <div>Open interest<br><span class="mono" style="color:var(--text);font-size:13px">$220M</span></div>
-            <div>Funding / 8h<br><span class="mono" style="color:var(--text);font-size:13px">+0.012%</span></div>
-          </div>
-          <div class="divider"></div>
-          <div class="row between muted" style="font-size:12px"><span>12 Perped traders live · 8 long, 4 short</span><span class="green">67% long</span></div>
+      <div class="top">
+        <button class="iconbtn" data-go="markets" aria-label="Back"><svg class="i" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>
+        <div class="sub mono">Balance $1,284.10</div>
+      </div>
+
+      <div class="block" style="padding-top:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div><div style="display:flex;align-items:center;gap:10px"><span class="cm SOL">SOL</span><div style="font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1">SOL</div></div><div class="mono" style="font-size:22px;font-weight:600;margin-top:10px">187.42 <span class="green" style="font-size:14px;font-weight:600">+5.1%</span></div></div>
+          <div class="seg"><button class="on" style="padding:6px 10px;font-size:12px">1H</button><button style="padding:6px 10px;font-size:12px">1D</button><button style="padding:6px 10px;font-size:12px">1W</button></div>
         </div>
-        <div class="muted" style="font-size:12px">Copying <b style="color:var(--text);font-weight:600">kiloklips</b> · Long SOL</div>
-        <div class="grid2">
-          <button class="btn btn-long" id="b-long">Long</button>
-          <button class="btn btn-outline" id="b-short">Short</button>
+        <svg viewBox="0 0 320 100" style="width:100%;height:100px;margin-top:14px" aria-label="SOL price, last hour">
+          <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--green)" stop-opacity=".2"/><stop offset="1" stop-color="var(--green)" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0 78 L30 70 L60 74 L90 56 L120 60 L150 44 L180 48 L210 34 L240 38 L270 20 L300 24 L320 14 L320 100 L0 100 Z" fill="url(#g)"/>
+          <path d="M0 78 L30 70 L60 74 L90 56 L120 60 L150 44 L180 48 L210 34 L240 38 L270 20 L300 24 L320 14" fill="none" stroke="var(--green)" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="320" cy="14" r="3.5" fill="var(--green)"/>
+        </svg>
+        <div class="stats3" style="margin-top:14px">
+          <div class="stat"><small>24h volume</small><div class="v mono">$640M</div></div>
+          <div class="stat"><small>Open interest</small><div class="v mono">$220M</div></div>
+          <div class="stat"><small>Funding</small><div class="v mono">0.012%</div></div>
         </div>
-        <div class="panel stack">
-          <div class="row" style="gap:6px"><button class="chip on" id="ot-market" style="flex:1;justify-content:center">Market</button><button class="chip" id="ot-limit" style="flex:1;justify-content:center">Limit</button></div>
-          <div class="row between" id="limit-row" hidden><span class="muted" style="font-size:12px">Limit price</span><input class="input mono" value="186.50" style="width:120px;padding:6px 10px;text-align:right"></div>
-          <div class="row between muted" style="font-size:12px"><span>Margin (USDC)</span><span>Max $500 during beta</span></div>
-          <div class="row" style="gap:6px">
-            <button class="chip" style="flex:1;justify-content:center">25</button><button class="chip on" style="flex:1;justify-content:center">50</button><button class="chip" style="flex:1;justify-content:center">100</button><button class="chip" style="flex:1;justify-content:center">250</button>
-          </div>
-          <input class="input mono" id="margin" value="50" inputmode="decimal">
-          <div class="row between" style="font-size:12px"><span class="muted">Leverage</span><span class="mono" style="font-weight:600" id="lev-lbl">5×</span></div>
-          <input type="range" class="range" id="lev" min="1" max="5" value="5">
-          <div class="grid3" style="font-size:11px;color:var(--muted)">
-            <div>Position<br><span class="mono" style="color:var(--text);font-size:13px" id="pos">$250.00</span></div>
-            <div>Size<br><span class="mono" style="color:var(--text);font-size:13px" id="sz">1.33 SOL</span></div>
-            <div>Liq. distance<br><span class="mono" style="color:var(--text);font-size:13px" id="liq">≈18%</span></div>
-          </div>
+        <div class="kv" style="margin-top:14px"><span class="k">12 Perped traders live</span><span class="green" style="font-weight:700">67% long</span></div>
+      </div>
+
+      <div class="block">
+        <div class="pair"><button class="btn long" id="b-long">Long</button><button class="btn" id="b-short">Short</button></div>
+        <div class="seg" style="margin-top:14px"><button class="on info" id="ot-market">Market</button><button id="ot-limit">Limit</button></div>
+        <div class="kv" id="limit-row" hidden style="margin-top:12px"><span class="k">Limit price</span><input class="field mono" value="186.50" style="width:130px;padding:10px 14px;text-align:right"></div>
+      </div>
+
+      <div class="block">
+        <div class="kv"><span class="k">Margin</span><span class="muted" style="font-size:12px">Max $500 in beta</span></div>
+        <div class="mono" style="font-size:40px;font-weight:600;letter-spacing:-.03em;margin:8px 0 10px"><span class="muted" style="font-size:24px;vertical-align:top">$</span><input id="margin" value="50" inputmode="decimal" class="mono" style="font-size:40px;font-weight:600;border:0;background:none;width:140px;color:var(--text);padding:0;letter-spacing:-.03em"></div>
+        <div class="seg"><button>25</button><button class="on">50</button><button>100</button><button>250</button></div>
+        <div class="kv" style="margin-top:18px"><span class="k">Leverage</span><span class="mono" style="font-weight:700" id="lev-lbl">5×</span></div>
+        <input type="range" class="range" id="lev" min="1" max="5" value="5">
+        <div class="stats3">
+          <div class="stat"><small>Position</small><div class="v mono" id="pos">$250</div></div>
+          <div class="stat"><small>Size</small><div class="v mono" id="sz">1.33</div></div>
+          <div class="stat"><small>Liq. at</small><div class="v mono" id="liq">153.2</div></div>
         </div>
-        <div class="panel stack" style="gap:8px">
-          <div class="row between"><span style="font-weight:600;font-size:13px">Take profit / stop loss</span><button class="chip on" id="tpsl-toggle" style="padding:3px 10px;font-size:11px">On</button></div>
-          <div class="grid2" id="tpsl">
-            <div><div class="muted" style="font-size:11px;margin-bottom:4px">Take profit</div><input class="input mono" value="195.00" style="padding:8px 10px"><div class="green" style="font-size:11px;margin-top:4px">+4.0% · +$10.10</div></div>
-            <div><div class="muted" style="font-size:11px;margin-bottom:4px">Stop loss</div><input class="input mono" value="182.00" style="padding:8px 10px"><div class="red" style="font-size:11px;margin-top:4px">−2.9% · −$7.23</div></div>
-          </div>
-          <p class="faint" style="font-size:11px;margin:0">Both are placed on Hyperliquid with the order and trigger as market orders. Est. liquidation 153.20.</p>
+      </div>
+
+      <div class="block">
+        <div class="kv"><span style="font-weight:700">Take profit · Stop loss</span><button class="chip on" id="tpsl-toggle" style="padding:6px 12px">On</button></div>
+        <div class="pair" id="tpsl" style="margin-top:14px">
+          <div><div class="eyebrow" style="margin-bottom:8px">Take profit</div><input class="field mono" value="195.00"><div class="green" style="font-size:13px;margin-top:8px;font-weight:600">+4.0% · +$10.10</div></div>
+          <div><div class="eyebrow" style="margin-bottom:8px">Stop loss</div><input class="field mono" value="182.00"><div class="red" style="font-size:13px;margin-top:8px;font-weight:600">−2.9% · −$7.23</div></div>
         </div>
-        <input class="input" id="caption" placeholder="Add a note (optional)">
-        <button class="btn btn-long" id="go" style="font-size:15px">Long SOL 5× · $250.00</button>
-        <p class="faint" style="font-size:11px;text-align:center;margin:0">Market order, up to 3% slippage. You can lose your margin. Not financial advice.</p>
+      </div>
+
+      <div class="block">
+        <input class="field" placeholder="Add a note for the feed" style="margin-bottom:14px">
+        <button class="btn long" id="go">Long SOL 5× · $250</button>
+        <p class="faint" style="font-size:12px;text-align:center;margin:12px 0 0;line-height:1.5">Filled on Hyperliquid. You can lose your margin. Not financial advice.</p>
       </div>
     </section>
 
     <!-- PROFILE -->
     <section class="screen" id="s-profile" hidden>
-      <div class="hdr"><h1>kiloklips</h1><button class="btn btn-outline sm">Log out</button></div>
-      <div class="panel">
-        <div class="row" style="gap:12px">
-          <div class="avatar" style="width:52px;height:52px;font-size:16px">KY</div>
-          <div style="flex:1;min-width:0">
-            <div class="muted" style="font-size:12px">312 followers · 41 following</div>
-            <p style="margin:4px 0 0">Koh Samui. Size small, take profits, post the losses too.</p>
-            <p class="faint mono" style="font-size:11px;margin:6px 0 0">0x7c2a9f…e41b · verified on-chain</p>
+      <div class="top"><h1 style="font-size:20px">kiloklips</h1><button class="iconbtn" aria-label="Settings" data-ov-open="ov-settings"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
+
+      <!-- Identity -->
+      <div class="cover"></div>
+      <div class="block" style="padding-top:0">
+        <div style="display:flex;gap:16px;align-items:center">
+          <div class="av" style="width:84px;height:84px;background:linear-gradient(135deg,#f6c177,#eb6f92)"></div>
+          <div style="flex:1;min-width:0;padding-top:46px">
+            <div style="font-size:22px;font-weight:800;letter-spacing:-.02em">kiloklips</div>
+            <div class="muted mono" style="font-size:12px;margin-top:2px">0x7c2a…e41b · verified</div>
+            <div style="display:flex;gap:18px;margin-top:10px">
+              <button class="cnt" data-ptab="followers"><b>312</b> followers</button>
+              <button class="cnt" data-ptab="following"><b>41</b> following</button>
+            </div>
           </div>
         </div>
-        <div class="grid3" style="margin-top:14px">
-          <div class="stat"><small>PnL 7d</small><span class="mono green" style="font-weight:600">+$412</span></div>
-          <div class="stat"><small>PnL all time</small><span class="mono green" style="font-weight:600">+$1,904</span></div>
-          <div class="stat"><small>Win rate</small><span class="mono" style="font-weight:600">58%</span></div>
+        <p style="margin:14px 0 0;font-size:15px">Koh Samui. Size small, take profits, post the losses too.</p>
+        <div class="pair" style="margin-top:14px">
+          <button class="btn brand" style="padding:12px;font-size:14px" id="compose-btn" data-ov-open="ov-compose">Write a post</button>
+          <button class="btn" style="padding:12px;font-size:14px">Edit profile</button>
         </div>
       </div>
-      <div class="eyebrow">Open positions</div>
-      <div class="panel row between" style="padding:12px 16px">
-        <div><div style="font-weight:600">SOL <span class="chip long" style="padding:2px 6px;font-size:11px;margin-left:4px">Long 5×</span></div><div class="muted mono" style="font-size:12px;margin-top:2px">1.33 @ 187.42 · mark 189.11</div></div>
-        <div style="text-align:right"><div class="mono green" style="font-weight:600">+$2.25</div><button class="btn btn-outline sm" style="margin-top:6px">Close</button></div>
-      </div>
-      <div class="eyebrow">History</div>
-      <article class="panel">
-        <div class="row between" style="margin-bottom:14px"><div class="row"><div class="avatar">KY</div><div><div style="font-weight:600">kiloklips</div><div class="muted" style="font-size:12px">Yesterday · closed</div></div></div><span class="chip">Short · 3×</span></div>
-        <div class="row between" style="align-items:flex-end">
-          <div><div class="coin">DOGE</div><div class="muted mono" style="font-size:12px;margin-top:2px">$150 · 0.1842 → 0.2008</div></div>
-          <div style="text-align:right"><div class="mono pnl red">−9.0%</div><div class="mono red" style="font-size:13px">−$13.50 realised</div></div>
+
+      <!-- Balance -->
+      <div class="block">
+        <div class="kv"><span class="eyebrow">Account balance</span><span class="muted" style="font-size:12px">USDC on Hyperliquid</span></div>
+        <div class="mono" style="font-size:36px;font-weight:600;letter-spacing:-.03em;margin-top:8px">$1,284.10</div>
+        <div style="display:flex;gap:18px;margin-top:8px;font-size:13px">
+          <span class="muted">Available <b class="mono" style="color:var(--text);font-weight:600">$1,034.10</b></span>
+          <span class="muted">In positions <b class="mono" style="color:var(--text);font-weight:600">$250.00</b></span>
+          <span class="muted">Open PnL <b class="mono green" style="font-weight:600">+$2.25</b></span>
         </div>
-        <div class="bar"><i style="width:9%;background:var(--red)"></i></div>
-        <p class="cap">Got perped. Doge does what doge wants.</p>
-      </article>
+        <div class="pair" style="margin-top:14px">
+          <button class="btn deposit" style="padding:12px;font-size:14px" data-money-open="deposit">Deposit</button>
+          <button class="btn withdraw" style="padding:12px;font-size:14px" data-money-open="withdraw">Withdraw</button>
+        </div>
+        <div class="stats3" style="margin-top:14px">
+          <div class="stat"><small>7 day</small><div class="v mono green">+$412</div></div>
+          <div class="stat"><small>All time</small><div class="v mono green">+$1,904</div></div>
+          <div class="stat"><small>Volume 30d</small><div class="v mono">$61K</div></div>
+        </div>
+        <div class="pair" style="margin-top:10px">
+          <div class="stat"><small>Copied vs faded</small><div class="v mono">41 <span class="muted" style="font-size:12px;font-weight:600">/</span> 17</div></div>
+          <div class="stat"><small>Rivalries</small><div class="v">4–2 <span class="muted" style="font-size:12px;font-weight:600">vs degenmaxi</span></div></div>
+        </div>
+        <div class="pair" style="margin-top:10px">
+          <div class="stat"><small>Trades · 31 closed</small><div class="v mono">58% <span class="muted" style="font-size:12px;font-weight:600">win</span></div></div>
+          <div class="stat"><small>Calls · 18 resolved · Judgement 64%</small><div class="v mono">78% <span class="muted" style="font-size:12px;font-weight:600">hit</span> <span class="green" style="font-size:12px;font-weight:700">🔥5</span></div></div>
+        </div>
+      </div>
+
+      <!-- Pinned -->
+      <div class="block" style="padding-bottom:12px">
+        <div class="kv"><span class="eyebrow">Pinned trades</span><button class="chip" style="padding:4px 10px;font-size:12px">Manage</button></div>
+        <div class="pins">
+          <div class="pin"><div class="muted" style="font-size:12px">Sep 12</div><div class="pin-coin">HYPE <span class="lbl long" style="padding:2px 8px;font-size:11px"><i></i>Long 3×</span></div><div class="mono green" style="font-size:22px;font-weight:700;margin-top:6px">+184%</div><div class="muted mono" style="font-size:12px">$200 → $568</div></div>
+          <div class="pin"><div class="muted" style="font-size:12px">Oct 3</div><div class="pin-coin">SOL <span class="lbl long" style="padding:2px 8px;font-size:11px"><i></i>Long 5×</span></div><div class="mono green" style="font-size:22px;font-weight:700;margin-top:6px">+61%</div><div class="muted mono" style="font-size:12px">$250 → $402</div></div>
+          <div class="pin"><div class="muted" style="font-size:12px">Oct 21</div><div class="pin-coin">ETH <span class="lbl short" style="padding:2px 8px;font-size:11px"><i></i>Short 2×</span></div><div class="mono green" style="font-size:22px;font-weight:700;margin-top:6px">+38%</div><div class="muted mono" style="font-size:12px">$300 → $414</div></div>
+          <div class="pin add"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><div class="muted" style="font-size:12px;margin-top:6px">Pin a trade</div></div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="ptabs">
+        <button class="on" data-ptab="posts">Posts</button>
+        <button data-ptab="trades">Trades</button>
+        <button data-ptab="followers">Followers</button>
+        <button data-ptab="following">Following</button>
+      </div>
+
+      <div id="pt-posts">
+        <article class="post">
+          <div class="who"><div class="av" style="background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div><div class="name">kiloklips</div><div class="when">1 h ago</div></div></div>
+          <p class="say">Funding on SOL flipped positive for the first time in a week. Longs are paying shorts now. Not a signal on its own, but worth watching into the NY open.</p>
+          <div class="acts">
+            <button><svg class="i" viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>31</button>
+            <button><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>9</button>
+          </div>
+        </article>
+        <article class="post">
+          <div class="who"><div class="av" style="background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div><div class="name">kiloklips</div><div class="when">Yesterday</div></div></div>
+          <p class="say">Rule for new people here: if you can't explain why you're in a trade in one sentence, you're not in a trade, you're in a bet.</p>
+          <div class="acts">
+            <button><svg class="i" viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>118</button>
+            <button><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>24</button>
+          </div>
+        </article>
+      </div>
+
+      <div id="pt-trades" hidden>
+        <div class="pad" style="padding-top:14px;padding-bottom:4px"><div class="seg"><button class="on" data-ttab="open">Open · 1</button><button data-ttab="closed">Closed · 31</button></div></div>
+        <div id="tt-open">
+          <article class="post">
+            <div class="who"><div><div class="name">SOL</div><div class="when">Opened 4 min ago</div></div><span class="lbl long" style="margin-left:auto"><i></i>Long 5×</span></div>
+            <div class="pos"><div><div class="detail mono" style="margin-top:0">1.33 SOL · in at 187.42 · now 189.11</div><div class="detail mono">TP 195.00 · SL 182.00 · liq 153.20</div></div><div style="text-align:right"><div class="pnl mono green" style="font-size:26px">+4.5%</div><div class="usd mono green">+$2.25</div></div></div>
+            <div class="track"><b style="width:4.5%;background:var(--green)"></b></div>
+            <div style="display:flex;gap:8px;margin-top:14px"><button class="chip danger">Close 50%</button><button class="chip danger">Close all</button><button class="chip info">Stop to entry</button></div>
+          </article>
+        </div>
+        <div id="tt-closed" hidden>
+          <article class="post">
+            <div class="who"><div><div class="name">DOGE</div><div class="when">Yesterday · held 3 h</div></div><span class="lbl done" style="margin-left:auto">Short 3×</span></div>
+            <div class="pos"><div><div class="detail mono" style="margin-top:0">$150 · 0.1842 → 0.2008</div></div><div style="text-align:right"><div class="pnl mono red" style="font-size:26px">−9.0%</div><div class="usd mono red">−$13.50</div></div></div>
+            <p class="say">Got perped. Doge does what doge wants.</p>
+          </article>
+          <article class="post">
+            <div class="who"><div><div class="name">ETH</div><div class="when">Oct 21 · held 2 d</div></div><span class="lbl done" style="margin-left:auto">Short 2×</span></div>
+            <div class="pos"><div><div class="detail mono" style="margin-top:0">$300 · 3,610 → 3,290</div></div><div style="text-align:right"><div class="pnl mono green" style="font-size:26px">+38%</div><div class="usd mono green">+$114</div></div></div>
+            <div class="acts"><span class="muted" style="font-size:12px">Pinned</span></div>
+          </article>
+          <article class="post">
+            <div class="who"><div><div class="name">HYPE</div><div class="when">Oct 18 · held 6 h</div></div><span class="lbl done" style="margin-left:auto">Long 2×</span></div>
+            <div class="pos"><div><div class="detail mono" style="margin-top:0">$80 · 41.10 → 46.28</div></div><div style="text-align:right"><div class="pnl mono green" style="font-size:26px">+25%</div><div class="usd mono green">+$20.16</div></div></div>
+          </article>
+        </div>
+      </div>
+
+      <div id="pt-followers" hidden>
+        <div class="lb"><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></div><div style="flex:1;min-width:0"><div class="name">samui_sam</div><div class="when">+$2,104 · 7 days</div></div><button class="chip follow">Follow back</button></div>
+        <div class="lb"><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#9ccfd8,#c4a7e7)"></div><div style="flex:1;min-width:0"><div class="name">degenmaxi</div><div class="when">−$640 · 7 days</div></div><button class="chip follow on">Following</button></div>
+        <div class="lb"><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#88c0d0,#5e81ac)"></div><div style="flex:1;min-width:0"><div class="name">wickhunter</div><div class="when">+$188 · 7 days</div></div><button class="chip follow">Follow back</button></div>
+        <div class="pad muted" style="padding:16px 20px;font-size:13px;text-align:center">309 more</div>
+      </div>
+
+      <div id="pt-following" hidden>
+        <div class="lb"><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#9ccfd8,#c4a7e7)"></div><div style="flex:1;min-width:0"><div class="name">degenmaxi</div><div class="when">2 open · copy alerts on</div></div><button class="chip follow on">Following</button></div>
+        <div class="lb"><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#bf616a,#d08770)"></div><div style="flex:1;min-width:0"><div class="name">fundingfarmer</div><div class="when">0 open</div></div><button class="chip follow on">Following</button></div>
+        <div class="pad muted" style="padding:16px 20px;font-size:13px;text-align:center">39 more</div>
+      </div>
     </section>
 
     <!-- BOARD -->
     <section class="screen" id="s-board" hidden>
-      <div class="hdr"><h1>Leaderboard</h1></div>
-      <div class="row" style="margin-bottom:10px;gap:6px"><span class="chip on">7 days</span><span class="chip">30 days</span><span class="chip">All time</span></div>
-      <p class="muted" style="font-size:12px;margin:0 0 12px">Realised PnL from Hyperliquid fills. Chain data only, no screenshots.</p>
-      <div class="panel" style="padding:14px 16px">
-        <div class="lb"><span class="rank">1</span><div style="flex:1;min-width:0"><div style="font-weight:600">samui_sam</div><div class="muted" style="font-size:12px">23 closed · 70% win · $48.2K volume</div></div><div class="mono green" style="font-weight:600">+$2,104</div></div>
-        <div class="lb"><span class="rank">2</span><div style="flex:1;min-width:0"><div style="font-weight:600">kiloklips</div><div class="muted" style="font-size:12px">31 closed · 58% win · $61.0K volume</div></div><div class="mono green" style="font-weight:600">+$412</div></div>
-        <div class="lb"><span class="rank">3</span><div style="flex:1;min-width:0"><div style="font-weight:600">wickhunter</div><div class="muted" style="font-size:12px">9 closed · 67% win · $12.4K volume</div></div><div class="mono green" style="font-weight:600">+$188</div></div>
-        <div class="lb"><span class="rank">4</span><div style="flex:1;min-width:0"><div style="font-weight:600">degenmaxi</div><div class="muted" style="font-size:12px">44 closed · 41% win · $190K volume</div></div><div class="mono red" style="font-weight:600">−$640</div></div>
+      <div class="top"><div><h1>Leaders</h1><div class="sub" id="board-sub">Realised PnL from Hyperliquid fills</div></div></div>
+      <div class="pad" style="padding-bottom:12px">
+        <div class="modes"><button class="on" data-board="trades">Trades</button><button data-board="calls">Calls</button></div>
+        <div class="seg" style="margin-top:12px"><button class="on">7 days</button><button>30 days</button><button>All time</button></div>
+      </div>
+
+      <div id="board-trades">
+      <div class="podium" id="podium">
+        <div class="pod second"><span class="medal">2</span><div class="av" style="background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div class="n">kiloklips</div><div class="v mono green">+$412</div></div>
+        <div class="pod first"><span class="medal">1</span><div class="av" style="background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></div><div class="n">samui_sam</div><div class="v mono green">+$2,104</div><div class="when">70% win</div></div>
+        <div class="pod third"><span class="medal">3</span><div class="av" style="background:linear-gradient(135deg,#88c0d0,#5e81ac)"></div><div class="n">wickhunter</div><div class="v mono green">+$188</div></div>
+      </div>
+        <div class="lb"><span class="rank">1</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></div><div style="flex:1;min-width:0"><div class="name">samui_sam</div><div class="when">23 trades · 70% win · $48K volume</div></div><div class="mono green" style="font-size:17px;font-weight:700">+$2,104</div></div>
+        <div class="lb"><span class="rank">2</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div style="flex:1;min-width:0"><div class="name">kiloklips</div><div class="when">31 trades · 58% win · $61K volume</div></div><div class="mono green" style="font-size:17px;font-weight:700">+$412</div></div>
+        <div class="lb"><span class="rank">3</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#88c0d0,#5e81ac)"></div><div style="flex:1;min-width:0"><div class="name">wickhunter</div><div class="when">9 trades · 67% win · $12K volume</div></div><div class="mono green" style="font-size:17px;font-weight:700">+$188</div></div>
+        <div class="lb"><span class="rank">4</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#9ccfd8,#c4a7e7)"></div><div style="flex:1;min-width:0"><div class="name">degenmaxi</div><div class="when">44 trades · 41% win · $190K volume</div></div><div class="mono red" style="font-size:17px;font-weight:700">−$640</div></div>
+        <div class="pad muted" style="padding:14px 20px;font-size:12px;line-height:1.5">Ranked by realised PnL. Only trades placed through Perped count, so every number is verifiable on-chain.</div>
+        <div class="eyebrow" style="padding:18px 20px 6px;color:var(--red)">Exit liquidity · this week · opted in</div>
+        <div class="lb"><span class="rank">↓1</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#9ccfd8,#c4a7e7)"></div><div style="flex:1;min-width:0"><div class="name">degenmaxi</div><div class="when">44 trades · 41% win · 2 liquidations · faded 9×</div></div><div class="mono red" style="font-size:17px;font-weight:700">−$640</div></div>
+        <div class="lb"><span class="rank">↓2</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#d08770,#ebcb8b)"></div><div style="flex:1;min-width:0"><div class="name">chadlord</div><div class="when">12 trades · 33% win · 1 liquidation</div></div><div class="mono red" style="font-size:17px;font-weight:700">−$410</div></div>
+        <div class="lb"><span class="rank">↓3</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#b48ead,#88c0d0)"></div><div style="flex:1;min-width:0"><div class="name">mooncat</div><div class="when">8 trades · 25% win</div></div><div class="mono red" style="font-size:17px;font-weight:700">−$188</div></div>
+        <div class="pad muted" style="padding:14px 20px;font-size:12px;line-height:1.5">Only traders who turned on "Show me at the bottom" in Settings appear here. Everyone else keeps their losses in their own history.</div>
+
+      </div>
+
+      <div id="board-calls" hidden>
+        <div class="lb"><span class="rank">1</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div style="flex:1;min-width:0"><div class="name">kiloklips</div><div class="when">18 calls · 14 hit · avg +6.2% · 🔥 5 · trades 58% win</div></div><div style="text-align:right"><div class="mono" style="font-size:17px;font-weight:700">78%</div><div class="when">hit rate</div></div></div>
+        <div class="lb"><span class="rank">2</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#bf616a,#d08770)"></div><div style="flex:1;min-width:0"><div class="name">fundingfarmer</div><div class="when">11 calls · 8 hit · avg +4.1%</div></div><div style="text-align:right"><div class="mono" style="font-size:17px;font-weight:700">73%</div><div class="when">hit rate</div></div></div>
+        <div class="lb"><span class="rank">3</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></div><div style="flex:1;min-width:0"><div class="name">samui_sam</div><div class="when">9 calls · 6 hit · avg +3.8%</div></div><div style="text-align:right"><div class="mono" style="font-size:17px;font-weight:700">67%</div><div class="when">hit rate</div></div></div>
+        <div class="lb"><span class="rank">4</span><div class="av" style="width:44px;height:44px;background:linear-gradient(135deg,#9ccfd8,#c4a7e7)"></div><div style="flex:1;min-width:0"><div class="name">degenmaxi</div><div class="when">27 calls · 11 hit · avg −1.9% · trades 41% win</div></div><div style="text-align:right"><div class="mono red" style="font-size:17px;font-weight:700">41%</div><div class="when">hit rate</div></div></div>
+        <div class="pad muted" style="padding:14px 20px;font-size:12px;line-height:1.5">A call is a public prediction: coin, direction, target and deadline. Perped checks it against Hyperliquid prices and marks it hit or missed automatically. Needs at least 5 resolved calls to rank.</div>
       </div>
     </section>
 
+
+    <!-- ONBOARDING -->
+    <section class="screen ob" id="s-onboard" hidden>
+      <div class="ob-step" data-step="1">
+        <div class="ob-hero">
+          <div class="ob-mark">P</div>
+          <h2 class="ob-title">Trade in public.<br>Copy the best.</h2>
+          <p class="ob-lead">Perped is the social home for perps. Every trade is a post, every trader has a verified track record, and your money stays on Hyperliquid.</p>
+          <div class="ob-ticker">
+            <span class="lbl long"><i></i>kiloklips · SOL +8.3%</span><span class="lbl short"><i></i>degenmaxi · ETH −2.1%</span><span class="lbl long"><i></i>samui_sam · HYPE +12.6%</span>
+          </div>
+        </div>
+        <div class="ob-actions">
+          <button class="btn ink ob-next"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><circle cx="12" cy="12" r="9"/></svg>Continue with Google</button>
+          <button class="btn ob-next"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M4 7h16v10H4zM4 7l8 6 8-6"/></svg>Continue with email</button>
+          <button class="btn ob-next"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M3 7h18v12H3zM3 7l3-3h12l3 3M16 13h2"/></svg>Connect a wallet</button>
+          <p class="faint" style="font-size:12px;text-align:center;margin:6px 0 0">No seed phrases. A wallet is created for you and only you control it.</p>
+        </div>
+      </div>
+
+      <div class="ob-step" data-step="2" hidden>
+        <div class="ob-body">
+          <div class="ob-progress"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <h2 class="ob-title">What should we call you?</h2>
+          <p class="ob-lead">Your handle is how you appear in the feed and on the leaderboards. You can change it later.</p>
+          <div class="ob-avatars">
+            <button class="av on" style="background:linear-gradient(135deg,#f6c177,#eb6f92)"></button>
+            <button class="av" style="background:linear-gradient(135deg,#9ccfd8,#c4a7e7)"></button>
+            <button class="av" style="background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></button>
+            <button class="av" style="background:linear-gradient(135deg,#88c0d0,#5e81ac)"></button>
+            <button class="av" style="background:linear-gradient(135deg,#bf616a,#d08770)"></button>
+            <button class="av add" aria-label="Upload a photo"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
+          <div class="ob-handle"><span class="muted">@</span><input class="field" value="kiloklips" id="ob-handle" maxlength="20"><span class="ok">Available</span></div>
+          <input class="field" placeholder="One line about how you trade (optional)" style="margin-top:10px">
+        </div>
+        <div class="ob-actions"><button class="btn ink ob-next">Continue</button></div>
+      </div>
+
+      <div class="ob-step" data-step="3" hidden>
+        <div class="ob-body">
+          <div class="ob-progress"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+          <h2 class="ob-title">How Perped works</h2>
+          <div class="ob-cards">
+            <div class="ob-card"><div class="ob-ico" style="background:var(--brand-soft);color:var(--brand)"><svg class="i" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div><div><b>Every trade is a post</b><p>Open a position and it appears in the feed with your name on it, live P&L and all. Wins and losses.</p></div></div>
+            <div class="ob-card"><div class="ob-ico" style="background:var(--blue-soft);color:var(--blue)"><svg class="i" viewBox="0 0 24 24"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7"/></svg></div><div><b>Copy anyone in one tap</b><p>See a trade you like? Copy it at your own size. Track records are pulled from the chain, so nobody can fake them.</p></div></div>
+            <div class="ob-card"><div class="ob-ico" style="background:var(--green-soft);color:var(--green)"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg></div><div><b>Your money stays on Hyperliquid</b><p>Perped never holds funds. Trades fill on Hyperliquid's order book from your own wallet. We're the screen, not the exchange.</p></div></div>
+            <div class="ob-card"><div class="ob-ico" style="background:var(--red-soft);color:var(--red)"><svg class="i" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div><div><b>Perps are risky</b><p>Leverage cuts both ways and you can lose your margin. Start small, use stops, and treat every post as an opinion, not advice.</p></div></div>
+          </div>
+        </div>
+        <div class="ob-actions"><button class="btn ink ob-next">Got it</button></div>
+      </div>
+
+      <div class="ob-step" data-step="4" hidden>
+        <div class="ob-body">
+          <div class="ob-progress"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <h2 class="ob-title">One signature to start</h2>
+          <p class="ob-lead">Perped earns a small fee on trades placed here. Hyperliquid asks you to approve the maximum once, up front.</p>
+          <div class="ob-fee">
+            <div class="ob-fee-row"><span class="muted">Perped fee</span><b class="mono">0.05%</b></div>
+            <div class="ob-fee-row"><span class="muted">On a $250 trade</span><b class="mono">$0.13</b></div>
+            <div class="ob-fee-row"><span class="muted">Hyperliquid's own fee</span><b class="mono">~0.045%</b></div>
+            <div class="ob-fee-row" style="border:0"><span class="muted">Applies to</span><b>Trades placed in Perped only</b></div>
+          </div>
+          <ul class="ob-list">
+            <li>You sign once with your wallet. Nothing is charged now.</li>
+            <li>You can revoke it anytime from Hyperliquid or in Settings.</li>
+            <li>It can never go above the amount you approve.</li>
+          </ul>
+        </div>
+        <div class="ob-actions">
+          <button class="btn brand ob-next">Approve 0.05% and continue</button>
+          <button class="btn ob-next" style="background:transparent">Skip for now</button>
+        </div>
+      </div>
+
+      <div class="ob-step" data-step="5" hidden>
+        <div class="ob-body">
+          <h2 class="ob-title">You're in, kiloklips.</h2>
+          <p class="ob-lead">Your trading wallet is ready. Add funds when you want to trade, or go look around first.</p>
+          <div class="ob-wallet">
+            <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Your Hyperliquid wallet</div>
+            <div class="mono" style="font-size:13px;margin-top:6px;word-break:break-all">0x7c2a9f3e1b84d6a2c5f09e7b1d3a8c6e4f2b9e41b</div>
+            <div class="pair" style="margin-top:12px"><button class="chip info">Copy address</button><button class="chip">Show QR</button></div>
+          </div>
+          <div class="ob-cards" style="margin-top:14px">
+            <button class="ob-card ob-opt"><div class="ob-ico" style="background:var(--green-soft);color:var(--green)"><svg class="i" viewBox="0 0 24 24"><path d="M3 7h18v10H3zM3 11h18"/></svg></div><div><b>Buy USDC with a card</b><p>Apple Pay, card or bank. Lands in your wallet in minutes.</p></div></button>
+            <button class="ob-card ob-opt"><div class="ob-ico" style="background:var(--blue-soft);color:var(--blue)"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg></div><div><b>Send USDC from an exchange</b><p>Withdraw to the address above on Arbitrum. We bridge it to Hyperliquid for you.</p></div></button>
+          </div>
+        </div>
+        <div class="ob-actions"><button class="btn ink" id="ob-finish">Explore the feed</button></div>
+      </div>
+    </section>
+
+
+
+    <!-- COMPOSER -->
+    <section class="overlay" id="ov-compose" hidden>
+      <div class="ov-top"><button class="chip" data-ov-close>Cancel</button><div class="modes mini"><button class="on" data-cmode="post">Post</button><button data-cmode="call">Call</button><button data-cmode="poll">Poll</button></div><button class="copy" style="margin:0" id="c-publish">Post</button></div>
+      <div class="ov-body">
+        <div class="who" style="margin-bottom:14px"><div class="av" style="background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div><div class="name">kiloklips</div><div class="when">Everyone can see this</div></div></div>
+
+        <div id="cm-post">
+          <textarea class="ta" rows="5" placeholder="What are you seeing?"></textarea>
+          <div class="attach"><div class="cm SOL sm">SOL</div><div style="flex:1"><b>SOL Long 5×</b><div class="when">Attached · +8.3% live</div></div><button class="chip">Remove</button></div>
+          <div class="seg" style="margin-top:12px"><button>Attach trade</button><button>Image</button><button>Chart</button></div>
+        </div>
+
+        <div id="cm-call" hidden>
+          <div class="eyebrow" style="margin-bottom:8px">Market</div>
+          <div class="seg"><button class="on" style="display:inline-flex;gap:6px;align-items:center"><span class="cm HYPE sm">HYP</span>HYPE</button><button>SOL</button><button>BTC</button><button>ETH</button><button>Search…</button></div>
+          <div class="pair" style="margin-top:14px"><button class="btn long" style="padding:12px">Up</button><button class="btn" style="padding:12px">Down</button></div>
+          <div class="pair" style="margin-top:14px">
+            <div><div class="eyebrow" style="margin-bottom:8px">Target</div><input class="field mono" value="52.00"><div class="green" style="font-size:12px;margin-top:6px;font-weight:600">+12.4% from 46.28</div></div>
+            <div><div class="eyebrow" style="margin-bottom:8px">Invalid below</div><input class="field mono" value="44.00"><div class="red" style="font-size:12px;margin-top:6px;font-weight:600">−4.9%</div></div>
+          </div>
+          <div class="eyebrow" style="margin:14px 0 8px">Deadline</div>
+          <div class="seg"><button>24 h</button><button class="on">3 days</button><button>1 week</button><button>Pick date</button></div>
+          <textarea class="ta" rows="3" placeholder="Why? One or two sentences." style="margin-top:14px"></textarea>
+          <label class="tog"><input type="checkbox" checked><span>Back it with a trade</span><span class="when" style="margin-left:auto">Opens the ticket after posting · earns the Backed badge</span></label>
+          <div class="warn" style="margin-top:12px">Calls resolve automatically against Hyperliquid prices. Once posted they can't be edited or deleted; they count toward your hit rate.</div>
+        </div>
+
+        <div id="cm-poll" hidden>
+          <textarea class="ta" rows="2" placeholder="Ask a question" style="font-weight:700">SOL above 200 by Friday?</textarea>
+          <div class="eyebrow" style="margin:14px 0 8px">Options</div>
+          <input class="field" value="Yes" style="margin-bottom:8px"><input class="field" value="No" style="margin-bottom:8px"><button class="chip">+ Add option</button>
+          <div class="eyebrow" style="margin:16px 0 8px">Closes</div>
+          <div class="seg"><button>6 h</button><button>24 h</button><button class="on">Fri 20:00</button><button>Pick</button></div>
+          <label class="tog" style="margin-top:14px"><input type="checkbox" checked><span>Settle on price</span><span class="when" style="margin-left:auto">SOL ≥ 200 at close → Yes wins</span></label>
+          <div class="when" style="margin-top:12px">Polls are available to verified traders (10+ closed trades and a linked X account).</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMMENTS THREAD -->
+    <section class="overlay" id="ov-thread" hidden>
+      <div class="ov-top"><button class="iconbtn" data-ov-close aria-label="Back"><svg class="i" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="name">Thread</div><span></span></div>
+      <div class="ov-body" style="padding:0">
+        <article class="post" style="padding:16px 20px">
+          <div class="who"><div class="av" style="background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div><div class="name">kiloklips</div><div class="when">4 min ago</div></div><span class="lbl long" style="margin-left:auto"><i></i>Long 5×</span></div>
+          <div class="pos"><div class="coinline"><span class="cm SOL">SOL</span><div><div class="coin">SOL</div><div class="detail mono">$250 · in at 187.42</div></div></div><div class="pnlpill g" style="text-align:right"><div class="pnl mono green">+8.3%</div><div class="usd mono green">+$20.75</div></div></div>
+          <p class="say">NY open bounce. Stop at 182, out at 195.</p>
+        </article>
+        <div class="cmt"><div class="av sm" style="background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></div><div><div class="name" style="font-size:14px">samui_sam <span class="when">· 3 min</span></div><p>Same setup I took yesterday. Watch 191, it rejected there twice.</p><div class="acts" style="margin-top:6px"><button class="vote up"><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2v4h5a2 2 0 0 1 2 2l-1.5 7a2 2 0 0 1-2 2H7"/></svg><b>6</b></button><button>Reply</button></div></div></div>
+        <div class="cmt reply"><div class="av sm" style="background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div><div class="name" style="font-size:14px">kiloklips <span class="lbl done" style="padding:1px 6px;font-size:10px">OP</span> <span class="when">· 2 min</span></div><p>Yeah, that's why the target's 195 not 200. Taking half at 191.</p><div class="acts" style="margin-top:6px"><button class="vote up"><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2v4h5a2 2 0 0 1 2 2l-1.5 7a2 2 0 0 1-2 2H7"/></svg><b>3</b></button><button>Reply</button></div></div></div>
+        <div class="cmt"><div class="av sm" style="background:linear-gradient(135deg,#9ccfd8,#c4a7e7)"></div><div><div class="name" style="font-size:14px">degenmaxi <span class="when">· 1 min</span></div><p>copied at 189, pray for me</p><div class="acts" style="margin-top:6px"><button class="vote up"><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2v4h5a2 2 0 0 1 2 2l-1.5 7a2 2 0 0 1-2 2H7"/></svg><b>12</b></button><button>Reply</button><span class="lbl long" style="padding:1px 8px;font-size:10px"><i></i>Copied</span></div></div></div>
+        <div class="cmt"><div class="av sm" style="background:linear-gradient(135deg,#bf616a,#d08770)"></div><div><div class="name" style="font-size:14px">fundingfarmer <span class="vbadge">✓</span> <span class="when">· now</span></div><p>Funding still positive, careful holding this through the 8h mark.</p><div class="acts" style="margin-top:6px"><button class="vote up"><svg class="i" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2v4h5a2 2 0 0 1 2 2l-1.5 7a2 2 0 0 1-2 2H7"/></svg><b>1</b></button><button>Reply</button></div></div></div>
+      </div>
+      <div class="ov-bar"><div class="av sm" style="background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><input class="field" placeholder="Add a comment"><button class="copy" style="margin:0">Send</button></div>
+    </section>
+
+    <!-- NOTIFICATIONS -->
+    <section class="overlay" id="ov-notifs" hidden>
+      <div class="ov-top"><button class="iconbtn" data-ov-close aria-label="Back"><svg class="i" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="name">Notifications</div><button class="chip">Mark all read</button></div>
+      <div class="ov-body" style="padding:0">
+        <div class="eyebrow" style="padding:14px 20px 6px">Today</div>
+        <div class="ntf unread"><div class="ob-ico" style="background:var(--green-soft);color:var(--green)"><svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div><div style="flex:1"><b>Your HYPE call hit</b><div class="when">52.00 printed 2 h before deadline · hit rate now 78% · 🔥 6</div></div><span class="when">12m</span></div>
+        <div class="ntf unread"><div class="ob-ico" style="background:var(--brand-soft);color:var(--brand)"><svg class="i" viewBox="0 0 24 24"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7"/></svg></div><div style="flex:1"><b>degenmaxi copied your SOL long</b><div class="when">$120 at 189.02 · 3 people have copied this trade</div></div><span class="when">19m</span></div>
+        <div class="ntf"><div class="ob-ico" style="background:var(--red-soft);color:var(--red)"><svg class="i" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg></div><div style="flex:1"><b>Stop loss triggered on DOGE</b><div class="when">Closed at 0.2008 · −$13.50</div></div><span class="when">1d</span></div>
+        <div class="ntf"><div class="ob-ico" style="background:var(--violet-soft);color:var(--violet)"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div><div style="flex:1"><b>samui_sam and 4 others followed you</b><div class="when">312 followers</div></div><span class="when">1d</span></div>
+        <div class="eyebrow" style="padding:14px 20px 6px">Earlier</div>
+        <div class="ntf"><div class="ob-ico" style="background:var(--gold-soft);color:var(--gold)"><svg class="i" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/></svg></div><div style="flex:1"><b>You moved to #2 on Trades</b><div class="when">7-day board · +$412</div></div><span class="when">2d</span></div>
+        <div class="ntf"><div class="ob-ico" style="background:var(--blue-soft);color:var(--blue)"><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></div><div style="flex:1"><b>fundingfarmer replied to your comment</b><div class="when">"Funding still positive, careful holding…"</div></div><span class="when">2d</span></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="overlay" id="ov-settings" hidden>
+      <div class="ov-top"><button class="iconbtn" data-ov-close aria-label="Back"><svg class="i" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="name">Settings</div><span></span></div>
+      <div class="ov-body" style="padding:0 0 24px">
+        <div class="eyebrow" style="padding:14px 20px 6px">Appearance</div>
+        <div class="srow"><span>Theme</span><div class="seg"><button>Day</button><button>Night</button><button class="on">Auto</button></div></div>
+        <div class="srow"><span>Show P&L as</span><div class="seg"><button class="on">%</button><button>$</button><button>ROI</button></div></div>
+        <div class="eyebrow" style="padding:18px 20px 6px">Privacy</div>
+        <label class="srow"><span>Post my liquidations to the feed</span><input type="checkbox" class="sw" checked></label>
+        <label class="srow"><span>Show position sizes</span><input type="checkbox" class="sw" checked></label>
+        <label class="srow"><span>Let people copy my trades</span><input type="checkbox" class="sw" checked></label>
+        <label class="srow"><span>Let people fade my trades</span><input type="checkbox" class="sw" checked></label>
+        <label class="srow"><span>Show me at the bottom of the board <span class="when">(off by default)</span></span><input type="checkbox" class="sw"></label>
+        <label class="srow"><span>Accept duel challenges</span><input type="checkbox" class="sw" checked></label>
+        <div class="eyebrow" style="padding:18px 20px 6px">Notifications</div>
+        <label class="srow"><span>Someone copies me</span><input type="checkbox" class="sw" checked></label>
+        <label class="srow"><span>Call or poll resolves</span><input type="checkbox" class="sw" checked></label>
+        <label class="srow"><span>Stop or take profit triggers</span><input type="checkbox" class="sw" checked></label>
+        <label class="srow"><span>Traders I follow open a trade</span><input type="checkbox" class="sw"></label>
+        <div class="eyebrow" style="padding:18px 20px 6px">Trading</div>
+        <div class="srow"><span>Default leverage</span><div class="seg"><button>1×</button><button>2×</button><button class="on">3×</button><button>5×</button></div></div>
+        <div class="srow"><span>Max per trade</span><span class="mono">$500</span></div>
+        <div class="srow"><span>Perped fee approval</span><span class="chip" style="color:var(--green);background:var(--green-soft)">Approved · 0.05%</span></div>
+        <div class="eyebrow" style="padding:18px 20px 6px">Account</div>
+        <div class="srow"><span>Linked X account</span><span class="chip info">@kiloklips ✓</span></div>
+        <div class="srow"><span>Wallet</span><span class="mono muted" style="font-size:13px">0x7c2a…e41b</span></div>
+        <div class="srow"><span>Export my trades (CSV)</span><span class="chip">Export</span></div>
+        <div class="srow"><span style="color:var(--red)">Log out</span><span></span></div>
+        <div class="when" style="padding:16px 20px 0;text-align:center">Perped 0.1 · Powered by Hyperliquid · Not financial advice</div>
+      </div>
+    </section>
+
+    <!-- EMPTY STATE (new user home) -->
+    <section class="overlay" id="ov-empty" hidden>
+      <div class="ov-top"><button class="iconbtn" data-ov-close aria-label="Back"><svg class="i" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="name">Home · brand-new account</div><span></span></div>
+      <div class="ov-body" style="padding:0">
+        <div class="hero" style="margin-top:16px"><div class="k">Welcome, kiloklips</div><div class="big mono">$0.00</div><div class="row2"><span>Fund your account to place your first trade</span></div><div class="hero-actions"><button class="solid" data-money-open="deposit">Deposit</button><button data-go="markets">Browse markets</button></div></div>
+        <div class="block" style="text-align:center;padding:36px 24px">
+          <div class="cm SOL" style="width:56px;height:56px;font-size:18px;margin:0 auto">SOL</div>
+          <h3 style="font-size:20px;font-weight:700;margin:16px 0 6px;letter-spacing:-.02em">Your feed is quiet</h3>
+          <p class="muted" style="margin:0 auto;max-width:28ch">Follow a few traders and their trades will show up here live. Start with the people doing well this week.</p>
+        </div>
+        <div class="block" style="padding-top:0"><div class="eyebrow" style="margin-bottom:12px">Suggested</div>
+          <div class="suggest" style="margin-top:0">
+            <div class="sug"><div class="av" style="width:48px;height:48px;background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></div><div class="name" style="margin-top:8px">samui_sam</div><div class="when">#1 · 70% win</div><button class="chip follow" style="margin-top:10px;width:100%">Follow</button></div>
+            <div class="sug"><div class="av" style="width:48px;height:48px;background:linear-gradient(135deg,#bf616a,#d08770)"></div><div class="name" style="margin-top:8px">fundingfarmer</div><div class="when">73% hit · calls</div><button class="chip follow" style="margin-top:10px;width:100%">Follow</button></div>
+            <div class="sug"><div class="av" style="width:48px;height:48px;background:linear-gradient(135deg,#88c0d0,#5e81ac)"></div><div class="name" style="margin-top:8px">wickhunter</div><div class="when">67% win</div><button class="chip follow" style="margin-top:10px;width:100%">Follow</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- RECEIPT (share card) -->
+    <section class="overlay" id="ov-receipt" hidden>
+      <div class="ov-top"><button class="iconbtn" data-ov-close aria-label="Back"><svg class="i" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="name">Receipt</div><span></span></div>
+      <div class="ov-body" style="display:flex;flex-direction:column;align-items:center;gap:16px">
+        <div class="receipt">
+          <div class="rc-top"><span class="rc-brand">Perped</span><span class="when" style="color:rgba(255,255,255,.7)">Oct 30 · 06:12</span></div>
+          <div class="rc-who"><div class="av sm" style="background:linear-gradient(135deg,#a3be8c,#ebcb8b)"></div><b>samui_sam</b><span class="lbl long" style="margin-left:auto"><i></i>Long 2×</span></div>
+          <div class="rc-coin"><span class="cm HYPE">HYP</span><span>HYPE</span></div>
+          <div class="rc-big mono">+12.6%</div>
+          <div class="rc-row mono"><span>41.10 → 46.28</span><span>+$10.08</span></div>
+          <div class="rc-row"><span>Held 6 h</span><span>7 copied · 4 faded</span></div>
+          <div class="rc-foot">Verified on Hyperliquid · perped.xyz/samui_sam</div>
+        </div>
+        <div class="seg" style="justify-content:center"><button class="on">Win style</button><button>Clean</button><button>Roast</button></div>
+        <div class="pair" style="width:100%"><button class="btn brand" style="padding:12px">Share to X</button><button class="btn" style="padding:12px">Save image</button></div>
+        <p class="faint" style="font-size:12px;text-align:center;margin:0">Receipts are generated for every closed trade and resolved call. Losses too. Nobody edits a receipt.</p>
+      </div>
+    </section>
+
+    <!-- FADE confirm -->
+    <section class="overlay" id="ov-fade" hidden>
+      <div class="ov-top"><button class="iconbtn" data-ov-close aria-label="Back"><svg class="i" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><div class="name">Fade kiloklips</div><span></span></div>
+      <div class="ov-body">
+        <div class="duel-body" style="margin-top:4px">
+          <div class="duelist"><div class="av" style="width:48px;height:48px;margin:0 auto;background:linear-gradient(135deg,#f6c177,#eb6f92)"></div><div class="name" style="margin-top:6px">kiloklips</div><span class="lbl long" style="margin-top:4px"><i></i>Long SOL 5×</span></div>
+          <div class="duel-mid"><div style="font-size:22px;font-weight:700">vs</div></div>
+          <div class="duelist"><div class="av" style="width:48px;height:48px;margin:0 auto;background:linear-gradient(135deg,#88c0d0,#5e81ac)"></div><div class="name" style="margin-top:6px">you</div><span class="lbl short" style="margin-top:4px"><i></i>Short SOL</span></div>
+        </div>
+        <div class="kv" style="margin-top:20px"><span class="k">Your margin</span><span class="muted" style="font-size:12px">Max $500</span></div>
+        <div class="mono" style="font-size:40px;font-weight:600;letter-spacing:-.03em;margin:6px 0 10px">$<input value="50" class="mono" style="font-size:40px;font-weight:600;border:0;background:none;width:140px;color:var(--text);padding:0;letter-spacing:-.03em"></div>
+        <div class="seg"><button>25</button><button class="on">50</button><button>100</button><button>250</button></div>
+        <div class="kv" style="margin-top:16px"><span class="k">Leverage</span><span class="mono" style="font-weight:700">3×</span></div>
+        <input type="range" class="range" min="1" max="5" value="3">
+        <div class="ob-fee" style="margin-top:14px">
+          <div class="ob-fee-row"><span class="muted">Opens</span><b>Short SOL · $150 at ~187.42</b></div>
+          <div class="ob-fee-row"><span class="muted">Auto stop</span><b class="mono">196.80 (−5%)</b></div>
+          <div class="ob-fee-row" style="border:0"><span class="muted">Shown on their post as</span><b>"5 faded" · your name in the thread</b></div>
+        </div>
+        <div class="warn" style="margin-top:14px">Fading is a real short on Hyperliquid at your size. If they're right, you're the one who gets perped, publicly. Accounts under 10 trades are capped at 2× on fades. Your fade record: 6 fades, 2 won.</div>
+      </div>
+      <div class="ov-bar"><button class="btn short" data-ov-close>Fade them · Short SOL $150</button></div>
+    </section>
+
+    <!-- DEPOSIT / WITHDRAW SHEET -->
+    <div class="sheet-bg" id="sheet-bg" hidden></div>
+    <div class="sheet" id="sheet" hidden>
+      <div class="grab"></div>
+      <div class="modes" style="margin:0 20px"><button class="on" data-money="deposit">Deposit</button><button data-money="withdraw">Withdraw</button></div>
+
+      <div id="money-deposit">
+        <div class="seg" style="padding:16px 20px 0"><button class="on" data-dep="card">Card or Apple Pay</button><button data-dep="transfer">Send USDC</button></div>
+
+        <div id="dep-card" class="block">
+          <div class="kv"><span class="k">You pay</span><span class="muted" style="font-size:12px">THB · USD · EUR</span></div>
+          <div class="mono" style="font-size:40px;font-weight:600;letter-spacing:-.03em;margin:6px 0 10px">฿<input value="3,500" class="mono" style="font-size:40px;font-weight:600;border:0;background:none;width:170px;color:var(--text);padding:0;letter-spacing:-.03em"></div>
+          <div class="seg"><button>฿1,000</button><button class="on">฿3,500</button><button>฿10,000</button><button>฿35,000</button></div>
+          <div class="ob-fee" style="margin-top:16px">
+            <div class="ob-fee-row"><span class="muted">You receive</span><b class="mono">≈ 101.9 USDC</b></div>
+            <div class="ob-fee-row"><span class="muted">Rate</span><b class="mono">1 USDC = ฿33.42</b></div>
+            <div class="ob-fee-row"><span class="muted">Provider fee</span><b class="mono">฿94 (2.7%)</b></div>
+            <div class="ob-fee-row" style="border:0"><span class="muted">Arrives</span><b>Usually under 10 min</b></div>
+          </div>
+          <button class="btn deposit" style="margin-top:16px">Continue with card</button>
+          <p class="faint" style="font-size:12px;text-align:center;margin:10px 0 0;line-height:1.5">Handled by our payment partner. Perped never sees your card. USDC lands straight in your Hyperliquid account.</p>
+        </div>
+
+        <div id="dep-transfer" class="block" hidden>
+          <div class="kv"><span class="k">Network</span><span class="chip info">Arbitrum</span></div>
+          <div class="qr"><div class="qr-box" aria-label="QR code placeholder"></div></div>
+          <div class="ob-wallet" style="margin-top:14px">
+            <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Your deposit address</div>
+            <div class="mono" style="font-size:13px;margin-top:6px;word-break:break-all">0x7c2a9f3e1b84d6a2c5f09e7b1d3a8c6e4f2b9e41b</div>
+            <button class="chip info" style="margin-top:12px">Copy address</button>
+          </div>
+          <div class="warn"><b>Send USDC on Arbitrum only.</b> Other tokens or networks can't be recovered. Minimum 5 USDC. We bridge to Hyperliquid automatically; allow a few minutes.</div>
+          <div class="kv" style="margin-top:14px"><span class="k">From Binance, OKX, Coinbase?</span><span class="chip">Show me how</span></div>
+        </div>
+      </div>
+
+      <div id="money-withdraw" hidden>
+        <div class="block" style="padding-top:16px">
+          <div class="kv"><span class="k">Amount</span><span class="muted" style="font-size:12px">Available <b class="mono" style="color:var(--text)">$1,034.10</b></span></div>
+          <div class="mono" style="font-size:40px;font-weight:600;letter-spacing:-.03em;margin:6px 0 10px">$<input value="500" class="mono" style="font-size:40px;font-weight:600;border:0;background:none;width:170px;color:var(--text);padding:0;letter-spacing:-.03em"></div>
+          <div class="seg"><button>25%</button><button class="on">50%</button><button>75%</button><button>Max</button></div>
+          <div class="eyebrow" style="margin:18px 0 8px">To</div>
+          <input class="field mono" placeholder="Arbitrum address (0x…)" value="0x91Fa…c04d">
+          <div class="seg" style="margin-top:10px"><button class="on">Saved: Binance</button><button>Ledger</button><button>New</button></div>
+          <div class="ob-fee" style="margin-top:16px">
+            <div class="ob-fee-row"><span class="muted">Hyperliquid withdrawal fee</span><b class="mono">1 USDC</b></div>
+            <div class="ob-fee-row"><span class="muted">You receive</span><b class="mono">499 USDC on Arbitrum</b></div>
+            <div class="ob-fee-row" style="border:0"><span class="muted">Time</span><b>~5 minutes</b></div>
+          </div>
+          <div class="warn" style="margin-top:14px">Open positions stay open. You can't withdraw margin that's holding a position.</div>
+          <button class="btn withdraw" style="margin-top:16px">Withdraw $500</button>
+        </div>
+      </div>
+    </div>
+
     <nav class="nav" aria-label="Tabs">
-      <button data-tab="feed" class="on"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Feed</button>
-      <button data-tab="markets"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Trade</button>
-      <button data-tab="board"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 6h3a3 3 0 0 1-3 3M7 6H4a3 3 0 0 0 3 3"/></svg>Board</button>
-      <button data-tab="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Me</button>
+      <button data-tab="feed" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>Home</button>
+      <button data-tab="markets"><svg class="i" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Markets</button>
+      <button data-tab="board"><svg class="i" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 6h3a3 3 0 0 1-3 3M7 6H4a3 3 0 0 0 3 3"/></svg>Leaders</button>
+      <button data-tab="profile"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>You</button>
     </nav>
   </div>
 </div>
@@ -305,33 +1112,164 @@
   function show(t) {
     if (!tabs.includes(t)) t = "feed";
     tabs.forEach(x => { document.getElementById("s-" + x).hidden = x !== t; });
+    const obEl = document.getElementById("s-onboard"); if (obEl) { obEl.hidden = true; document.querySelector(".phone").classList.remove("onboarding"); }
     const navTab = t === "trade" ? "markets" : t;
     document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === navTab));
-    document.querySelector(".screen:not([hidden])")?.scrollTo(0, 0);
+    const el = document.getElementById("s-" + t); if (el) el.scrollTop = 0;
   }
-  document.querySelectorAll("[data-go]").forEach(el => el.addEventListener("click", () => { location.hash = el.dataset.go; show(el.dataset.go); }));
   document.querySelectorAll(".nav button").forEach(b => b.addEventListener("click", () => { location.hash = b.dataset.tab; show(b.dataset.tab); }));
+  document.querySelectorAll("[data-go]").forEach(el => el.addEventListener("click", () => { location.hash = el.dataset.go; show(el.dataset.go); }));
   window.addEventListener("hashchange", () => show(location.hash.slice(1)));
   show(location.hash.slice(1));
+
+  // Day / Night / Auto switch (Auto follows the phone's setting)
+  const root = document.documentElement;
+  function applyTheme(t) {
+    if (t === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
+    document.querySelectorAll("[data-theme-pick]").forEach(b => b.classList.toggle("on", b.dataset.themePick === t));
+    try { localStorage.setItem("perped-preview-theme", t); } catch {}
+  }
+  document.querySelectorAll("[data-theme-pick]").forEach(b => b.addEventListener("click", () => applyTheme(b.dataset.themePick)));
+  try { const saved = localStorage.getItem("perped-preview-theme"); if (saved) applyTheme(saved); } catch {}
+
+  // Profile tabs, trade sub-tabs, composer
+  const ptabs = ["posts", "trades", "followers", "following"];
+  function showP(t) {
+    ptabs.forEach(x => { document.getElementById("pt-" + x).hidden = x !== t; });
+    document.querySelectorAll(".ptabs button").forEach(b => b.classList.toggle("on", b.dataset.ptab === t));
+  }
+  document.querySelectorAll("[data-ptab]").forEach(b => b.addEventListener("click", () => { showP(b.dataset.ptab); if (!b.closest(".ptabs")) document.querySelector(".ptabs").scrollIntoView({ block: "start", behavior: "smooth" }); }));
+  document.querySelectorAll("[data-ttab]").forEach(b => b.addEventListener("click", () => {
+    document.getElementById("tt-open").hidden = b.dataset.ttab !== "open";
+    document.getElementById("tt-closed").hidden = b.dataset.ttab !== "closed";
+    document.querySelectorAll("[data-ttab]").forEach(x => x.classList.toggle("on", x === b));
+  }));
+
+
+
+  document.querySelectorAll("[data-board]").forEach(b => b.addEventListener("click", () => {
+    const t = b.dataset.board;
+    document.getElementById("board-trades").hidden = t !== "trades";
+    document.getElementById("board-calls").hidden = t !== "calls";
+    document.querySelectorAll("[data-board]").forEach(x => x.classList.toggle("on", x === b));
+    document.getElementById("board-sub").textContent = t === "trades" ? "Realised PnL from Hyperliquid fills" : "Public predictions, scored against the chart";
+  }));
+
+  // Live ticker (simulated movement in the preview; the app feeds this from the Hyperliquid WebSocket)
+  const tick = [["BTC",98412,1.8],["ETH",3412,-2.4],["SOL",187.42,5.1],["HYPE",46.28,9.7],["XRP",2.14,0.2],["DOGE",0.2008,-4.0],["SUI",3.41,1.1],["LINK",17.90,-0.8],["AVAX",41.2,2.3],["ARB",1.02,-0.5]];
+  const track = document.getElementById("tk-track");
+  function fmtP(v){ return v >= 1000 ? Math.round(v).toLocaleString() : v >= 10 ? v.toFixed(2) : v.toFixed(4); }
+  function renderTicker(){
+    const items = tick.map(([c,p,ch]) => `<span class="tk"><span class="cm ${c}">${c.slice(0,3)}</span><span>${c}</span><span class="p mono">${fmtP(p)}</span><span class="mono ${ch>=0?"green":"red"}">${ch>=0?"+":""}${ch.toFixed(1)}%</span></span>`).join("");
+    track.innerHTML = items + items; // duplicated for a seamless loop
+  }
+  renderTicker();
+  setInterval(() => { tick.forEach(t => { t[1] = t[1] * (1 + (Math.random() - 0.5) * 0.0006); t[2] += (Math.random() - 0.5) * 0.02; }); renderTicker(); }, 1500);
+
+  // Feed tabs (preview shows the same content; the app filters)
+  document.querySelectorAll("[data-ftab]").forEach(b => b.addEventListener("click", () => document.querySelectorAll("[data-ftab]").forEach(x => x.classList.toggle("on", x === b))));
+
+  // Live P&L: simulated ticks (the app uses the Hyperliquid WebSocket)
+  const livePosts = [...document.querySelectorAll("[data-live]")];
+  const liveState = {};
+  livePosts.forEach(el => { const id = el.dataset.live; liveState[id] = { entry: +el.dataset.entry, size: +el.dataset.size, lev: +el.dataset.lev, mark: +el.dataset.entry * (id === "a" ? 1.083 : 1.021 * (id === "b" ? 1 : 1)), side: id === "b" ? "short" : "long", mode: 0 }; });
+  liveState.b.mark = 3412 * 1.021;
+  function fmtUsdS(v){ return (v >= 0 ? "+$" : "−$") + Math.abs(v).toFixed(2); }
+  function paint(id, dir) {
+    const st = liveState[id]; const diff = st.side === "long" ? st.mark - st.entry : st.entry - st.mark;
+    const pct = diff / st.entry * 100, usd = diff * st.size, roi = pct * st.lev, pos = usd >= 0;
+    const pnl = document.getElementById("pnl-" + id), usdEl = document.getElementById("usd-" + id), bar = document.getElementById("bar-" + id);
+    const labels = [ [ (pct>=0?"+":"−") + Math.abs(pct).toFixed(1) + "%", fmtUsdS(usd) ], [ fmtUsdS(usd), (pct>=0?"+":"−") + Math.abs(pct).toFixed(1) + "%" ], [ (roi>=0?"+":"−") + Math.abs(roi).toFixed(1) + "% ROI", fmtUsdS(usd) + " on $" + Math.round(st.entry*st.size/st.lev) ] ];
+    pnl.textContent = labels[st.mode][0]; usdEl.textContent = labels[st.mode][1];
+    [pnl, usdEl].forEach(e => { e.classList.toggle("green", pos); e.classList.toggle("red", !pos); }); pnl.parentElement.classList.toggle("g", pos); pnl.parentElement.classList.toggle("r", !pos);
+    bar.style.width = Math.min(100, Math.abs(pct)) + "%"; bar.style.background = pos ? "var(--green)" : "var(--red)";
+    if (dir) { const box = pnl.parentElement; box.classList.remove("flash-up","flash-down"); void box.offsetWidth; box.classList.add(dir > 0 ? "flash-up" : "flash-down"); }
+    if (id === "a") { const mp = document.getElementById("mine-pnl"); mp.textContent = fmtUsdS(usd * 0.11); mp.className = "mono " + (pos ? "green" : "red"); mp.style.cssText = "margin-left:auto;font-weight:700"; }
+  }
+  livePosts.forEach(el => { paint(el.dataset.live); el.querySelector(".pnlbox").addEventListener("click", e => { e.stopPropagation(); const st = liveState[el.dataset.live]; st.mode = (st.mode + 1) % 3; paint(el.dataset.live); }); });
+  setInterval(() => { livePosts.forEach(el => { const st = liveState[el.dataset.live]; const d = (Math.random() - 0.48) * 0.002; st.mark *= 1 + d; paint(el.dataset.live, d >= 0 ? 1 : -1); }); }, 1800);
+
+  // Like / dislike (mutually exclusive)
+  document.querySelectorAll(".acts").forEach(acts => {
+    const up = acts.querySelector(".vote.up"), down = acts.querySelector(".vote.down");
+    const bump = (btn, d) => { const b = btn.querySelector("b"); b.textContent = String(Math.max(0, +b.textContent + d)); };
+    up?.addEventListener("click", e => { e.stopPropagation(); const was = up.classList.toggle("on"); bump(up, was ? 1 : -1); if (was && down?.classList.contains("on")) { down.classList.remove("on"); bump(down, -1); } });
+    down?.addEventListener("click", e => { e.stopPropagation(); const was = down.classList.toggle("on"); bump(down, was ? 1 : -1); if (was && up?.classList.contains("on")) { up.classList.remove("on"); bump(up, -1); } });
+  });
+
+  // Poll vote
+  document.querySelectorAll(".poll .opt").forEach(o => o.addEventListener("click", () => { o.parentElement.querySelectorAll(".opt").forEach(x => x.classList.toggle("on", x === o)); }));
+
+  // Pull to refresh (touch and mouse-wheel at top)
+  const feedEl = document.getElementById("s-feed"), ptr = document.getElementById("ptr");
+  let startY = null;
+  feedEl.addEventListener("touchstart", e => { startY = feedEl.scrollTop === 0 ? e.touches[0].clientY : null; }, { passive: true });
+  feedEl.addEventListener("touchmove", e => { if (startY !== null && e.touches[0].clientY - startY > 60) ptr.classList.add("show"); }, { passive: true });
+  feedEl.addEventListener("touchend", () => { if (ptr.classList.contains("show")) { ptr.textContent = "Refreshing…"; setTimeout(() => { ptr.classList.remove("show"); ptr.innerHTML = '<span class="mono">187.42</span> Pull to refresh'; }, 900); } startY = null; });
+
+  // Swipe right on a trade post to copy
+  document.querySelectorAll(".swipe").forEach(card => {
+    const fg = card.querySelector(".swipe-fg"); let x0 = null, dx = 0;
+    card.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; fg.style.transition = "none"; }, { passive: true });
+    card.addEventListener("touchmove", e => { if (x0 === null) return; dx = Math.max(0, Math.min(140, e.touches[0].clientX - x0)); fg.style.transform = `translateX(${dx}px)`; }, { passive: true });
+    card.addEventListener("touchend", () => { fg.style.transition = ""; if (dx > 100) { location.hash = "trade"; show("trade"); } fg.style.transform = ""; x0 = null; dx = 0; });
+  });
+
+  // Onboarding flow
+  const phone = document.querySelector(".phone"), ob = document.getElementById("s-onboard");
+  function obShow(n) { ob.querySelectorAll(".ob-step").forEach(st => { st.hidden = st.dataset.step !== String(n); }); ob.scrollTop = 0; }
+  document.getElementById("ob-launch").addEventListener("click", () => { tabs.forEach(x => document.getElementById("s-" + x).hidden = true); ob.hidden = false; phone.classList.add("onboarding"); obShow(1); });
+  ob.querySelectorAll(".ob-next").forEach(b => b.addEventListener("click", () => { const cur = +b.closest(".ob-step").dataset.step; obShow(cur + 1); }));
+  document.getElementById("ob-finish").addEventListener("click", () => { ob.hidden = true; phone.classList.remove("onboarding"); location.hash = "feed"; show("feed"); });
+  ob.querySelectorAll(".ob-avatars .av").forEach(a => a.addEventListener("click", () => ob.querySelectorAll(".ob-avatars .av").forEach(x => x.classList.toggle("on", x === a))));
+
+  // Deposit / Withdraw sheet
+  const sheet = document.getElementById("sheet"), sheetBg = document.getElementById("sheet-bg");
+  function moneyMode(m) {
+    document.getElementById("money-deposit").hidden = m !== "deposit";
+    document.getElementById("money-withdraw").hidden = m !== "withdraw";
+    document.querySelectorAll("[data-money]").forEach(b => b.classList.toggle("on", b.dataset.money === m));
+  }
+  document.querySelectorAll("[data-money-open]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); moneyMode(b.dataset.moneyOpen); sheet.hidden = false; sheetBg.hidden = false; }));
+  document.querySelectorAll("[data-money]").forEach(b => b.addEventListener("click", () => moneyMode(b.dataset.money)));
+  sheetBg.addEventListener("click", () => { sheet.hidden = true; sheetBg.hidden = true; });
+  document.querySelectorAll("[data-dep]").forEach(b => b.addEventListener("click", () => {
+    document.getElementById("dep-card").hidden = b.dataset.dep !== "card";
+    document.getElementById("dep-transfer").hidden = b.dataset.dep !== "transfer";
+    document.querySelectorAll("[data-dep]").forEach(x => x.classList.toggle("on", x === b));
+  }));
+
+  // Overlays
+  document.querySelectorAll("[data-ov-open]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); document.getElementById(b.dataset.ovOpen).hidden = false; }));
+  document.querySelectorAll("[data-ov-close]").forEach(b => b.addEventListener("click", () => { b.closest(".overlay").hidden = true; }));
+  document.querySelectorAll("[data-cmode]").forEach(b => b.addEventListener("click", () => {
+    ["post","call","poll"].forEach(m => document.getElementById("cm-" + m).hidden = m !== b.dataset.cmode);
+    document.querySelectorAll("[data-cmode]").forEach(x => x.classList.toggle("on", x === b));
+    document.getElementById("c-publish").textContent = b.dataset.cmode === "post" ? "Post" : b.dataset.cmode === "call" ? "Publish call" : "Start poll";
+  }));
+  document.getElementById("c-publish").addEventListener("click", () => { document.getElementById("ov-compose").hidden = true; });
+  // overlays sit above the nav; nav taps should close them
+  document.querySelectorAll(".nav button").forEach(b => b.addEventListener("click", () => document.querySelectorAll(".overlay").forEach(o => o.hidden = true)));
 
   const mid = 187.42, m = document.getElementById("margin"), lev = document.getElementById("lev"), go = document.getElementById("go");
   let side = "long";
   function recalc() {
     const usd = Math.max(0, Number(m.value) || 0), l = Number(lev.value), notional = usd * l;
     document.getElementById("lev-lbl").textContent = l + "×";
-    document.getElementById("pos").textContent = "$" + notional.toFixed(2);
-    document.getElementById("sz").textContent = (notional / mid).toFixed(2) + " SOL";
-    document.getElementById("liq").textContent = "≈" + Math.round((100 / l) * 0.9) + "%";
-    go.textContent = (side === "long" ? "Long" : "Short") + " SOL " + l + "× · $" + notional.toFixed(2);
-    go.className = "btn " + (side === "long" ? "btn-long" : "btn-short");
+    document.getElementById("pos").textContent = "$" + Math.round(notional).toLocaleString();
+    document.getElementById("sz").textContent = (notional / mid).toFixed(2);
+    const liqPct = (1 / l) * 0.9;
+    document.getElementById("liq").textContent = (side === "long" ? mid * (1 - liqPct) : mid * (1 + liqPct)).toFixed(1);
+    go.textContent = (side === "long" ? "Long" : "Short") + " SOL " + l + "× · $" + Math.round(notional).toLocaleString();
+    go.className = "btn " + side;
   }
+  m.addEventListener("input", recalc); lev.addEventListener("input", recalc);
+  document.getElementById("b-long").addEventListener("click", () => { side = "long"; document.getElementById("b-long").className = "btn long"; document.getElementById("b-short").className = "btn"; recalc(); });
+  document.getElementById("b-short").addEventListener("click", () => { side = "short"; document.getElementById("b-short").className = "btn short"; document.getElementById("b-long").className = "btn"; recalc(); });
   const otM = document.getElementById("ot-market"), otL = document.getElementById("ot-limit"), lr = document.getElementById("limit-row");
-  otM.addEventListener("click", () => { otM.className = "chip on"; otL.className = "chip"; lr.hidden = true; });
-  otL.addEventListener("click", () => { otL.className = "chip on"; otM.className = "chip"; lr.hidden = false; });
+  otM.addEventListener("click", () => { otM.className = "on info"; otL.className = ""; lr.hidden = true; });
+  otL.addEventListener("click", () => { otL.className = "on info"; otM.className = ""; lr.hidden = false; });
   const tt = document.getElementById("tpsl-toggle"), tp = document.getElementById("tpsl");
   tt.addEventListener("click", () => { const on = tt.classList.toggle("on"); tt.textContent = on ? "On" : "Off"; tp.hidden = !on; });
-  m.addEventListener("input", recalc); lev.addEventListener("input", recalc);
-  document.getElementById("b-long").addEventListener("click", () => { side = "long"; document.getElementById("b-long").className = "btn btn-long"; document.getElementById("b-short").className = "btn btn-outline"; recalc(); });
-  document.getElementById("b-short").addEventListener("click", () => { side = "short"; document.getElementById("b-short").className = "btn btn-short"; document.getElementById("b-long").className = "btn btn-outline"; recalc(); });
   recalc();
 </script>

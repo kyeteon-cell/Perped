@@ -49,9 +49,10 @@ export function useSession() {
     [getAccessToken, address],
   );
 
-  const { data: me, mutate: refreshMe, isLoading: meLoading } = useSWR<{ profile: User | null }>(
+  const { data: me, mutate: refreshMe, isLoading: meLoading } = useSWR<{ profile: User | null; unread: number }>(
     authenticated && address ? ["/api/me", address] : null,
     async () => (await authedFetch("/api/me")).json(),
+    { refreshInterval: 30_000 },
   );
 
   return {
@@ -66,6 +67,7 @@ export function useSession() {
     authedFetch,
     profile: me?.profile ?? null,
     profileLoading: meLoading,
+    unread: me?.unread ?? 0,
     refreshMe,
   };
 }
