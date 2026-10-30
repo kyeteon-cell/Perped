@@ -313,12 +313,14 @@ button:active { transform: scale(.97); }
 
 /* ---------- Profile ---------- */
 .profile .eyebrow { color: var(--muted); }
-.statrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; background: var(--surface); border-radius: var(--r); padding: 14px 6px; }
-.statrow > div { text-align: center; padding: 0 4px; border-left: 1px solid var(--line); }
-.statrow > div:first-child { border-left: 0; }
-.statrow small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
-.statrow b { display: block; margin-top: 4px; font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
-.record { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.statrow { display: flex; gap: 8px; overflow-x: auto; padding: 0 0 4px; margin: 0 -20px; padding-left: 20px; padding-right: 20px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.statrow::-webkit-scrollbar { display: none; }
+.statrow > div { flex: none; min-width: 108px; background: var(--surface); border-radius: 14px; padding: 12px 14px; white-space: nowrap; scroll-snap-align: start; }
+.statrow small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .02em; white-space: nowrap; }
+.statrow b { display: block; margin-top: 4px; font-size: 18px; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
+.record { display: flex; gap: 8px; overflow-x: auto; margin: 10px -20px 0; padding: 0 20px 4px; scrollbar-width: none; }
+.record::-webkit-scrollbar { display: none; }
+.record > span { flex: none; white-space: nowrap; font-size: 12px; color: var(--muted); background: var(--surface); border-radius: 999px; padding: 6px 11px; }
 .record b { color: var(--text); font-weight: 700; }
 .pincard { flex: none; width: 156px; background: var(--surface); border-radius: var(--r); padding: 12px 14px; scroll-snap-align: start; text-decoration: none; color: inherit; }
 .btn.ghostline { background: transparent; border: 1.5px solid var(--line); color: var(--text); }
