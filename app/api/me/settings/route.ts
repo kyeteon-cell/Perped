@@ -10,7 +10,7 @@ const Body = z.object({
   allowFade: z.boolean().optional(),
   showBottomBoard: z.boolean().optional(),
   acceptDuels: z.boolean().optional(),
-  defaultLeverage: z.number().int().min(1).max(50).optional(),
+  defaultLeverage: z.number().int().min(1).max(100).optional(),
   pnlDisplay: z.enum(["pct", "usd", "roi"]).optional(),
   xHandle: z.string().max(30).nullable().optional(),
   isDemo: z.boolean().optional(),

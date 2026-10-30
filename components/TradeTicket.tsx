@@ -37,9 +37,8 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
   const [coin, setCoin] = useState(seed.coin);
   const [side, setSide] = useState<"long" | "short">(seed.side ?? "long");
   const [usd, setUsd] = useState(50);
-  // Perped's overall cap follows Hyperliquid's live max leverage on the HYPE pair (env MAX_LEVERAGE is the fallback).
-  const appCap = markets.find((m) => m.name === "HYPE")?.maxLeverage ?? MAX_LEVERAGE;
-  const fadeCap = isFade && (seed.closedTrades ?? 0) < 10 ? 2 : appCap;
+  // Leverage cap = whatever Hyperliquid allows on this market (BTC 40×, ETH 25×, …). Fades for new accounts stay at 2×.
+  const fadeCap = isFade && (seed.closedTrades ?? 0) < 10 ? 2 : 100;
   const [lev, setLev] = useState(Math.min(seed.leverage ?? profile?.defaultLeverage ?? 2, fadeCap));
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
   const [limitPx, setLimitPx] = useState("");
@@ -54,7 +53,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
 
   const market: Market | undefined = useMemo(() => markets.find((m) => m.name === coin), [markets, coin]);
   const mid = mids[coin] ?? market?.mid ?? 0;
-  const maxLev = Math.min(fadeCap, market?.maxLeverage ?? appCap);
+  const maxLev = Math.min(fadeCap, market?.maxLeverage ?? MAX_LEVERAGE);
   useEffect(() => { if (lev > maxLev) setLev(maxLev); }, [maxLev, lev]);
   useEffect(() => {
     if (isDemo || !address || !BUILDER_CONFIGURED) return setApproved(true);

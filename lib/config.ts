@@ -52,8 +52,8 @@ export const REFERRAL_SHARE_PCT = clampInt(Number(process.env.NEXT_PUBLIC_REFERR
 export const REFERRAL_TOP_SHARE_PCT = clampInt(Number(process.env.NEXT_PUBLIC_REFERRAL_TOP_SHARE_PCT ?? 40), 0, 100);
 export const REFERRAL_TOP_THRESHOLD = clampInt(Number(process.env.NEXT_PUBLIC_REFERRAL_TOP_THRESHOLD ?? 10), 1, 100_000);
 
-/** Fallback leverage cap. At runtime the ticket uses Hyperliquid's live max leverage on the HYPE pair instead. */
-export const MAX_LEVERAGE = clampInt(Number(process.env.NEXT_PUBLIC_MAX_LEVERAGE ?? 10), 1, 50);
+/** Fallback only, used before market data loads. The real cap is each market's own max leverage on Hyperliquid. */
+export const MAX_LEVERAGE = clampInt(Number(process.env.NEXT_PUBLIC_MAX_LEVERAGE ?? 50), 1, 100);
 export const MAX_POSITION_USD = Math.max(10, Number(process.env.NEXT_PUBLIC_MAX_POSITION_USD ?? 500));
 
 export const BUILDER_CONFIGURED =

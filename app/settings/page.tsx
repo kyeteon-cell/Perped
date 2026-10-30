@@ -18,8 +18,8 @@ export default function SettingsPage() {
   const { profile, authedFetch, refreshMe, logout, address, fee, hasExternalWallet, linkWallet, linkError, isGuest, login } = useSession();
   const [copied, setCopied] = useState(false);
   const { markets } = useMarkets();
-  const hypeCap = markets.find((m) => m.name === "HYPE")?.maxLeverage ?? MAX_LEVERAGE;
-  const levOptions = [1, 2, 3, 5, 10, 20, 25, 40, 50].filter((n) => n <= hypeCap).map((n) => [String(n), `${n}×`] as [string, string]);
+  const topCap = markets.reduce((m, x) => Math.max(m, x.maxLeverage), 0) || MAX_LEVERAGE;
+  const levOptions = [1, 2, 3, 5, 10, 20, 25, 40, 50].filter((n) => n <= topCap).map((n) => [String(n), `${n}×`] as [string, string]);
   const [theme, setThemeState] = useState<Theme>("auto");
   const [local, setLocal] = useState<Partial<User>>({});
   useEffect(() => setThemeState(getTheme()), []);
@@ -72,7 +72,7 @@ export default function SettingsPage() {
       {(saveErr || linkError) && <p className="red px-5 pb-1 text-sm">{saveErr ?? linkError}</p>}
       <div className="srow"><span>Default leverage</span><Seg value={String(local.defaultLeverage ?? 3)} options={levOptions} onChange={(v) => save({ defaultLeverage: Number(v) })} /></div>
       <div className="srow"><span>Max per trade</span><span className="mono">${MAX_POSITION_USD}</span></div>
-      <div className="srow"><span>Max leverage<span className="when ml-1.5">follows HYPE on Hyperliquid</span></span><span className="mono">{hypeCap}×</span></div>
+      <div className="srow"><span>Max leverage<span className="when ml-1.5">per market, same as Hyperliquid</span></span><span className="mono">up to {topCap}×</span></div>
       <div className="srow"><span>Your Perped fee<span className="when ml-1.5">{fee.reason}</span></span><span className="mono font-bold">{fee.label}</span></div>
       <div className="srow"><span>Approved maximum</span><span className="chip" style={{ color: "var(--green)", background: "var(--green-soft)" }}>{BUILDER_MAX_FEE_RATE} max</span></div>
       <div className="when px-5 pb-1 pt-1.5 text-[12px] leading-relaxed">Standard {tenthsBpsToLabel(BUILDER_FEE_STANDARD_TENTHS_BPS)} · with a referral code {tenthsBpsToLabel(BUILDER_FEE_REFERRED_TENTHS_BPS)} · top {TOP_TIER_RANK} on the 30-day board {tenthsBpsToLabel(BUILDER_FEE_TOP_TENTHS_BPS)}. Hyperliquid&apos;s own fee is separate.</div>

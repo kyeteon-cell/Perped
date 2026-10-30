@@ -49,7 +49,7 @@ The tier is resolved server-side (`lib/fees.ts`, `/api/me` → `fee`) and the ti
 
 **Coin logos and tickers** — `CoinMark` loads each coin's logo from Hyperliquid's icon set (`app.hyperliquid.xyz/coins/<COIN>.svg`) with a coloured letter badge as fallback. Hyperliquid's thousand-lot coins (`kPEPE`, `kBONK`…) are shown by their real ticker with a `·1000×` tag; links and API calls keep the Hyperliquid name.
 
-**Leverage cap** follows Hyperliquid's live max leverage on the HYPE pair (read from `metaAndAssetCtxs`), per-market caps still apply on top; `NEXT_PUBLIC_MAX_LEVERAGE` is only the fallback before markets load.
+**Leverage** matches Hyperliquid exactly: each market's own max leverage (BTC 40×, ETH 25×, SOL 20×…) read live from `metaAndAssetCtxs` and enforced client- and server-side. `NEXT_PUBLIC_MAX_LEVERAGE` is only the fallback before markets load. Fades from accounts with under 10 closed trades stay capped at 2×.
 
 ## Sign-up, demo mode and demo traders
 
