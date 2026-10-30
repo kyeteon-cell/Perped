@@ -22,7 +22,7 @@ export default function SettingsPage() {
     refreshMe();
   };
   const Toggle = ({ k, label, note }: { k: Key; label: string; note?: string }) => (
-    <label className="srow"><span>{label}{note && <span className="when ml-1.5">{note}</span>}</span><input type="checkbox" className="sw" checked={!!local[k]} onChange={(e) => save({ [k]: e.target.checked })} /></label>
+    <label className="srow"><span>{label}{note && <span className="when ml-1.5">{note}</span>}</span><input type="checkbox" className="sw" checked={!!local[k]} onChange={(e) => save({ [k]: e.target.checked } as Partial<User>)} /></label>
   );
   const Seg = <T extends string>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) => (
     <div className="seg">{options.map(([v, l]) => <button key={v} className={`chip ${value === v ? "on" : ""}`} style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => onChange(v)}>{l}</button>)}</div>
