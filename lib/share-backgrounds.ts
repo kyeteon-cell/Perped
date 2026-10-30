@@ -10,6 +10,7 @@ export const SHARE_BACKGROUNDS: { key: string; name: string; url: string; textCo
 
 /** Hero banner backgrounds (16:9). Served through the same /api/share-bg/:key proxy. */
 export const HERO_BACKGROUNDS = [
+  { key: "hero-droplets", name: "Chrome droplets", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131432_c1325a0b-3c8b-4d1a-ae12-c3878c09c5aa.png" },
   { key: "hero-fightnight", name: "Fight night", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131121_3bf994e3-0ac8-4fd5-92b3-e218bd132082.png" },
   { key: "hero-chrome", name: "Liquid chrome", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131121_865ca019-fe8e-4e99-a79d-c6bb2155fb3f.png" },
 ];

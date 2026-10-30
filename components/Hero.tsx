@@ -17,7 +17,7 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
 
   if (!authenticated || !profile) {
     return (
-      <div className="hero photo" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
+      <div className="hero photo" style={{ backgroundImage: "url(/api/share-bg/hero-droplets)" }}>
         <div className="k">Perped · PvP perps</div>
         <div className="big" style={{ fontSize: 26, lineHeight: 1.1 }}>Trade in public.<br />Get perped or get paid.</div>
         <div className="mt-2.5 text-[13px] opacity-95">Post your position. Someone will copy it, someone will fade it, and the chain decides who was right.</div>
@@ -28,7 +28,7 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
   const bal = profile.isDemo ? Number(profile.demoBalance) : (data?.accountValue ?? 0);
   const openN = data?.positions?.length ?? 0;
   return (
-    <div className="hero photo" style={{ backgroundImage: "url(/api/share-bg/hero-chrome)" }}>
+    <div className="hero photo" style={{ backgroundImage: "url(/api/share-bg/hero-droplets)" }}>
       <div className="k">{greet}, {profile.handle}{profile.isDemo ? " · demo" : ""}</div>
       <div className="big mono">{fmtUsd(bal)}</div>
       <div className="mt-2.5 flex gap-4 text-[13px] opacity-95">
