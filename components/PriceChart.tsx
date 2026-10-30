@@ -96,7 +96,7 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
     const snap = (t: number) => { let lo = times[0]; for (const x of times) { if (x <= t) lo = x; else break; } return lo; };
     const ms: SeriesMarker<Time>[] = markers
       .filter((m) => m.t >= times[0] - 60_000)
-      .map((m) => ({ id: m.id, time: (snap(m.t) / 1000) as UTCTimestamp, position: m.side === "long" ? "belowBar" : "aboveBar", shape: m.side === "long" ? "arrowUp" : "arrowDown", color: m.muted ? "#8b8b8b" : m.side === "long" ? cssVar("--green", "#16a34a") : cssVar("--red", "#dc2626"), text: `${m.hot ? "⚔ " : ""}${m.label}`, size: m.hot ? 2 : 1 }))
+      .map((m): SeriesMarker<Time> => ({ id: m.id, time: (snap(m.t) / 1000) as UTCTimestamp, position: m.side === "long" ? ("belowBar" as const) : ("aboveBar" as const), shape: m.side === "long" ? ("arrowUp" as const) : ("arrowDown" as const), color: m.muted ? "#8b8b8b" : m.side === "long" ? cssVar("--green", "#16a34a") : cssVar("--red", "#dc2626"), text: `${m.hot ? "⚔ " : ""}${m.label}`, size: m.hot ? 2 : 1 }))
       .sort((a, b) => (a.time as number) - (b.time as number));
     s.setMarkers(ms);
   }, [markers, candles, mode]);
