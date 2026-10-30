@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { db, ensureSchema } from "@/lib/db";
+import { db, ensureSchema, unjam } from "@/lib/db";
 import { boostHistory, ensureBots, seedHistory, seedRanks, syncBotAvatars } from "@/lib/bots";
 import { queryFeed } from "@/lib/feed";
 import { eq } from "drizzle-orm";
@@ -40,6 +40,8 @@ async function privyCheck(origin: string) {
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  // Clear any lock pile-up before touching tables; report what was cleared.
+  const unjammed = await unjam().catch((e) => `unjam failed: ${e instanceof Error ? e.message : String(e)}`);
   await ensureSchema();
   const origin = new URL(req.url).origin;
   const privy = await privyCheck(origin);
@@ -62,8 +64,8 @@ export async function GET(req: Request) {
     let feed: unknown;
     try { const rows = await queryFeed({ limit: 3 }); feed = { ok: true, rows: rows.length, newest: rows[0]?.post.createdAt ?? null }; } catch (e) { feed = { ok: false, error: e instanceof Error ? e.message : String(e) }; }
     const [counts] = (await db.execute(sql`select (select count(*) from posts) as posts, (select count(*) from users where is_bot) as bots, (select max(created_at) from posts where user_id in (select id from users where is_bot)) as last_bot_post`)) as unknown as { posts: string; bots: string; last_bot_post: string | null }[];
-    return Response.json({ ok: missing.length === 0, feed, counts, botsPaused: process.env.BOTS_PAUSED === "1", app: APP_NAME, version: "0.4.0", trading: HL_NETWORK, prices: HL_DATA_NETWORK, builderConfigured: BUILDER_CONFIGURED, privy, bots, tables, missing });
+    return Response.json({ ok: missing.length === 0, unjammed, feed, counts, botsPaused: process.env.BOTS_PAUSED === "1", app: APP_NAME, version: "0.4.0", trading: HL_NETWORK, prices: HL_DATA_NETWORK, builderConfigured: BUILDER_CONFIGURED, privy, bots, tables, missing });
   } catch (e) {
-    return Response.json({ ok: false, privy, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    return Response.json({ ok: false, unjammed, privy, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 }

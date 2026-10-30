@@ -1,5 +1,5 @@
 import { and, eq, isNull, lte, sql } from "drizzle-orm";
-import { db, schema, ensureSchema } from "@/lib/db";
+import { db, schema, ensureSchema, unjam } from "@/lib/db";
 import { getMids } from "@/lib/hl-info";
 import { notify, systemPost } from "@/lib/feed";
 import { closeTradePost } from "@/lib/trades";
@@ -16,6 +16,7 @@ import { demoLiqPx } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  await unjam().catch(() => 0);
   await ensureSchema();
   const secret = process.env.CRON_SECRET;
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) return Response.json({ error: "unauthorized" }, { status: 401 });
