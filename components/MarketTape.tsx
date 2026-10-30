@@ -20,7 +20,7 @@ export function pick(traders: MarketTrader[], lens: Lens) {
 }
 
 export function toMarkers(rows: MarketTrader[]): ChartMarker[] {
-  return rows.map((t) => ({ id: String(t.postId), t: new Date(t.openedAt).getTime(), side: t.side, label: `${t.handle} ${t.leverage}×`, hot: t.fadeCount >= 3, muted: t.status === "closed" }));
+  return rows.map((t) => ({ id: String(t.postId), t: new Date(t.openedAt).getTime(), side: t.side, label: `${t.handle} · ${t.side} ${t.leverage}× at ${t.entryPx}`, hot: t.fadeCount >= 3, muted: t.status === "closed", price: t.entryPx, avatarUrl: t.avatarUrl, handle: t.handle, href: `/post/${t.postId}` }));
 }
 
 /** Long/short split for Following · Top 10 · Everyone, for this market's open Perped positions. */

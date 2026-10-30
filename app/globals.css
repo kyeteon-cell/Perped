@@ -384,3 +384,13 @@ button:active { transform: scale(.97); }
 .pill { font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; background: var(--surface); color: var(--muted); }
 .pill.gold { background: var(--gold-soft); color: var(--gold); }
 .pill.hot { background: var(--red-soft); color: var(--red); text-decoration: none; }
+
+
+/* ---------- Avatar pins over the chart ---------- */
+.pins { position: absolute; inset: 0; pointer-events: none; }
+.pin { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; border-radius: 50%; padding: 2px; background: var(--bg); box-shadow: 0 0 0 2px var(--green), 0 4px 10px -4px rgba(0,0,0,.6); transition: transform .15s; }
+.pin.short { box-shadow: 0 0 0 2px var(--red), 0 4px 10px -4px rgba(0,0,0,.6); }
+.pin.muted { opacity: .45; filter: saturate(0); }
+.pin.hot { box-shadow: 0 0 0 2px var(--gold), 0 0 0 5px rgba(245,181,10,.25), 0 4px 10px -4px rgba(0,0,0,.6); }
+.pin:active { transform: translate(-50%, -50%) scale(1.15); }
+.pin .av { font-size: 8px; }

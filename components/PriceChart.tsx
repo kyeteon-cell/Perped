@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { createChart, ColorType, CrosshairMode, type IChartApi, type ISeriesApi, type UTCTimestamp, type SeriesMarker, type Time } from "lightweight-charts";
 import type { Candle } from "@/lib/hl-info";
+import Link from "next/link";
+import { Avatar } from "./ui";
 import { fmtPrice } from "@/lib/format";
 
 type Interval = "1m" | "5m" | "15m" | "1h" | "4h" | "1d";
 
 /** A trade to pin on the chart. */
-export type ChartMarker = { id: string; t: number; side: "long" | "short"; label: string; hot?: boolean; muted?: boolean };
+export type ChartMarker = { id: string; t: number; side: "long" | "short"; label: string; hot?: boolean; muted?: boolean; price?: number; avatarUrl?: string | null; handle?: string; href?: string };
 type Mode = "candles" | "line";
 const INTERVALS: Interval[] = ["1m", "5m", "15m", "1h", "4h", "1d"];
 
@@ -32,6 +34,9 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
   const vol = useRef<ISeriesApi<"Histogram"> | null>(null);
   const lastRef = useRef<Candle | null>(null);
   const clickRef = useRef(onMarkerClick); clickRef.current = onMarkerClick;
+  const [pins, setPins] = useState<{ id: string; x: number; y: number; m: ChartMarker }[]>([]);
+  const markersRef = useRef<ChartMarker[]>(markers); markersRef.current = markers;
+  const candlesRef = useRef<Candle[]>([]);
 
   const { data } = useSWR<{ candles: Candle[] }>(`/api/markets/${coin}/candles?interval=${interval}&limit=500`, {
     refreshInterval: interval === "1m" ? 15_000 : interval === "5m" ? 30_000 : 60_000,
@@ -90,16 +95,44 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
   }, [candles, mode, up]);
 
   // Trade pins: snap each to the candle it happened in, sort by time (the library requires it).
+  /** Position avatar bubbles at (entry time, entry price) in pixel space; re-run on pan/zoom. */
+  const placePins = () => {
+    const ch = chart.current, s = main.current, el = box.current; if (!ch || !s || !el) return setPins([]);
+    const times = candlesRef.current.map((c) => c.t); if (!times.length) return setPins([]);
+    const snap = (t: number) => { let lo = times[0]; for (const x of times) { if (x <= t) lo = x; else break; } return lo; };
+    const out: { id: string; x: number; y: number; m: ChartMarker }[] = [];
+    for (const m of markersRef.current) {
+      if (m.t < times[0] - 60_000) continue;
+      const x = ch.timeScale().timeToCoordinate((snap(m.t) / 1000) as UTCTimestamp);
+      const y = m.price ? s.priceToCoordinate(m.price) : null;
+      if (x == null || y == null) continue;
+      if (x < -10 || x > el.clientWidth - 40) continue;
+      out.push({ id: m.id, x, y, m });
+    }
+    setPins(out);
+  };
   useEffect(() => {
     const s = main.current; if (!s || !candles.length) return;
     const times = candles.map((c) => c.t);
     const snap = (t: number) => { let lo = times[0]; for (const x of times) { if (x <= t) lo = x; else break; } return lo; };
     const ms: SeriesMarker<Time>[] = markers
       .filter((m) => m.t >= times[0] - 60_000)
-      .map((m): SeriesMarker<Time> => ({ id: m.id, time: (snap(m.t) / 1000) as UTCTimestamp, position: m.side === "long" ? ("belowBar" as const) : ("aboveBar" as const), shape: m.side === "long" ? ("arrowUp" as const) : ("arrowDown" as const), color: m.muted ? "#8b8b8b" : m.side === "long" ? cssVar("--green", "#16a34a") : cssVar("--red", "#dc2626"), text: `${m.hot ? "⚔ " : ""}${m.label}`, size: m.hot ? 2 : 1 }))
+      .map((m): SeriesMarker<Time> => ({ id: m.id, time: (snap(m.t) / 1000) as UTCTimestamp, position: m.side === "long" ? ("belowBar" as const) : ("aboveBar" as const), shape: m.side === "long" ? ("arrowUp" as const) : ("arrowDown" as const), color: m.muted ? "#8b8b8b" : m.side === "long" ? cssVar("--green", "#16a34a") : cssVar("--red", "#dc2626"), text: m.hot ? "⚔" : undefined, size: m.hot ? 1.5 : 0.8 }))
       .sort((a, b) => (a.time as number) - (b.time as number));
     s.setMarkers(ms);
+    candlesRef.current = candles;
+    placePins();
   }, [markers, candles, mode]);
+
+  useEffect(() => {
+    const ch = chart.current; if (!ch) return;
+    const h = () => placePins();
+    ch.timeScale().subscribeVisibleLogicalRangeChange(h);
+    return () => ch.timeScale().unsubscribeVisibleLogicalRangeChange(h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+  useEffect(() => { placePins(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [livePx]);
 
   // Live tick: move the last candle with the WebSocket mid.
   useEffect(() => {
@@ -133,6 +166,13 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
       )}
       <div className="relative mt-1.5">
         <div ref={box} className="w-full" style={{ height: 260 }} />
+        <div className="pins" aria-hidden={false}>
+          {pins.map((p) => (
+            <Link key={p.id} href={p.m.href ?? "#"} className={`pin ${p.m.side} ${p.m.muted ? "muted" : ""} ${p.m.hot ? "hot" : ""}`} style={{ left: p.x, top: p.y }} title={p.m.label} onClick={() => onMarkerClick?.(p.id)}>
+              <Avatar handle={p.m.handle ?? "?"} url={p.m.avatarUrl ?? undefined} size={22} />
+            </Link>
+          ))}
+        </div>
         {!candles.length && <p className="muted absolute inset-0 grid place-items-center text-sm">Loading chart…</p>}
       </div>
       <p className="faint mt-1 text-[11px]">Hyperliquid mainnet · pinch to zoom, drag to pan</p>
