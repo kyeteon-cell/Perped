@@ -502,3 +502,5 @@ html { scroll-behavior: smooth; }
 
 .sio-continue { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin: 6px 0 8px; padding: 11px 14px; border-radius: 12px; border: 1.5px solid var(--gold); background: var(--gold-soft); color: var(--text); font: inherit; font-weight: 800; font-size: 14px; }
 .sio.dark .sio-continue { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.5); color: #fff; }
+.pf-banner { z-index: 0; }
+.pf-banner + .block { position: relative; z-index: 1; }
