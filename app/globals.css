@@ -307,9 +307,5 @@ button:active { transform: scale(.97); }
 .theme-dot { width: 44px; height: 44px; border-radius: 50%; border: 3px solid transparent; position: relative; cursor: pointer; transition: transform .15s; }
 .theme-dot.on { border-color: var(--text); transform: scale(1.1); }
 .theme-dot span { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px; font-size: 10px; color: var(--muted); white-space: nowrap; }
-.theme-dot.mint { background: linear-gradient(160deg, #0f766e, #052e2b); }
-.theme-dot.midnight { background: radial-gradient(circle at 35% 60%, #22c55e55, #0b1020 70%); }
-.theme-dot.sunset { background: linear-gradient(180deg, #ff7a3d, #ff4d6d, #7c2d9c); }
-.theme-dot.terminal { background: #050806; box-shadow: inset 0 0 0 2px #39ff88; }
-.theme-dot.paper { background: #f7f3ea; box-shadow: inset 0 0 0 2px #1c1917; }
+.theme-dot { background-size: cover; background-position: center; width: 52px; height: 65px; border-radius: 10px; }
 .themes { margin-bottom: 14px; }

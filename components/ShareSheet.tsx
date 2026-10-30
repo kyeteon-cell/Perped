@@ -5,69 +5,18 @@ import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtUsd, fmtPrice, pnlForPosition } from "@/lib/format";
 import { APP_URL } from "@/lib/config";
 import { ticker } from "./ui";
+import { SHARE_BACKGROUNDS } from "@/lib/share-backgrounds";
 
-/* ---------- themes ---------- */
+/* ---------- themes: photo backgrounds, loaded same-origin ---------- */
 
-export type ShareTheme = { id: string; name: string; paint: (g: CanvasRenderingContext2D, W: number, H: number, loss: boolean) => { fg: string; muted: string; accent: string; mono: string } };
 
-const THEMES: ShareTheme[] = [
-  {
-    id: "mint", name: "Mint",
-    paint(g, W, H, loss) {
-      const gr = g.createLinearGradient(0, 0, W, H);
-      if (loss) { gr.addColorStop(0, "#9f1239"); gr.addColorStop(0.55, "#7f1d1d"); gr.addColorStop(1, "#3b0a0a"); } else { gr.addColorStop(0, "#0f766e"); gr.addColorStop(0.55, "#065f46"); gr.addColorStop(1, "#052e2b"); }
-      g.fillStyle = gr; g.fillRect(0, 0, W, H);
-      g.globalAlpha = 0.12; g.fillStyle = "#fff"; g.beginPath(); g.arc(W * 0.85, H * 0.12, 260, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
-      return { fg: "#fff", muted: "rgba(255,255,255,.72)", accent: "#fff", mono: "#fff" };
-    },
-  },
-  {
-    id: "midnight", name: "Midnight",
-    paint(g, W, H, loss) {
-      g.fillStyle = "#0b1020"; g.fillRect(0, 0, W, H);
-      g.strokeStyle = "rgba(255,255,255,.06)"; g.lineWidth = 2;
-      for (let x = 0; x <= W; x += 90) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
-      for (let y = 0; y <= H; y += 90) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
-      const glow = g.createRadialGradient(W * 0.3, H * 0.55, 20, W * 0.3, H * 0.55, 620);
-      glow.addColorStop(0, loss ? "rgba(244,63,94,.45)" : "rgba(34,197,94,.45)"); glow.addColorStop(1, "rgba(0,0,0,0)");
-      g.fillStyle = glow; g.fillRect(0, 0, W, H);
-      return { fg: "#fff", muted: "rgba(255,255,255,.6)", accent: loss ? "#fb7185" : "#4ade80", mono: "#fff" };
-    },
-  },
-  {
-    id: "sunset", name: "Sunset",
-    paint(g, W, H) {
-      const gr = g.createLinearGradient(0, 0, 0, H);
-      gr.addColorStop(0, "#ff7a3d"); gr.addColorStop(0.5, "#ff4d6d"); gr.addColorStop(1, "#7c2d9c");
-      g.fillStyle = gr; g.fillRect(0, 0, W, H);
-      g.fillStyle = "rgba(255,230,120,.9)"; g.beginPath(); g.arc(W * 0.78, H * 0.3, 190, 0, Math.PI * 2); g.fill();
-      g.fillStyle = "rgba(0,0,0,.18)"; for (let i = 0; i < 7; i++) g.fillRect(0, H * 0.3 + 40 + i * 34, W, 10);
-      return { fg: "#fff", muted: "rgba(255,255,255,.8)", accent: "#fff", mono: "#fff" };
-    },
-  },
-  {
-    id: "terminal", name: "Terminal",
-    paint(g, W, H, loss) {
-      g.fillStyle = "#050806"; g.fillRect(0, 0, W, H);
-      g.fillStyle = "rgba(0,255,120,.05)"; for (let y = 0; y < H; y += 6) g.fillRect(0, y, W, 2);
-      const c = loss ? "#ff5f56" : "#39ff88";
-      g.strokeStyle = c; g.lineWidth = 3; g.strokeRect(40, 40, W - 80, H - 80);
-      g.fillStyle = c; g.font = "500 30px ui-monospace, Menlo, monospace"; g.fillText("> perped --receipt", 80, 110);
-      return { fg: c, muted: loss ? "rgba(255,95,86,.7)" : "rgba(57,255,136,.7)", accent: c, mono: c };
-    },
-  },
-  {
-    id: "paper", name: "Paper",
-    paint(g, W, H) {
-      g.fillStyle = "#f7f3ea"; g.fillRect(0, 0, W, H);
-      g.fillStyle = "rgba(0,0,0,.035)"; for (let i = 0; i < 400; i++) g.fillRect(Math.random() * W, Math.random() * H, 3, 3);
-      g.setLineDash([14, 12]); g.strokeStyle = "#1c1917"; g.lineWidth = 3; g.strokeRect(50, 50, W - 100, H - 100); g.setLineDash([]);
-      // torn edge
-      g.fillStyle = "#f7f3ea"; g.beginPath(); g.moveTo(0, H); for (let x = 0; x <= W; x += 36) g.lineTo(x + 18, H - 28); g.lineTo(W, H); g.closePath(); g.fill();
-      return { fg: "#1c1917", muted: "rgba(28,25,23,.6)", accent: "#1c1917", mono: "#1c1917" };
-    },
-  },
-];
+export type ShareTheme = (typeof SHARE_BACKGROUNDS)[number];
+const THEMES = SHARE_BACKGROUNDS;
+const imgCache = new Map<string, Promise<HTMLImageElement>>();
+function loadBg(key: string) {
+  if (!imgCache.has(key)) imgCache.set(key, new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = `/api/share-bg/${key}`; }));
+  return imgCache.get(key)!;
+}
 
 /* ---------- drawing ---------- */
 
@@ -119,11 +68,25 @@ function wrap(g: CanvasRenderingContext2D, text: string, maxW: number): string[]
   if (line) out.push(line); return out;
 }
 
-export function drawCard(theme: ShareTheme, d: CardData): HTMLCanvasElement {
+export async function drawCard(theme: ShareTheme, d: CardData): Promise<HTMLCanvasElement> {
   const W = 1080, H = 1350;
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
-  const col = theme.paint(g, W, H, d.loss);
+  // background photo, cover-fit
+  try {
+    const im = await loadBg(theme.key);
+    const s = Math.max(W / im.width, H / im.height); const w = im.width * s, h = im.height * s;
+    g.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
+  } catch { g.fillStyle = "#0b0b0f"; g.fillRect(0, 0, W, H); }
+  // scrim so text always reads
+  const sc = theme.scrim === "left" ? g.createLinearGradient(0, 0, W, 0) : theme.scrim === "full" ? g.createLinearGradient(0, 0, 0, H) : g.createLinearGradient(0, 0, 0, H);
+  if (theme.scrim === "left") { sc.addColorStop(0, "rgba(0,0,0,.78)"); sc.addColorStop(0.6, "rgba(0,0,0,.35)"); sc.addColorStop(1, "rgba(0,0,0,0)"); }
+  else if (theme.scrim === "full") { sc.addColorStop(0, "rgba(0,0,0,.55)"); sc.addColorStop(1, "rgba(0,0,0,.55)"); }
+  else { sc.addColorStop(0, "rgba(0,0,0,.8)"); sc.addColorStop(0.55, "rgba(0,0,0,.45)"); sc.addColorStop(1, "rgba(0,0,0,.1)"); }
+  g.fillStyle = sc; g.fillRect(0, 0, W, H);
+  if (d.loss) { g.fillStyle = "rgba(190,18,60,.28)"; g.fillRect(0, 0, W, H); }
+  const col = { fg: theme.textColor, muted: theme.muted, accent: d.loss ? "#fb7185" : theme.accent, mono: theme.textColor };
+  g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 14; g.shadowOffsetY = 2;
   const sans = "-apple-system, 'Inter', 'Helvetica Neue', Arial, sans-serif";
   const mono = "ui-monospace, 'SF Mono', Menlo, monospace";
   // header
@@ -157,12 +120,16 @@ export function drawCard(theme: ShareTheme, d: CardData): HTMLCanvasElement {
 
 /** Share any post as an image: five backgrounds, native share, save, X, copy link. */
 export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number; onClose: () => void }) {
-  const [themeId, setThemeId] = useState<string>(() => { try { return localStorage.getItem("perped:share-theme") || "mint"; } catch { return "mint"; } });
+  const [themeId, setThemeId] = useState<string>(() => { try { return localStorage.getItem("perped:share-theme") || "gold"; } catch { return "gold"; } });
   const [img, setImg] = useState<string>("");
   const [msg, setMsg] = useState<string | null>(null);
   const data = useMemo(() => cardData(item, mid), [item, mid]);
-  const theme = THEMES.find((t) => t.id === themeId) ?? THEMES[0];
-  useEffect(() => { try { setImg(drawCard(theme, data).toDataURL("image/png")); localStorage.setItem("perped:share-theme", theme.id); } catch { setImg(""); } }, [theme, data]);
+  const theme = THEMES.find((t) => t.key === themeId) ?? THEMES[0];
+  useEffect(() => {
+    let live = true;
+    drawCard(theme, data).then((c) => { if (!live) return; try { setImg(c.toDataURL("image/png")); localStorage.setItem("perped:share-theme", theme.key); } catch { setImg(""); } }).catch(() => setImg(""));
+    return () => { live = false; };
+  }, [theme, data]);
 
   const text = `${data.handle} · ${data.kind.toLowerCase()} · ${data.title} ${data.headline} on Perped`;
   const file = async () => { const blob = await (await fetch(img)).blob(); return new File([blob], `perped-${item.post.id}.png`, { type: "image/png" }); };
@@ -186,7 +153,7 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
         <div className="flex flex-col items-center gap-3.5 px-5 pb-5">
           {img ? <img src={img} alt="Share card preview" className="share-prev" /> : <div className="share-prev" />}
           <div className="themes">
-            {THEMES.map((t) => <button key={t.id} className={`theme-dot ${t.id} ${t.id === themeId ? "on" : ""}`} onClick={() => setThemeId(t.id)} aria-label={t.name}><span>{t.name}</span></button>)}
+            {THEMES.map((t) => <button key={t.key} className={`theme-dot ${t.key === themeId ? "on" : ""}`} style={{ backgroundImage: `url(/api/share-bg/${t.key})` }} onClick={() => setThemeId(t.key)} aria-label={t.name}><span>{t.name}</span></button>)}
           </div>
           <div className="grid w-full grid-cols-2 gap-2.5">
             <button className="btn brand" style={{ padding: 12 }} onClick={nativeShare}>Share</button>
