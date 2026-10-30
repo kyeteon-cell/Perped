@@ -106,8 +106,10 @@ function groupFeed(rows: FeedRow[]): Array<{ kind: "one"; item: FeedRow } | { ki
 }
 
 function Suggested({ rows }: { rows: { handle: string; pnl: number; winRate: string }[] }) {
-  const { authedFetch, authenticated, login } = useSession();
+  const { authedFetch, authenticated, login, profile } = useSession();
+  const { data: mine } = useSWR<{ users: { handle: string }[] }>(profile ? `/api/follows?handle=${profile.handle}&dir=following` : null);
   const [done, setDone] = useState<Record<string, boolean>>({});
+  useEffect(() => { if (mine?.users) setDone((d) => ({ ...Object.fromEntries(mine.users.map((u) => [u.handle, true])), ...d })); }, [mine]);
   const follow = async (h: string) => {
     if (!authenticated) return login();
     const r = await authedFetch("/api/follows", { method: "POST", body: JSON.stringify({ handle: h }) });

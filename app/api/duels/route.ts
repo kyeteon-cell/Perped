@@ -41,16 +41,25 @@ export async function GET(req: Request) {
   return Response.json({ duels: rows });
 }
 
-const Act = z.object({ id: z.number().int(), action: z.enum(["accept", "decline"]), postId: z.number().int().optional(), startPx: z.number().positive().optional() });
+const Act = z.object({ id: z.number().int(), action: z.enum(["accept", "decline", "post"]), postId: z.number().int().optional(), startPx: z.number().positive().optional() });
 
-/** PATCH /api/duels → accept (with your opposing trade post id) or decline. */
+/**
+ * PATCH /api/duels → opponent: accept (with their opposing trade post id + price) or decline.
+ * Challenger: "post" attaches their own position (post id) to a duel they created.
+ */
 export async function PATCH(req: Request) {
   const auth = await getAuth(req);
   if (!auth) return unauthorized();
   const parsed = Act.safeParse(await req.json());
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const [d] = await db.select().from(schema.duels).where(eq(schema.duels.id, parsed.data.id)).limit(1);
-  if (!d || d.opponentId !== auth.privyId || d.status !== "pending") return Response.json({ error: "not found" }, { status: 404 });
+  if (!d) return Response.json({ error: "not found" }, { status: 404 });
+  if (parsed.data.action === "post") {
+    if (d.challengerId !== auth.privyId || !parsed.data.postId) return Response.json({ error: "not found" }, { status: 404 });
+    const [u] = await db.update(schema.duels).set({ challengerPostId: parsed.data.postId, startPx: d.startPx ?? (parsed.data.startPx ? String(parsed.data.startPx) : undefined) }).where(eq(schema.duels.id, d.id)).returning();
+    return Response.json({ duel: u });
+  }
+  if (d.opponentId !== auth.privyId || d.status !== "pending") return Response.json({ error: "not found" }, { status: 404 });
   const [updated] = await db
     .update(schema.duels)
     .set(parsed.data.action === "accept" ? { status: "live", opponentPostId: parsed.data.postId, startPx: parsed.data.startPx ? String(parsed.data.startPx) : undefined } : { status: "declined" })

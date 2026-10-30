@@ -1,6 +1,7 @@
 "use client";
 
-import { PrivyProvider } from "@privy-io/react-auth";
+import { PrivyProvider, usePrivy, useWallets } from "@privy-io/react-auth";
+import { useCallback } from "react";
 import { SWRConfig } from "swr";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { HL_NETWORK } from "@/lib/config";
@@ -29,7 +30,26 @@ export function Providers({ children }: { children: React.ReactNode }) {
         supportedChains: [chain],
       }}
     >
-      <SWRConfig value={{ fetcher: (url: string) => fetch(url).then((r) => r.json()), revalidateOnFocus: false }}>{children}</SWRConfig>
+      <AuthedSWR>{children}</AuthedSWR>
     </PrivyProvider>
   );
+}
+
+/** Global SWR fetcher that carries the user's Privy token (or guest token), so every useSWR call sees the logged-in view. */
+function AuthedSWR({ children }: { children: React.ReactNode }) {
+  const { authenticated, getAccessToken } = usePrivy();
+  const { wallets } = useWallets();
+  const fetcher = useCallback(async (url: string) => {
+    const headers = new Headers();
+    if (authenticated) {
+      const token = await getAccessToken().catch(() => null);
+      if (token) headers.set("authorization", `Bearer ${token}`);
+      const w = wallets.find((x) => x.walletClientType !== "privy") ?? wallets.find((x) => x.walletClientType === "privy") ?? wallets[0];
+      if (w?.address) headers.set("x-wallet-address", w.address.toLowerCase());
+    } else {
+      try { const g = localStorage.getItem("perped:guest"); if (g) headers.set("authorization", `Guest ${g}`); } catch {}
+    }
+    return fetch(url, { headers }).then((r) => r.json());
+  }, [authenticated, getAccessToken, wallets]);
+  return <SWRConfig value={{ fetcher, revalidateOnFocus: false }}>{children}</SWRConfig>;
 }

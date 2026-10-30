@@ -121,11 +121,13 @@ export async function POST(req: Request) {
   } else {
     Object.assign(values, { coin: b.coin?.toUpperCase(), status: "closed" });
   }
-  if (b.kind === "trade" && b.fadedFromId) {
-    const [src] = await db.select({ userId: schema.posts.userId }).from(schema.posts).where(eq(schema.posts.id, b.fadedFromId)).limit(1);
+  if (b.kind === "trade" && (b.fadedFromId || b.copiedFromId)) {
+    const srcId = (b.fadedFromId ?? b.copiedFromId)!;
+    const [src] = await db.select({ userId: schema.posts.userId }).from(schema.posts).where(eq(schema.posts.id, srcId)).limit(1);
     if (src?.userId) {
-      const [owner] = await db.select({ allowFade: schema.users.allowFade }).from(schema.users).where(eq(schema.users.id, src.userId)).limit(1);
-      if (owner && !owner.allowFade) return Response.json({ error: "this trader has turned fading off" }, { status: 403 });
+      const [owner] = await db.select({ allowFade: schema.users.allowFade, allowCopy: schema.users.allowCopy }).from(schema.users).where(eq(schema.users.id, src.userId)).limit(1);
+      if (owner && b.fadedFromId && !owner.allowFade) return Response.json({ error: "this trader has turned fading off" }, { status: 403 });
+      if (owner && b.copiedFromId && !owner.allowCopy) return Response.json({ error: "this trader has turned copying off" }, { status: 403 });
     }
   }
   if (b.kind === "call") {

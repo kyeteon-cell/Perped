@@ -200,6 +200,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
       )}
 
       {sheet && <DepositSheet initial={sheet} onClose={() => setSheet(null)} />}
+      {challenge && <ChallengeSheet handle={user.handle} onClose={() => setChallenge(false)} />}
     </div>
   );
 }

@@ -23,6 +23,11 @@ export type Seed = {
   handle?: string;
   /** Stats of the current user for guardrails (closed trade count). */
   closedTrades?: number;
+  /** When set, this trade is one side of a duel: after the fill it's attached to the duel. */
+  duelId?: number;
+  duelRole?: "challenger" | "opponent";
+  /** Preset margin (duel stake). */
+  usd?: number;
 };
 
 /** The trade ticket: market or limit, leverage, TP/SL, builder-fee approval, copy and fade modes. */
@@ -36,7 +41,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
   const isDemo = !!profile?.isDemo;
   const [coin, setCoin] = useState(seed.coin);
   const [side, setSide] = useState<"long" | "short">(seed.side ?? "long");
-  const [usd, setUsd] = useState(50);
+  const [usd, setUsd] = useState(seed.usd ?? 50);
   // Leverage cap = whatever Hyperliquid allows on this market (BTC 40×, ETH 25×, …). Fades for new accounts stay at 2×.
   const fadeCap = isFade && (seed.closedTrades ?? 0) < 10 ? 2 : 100;
   const [lev, setLev] = useState(Math.min(seed.leverage ?? profile?.defaultLeverage ?? 2, fadeCap));
@@ -89,6 +94,14 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
       method: "POST",
       body: JSON.stringify({ kind: "trade", coin, side, size: filledSz, notionalUsd: filledSz * entryPx, leverage: lev, entryPx, oid, paper, body: note.trim() || undefined, copiedFromId: seed.copiedFromId, fadedFromId: seed.fadedFromId, backsCallId: seed.backsCallId, tpPx: tpslOn && Number(tp) > 0 ? Number(tp) : undefined, slPx: tpslOn && Number(sl) > 0 ? Number(sl) : undefined }),
     });
+    // Duel: attach this position to the duel (opponent accepting, or challenger posting their side).
+    if (r.ok && seed.duelId) {
+      try {
+        const j = await r.clone().json();
+        const postId = j?.post?.id ?? j?.id;
+        if (postId) await authedFetch("/api/duels", { method: "PATCH", body: JSON.stringify({ id: seed.duelId, action: seed.duelRole === "opponent" ? "accept" : "post", postId, startPx: entryPx }) });
+      } catch {}
+    }
     return r;
   };
 
@@ -105,7 +118,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
       const r = await postTrade(mid, size, undefined, true);
       setBusy(null);
       if (!r.ok) return setErr((await r.json()).error ?? "Couldn't place demo trade");
-      return router.push("/");
+      return router.push(seed.duelId ? `/duels/${seed.duelId}` : "/");
     }
     if (!walletClient || !address) return setErr("Wallet still loading, try again in a second.");
     setBusy("Signing order…");
@@ -121,7 +134,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
     const r = await postTrade(res.avgPx ?? refPx, res.totalSz ?? size, res.oid);
     setBusy(null);
     if (!r.ok) return setErr("Filled on Hyperliquid but posting failed; refresh your profile.");
-    router.push("/");
+    router.push(seed.duelId ? `/duels/${seed.duelId}` : "/");
   };
 
   const cta = `${orderType === "limit" ? "Limit " : ""}${isFade ? "Fade · " : ""}${side === "long" ? "Long" : "Short"} ${ticker(coin)} ${lev}× · ${fmtUsd(notional)}`;

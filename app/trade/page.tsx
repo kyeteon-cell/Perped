@@ -13,7 +13,8 @@ import { useSession } from "@/lib/hooks/useSession";
 function TradeInner() {
   const sp = useSearchParams();
   const { profile } = useSession();
-  const copy = sp.get("copy"), fade = sp.get("fade");
+  const copy = sp.get("copy"), fade = sp.get("fade"), duelId = sp.get("duel");
+  const { data: duel } = useSWR<{ duel: { id: number; coin: string; challengerSide: "long" | "short"; stakeUsd: string }; role: "challenger" | "opponent" | "viewer"; opponent: { handle: string }; challenger: { handle: string } }>(duelId ? `/api/duels/${duelId}` : null);
   const srcId = copy ?? fade;
   const { data: src } = useSWR<{ post: FeedRow }>(srcId ? `/api/posts/${srcId}` : null);
   const { data: me } = useSWR<{ stats: { closedTrades: number } | null }>(profile ? `/api/profile/${profile.handle}` : null);
@@ -24,13 +25,18 @@ function TradeInner() {
     const s = row.post.side!;
     seed = { ...seed, coin: row.post.coin!, side: fade ? (s === "long" ? "short" : "long") : s, leverage: fade ? 2 : row.post.leverage ?? 2, copiedFromId: copy ? row.post.id : undefined, fadedFromId: fade ? row.post.id : undefined, handle: row.author?.handle };
   }
-  if (srcId && !src) return <p className="muted p-5 text-sm">Loading…</p>;
+  if (duel && duel.role !== "viewer") {
+    const d = duel.duel;
+    const side = duel.role === "opponent" ? (d.challengerSide === "long" ? "short" : "long") : d.challengerSide;
+    seed = { ...seed, coin: d.coin, side, usd: Number(d.stakeUsd), duelId: d.id, duelRole: duel.role, handle: duel.role === "opponent" ? duel.challenger.handle : duel.opponent.handle };
+  }
+  if ((srcId && !src) || (duelId && !duel)) return <p className="muted p-5 text-sm">Loading…</p>;
 
   return (
     <div data-tint="blue">
       <header className="flex items-center justify-between px-4 py-3">
         <Link href={`/markets/${seed.coin}`} className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link>
-        <div className="name">{fade ? "Fade" : copy ? "Copy trade" : "Trade"}</div>
+        <div className="name">{duelId ? "Duel · your side" : fade ? "Fade" : copy ? "Copy trade" : "Trade"}</div>
         <span className="w-9" />
       </header>
       <TradeTicket seed={seed} />

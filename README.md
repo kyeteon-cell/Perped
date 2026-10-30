@@ -20,7 +20,7 @@ Mobile-first web app (installable PWA). Trades execute directly on Hyperliquid f
 
 **Profile** — cover, avatar, verified tick, followers/following (tappable), bio, Write a post / Edit profile or Follow / Challenge, account balance with Deposit / Withdraw, stat tiles (7d, all time, volume, copied vs faded, rivalries, trades win %, calls hit % + Judgement + streak), pinned trades (closed only), tabs: Posts · Trades (Open with Close 50% / Close all / Add · Closed with Pin) · Followers · Following.
 
-**Also** — full-screen composer (Post / Call / Poll), thread view with nested replies and Copied/Faded tags, Receipts (share card, Win / Honest / Clean / Roast, Share to X, Save image), notifications, settings (theme, P&L display, privacy toggles incl. fading/bottom-board/duels, default leverage, linked X, log out), five-step onboarding, deposit sheet (card via on-ramp URL, or USDC on Arbitrum with address), duels API (no spectator stakes).
+**Also** — full-screen composer (Post / Call / Poll), thread view with nested replies and Copied/Faded tags, Receipts (share card, Win / Honest / Clean / Roast, Share to X, Save image), notifications, settings (theme, P&L display, privacy toggles incl. fading/bottom-board/duels, default leverage, linked X, log out), five-step onboarding, deposit sheet (card via on-ramp URL, or USDC on Arbitrum with address), duels: ⚔ Challenge from any profile (coin, side, stake, duration) → you open your side in the ticket → they get a notification → `/duels/:id` to accept (opens the ticket for the opposite side) or decline → settles by who's further ahead at the deadline (no spectator stakes).
 
 **Back end** — Postgres via Drizzle; crons: `/api/cron/stats` (15 min, fills → stats, verification) and `/api/cron/resolve` (5 min, calls hit/missed, polls close/settle, duels settle, "told you so" comments).
 
@@ -99,6 +99,7 @@ lib/                 config, format, hl-info (read API), hl-exchange (signed act
 ```
 
 ## Known gaps / honest notes
+- Fixed in v0.4: profile and every `useSWR` call now send auth (the global fetcher attaches the Privy or guest token), poll results align to options, `allowCopy` is enforced, Receipt chips open the share sheet, comment errors show.
 - Build not yet verified by CI: run `npm install && npm run build` and fix anything the compiler flags (expected: a handful of type nits, not architecture).
 - `@nktkas/hyperliquid` version drift: if `ExchangeClient` / `order` signatures changed, `lib/hl-exchange.ts` is the only file to touch.
 - Calls resolve against the current mid at each 5-minute run, not against 1-minute candles; a wick between runs can be missed. Tighten with `candleSnapshot` later.

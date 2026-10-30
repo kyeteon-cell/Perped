@@ -23,7 +23,8 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   const { data: copiers } = useSWR<{ posts: FeedRow[] }>(`/api/posts?kind=trade&limit=50`);
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<number | null>(null);
-  const [receipt, setReceipt] = useState(false);
+  const [receipt, setReceipt] = useState(() => { try { return new URLSearchParams(window.location.search).get("share") === "1"; } catch { return false; } });
+  const [cErr, setCErr] = useState<string | null>(null);
   const post = data?.post;
   const copierHandles = new Set((copiers?.posts ?? []).filter((p) => p.post.copiedFromId === Number(id)).map((p) => p.author?.handle));
   const faderHandles = new Set((copiers?.posts ?? []).filter((p) => p.post.fadedFromId === Number(id)).map((p) => p.author?.handle));
@@ -32,7 +33,8 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     if (!authenticated) return login();
     if (!draft.trim()) return;
     const r = await authedFetch(`/api/posts/${id}/comments`, { method: "POST", body: JSON.stringify({ body: draft, parentId: replyTo ?? undefined }) });
-    if (r.ok) { setDraft(""); setReplyTo(null); mutateC(); mutate(); }
+    if (r.ok) { setDraft(""); setReplyTo(null); setCErr(null); mutateC(); mutate(); }
+    else { const j = await r.json().catch(() => ({})); setCErr(j.error === "pick a handle first" ? "Finish setting up your profile to comment." : j.error ?? "Couldn't post comment"); }
   };
   const roots = (cm?.comments ?? []).filter((c) => !c.comment.parentId);
   const children = (pid: number) => (cm?.comments ?? []).filter((c) => c.comment.parentId === pid);
@@ -60,6 +62,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         {replyTo && <button className="chip" onClick={() => setReplyTo(null)}>×</button>}
         <button className="copy" onClick={send}>Send</button>
       </div>
+      {cErr && <p className="red fixed bottom-[128px] left-1/2 w-full max-w-md -translate-x-1/2 px-5 text-xs">{cErr}</p>}
       {receipt && post && <ShareSheet item={post} mid={post.post.coin ? mids[post.post.coin] : undefined} onClose={() => setReceipt(false)} />}
     </div>
   );

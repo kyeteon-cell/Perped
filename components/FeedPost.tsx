@@ -193,8 +193,8 @@ function TradePost({ item, mid, onChanged }: Props) {
       <Acts item={item} onChanged={onChanged} mid={mid}>
         {canAct && (
           <>
-            <Link href={`/trade?fade=${post.id}`} className="fade ml-auto">Fade</Link>
-            <Link href={`/trade?copy=${post.id}`} className="copy">Copy</Link>
+            {author?.allowFade !== false && <Link href={`/trade?fade=${post.id}`} className="fade ml-auto">Fade</Link>}
+            {author?.allowCopy !== false && <Link href={`/trade?copy=${post.id}`} className={author?.allowFade === false ? "copy ml-auto" : "copy"}>Copy</Link>}
           </>
         )}
       </Acts>
@@ -344,7 +344,7 @@ function SystemPost({ item, onChanged }: Props) {
       </div>
       <p className="say">{post.body}</p>
       <Acts item={item} onChanged={onChanged}>
-        {typeof meta.postId === "number" && <Link href={`/post/${meta.postId}`} className="chip ml-auto">Receipt</Link>}
+        {typeof meta.postId === "number" && <Link href={`/post/${meta.postId}?share=1`} className="chip ml-auto">Receipt</Link>}
         {isLiq && <span className="muted ml-auto text-xs">Size small. Stops exist.</span>}
       </Acts>
     </article>

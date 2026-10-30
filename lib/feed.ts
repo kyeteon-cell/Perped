@@ -4,18 +4,18 @@ import { db, schema } from "./db";
 /** The shape every feed consumer gets. Counts are computed in SQL so the feed is one query. */
 export const feedSelect = {
   post: schema.posts,
-  author: { id: schema.users.id, handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified, showSizes: schema.users.showSizes, isDemo: schema.users.isDemo, isBot: schema.users.isBot },
+  author: { id: schema.users.id, handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified, showSizes: schema.users.showSizes, allowCopy: schema.users.allowCopy, allowFade: schema.users.allowFade, isDemo: schema.users.isDemo, isBot: schema.users.isBot },
   likes: sql<number>`(select count(*) from votes v where v.post_id = ${schema.posts.id} and v.value = 1)`.mapWith(Number),
   dislikes: sql<number>`(select count(*) from votes v where v.post_id = ${schema.posts.id} and v.value = -1)`.mapWith(Number),
   commentCount: sql<number>`(select count(*) from comments c where c.post_id = ${schema.posts.id})`.mapWith(Number),
   copyCount: sql<number>`(select count(*) from posts p2 where p2.copied_from_id = ${schema.posts.id})`.mapWith(Number),
   fadeCount: sql<number>`(select count(*) from posts p3 where p3.faded_from_id = ${schema.posts.id})`.mapWith(Number),
-  pollCounts: sql<number[]>`(select coalesce(array_agg(cnt order by opt), '{}') from (select pv.option as opt, count(*) as cnt from poll_votes pv where pv.post_id = ${schema.posts.id} group by pv.option) t)`,
+  pollCounts: sql<number[]>`(select coalesce(array_agg(coalesce(c.cnt, 0)::int order by gs.i), '{}') from generate_series(0, greatest(coalesce(jsonb_array_length(${schema.posts.options}), 0) - 1, -1)) gs(i) left join (select pv.option as opt, count(*)::int as cnt from poll_votes pv where pv.post_id = ${schema.posts.id} group by pv.option) c on c.opt = gs.i)`.mapWith((v) => (Array.isArray(v) ? v.map(Number) : [])),
 };
 
 export type FeedRow = {
   post: typeof schema.posts.$inferSelect;
-  author: { id: string; handle: string; avatarUrl: string | null; verified: boolean; showSizes: boolean; isDemo: boolean; isBot: boolean } | null;
+  author: { id: string; handle: string; avatarUrl: string | null; verified: boolean; showSizes: boolean; allowCopy?: boolean; allowFade?: boolean; isDemo: boolean; isBot: boolean } | null;
   likes: number;
   dislikes: number;
   commentCount: number;
