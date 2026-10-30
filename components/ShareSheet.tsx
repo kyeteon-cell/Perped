@@ -7,6 +7,7 @@ import { fmtPct, fmtUsd, fmtPrice, pnlForPosition } from "@/lib/format";
 import { APP_URL } from "@/lib/config";
 import { ticker } from "./ui";
 import { SHARE_BACKGROUNDS } from "@/lib/share-backgrounds";
+import { useSession } from "@/lib/hooks/useSession";
 
 /* ---------- themes: photo backgrounds, loaded same-origin ---------- */
 
@@ -27,11 +28,11 @@ function roundRect(g: CanvasRenderingContext2D, x: number, y: number, w: number,
 
 type CardData = { kind: string; title: string; headline: string; sub: string; lines: string[]; handle: string; loss: boolean; url: string; tag: string };
 
-function cardData(item: FeedRow, mid?: number): CardData {
+function cardData(item: FeedRow, mid?: number, shareUrl?: string): CardData {
   const { post, author } = item;
   const handle = author?.handle ?? "Perped";
   const origin = typeof window !== "undefined" && /localhost/.test(APP_URL) ? window.location.origin : APP_URL;
-  const url = `${origin}/post/${post.id}`;
+  const url = shareUrl ?? `${origin}/post/${post.id}`;
   const tag = author?.isDemo || post.paper ? "DEMO" : "REAL";
   if (post.kind === "trade") {
     const entry = Number(post.entryPx), size = Number(post.size), lev = post.leverage ?? 1;
@@ -128,7 +129,15 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
   const [themeId, setThemeId] = useState<string>(() => { try { return localStorage.getItem("perped:share-theme") || "gold"; } catch { return "gold"; } });
   const [img, setImg] = useState<string>("");
   const [msg, setMsg] = useState<string | null>(null);
-  const data = useMemo(() => cardData(item, mid), [item, mid]);
+  const { profile } = useSession();
+  // Open trades and calls share as a challenge: the link lands on /c/:id, takes the other side in one tap,
+  // and carries the sharer's referral so they earn on everything the newcomer trades.
+  const origin = typeof window !== "undefined" ? window.location.origin : APP_URL;
+  const challengeable = (item.post.kind === "trade" && item.post.status === "open") || (item.post.kind === "call" && item.post.callStatus === "open");
+  const refQ = profile ? `?ref=${profile.handle}` : "";
+  const challengeUrl = challengeable ? `${origin}/c/${item.post.id}${refQ}` : undefined;
+  const data = useMemo(() => cardData(item, mid, challengeUrl), [item, mid, challengeUrl]);
+  const mine = !!profile && item.author?.id === profile.id;
   const theme = THEMES.find((t) => t.key === themeId) ?? THEMES[0];
   useEffect(() => {
     let live = true;
@@ -136,7 +145,9 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
     return () => { live = false; };
   }, [theme, data]);
 
-  const text = `${data.handle} · ${data.kind.toLowerCase()} · ${data.title} ${data.headline} on Perped`;
+  const text = challengeable
+    ? (mine ? `I'm ${item.post.side} ${data.title}. Think I'm wrong? Fade me on Perped 👇` : `@${data.handle} is ${item.post.side} ${data.title}. Fade them with me on Perped 👇`)
+    : `${data.handle} · ${data.kind.toLowerCase()} · ${data.title} ${data.headline} on Perped`;
   const file = async () => { const blob = await (await fetch(img)).blob(); return new File([blob], `perped-${item.post.id}.png`, { type: "image/png" }); };
   const nativeShare = async () => {
     try {
@@ -147,7 +158,7 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
     } catch { /* cancelled */ }
   };
   const save = () => { const a = document.createElement("a"); a.download = `perped-${item.post.id}.png`; a.href = img; a.click(); };
-  const copyLink = async () => { try { await navigator.clipboard.writeText(data.url); setMsg("Link copied"); setTimeout(() => setMsg(null), 1500); } catch {} };
+  const copyLink = async () => { try { await navigator.clipboard.writeText(data.url); setMsg(challengeable ? "Challenge link copied" : "Link copied"); setTimeout(() => setMsg(null), 1500); } catch {} };
   const shareX = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(data.url)}`;
 
   if (typeof document === "undefined") return null;
@@ -162,12 +173,12 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
             {THEMES.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === themeId ? "on" : ""}`} onClick={() => setThemeId(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(/api/share-bg/${t.key})` }} /><span>{t.name}</span></button>)}
           </div>
           <div className="grid w-full grid-cols-2 gap-2.5">
-            <button className="btn brand" style={{ padding: 12 }} onClick={nativeShare}>Share</button>
+            <button className="btn brand" style={{ padding: 12 }} onClick={nativeShare}>{challengeable ? "Challenge a friend" : "Share"}</button>
             <button className="btn ghostline" style={{ padding: 12 }} onClick={save}>Save image</button>
             <a className="btn ink" style={{ padding: 12 }} href={shareX} target="_blank" rel="noreferrer">Post to X</a>
-            <button className="btn ghostline" style={{ padding: 12 }} onClick={copyLink}>{msg ?? "Copy link"}</button>
+            <button className="btn ghostline" style={{ padding: 12 }} onClick={copyLink}>{msg ?? (challengeable ? "Copy challenge link" : "Copy link")}</button>
           </div>
-          <p className="faint text-center text-xs">Cards show the real numbers. Losses too. Nobody edits a receipt.</p>
+          <p className="faint text-center text-xs">{challengeable ? (profile ? "Your link is an invite: anyone who joins through it gets reduced fees, and you earn a cut of every fee they ever pay." : "Cards show the real numbers. Losses too.") : "Cards show the real numbers. Losses too. Nobody edits a receipt."}</p>
         </div>
       </div>
     </>,

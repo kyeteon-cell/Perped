@@ -9,6 +9,13 @@ import { useSession } from "@/lib/hooks/useSession";
 import { Avatar, CoinMark, Icon, I, ticker } from "./ui";
 import { Sparkline } from "./Sparkline";
 import { ShareSheet } from "./ShareSheet";
+import { HL_NETWORK } from "@/lib/config";
+
+/** Hyperliquid's own explorer page for an account: every fill, visible to anyone. */
+export function explorerUrl(address?: string | null) {
+  const base = HL_NETWORK === "mainnet" ? "https://app.hyperliquid.xyz/explorer" : "https://app.hyperliquid-testnet.xyz/explorer";
+  return address ? `${base}/address/${address}` : base;
+}
 
 type Props = { item: FeedRow; mid?: number; onChanged?: () => void; compact?: boolean };
 
@@ -55,7 +62,7 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
   );
 }
 
-function Acts({ item, onChanged, children, mid }: { item: FeedRow; onChanged?: () => void; children?: React.ReactNode; mid?: number }) {
+function Acts({ item, onChanged, children, mid, challenge }: { item: FeedRow; onChanged?: () => void; children?: React.ReactNode; mid?: number; challenge?: boolean }) {
   const { authenticated, authedFetch, login } = useSession();
   const [share, setShare] = useState(false);
   const [likes, setLikes] = useState(item.likes);
@@ -79,6 +86,7 @@ function Acts({ item, onChanged, children, mid }: { item: FeedRow; onChanged?: (
       <Link href={`/post/${item.post.id}`}><Icon d={I.comment} size={18} />{item.commentCount}</Link>
       <button onClick={() => setShare(true)} aria-label="Share"><Icon d={I.share} size={18} /></button>
       {children}
+      {challenge && <button className="copy ml-auto" onClick={() => setShare(true)}>Challenge a friend</button>}
       {share && <ShareSheet item={item} mid={mid} onClose={() => setShare(false)} />}
     </div>
   );
@@ -186,13 +194,18 @@ function TradePost({ item, mid, onChanged }: Props) {
         </div>
       </div>
       <div className="track"><b style={{ width: `${Math.min(100, Math.abs(roi))}%`, background: pos ? "var(--green)" : "var(--red)" }} /></div>
+      <div className="mt-2 flex items-center justify-between">
+        {isDemoPost(item)
+          ? <Link href="/how-it-works#demo" className="verify">Demo · simulated at live Hyperliquid prices</Link>
+          : <a href={explorerUrl(author?.address)} target="_blank" rel="noreferrer" className="verify real"><Icon d={I.shield} size={12} />Verified on Hyperliquid ↗</a>}
+      </div>
       {camps >= 3 ? (
         <div className="camps"><span><b>{item.copyCount} copied</b></span><span className="faint text-[11px] font-extrabold">vs</span><span><b>{item.fadeCount} faded</b></span></div>
       ) : (
         <div className="camps"><span>Be the first to copy or fade this one</span></div>
       )}
       {post.body && <p className="say">{post.body}</p>}
-      <Acts item={item} onChanged={onChanged} mid={mid}>
+      <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id}>
         {canAct && (
           <>
             {author?.allowFade !== false && <Link href={`/trade?fade=${post.id}`} className="fade ml-auto">Fade</Link>}
@@ -209,36 +222,40 @@ function TradePost({ item, mid, onChanged }: Props) {
 
 function CallPost({ item, mid, onChanged }: Props) {
   const { post } = item;
+  const { profile } = useSession();
   const target = Number(post.targetPx), p = mid ?? target;
   const up = post.side === "long";
   const open = post.callStatus === "open";
-  const fromPx = Number((post.meta as { fromPx?: number } | null)?.fromPx ?? 0);
+  const meta = post.meta as { fromPx?: number; quick?: boolean } | null;
+  const fromPx = Number(meta?.fromPx ?? 0);
+  const quick = meta?.quick === true;
   const pctToTarget = fromPx ? ((target - fromPx) / fromPx) * 100 : 0;
-  const progress = fromPx ? Math.max(0, Math.min(100, ((p - fromPx) / (target - fromPx)) * 100)) : 0;
+  const liveMove = fromPx ? ((p - fromPx) / fromPx) * 100 * (up ? 1 : -1) : 0; // quick calls: how far in your favour right now
+  const progress = quick ? Math.max(0, Math.min(100, 50 + liveMove * 25)) : fromPx && target !== fromPx ? Math.max(0, Math.min(100, ((p - fromPx) / (target - fromPx)) * 100)) : 0;
   const deadline = d(post.deadline), resolvedAt = d(post.resolvedAt);
   const left = deadline ? Math.max(0, deadline.getTime() - Date.now()) : 0;
-  const leftTxt = left > 86_400_000 ? `${Math.round(left / 86_400_000)} d left` : left > 0 ? `${Math.round(left / 3_600_000)} h left` : "";
+  const leftTxt = left > 86_400_000 ? `${Math.round(left / 86_400_000)} d left` : left > 3_600_000 ? `${Math.round(left / 3_600_000)} h left` : left > 0 ? `${Math.max(1, Math.round(left / 60_000))} m left` : "";
   return (
     <article className={`post ${open ? "tint-blue" : post.callStatus === "hit" ? "tint-green" : "tint-red"}`}>
-      <KindTag icon={I.trophy}>{open ? "Price call" : post.callStatus === "hit" ? "Call hit" : "Call missed"}</KindTag>
+      <KindTag icon={I.trophy}>{quick ? (open ? "One-hour call" : post.callStatus === "hit" ? "Called it" : "Got perped") : open ? "Price call" : post.callStatus === "hit" ? "Call hit" : "Call missed"}</KindTag>
       <Who item={item} right={<>{post.backedPostId && <span className="lbl backed">Backed</span>}<span className={`lbl ${open ? "call" : post.callStatus === "hit" ? "long" : "short"}`}><i />{open ? "Call" : post.callStatus === "hit" ? "Hit" : "Missed"}</span></>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
           <CoinMark coin={post.coin!} />
           <div>
-            <div className="coin" style={{ fontSize: 24 }}>{ticker(post.coin!, true)} <span className="muted text-sm font-semibold tracking-normal">{up ? "↑" : "↓"} {fmtPrice(target)}</span></div>
-            <div className="mono when mt-2">{fromPx ? `from ${fmtPrice(fromPx)} · ${fmtPct(pctToTarget, 1)}` : up ? "up" : "down"}{deadline ? ` · by ${deadline.toLocaleDateString("en-US", { weekday: "short" })}` : ""}{post.invalidPx ? ` · invalid ${up ? "below" : "above"} ${fmtPrice(post.invalidPx)}` : ""}</div>
+            <div className="coin" style={{ fontSize: 24 }}>{ticker(post.coin!, true)} <span className="muted text-sm font-semibold tracking-normal">{quick ? (up ? "higher" : "lower") : `${up ? "↑" : "↓"} ${fmtPrice(target)}`}</span></div>
+            <div className="mono when mt-2">{quick ? `from ${fmtPrice(fromPx || target)}${deadline ? ` · settles ${deadline.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}` : ""}` : `${fromPx ? `from ${fmtPrice(fromPx)} · ${fmtPct(pctToTarget, 1)}` : up ? "up" : "down"}${deadline ? ` · by ${deadline.toLocaleDateString("en-US", { weekday: "short" })}` : ""}${post.invalidPx ? ` · invalid ${up ? "below" : "above"} ${fmtPrice(post.invalidPx)}` : ""}`}</div>
           </div>
         </div>
         <div className="text-right">
-          <div className="pnl mono" style={{ fontSize: 22 }}>{open ? `${Math.round(progress)}%` : fmtPrice(post.resolvedPx)}</div>
-          <div className="when">{open ? `to target · ${leftTxt}` : `resolved ${resolvedAt ? timeAgo(resolvedAt) + " ago" : ""}`}</div>
+          <div className={`pnl mono ${quick && open ? (liveMove >= 0 ? "green" : "red") : ""}`} style={{ fontSize: 22 }}>{open ? (quick ? fmtPct(liveMove, 2) : `${Math.round(progress)}%`) : fmtPrice(post.resolvedPx)}</div>
+          <div className="when">{open ? (quick ? `${liveMove >= 0 ? "winning" : "losing"} · ${leftTxt}` : `to target · ${leftTxt}`) : `resolved ${resolvedAt ? timeAgo(resolvedAt) + " ago" : ""}`}</div>
         </div>
       </div>
       <div className="track"><b style={{ width: `${open ? progress : 100}%`, background: open ? "var(--text)" : post.callStatus === "hit" ? "var(--green)" : "var(--red)" }} /></div>
-      {post.body && <p className="say">{post.body}</p>}
-      <Acts item={item} onChanged={onChanged}>
-        {open && <Link href={`/trade?coin=${post.coin}&side=${post.side}`} className="copy ml-auto">Trade it</Link>}
+      {post.body && !quick && <p className="say">{post.body}</p>}
+      <Acts item={item} onChanged={onChanged} challenge={open && !!item.author && item.author.id === profile?.id}>
+        {open && item.author?.id !== profile?.id && <Link href={`/trade?coin=${post.coin}&side=${post.side}`} className="copy ml-auto">Trade it</Link>}
       </Acts>
     </article>
   );

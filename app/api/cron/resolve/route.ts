@@ -27,7 +27,12 @@ export async function GET(req: Request) {
     const target = Number(c.targetPx), invalid = c.invalidPx ? Number(c.invalidPx) : null;
     const up = c.side === "long";
     let outcome: "hit" | "missed" | null = null;
-    if (up ? p >= target : p <= target) outcome = "hit";
+    const quick = (c.meta as { quick?: boolean } | null)?.quick === true;
+    if (quick) {
+      // Quick calls settle only at the deadline, against the price they were made at.
+      if (!c.deadline || c.deadline.getTime() > now.getTime()) continue;
+      outcome = (up ? p > target : p < target) ? "hit" : "missed";
+    } else if (up ? p >= target : p <= target) outcome = "hit";
     else if (invalid && (up ? p <= invalid : p >= invalid)) outcome = "missed";
     else if (c.deadline && c.deadline.getTime() <= now.getTime()) outcome = "missed";
     if (!outcome) continue;

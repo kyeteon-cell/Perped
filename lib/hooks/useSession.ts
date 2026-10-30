@@ -22,7 +22,9 @@ export function useSession() {
   const authenticated = privyAuthed || isGuest;
   const ready = privyReady && guestReady;
   const startGuest = useCallback(async () => {
-    const r = await fetch("/api/guest", { method: "POST" });
+    let ref: string | null = null;
+    try { ref = localStorage.getItem("perped:ref"); } catch {}
+    const r = await fetch("/api/guest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ref }) });
     const j = await r.json();
     if (!r.ok || !j.token) throw new Error(j.error ?? "Couldn't start demo");
     try { localStorage.setItem("perped:guest", j.token); } catch {}

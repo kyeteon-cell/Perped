@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { FeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
 import { Pulse } from "@/components/Pulse";
+import { QuickCall } from "@/components/QuickCall";
 import { Banked } from "@/components/Banked";
 import { DepositSheet } from "@/components/DepositSheet";
 import { Avatar, Icon, I, SkeletonList } from "@/components/ui";
@@ -58,6 +59,7 @@ export default function HomePage() {
       </div>
 
       {tab === "foryou" && <Hero onDeposit={() => setDeposit(true)} />}
+      {tab === "foryou" && <QuickCall mids={mids} />}
       {tab !== "following" && <Pulse mids={mids} />}
       {tab === "foryou" && <Banked />}
 

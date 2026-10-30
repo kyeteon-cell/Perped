@@ -414,3 +414,24 @@ img { -webkit-user-drag: none; }
 main, .page { animation: fade .22s ease both; }
 ::selection { background: var(--brand-soft); }
 html { scroll-behavior: smooth; }
+
+/* ---------- Quick call (front door) ---------- */
+.qc { margin: 0 20px 14px; padding: 16px; border-radius: var(--r); background: var(--surface); }
+.qc-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.qc-btn { border: 0; border-radius: 14px; padding: 16px 12px; font: inherit; font-size: 17px; font-weight: 800; color: #fff; cursor: pointer; }
+.qc-btn.up { background: var(--green); } .qc-btn.dn { background: var(--red); }
+.qc-btn:disabled { opacity: .55; }
+.qc-locked { padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--text) 5%, transparent); }
+.qc-split { height: 6px; border-radius: 999px; background: var(--red); overflow: hidden; }
+.qc-split i { display: block; height: 100%; background: var(--green); transition: width .6s cubic-bezier(.2,.8,.2,1); }
+
+/* ---------- How it works ---------- */
+.hw-list { display: flex; flex-direction: column; gap: 8px; padding-left: 0; list-style: none; }
+.hw-list li { padding: 10px 12px; border-radius: 12px; background: var(--surface); }
+.hw-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.hw-table td { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.hw-table td:nth-child(2) { font-weight: 700; white-space: nowrap; }
+.hw-table td:nth-child(3) { color: var(--muted); }
+.hw a { color: var(--brand); text-decoration: underline; }
+.verify { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--muted); text-decoration: none; }
+.verify.real { color: var(--green); }

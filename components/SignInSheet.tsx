@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignInOptions } from "./SignInOptions";
 import { useSession } from "@/lib/hooks/useSession";
@@ -27,6 +28,7 @@ export function SignInSheet() {
           <h2 className="text-lg font-bold">Get in</h2>
           <p className="muted mb-3 text-sm">Demo to practise, wallet to trade for real.</p>
           <SignInOptions />
+          <p className="faint mt-3 text-center text-[11px]"><Link href="/how-it-works">How it works · where your money is · fees</Link></p>
         </div>
       </div>
     </>

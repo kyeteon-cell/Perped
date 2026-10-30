@@ -37,7 +37,7 @@ export async function GET(req: Request) {
 
   return Response.json({
     code: profile.handle,
-    link: referralLink(APP_URL, profile.handle),
+    link: referralLink(/localhost/.test(APP_URL) ? new URL(req.url).origin : APP_URL, profile.handle),
     referredBy: referrer[0]?.handle ?? null,
     fee,
     programme: { sharePct: REFERRAL_SHARE_PCT, topSharePct: REFERRAL_TOP_SHARE_PCT, topThreshold: REFERRAL_TOP_THRESHOLD },

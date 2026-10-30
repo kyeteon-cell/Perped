@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/hooks/useSession";
@@ -184,7 +186,7 @@ export function TradeTicket({ seed, compact = false }: { seed: Seed; compact?: b
           <div className="stat"><small>Size</small><div className="v mono">{market ? fmtSize(size, market.szDecimals) : "—"}</div></div>
           <div className="stat"><small>Liq. at</small><div className="v mono">{estLiq ? fmtPrice(estLiq) : "—"}</div></div>
         </div>
-        {!isDemo && <div className="when mt-2.5 flex items-center justify-between"><span>Perped fee {fee.label}{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? "Top trader" : "Referral"}</span>}</span><span className="mono">{fmtUsd((notional * fee.tenthsBps) / 100000)}</span></div>}
+        {!isDemo && <div className="when mt-2.5 flex items-center justify-between"><span><Link href="/how-it-works#fees" className="underline">Perped fee</Link> {fee.label}{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? "Top trader" : "Referral"}</span>}</span><span className="mono">{fmtUsd((notional * fee.tenthsBps) / 100000)}</span></div>}
       </div>
 
       <div className="block">
