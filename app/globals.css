@@ -724,6 +724,23 @@ body { letter-spacing: -.005em; }
 .h1 { letter-spacing: -.03em; }
 .eyebrow { letter-spacing: .08em; }
 
-/* Feed cards: keep Copy / Fade coloured (".acts button" was clearing their background) */
-.acts .copy { background: linear-gradient(180deg, #2ff0a8 0%, #05e091 45%, #03c47e 100%); color: #04130d; }
-.acts .fade { background: linear-gradient(180deg, #ff8a8e 0%, #fd6267 45%, #e5484d 100%); color: #fff; }
+/* Trade card: quick-TA chart + day stats */
+.tchart { display: block; margin-top: 14px; text-decoration: none; color: inherit; }
+.tchart-plot { position: relative; height: 96px; border-radius: 14px; background: color-mix(in srgb, var(--text) 3%, transparent); border: 1px solid var(--line); overflow: hidden; }
+.tchart-plot svg { position: absolute; inset: 6px 58px 6px 6px; width: calc(100% - 64px); height: calc(100% - 12px); }
+.tc-tag { position: absolute; right: 4px; transform: translateY(-50%); font-family: var(--font-mono), "Barlow", sans-serif; font-size: 10px; font-weight: 700; line-height: 1; padding: 3px 5px; border-radius: 6px; white-space: nowrap; max-width: 56px; overflow: hidden; text-overflow: ellipsis; }
+.tc-tag.entry { right: auto; left: 8px; background: var(--surface); color: var(--muted); border: 1px solid var(--line); }
+.tc-tag.now { color: #fff; } .tc-tag.now.g { background: var(--green); color: #04130d; } .tc-tag.now.r { background: var(--red); }
+.tc-tag.tp { right: auto; left: 50%; background: var(--green-soft); color: var(--green); }
+.tc-tag.sl { right: auto; left: 50%; background: var(--red-soft); color: var(--red); }
+.tc-dot { position: absolute; right: 60px; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; }
+.tc-dot.g { background: var(--green); } .tc-dot.r { background: var(--red); }
+.tc-dot { animation: tcblink 1.6s ease-in-out infinite; }
+@keyframes tcblink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(1.5); } }
+.tc-range { position: absolute; left: 8px; bottom: 5px; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+.tstats { display: grid; grid-template-columns: .8fr 1.5fr 1fr 1fr; gap: 6px; margin-top: 8px; }
+.tstats > div { min-width: 0; background: color-mix(in srgb, var(--text) 3%, transparent); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; }
+.tstats small { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.tstats b { display: block; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tfoot { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.tfoot b { color: var(--text); }

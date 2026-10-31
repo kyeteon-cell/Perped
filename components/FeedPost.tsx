@@ -9,6 +9,7 @@ import { fmtPct, fmtPrice, fmtStake, fmtUsd, pnlForPosition, timeAgo } from "@/l
 import { useSession } from "@/lib/hooks/useSession";
 import { Avatar, CoinMark, Icon, I, ticker, RankChip } from "./ui";
 import { Sparkline } from "./Sparkline";
+import { TradeChart } from "./TradeChart";
 import { ShareSheet } from "./ShareSheet";
 import { ManageTrade } from "./ManageTrade";
 import { QuickTrade } from "./QuickTrade";
@@ -289,18 +290,14 @@ function TradePost({ item, mid, onChanged, full }: Props) {
           <div className={`mono text-[13px] ${pos ? "green" : "red"}`}>{labels[1]}</div>
         </div>
       </div>
-      <div className="track"><b style={{ width: `${Math.min(100, Math.abs(roi))}%`, background: pos ? "var(--green)" : "var(--red)" }} /></div>
-      {isOpen && (post.tpPx || post.slPx) && <div className="mono when mt-2 text-[11px]">{post.tpPx ? `TP ${fmtPrice(post.tpPx)}` : ""}{post.tpPx && post.slPx ? " · " : ""}{post.slPx ? `SL ${fmtPrice(post.slPx)}` : ""}</div>}
-      <div className="mt-2 flex items-center justify-between">
+      <TradeChart coin={post.coin!} entry={entry} mark={mark} side={post.side as "long" | "short"} tp={post.tpPx ? Number(post.tpPx) : null} sl={post.slPx ? Number(post.slPx) : null} />
+      <div className="tfoot">
         {isDemoPost(item)
-          ? <Link href="/how-it-works#demo" className="verify">Demo · simulated at live Hyperliquid prices</Link>
-          : <a href={explorerUrl(author?.address)} target="_blank" rel="noreferrer" className="verify real"><Icon d={I.shield} size={12} />Verified on Hyperliquid ↗</a>}
+          ? <Link href="/how-it-works#demo" className="verify">Demo · live prices</Link>
+          : <a href={explorerUrl(author?.address)} target="_blank" rel="noreferrer" className="verify real"><Icon d={I.shield} size={12} />Verified ↗</a>}
+        {(post.tpPx || post.slPx) && <span className="mono">{post.tpPx ? `TP ${fmtPrice(post.tpPx)}` : ""}{post.tpPx && post.slPx ? " · " : ""}{post.slPx ? `SL ${fmtPrice(post.slPx)}` : ""}</span>}
+        {camps > 0 && <span><b>{item.copyCount}</b> copied · <b>{item.fadeCount}</b> faded</span>}
       </div>
-      {camps >= 3 ? (
-        <div className="camps"><span><b>{item.copyCount} copied</b></span><span className="faint text-[11px] font-extrabold">vs</span><span><b>{item.fadeCount} faded</b></span></div>
-      ) : (
-        <div className="camps"><span>Be the first to copy or fade this one</span></div>
-      )}
       {post.body && <RichText text={post.body} />}
       <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id} manage={isOpen && !!author && author.id === profile?.id}>
         {canAct && (
