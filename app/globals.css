@@ -982,3 +982,18 @@ body { letter-spacing: -.005em; }
 @media (prefers-reduced-motion: reduce) { .ar-hpbar i::after, .ar-hpbar.bleed i, .ar-drips b { animation: none; } .ar-drips { display: none; } }
 .ar-hpbox.r .ar-hpbar { display: block; }
 .ar-hptrack { width: 100%; }
+/* Drips v2: proper teardrops (point up, round bottom), slower and sparser */
+.ar-drips b { width: 6px; height: 8px; margin-left: -3px; border-radius: 0; background: none; box-shadow: none; animation: drip2 5.4s cubic-bezier(.5,0,.9,.45) infinite; }
+.ar-drips b::before { content: ""; position: absolute; left: 0; bottom: 0; width: 6px; height: 6px; border-radius: 0 50% 50% 50%; transform: rotate(45deg);
+  background: radial-gradient(circle at 70% 70%, #ffd0d2 0, #fd6267 40%, #8f1d23 100%); box-shadow: 0 1px 2px rgba(143,29,35,.45); }
+.ar-drips b:nth-child(1) { left: 85%; animation-delay: 0s; }
+.ar-drips b:nth-child(2) { left: 50%; animation-delay: 1.9s; width: 6px; height: 8px; }
+.ar-drips b:nth-child(3) { left: 22%; animation-delay: 3.7s; }
+.ar-drips b:nth-child(4) { display: none; }
+@keyframes drip2 {
+  0% { opacity: 0; transform: translateY(-4px) scale(.3); }
+  10% { opacity: 1; transform: translateY(-1px) scale(.8); }
+  32% { opacity: 1; transform: translateY(1px) scale(1, 1.25); }
+  55% { opacity: 1; transform: translateY(24px) scale(.9, 1.05); }
+  62%, 100% { opacity: 0; transform: translateY(28px) scale(.7); }
+}
