@@ -76,8 +76,12 @@ export async function drawCard(theme: ShareTheme, d: CardData): Promise<HTMLCanv
   const W = 1080, H = 1350;
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
-  // background photo, cover-fit
-  try {
+  const light = theme.scrim === "light";
+  const brandNew = ["mercury", "liquid", "paper"].includes(theme.key);
+  if (light) {
+    const bg = g.createRadialGradient(W / 2, H * 0.4, 100, W / 2, H * 0.4, H);
+    bg.addColorStop(0, "#ffffff"); bg.addColorStop(1, "#ecedf0"); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  } else try {
     const im = await loadBg(theme.key);
     const s = Math.max(W / im.width, H / im.height); const w = im.width * s, h = im.height * s;
     g.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
@@ -87,17 +91,26 @@ export async function drawCard(theme: ShareTheme, d: CardData): Promise<HTMLCanv
   if (theme.scrim === "left") { sc.addColorStop(0, "rgba(0,0,0,.78)"); sc.addColorStop(0.6, "rgba(0,0,0,.35)"); sc.addColorStop(1, "rgba(0,0,0,0)"); }
   else if (theme.scrim === "full") { sc.addColorStop(0, "rgba(0,0,0,.55)"); sc.addColorStop(1, "rgba(0,0,0,.55)"); }
   else { sc.addColorStop(0, "rgba(0,0,0,.8)"); sc.addColorStop(0.55, "rgba(0,0,0,.45)"); sc.addColorStop(1, "rgba(0,0,0,.1)"); }
-  g.fillStyle = sc; g.fillRect(0, 0, W, H);
+  if (!light) {
+    g.fillStyle = sc; g.fillRect(0, 0, W, H);
+    // bottom scrim so the footer reads over bright chrome
+    const bs = g.createLinearGradient(0, H - 460, 0, H); bs.addColorStop(0, "rgba(0,0,0,0)"); bs.addColorStop(1, "rgba(0,0,0,.78)");
+    g.fillStyle = bs; g.fillRect(0, H - 460, W, 460);
+  }
   if (d.loss) { g.fillStyle = "rgba(190,18,60,.28)"; g.fillRect(0, 0, W, H); }
-  const col = { fg: theme.textColor, muted: theme.muted, accent: d.loss ? "#fb7185" : theme.accent, mono: theme.textColor };
-  g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 14; g.shadowOffsetY = 2;
+  const col = { fg: theme.textColor, muted: theme.muted, accent: d.loss ? (brandNew ? (light ? "#E5484D" : "#FD6267") : "#fb7185") : theme.accent, mono: theme.textColor };
+  if (!light) { g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 14; g.shadowOffsetY = 2; }
   // Use the app's own faces (next/font exposes them as CSS variables on <html>).
   try { await document.fonts.ready; } catch {}
   const root = getComputedStyle(document.documentElement);
   const sans = `${root.getPropertyValue("--font-sans") || ""}, -apple-system, 'Helvetica Neue', Arial, sans-serif`.replace(/^,\s*/, "");
   const mono = `${root.getPropertyValue("--font-mono") || ""}, 'Barlow', system-ui, sans-serif`.replace(/^,\s*/, "");
   // header
-  g.fillStyle = col.fg; g.font = `800 54px ${sans}`; g.fillText("Perped", 80, 180);
+  try {
+    const logo = await loadBg("logo-wordmark");
+    const lw = 340, lh = (logo.height / logo.width) * lw;
+    g.save(); g.shadowColor = light ? "rgba(0,0,0,.18)" : "rgba(0,0,0,.6)"; g.drawImage(logo, 72, 186 - lh, lw, lh); g.restore();
+  } catch { g.fillStyle = col.fg; g.font = `800 54px ${sans}`; g.fillText("perped.", 80, 180); }
   g.font = `700 26px ${sans}`; g.fillStyle = col.muted; g.fillText(d.kind, 80, 225);
   // tag
   g.font = `900 24px ${sans}`; const tw = g.measureText(d.tag).width + 36;
@@ -117,9 +130,20 @@ export async function drawCard(theme: ShareTheme, d: CardData): Promise<HTMLCanv
   g.fillStyle = col.fg; g.font = `500 40px ${d.kind.includes("TRADE") ? mono : sans}`;
   for (const line of d.lines) for (const l of wrap(g, line, W - 160).slice(0, 4)) { g.fillText(l, 80, y + 40); y += 56; }
   // footer
-  g.fillStyle = col.muted; g.font = `500 32px ${sans}`;
-  g.fillText("Verified on Hyperliquid · every trade is a post", 80, H - 150);
-  g.fillText(d.url.replace(/^https?:\/\//, ""), 80, H - 100);
+  g.save(); g.shadowColor = "transparent";
+  g.strokeStyle = light ? "rgba(0,0,0,.12)" : "rgba(255,255,255,.22)"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(80, H - 200); g.lineTo(W - 80, H - 200); g.stroke(); g.restore();
+  let fx = 80;
+  try {
+    const icon = await loadBg("icon-512");
+    g.save(); roundRect(g, 80, H - 168, 96, 96, 24); g.clip(); g.drawImage(icon, 80, H - 168, 96, 96); g.restore(); fx = 200;
+  } catch {}
+  const path = d.url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
+  g.fillStyle = col.fg; g.font = `800 44px ${sans}`; g.fillText("perped.pro", fx, H - 118);
+  const dw = g.measureText("perped.pro").width;
+  if (path && path !== "/") { g.fillStyle = col.muted; g.font = `600 30px ${sans}`; g.fillText(path, fx + dw + 6, H - 118); }
+  g.fillStyle = col.muted; g.font = `500 26px ${sans}`;
+  g.fillText("Verified on Hyperliquid · every trade is a post", fx, H - 78);
   return c;
 }
 
@@ -127,7 +151,7 @@ export async function drawCard(theme: ShareTheme, d: CardData): Promise<HTMLCanv
 
 /** Share any post as an image: five backgrounds, native share, save, X, copy link. */
 export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number; onClose: () => void }) {
-  const [themeId, setThemeId] = useState<string>(() => { try { return localStorage.getItem("perped:share-theme") || "gold"; } catch { return "gold"; } });
+  const [themeId, setThemeId] = useState<string>(() => { try { return localStorage.getItem("perped:share-theme") || "mercury"; } catch { return "mercury"; } });
   const [img, setImg] = useState<string>("");
   const [msg, setMsg] = useState<string | null>(null);
   const { profile } = useSession();
@@ -167,7 +191,7 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
         <div className="flex flex-col items-center gap-3.5 px-5 pb-5">
           {img ? <img src={img} alt="Share card preview" className="share-prev" /> : <div className="share-prev" />}
           <div className="themes">
-            {THEMES.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === themeId ? "on" : ""}`} onClick={() => setThemeId(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(/api/share-bg/${t.key})` }} /><span>{t.name}</span></button>)}
+            {THEMES.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === themeId ? "on" : ""}`} onClick={() => setThemeId(t.key)} aria-label={t.name}><i style={t.scrim === "light" ? { background: "linear-gradient(160deg,#fff,#e6e7ea)" } : { backgroundImage: `url(/api/share-bg/${t.key})` }} /><span>{t.name}</span></button>)}
           </div>
           <div className="grid w-full grid-cols-2 gap-2.5">
             <button className="btn brand" style={{ padding: 12 }} onClick={nativeShare}>{challengeable ? "Challenge a friend" : "Share"}</button>
