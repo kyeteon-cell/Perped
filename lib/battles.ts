@@ -45,7 +45,8 @@ function roiOf(p: P, mid: number) {
  * Settle battles that are decided:
  *  - both positions closed → compare realised ROI (leverage-adjusted);
  *  - one side liquidated → they lose immediately;
- *  - one side closed for 24h and the other still open → the open side is marked at the live price.
+ *  - bank and chase: when one side closes first, their ROI is banked and the battle stays live; the side still
+ *    in has to beat it when they close. Nobody is marked early, except the 7-day safety limit.
  * A gap under 0.5% ROI is a draw.
  */
 export async function settleBattles(mids: Record<string, string | number>) {
@@ -63,9 +64,10 @@ export async function settleBattles(mids: Record<string, string | number>) {
     const fr = roiOf(f, fMid), tr = roiOf(t, tMid);
     const bothClosed = f.status === "closed" && t.status === "closed";
     const firstClose = [f.closedAt, t.closedAt].filter(Boolean).map((d) => new Date(d as Date).getTime()).sort()[0];
-    // Closed on one side for a day, or nobody closed for a week: mark at the live price.
+    // Bank and chase: one side closing doesn't end it. Only the 7-day safety limit marks an open side at the live price.
     const stale = Date.now() - new Date(b.createdAt as unknown as string).getTime() > 7 * DAY;
-    const timedOut = !bothClosed && mid > 0 && ((!!firstClose && Date.now() - firstClose > DAY) || stale);
+    const timedOut = !bothClosed && mid > 0 && stale;
+    void firstClose;
     const liquidated = fr.liq || tr.liq;
     if (!bothClosed && !timedOut && !liquidated) continue;
     const reason = liquidated ? "liquidation" : bothClosed ? "both_closed" : "timeout";
@@ -182,4 +184,37 @@ export async function restampPosts(postIds: number[]) {
 export async function backfillBattleStamps(limit = 300) {
   const rows = await db.select({ f: schema.battles.faderPostId, t: schema.battles.targetPostId }).from(schema.battles).where(eq(schema.battles.status, "settled")).orderBy(desc(schema.battles.settledAt)).limit(limit);
   return restampPosts(rows.flatMap((r) => [r.f, r.t]));
+}
+
+/**
+ * One-off repair for the old 24h rule: battles settled by "timeout" while one side is still open are put back to
+ * live (bank and chase). XP and battle stats from the early verdict are reversed and its feed card removed.
+ */
+export async function reopenPrematureBattles(limit = 100) {
+  const rows = await db.select().from(schema.battles).where(and(eq(schema.battles.status, "settled"), eq(schema.battles.reason, "timeout"))).limit(500);
+  if (!rows.length) return 0;
+  const ids = [...new Set(rows.flatMap((b) => [b.faderPostId, b.targetPostId]))];
+  const P = new Map((await db.select({ id: schema.posts.id, status: schema.posts.status }).from(schema.posts).where(inArray(schema.posts.id, ids))).map((p) => [p.id, p.status]));
+  let n = 0;
+  for (const b of rows) {
+    if (n >= limit) break;
+    if (P.get(b.faderPostId) !== "open" && P.get(b.targetPostId) !== "open") continue; // both closed: verdict stands
+    if (Date.now() - new Date(b.createdAt).getTime() > 7 * DAY) continue; // genuinely stale: verdict stands
+    const [back] = await db.update(schema.battles).set({ status: "open", winnerId: null, faderRoi: null, targetRoi: null, reason: null, xpFader: null, xpTarget: null, settledAt: null })
+      .where(and(eq(schema.battles.id, b.id), eq(schema.battles.status, "settled"))).returning({ id: schema.battles.id });
+    if (!back) continue;
+    if (b.xpFader) await awardXp(b.faderId, -b.xpFader, "battle_reopened", `battle:${b.id}`);
+    if (b.xpTarget) await awardXp(b.targetId, -b.xpTarget, "battle_reopened", `battle:${b.id}`);
+    if (b.winnerId) {
+      const loser = b.winnerId === b.faderId ? b.targetId : b.faderId;
+      await db.update(schema.stats).set({ battlesWon: sql`greatest(0, ${schema.stats.battlesWon} - 1)` }).where(eq(schema.stats.userId, b.winnerId));
+      await db.update(schema.stats).set({ battlesLost: sql`greatest(0, ${schema.stats.battlesLost} - 1)` }).where(eq(schema.stats.userId, loser));
+    }
+    await db.execute(sql`delete from posts where kind = 'system' and system_type in ('battle_settled', 'bounty') and (meta->>'battleId')::int = ${b.id}`).catch(() => null);
+    // Drop this battle's label from both trades, then re-derive from whatever else they fought.
+    for (const pid of [b.faderPostId, b.targetPostId]) await db.execute(sql`update posts set meta = coalesce(meta, '{}'::jsonb) - 'battle' - 'battleRecord' - 'battles' where id = ${pid}`);
+    await restampPosts([b.faderPostId, b.targetPostId]);
+    n++;
+  }
+  return n;
 }

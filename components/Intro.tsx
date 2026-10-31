@@ -30,7 +30,7 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
   },
   {
     k: "battle", eyebrow: "3 · Battles", title: "Every fade is a head-to-head",
-    body: ["Higher ROI when both close wins. Get liquidated and you lose on the spot. Under 0.5% apart is a draw.", "Health bars run from your entry to your stop loss (or liquidation if you have none). Under 40% they start to bleed."],
+    body: ["Higher ROI when both close wins. Close first and your ROI is banked: they have to beat it. Get liquidated and you lose on the spot.", "Health bars run from your entry to your stop loss (or liquidation if you have none). Under 40% they start to bleed."],
     mock: (
       <div className="im-card">
         <div className="im-row"><i className="im-av b" /><b>kate</b><span className="im-vs">VS</span><b>mooncat</b><i className="im-av c" /></div>

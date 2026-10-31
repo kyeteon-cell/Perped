@@ -38,11 +38,14 @@ export function FinishSave({ b, winner, loser }: { b: ArenaBattle; winner: Mini;
     const l = legOf(b, u);
     setOpen({ item: legItem({ id: l.postId, coin: b.coin, side: l.side, leverage: l.leverage }, { handle: u.handle, avatarUrl: u.avatarUrl }), title });
   };
+  // A side that already banked (closed) can't be backed any more.
+  const wOpen = legOf(b, winner).status === "open", lOpen = legOf(b, loser).status === "open";
+  if (!wOpen && !lOpen) return null;
   return (
     <>
-      <div className="bb-acts">
-        <button className="bb-finish" onClick={() => pick(winner, "🗡 Finish them · back")}>🗡 Finish them<small>back {winner.handle}</small></button>
-        <button className="bb-save" onClick={() => pick(loser, "🛟 Save them · back")}>🛟 Save them<small>back {loser.handle}</small></button>
+      <div className="bb-acts" style={wOpen && lOpen ? undefined : { gridTemplateColumns: "1fr" }}>
+        {wOpen && <button className="bb-finish" onClick={() => pick(winner, "🗡 Finish them · back")}>🗡 Finish them<small>back {winner.handle}</small></button>}
+        {lOpen && <button className="bb-save" onClick={() => pick(loser, "🛟 Save them · back")}>🛟 Save them<small>back {loser.handle}</small></button>}
       </div>
       {open && <QuickTrade item={open.item} mode="copy" lock title={open.title} onClose={() => setOpen(null)} />}
     </>

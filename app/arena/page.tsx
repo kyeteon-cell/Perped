@@ -52,6 +52,11 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
     <Link href={`/battle/${b.faderPostId}`} className={`arow ${b.nemesis ? "nemesis" : ""}`}>
       {b.nemesis && <NemesisBar b={b} />}
       {isFightNight(b.createdAt) && b.status === "open" && <span className="fn-badge">🥊 Fight Night · 2× XP</span>}
+      {!settled && (b.faderLeg.status === "closed" || b.targetLeg.status === "closed") && (() => {
+        const fBanked = b.faderLeg.status === "closed", banker = fBanked ? b.fader : b.target, chaser = fBanked ? b.target : b.fader;
+        const bank = fBanked ? a : t, now = fBanked ? t : a;
+        return <span className={`chase-badge ${now > bank ? "ahead" : ""}`}>🏦 {banker.handle} banked {fmtPct(bank, 1)} · {chaser.handle} {now > bank ? "ahead" : "chasing"}</span>;
+      })()}
       <div className="flex items-center justify-between gap-2">
         <div className={`aside ${aWin ? "lead" : ""}`}><span className="arank"><Avatar handle={b.fader.handle} url={b.fader.avatarUrl} size={36} link={false} /><img src={`/api/share-bg/rank-${rankFor(b.fader.xp ?? 0).level}`} alt="" /></span><div className="min-w-0"><div className="flex items-center gap-1 text-[13px] font-bold"><span className="truncate">{b.fader.handle}</span><RankChip xp={b.fader.xp} compact size={18} /></div><div className={`mono text-[13px] font-bold ${a >= 0 ? "green" : "red"}`}>{fmtPct(a, 1)}</div></div></div>
         <div className="text-center"><CoinMark coin={b.coin} size="xs" /><div className="when text-[10px]">{settled ? timeAgo(b.settledAt ?? b.createdAt) : "LIVE"}</div></div>

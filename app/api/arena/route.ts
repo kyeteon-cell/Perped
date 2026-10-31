@@ -52,7 +52,7 @@ export async function GET(req: Request) {
     return { id: b.id, faderPostId: b.faderPostId, coin: b.coin, status: b.status as "open" | "settled", winnerId: b.winnerId, fader: f, target: t, faderLeg: leg(b.faderPostId), targetLeg: leg(b.targetPostId), faderRoi: b.faderRoi != null ? Number(b.faderRoi) : null, targetRoi: b.targetRoi != null ? Number(b.targetRoi) : null, settledAt: b.settledAt?.toISOString() ?? null, createdAt: b.createdAt.toISOString(), reason: b.reason ?? null, nemesis: nemesisOf(b.faderId, b.targetId) };
   };
 
-  const live = rows.filter((b) => b.status === "open").map(shape).filter((x): x is ArenaBattle => !!x && x.faderLeg.status === "open" && x.targetLeg.status === "open").slice(0, 80);
+  const live = rows.filter((b) => b.status === "open").map(shape).filter((x): x is ArenaBattle => !!x && (x.faderLeg.status === "open" || x.targetLeg.status === "open")).slice(0, 80);
   const settled = rows.filter((b) => b.status === "settled").sort((a, b) => (b.settledAt?.getTime() ?? 0) - (a.settledAt?.getTime() ?? 0));
   const recent = settled.slice(0, 12).map(shape).filter((x): x is ArenaBattle => !!x);
   // Liquidations in the last hour stay in Bloodbath as REKT cards.

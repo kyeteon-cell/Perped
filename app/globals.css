@@ -1190,3 +1190,12 @@ body { letter-spacing: -.005em; }
 .hcard.mover .name { font-size: 14px; }
 .hcard.mover .mono.text-lg { font-size: 17px; white-space: nowrap; }
 .hcard.mover .when { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Verdict and chase boxes sit on the dark battle photo: force readable text. */
+.battle.photo .verdict, .battle.photo .verdict .name { color: var(--text); }
+.battle.photo .verdict .mono, .battle.photo .verdict .when { color: var(--muted) !important; }
+.chase { padding: 14px; border-radius: 14px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); color: var(--text); }
+.chase.ahead { border-color: var(--gold); }
+.battle.photo .chase .eyebrow { color: var(--muted); }
+.chase-badge { display: inline-block; margin: -2px 0 8px; font-size: 11px; font-weight: 800; color: var(--muted); background: color-mix(in srgb, var(--text) 6%, transparent); padding: 2px 9px; border-radius: 999px; }
+.chase-badge.ahead { color: #2a1c00; background: var(--gold-soft); }

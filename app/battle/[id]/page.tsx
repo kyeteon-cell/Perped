@@ -65,6 +65,9 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const coin = fade.coin!; const mid = mids[coin] ?? 0;
   const a = roi(fade, mid), b = roi(target, mid);
   const live = fade.status === "open" && target.status === "open";
+  // Bank and chase: one side closed, the other still in, battle not settled yet.
+  const chasing = !live && battle?.status !== "settled" && (fade.status === "open" || target.status === "open");
+  const fBanked = fade.status === "closed";
   const faderLeads = a.roi > b.roi;
   const share = Math.max(8, Math.min(92, 50 + ((a.roi - b.roi) / (Math.abs(a.roi) + Math.abs(b.roi) || 1)) * 50));
   const fighter = (u: U, p: Post, r: { roi: number }): Fighter => ({
@@ -86,7 +89,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
 
   const Side = ({ u, p, r, left }: { u: U; p: Post; r: { pnl: number; roi: number }; left: boolean }) => (
     <div className={`bside ${left ? "l" : "r"}`}>
-      <Link href={`/u/${u.handle}`}><div className={`avring ${(left ? faderLeads : !faderLeads) && live ? "lead" : live ? "losing" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={64} link={false} /></div></Link>
+      <Link href={`/u/${u.handle}`}><div className={`avring ${(left ? faderLeads : !faderLeads) && (live || chasing) ? "lead" : live || chasing ? "losing" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={64} link={false} /></div></Link>
       <div className="name mt-2 truncate">{u.handle}{u.verified && <span className="vbadge">✓</span>}</div>
       <div className="mt-1 flex items-center justify-center gap-1.5"><RankChip xp={u.xp} compact size={20} />{u.isDemo ? <span className="demo-tag">Demo</span> : <span className="real-tag">Real</span>}</div>
       <span className={`lbl ${p.side} mt-2`}><i />{p.side === "long" ? "Long" : "Short"} {p.leverage}×</span>
@@ -108,17 +111,28 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
       )}
 
       <section className="battle photo mx-4 mt-4" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
-        <div className="flex items-center justify-between"><span className="pc-tag violet">{live ? "● Live fade" : "Settled fade"} · {timeAgo(fade.createdAt)} ago</span><Link href={`/markets/${coin}`} className="flex items-center gap-1.5 text-sm"><CoinMark coin={coin} size="sm" /><b>{ticker(coin, true)}</b><span className="mono muted">{mid ? fmtPrice(mid) : ""}</span></Link></div>
+        <div className="flex items-center justify-between"><span className="pc-tag violet">{live ? "● Live fade" : chasing ? "● Chase on" : "Settled fade"} · {timeAgo(fade.createdAt)} ago</span><Link href={`/markets/${coin}`} className="flex items-center gap-1.5 text-sm"><CoinMark coin={coin} size="sm" /><b>{ticker(coin, true)}</b><span className="mono muted">{mid ? fmtPrice(mid) : ""}</span></Link></div>
         <div className="bgrid mt-4">
           {Side({ u: fader.user, p: fade, r: a, left: true })}
           <div className="bmid"><div className="vs">VS</div><div className="when text-[11px] mt-1">{fader.user.handle} faded</div></div>
           {Side({ u: tu.user, p: target, r: b, left: false })}
         </div>
+        {chasing && (() => {
+          const banker = fBanked ? fader.user : tu.user, chaser = fBanked ? tu.user : fader.user;
+          const bank = fBanked ? a.roi : b.roi, now = fBanked ? b.roi : a.roi, ahead = now > bank;
+          return (
+            <div className={`chase mt-4 ${ahead ? "ahead" : ""}`}>
+              <div className="eyebrow">🏦 Bank and chase</div>
+              <div className="mt-1 text-[16px] font-extrabold">{banker.handle} banked <span className={`mono ${bank >= 0 ? "green" : "red"}`}>{fmtPct(bank, 1)}</span></div>
+              <div className="mt-0.5 text-[13px]">{chaser.handle} needs better than <b className="mono">{fmtPct(bank, 1)}</b> when they close · now <b className={`mono ${now >= 0 ? "green" : "red"}`}>{fmtPct(now, 1)}</b> · {ahead ? "on course to win" : "behind"}</div>
+            </div>
+          );
+        })()}
         {battle?.status === "settled" && (
           <div className="verdict mt-4">
             <div className="flex items-center justify-between"><div className="eyebrow">{battle.winnerId ? "Verdict" : "Draw"}</div>{battle.winnerId && <RankEmblem level={rankFor((battle.winnerId === fader.user.id ? fader.user.xp : tu.user.xp) ?? 0).level} size={40} />}</div>
             <div className="mt-1 text-[17px] font-extrabold">{battle.winnerId ? `${battle.winnerId === fader.user.id ? fader.user.handle : tu.user.handle} perped ${battle.winnerId === fader.user.id ? tu.user.handle : fader.user.handle}` : "Too close to call"}</div>
-            <div className="mono when mt-1">{fader.user.handle} {fmtPct(Number(battle.faderRoi), 1)} · {tu.user.handle} {fmtPct(Number(battle.targetRoi), 1)}{battle.reason === "liquidation" ? " · decided by liquidation" : battle.reason === "timeout" ? " · marked 24h after the first close" : ""}</div>
+            <div className="mono when mt-1">{fader.user.handle} {fmtPct(Number(battle.faderRoi), 1)} · {tu.user.handle} {fmtPct(Number(battle.targetRoi), 1)}{battle.reason === "liquidation" ? " · decided by liquidation" : battle.reason === "timeout" ? " · marked at the live price after 7 days" : ""}</div>
             <div className="mt-2 flex gap-2 text-[12px]"><span className="chip">{fader.user.handle} {(battle.xpFader ?? 0) >= 0 ? "+" : ""}{battle.xpFader ?? 0} XP</span><span className="chip">{tu.user.handle} {(battle.xpTarget ?? 0) >= 0 ? "+" : ""}{battle.xpTarget ?? 0} XP</span></div>
           </div>
         )}
@@ -138,7 +152,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
           <button className="btn ghost mt-2" style={{ padding: 10, fontSize: 13 }} onClick={() => shareWin(profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}>{shared ?? "📣 Share: I just perped " + (profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}</button>
         )}
         <div className="tug mt-5" style={{ height: 10, background: target.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${share}%`, background: fade.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
-        <div className="when mt-2 text-center">{live ? `${faderLeads ? fader.user.handle : tu.user.handle} is ahead by ${fmtPct(Math.abs(a.roi - b.roi), 1)}` : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
+        <div className="when mt-2 text-center">{live || chasing ? `${faderLeads ? fader.user.handle : tu.user.handle} is ahead by ${fmtPct(Math.abs(a.roi - b.roi), 1)}` : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
         {live && profile && (profile.id === fader.user.id || profile.id === tu.user.id) && (
           <button className="btn ink mt-4" style={{ padding: 11, fontSize: 13 }} onClick={() => setManage(profile.id === fader.user.id ? fade : target)}>Manage trade</button>
         )}

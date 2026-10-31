@@ -3,7 +3,7 @@ import { db, schema, ensureSchema, unjam } from "@/lib/db";
 import { getMids } from "@/lib/hl-info";
 import { notify, systemPost } from "@/lib/feed";
 import { closeTradePost } from "@/lib/trades";
-import { backfillBattles, backfillBattleStamps, settleBattles } from "@/lib/battles";
+import { backfillBattles, backfillBattleStamps, reopenPrematureBattles, settleBattles } from "@/lib/battles";
 import { alertBloodbath } from "@/lib/bloodbath";
 import { syncRealPositions } from "@/lib/realsync";
 import { fightNightKickoff } from "@/lib/fightnight-server";
@@ -126,12 +126,13 @@ export async function GET(req: Request) {
   const realSynced = await syncRealPositions().catch(() => 0);
   // Battles (fades): make sure every fade has one, then settle the decided ones.
   await backfillBattles().catch(() => 0);
+  const reopened = await reopenPrematureBattles().catch(() => 0);
   const battles = await settleBattles(mids).catch(() => 0);
   await backfillBattleStamps().catch(() => 0);
   const bloodbath = await alertBloodbath(mids).catch(() => 0);
   const fightNight = await fightNightKickoff().catch(() => 0);
 
-  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, realSynced, battles, bloodbath, fightNight, at: now.toISOString() });
+  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, realSynced, reopened, battles, bloodbath, fightNight, at: now.toISOString() });
 }
 
 // keep isNull imported for future invalidation-by-candle checks
