@@ -2,10 +2,10 @@ import { z } from "zod";
 import { desc, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 
-function authed(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  const key = new URL(req.url).searchParams.get("key") ?? req.headers.get("x-admin-key");
-  return !!secret && key === secret;
+import { staffFrom } from "@/lib/staff";
+async function authed(req: Request) {
+  const s = await staffFrom(req);
+  return s?.role === "owner";
 }
 
 /**
@@ -15,7 +15,7 @@ function authed(req: Request) {
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  if (!authed(req)) return Response.json({ error: "unauthorized" }, { status: 401 });
+  if (!(await authed(req))) return Response.json({ error: "unauthorized" }, { status: 401 });
   const rows = await db
     .select({
       userId: schema.users.id,
@@ -24,10 +24,10 @@ export async function GET(req: Request) {
       referees: sql<number>`(select count(*) from users r where r.referred_by = ${schema.users.id})`.mapWith(Number),
       earnedUsd: sql<number>`coalesce((select sum(share_usd) from referral_earnings e where e.referrer_id = ${schema.users.id}), 0)`.mapWith(Number),
       paidUsd: sql<number>`coalesce((select sum(amount_usd) from referral_payouts p where p.referrer_id = ${schema.users.id}), 0)`.mapWith(Number),
-      builderFeeUsd: sql<number>`coalesce((select sum(builder_fee_usd) from referral_earnings e where e.referrer_id = ${schema.users.id}), 0)`.mapWith(Number),
+      builderFeeUsd: sql<number>`coalesce((select sum(builder_fee_usd) from referral_earnings e where e.referrer_id = ${schema.users.id} and e.kind = 'invite'), 0)`.mapWith(Number),
     })
     .from(schema.users)
-    .where(sql`exists (select 1 from users r where r.referred_by = ${schema.users.id})`)
+    .where(sql`exists (select 1 from users r where r.referred_by = ${schema.users.id}) or exists (select 1 from referral_earnings e where e.referrer_id = ${schema.users.id})`)
     .orderBy(desc(sql`coalesce((select sum(share_usd) from referral_earnings e where e.referrer_id = ${schema.users.id}), 0)`));
   const out = rows.map((r) => ({ ...r, owedUsd: Number(Math.max(0, r.earnedUsd - r.paidUsd).toFixed(4)) }));
   const [tot] = await db.select({ fee: sql<number>`coalesce(sum(builder_fee_usd),0)`.mapWith(Number), share: sql<number>`coalesce(sum(share_usd),0)`.mapWith(Number) }).from(schema.referralEarnings);
@@ -38,7 +38,7 @@ const Body = z.object({ handle: z.string().min(3).max(20), amountUsd: z.number()
 
 /** POST /api/admin/referrals?key=… {handle, amountUsd, txHash?} → record a payout you've sent. */
 export async function POST(req: Request) {
-  if (!authed(req)) return Response.json({ error: "unauthorized" }, { status: 401 });
+  if (!(await authed(req))) return Response.json({ error: "unauthorized" }, { status: 401 });
   const parsed = Body.safeParse(await req.json());
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const [u] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.handle, parsed.data.handle.toLowerCase())).limit(1);

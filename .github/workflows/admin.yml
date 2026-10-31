@@ -1,0 +1,23 @@
+name: admin
+# Run admin actions on the live app from chat: founders, admins, waitlist, renames.
+# Needs the repo secret CRON_SECRET (same value as on Vercel).
+on:
+  workflow_dispatch:
+    inputs:
+      body:
+        description: 'JSON action, e.g. {"action":"addFounder","handle":"kate"}'
+        required: true
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/admin/programme
+        env:
+          KEY: ${{ secrets.CRON_SECRET }}
+          BODY: ${{ github.event.inputs.body }}
+        run: |
+          if [ -z "$KEY" ]; then echo "::error::Add the CRON_SECRET repo secret (same value as Vercel)"; exit 1; fi
+          out=$(curl -sS -X POST "https://perped-final.vercel.app/api/admin/programme" -H "content-type: application/json" -H "x-admin-key: $KEY" --data "$BODY")
+          echo "$out"
+          echo "::notice title=result::$out"
+          echo "$out" | grep -q '"error"' && exit 1 || exit 0

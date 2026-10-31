@@ -18,6 +18,10 @@
     {
       "path": "/api/cron/referrals",
       "schedule": "40 0 * * *"
+    },
+    {
+      "path": "/api/cron/programme",
+      "schedule": "5 * * * *"
     }
   ]
 }

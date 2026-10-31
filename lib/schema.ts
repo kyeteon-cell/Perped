@@ -30,6 +30,14 @@ export const users = pgTable(
     referredBy: text("referred_by"),
     referredAt: timestamp("referred_at", { withTimezone: true }),
     signupIp: text("signup_ip"),
+    // Invite programme. role: user | admin | owner. Founders hold a numbered seat (1-100).
+    role: text("role").default("user").notNull(),
+    founderSeat: integer("founder_seat"),
+    founderSince: timestamp("founder_since", { withTimezone: true }),
+    founderStatus: text("founder_status"), // active | expired
+    // Real-money trading needs an invite code, a waitlist release, or a grandfathered account.
+    canGoLive: boolean("can_go_live").default(false),
+    waitlistAt: timestamp("waitlist_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [uniqueIndex("users_handle_idx").on(t.handle), uniqueIndex("users_address_idx").on(t.address), index("users_referred_by_idx").on(t.referredBy)],
@@ -293,9 +301,11 @@ export const referralEarnings = pgTable(
     builderFeeUsd: numeric("builder_fee_usd").default("0").notNull(),
     sharePct: numeric("share_pct").default("0").notNull(),
     shareUsd: numeric("share_usd").default("0").notNull(),
+    // invite (they joined with your code) | invite2 (joined with your invitee's code; founders only) | creator (copied/faded your trade or traded your call)
+    kind: text("kind").default("invite").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [uniqueIndex("referral_earnings_unique").on(t.refereeId, t.day), index("referral_earnings_referrer_idx").on(t.referrerId)],
+  (t) => [uniqueIndex("referral_earnings_unique2").on(t.refereeId, t.day, t.referrerId, t.kind), index("referral_earnings_referrer_idx").on(t.referrerId)],
 );
 
 /** Payouts made to referrers (USDC sent to their Perped wallet). Owed = sum(share_usd) - sum(amount_usd). */
@@ -311,6 +321,18 @@ export const referralPayouts = pgTable(
   },
   (t) => [index("referral_payouts_referrer_idx").on(t.referrerId)],
 );
+
+export const handleRedirects = pgTable("handle_redirects", {
+  oldHandle: text("old_handle").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 export type User = typeof users.$inferSelect;
 export type Post = typeof posts.$inferSelect;

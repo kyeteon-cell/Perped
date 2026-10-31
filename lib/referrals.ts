@@ -19,7 +19,7 @@ export async function countActiveReferees(referrerId: string): Promise<number> {
   const [r] = await db
     .select({ n: sql<number>`count(distinct ${schema.referralEarnings.refereeId})`.mapWith(Number) })
     .from(schema.referralEarnings)
-    .where(and(eq(schema.referralEarnings.referrerId, referrerId), gte(schema.referralEarnings.day, since), sql`${schema.referralEarnings.fills} > 0`));
+    .where(and(eq(schema.referralEarnings.referrerId, referrerId), eq(schema.referralEarnings.kind, "invite"), gte(schema.referralEarnings.day, since), sql`${schema.referralEarnings.fills} > 0`));
   return r?.n ?? 0;
 }
 

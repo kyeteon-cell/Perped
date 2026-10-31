@@ -35,7 +35,11 @@ export default function SettingsPage() {
   const save = async (patch: Partial<User>) => {
     setLocal((l) => ({ ...l, ...patch }));
     const r = await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify(patch) });
-    if (!r.ok) { setSaveErr((await r.json()).error ?? "Couldn't save"); setLocal((l) => ({ ...l, ...(profile ?? {}) })); } else setSaveErr(null);
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      setSaveErr(j.error === "invite_required" ? "invite_required" : j.error ?? "Couldn't save");
+      setLocal((l) => ({ ...l, ...(profile ?? {}) }));
+    } else setSaveErr(null);
     refreshMe();
   };
   const goLive = () => (isGuest ? login() : hasExternalWallet ? save({ isDemo: false }) : linkWallet());
@@ -84,7 +88,9 @@ export default function SettingsPage() {
         DEMO_ENABLED && <div className="srow"><span className="muted text-sm">Back to practice money? Your real positions stay on Hyperliquid.</span><button className="chip" onClick={() => save({ isDemo: true })}>Switch to demo</button></div>
       )}
       {!hasExternalWallet && !isGuest && !local.isDemo && <div className="srow"><span className="muted text-sm">No wallet connected.</span><button className="chip" onClick={linkWallet}>Connect wallet</button></div>}
-      {(saveErr || linkError) && <p className="red px-5 pb-1 text-sm">{saveErr ?? linkError}</p>}
+      {saveErr === "invite_required" ? (
+        <div className="inv-card mx-4"><b>Real trading is invite only for now</b><p className="when mt-1">You&rsquo;re on the waitlist. Add someone&rsquo;s invite code to go live straight away, and your fees drop to the invite rate forever.</p><Link href="/invite" className="btn brand mt-3 w-full" style={{ padding: 12, fontSize: 14 }}>Add an invite code</Link></div>
+      ) : (saveErr || linkError) && <p className="red px-5 pb-1 text-sm">{saveErr ?? linkError}</p>}
       <div className="srow"><span>Default leverage</span><Seg value={String(local.defaultLeverage ?? 3)} options={levOptions} onChange={(v) => save({ defaultLeverage: Number(v) })} /></div>
       <div className="srow"><span>Max leverage<span className="when ml-1.5">per market, same as Hyperliquid</span></span><span className="mono">up to {topCap}×</span></div>
       <div className="srow"><span>Your Perped fee<span className="when ml-1.5">{fee.reason}</span></span><span className="mono font-bold">{fee.label}</span></div>
@@ -95,6 +101,7 @@ export default function SettingsPage() {
       <div className="when px-5 pb-1 pt-1.5 text-[12px] leading-relaxed">Standard {tenthsBpsToLabel(BUILDER_FEE_STANDARD_TENTHS_BPS)} · with a referral code {tenthsBpsToLabel(BUILDER_FEE_REFERRED_TENTHS_BPS)} · top {TOP_TIER_RANK} on the 30-day board {tenthsBpsToLabel(BUILDER_FEE_TOP_TENTHS_BPS)}. Hyperliquid&apos;s own fee is separate.</div>
 
       <div className="eyebrow px-5 pb-1.5 pt-4">Referrals</div>
+      <Link href="/invite" className="srow" style={{ color: "var(--brand)" }}><span><b>Invite &amp; earn</b><span className="when ml-1.5">your link, rates, earnings and people</span></span><span>→</span></Link>
       <div className="block mx-4 mt-1 rounded-2xl p-4" style={{ background: "var(--brand-soft)" }}>
         <div className="flex items-center justify-between"><div><div className="eyebrow" style={{ color: "var(--muted)" }}>Your code</div><b className="mono text-lg uppercase">{profile.handle}</b></div><button className="chip" style={{ color: "var(--brand)", background: "var(--bg)" }} onClick={copyLink}>{copied ? "Copied" : "Copy link"}</button></div>
         <p className="muted mt-2 text-[13px] leading-relaxed">Friends who join with your code trade at the referral rate. You earn <b>{ref?.summary.sharePct ?? 25}%</b> of the Perped fee on every trade they make, for life{ref && ref.summary.sharePct < ref.programme.topSharePct ? ` (${ref.programme.topSharePct}% once ${ref.programme.topThreshold} of them are trading)` : ""}. Paid in USDC to your Perped wallet.</p>

@@ -26,7 +26,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ handle: string 
     .leftJoin(schema.stats, eq(schema.stats.userId, schema.users.id))
     .where(eq(schema.users.handle, handle.toLowerCase()))
     .limit(1);
-  if (!row) return Response.json({ error: "not found" }, { status: 404 });
+  if (!row) {
+    // Renamed accounts: old handles point to the new one.
+    const [r] = await db.select({ handle: schema.users.handle }).from(schema.handleRedirects).innerJoin(schema.users, eq(schema.users.id, schema.handleRedirects.userId)).where(eq(schema.handleRedirects.oldHandle, handle.toLowerCase())).limit(1);
+    return Response.json(r ? { error: "moved", redirect: r.handle } : { error: "not found" }, { status: r ? 200 : 404 });
+  }
 
   let isFollowing = false;
   if (auth) {

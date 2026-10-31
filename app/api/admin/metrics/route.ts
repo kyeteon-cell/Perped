@@ -1,15 +1,14 @@
 import { sql, type SQL } from "drizzle-orm";
 import { db, ensureSchema } from "@/lib/db";
 import { BUILDER_FEE_STANDARD_TENTHS_BPS } from "@/lib/config";
+import { staffFrom } from "@/lib/staff";
 
 export const dynamic = "force-dynamic";
 
 /** GET /api/admin/metrics?key=CRON_SECRET → the numbers that matter: funnel, trades per user, volume, retention. */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  const u = new URL(req.url);
-  if (secret && u.searchParams.get("key") !== secret) return Response.json({ error: "unauthorized" }, { status: 401 });
   await ensureSchema();
+  if (!(await staffFrom(req))) return Response.json({ error: "unauthorized" }, { status: 401 });
   const one = async <T,>(q: SQL) => ((await db.execute(q)) as unknown as T[])[0];
   const [people, funnel, trades, volume, events, push, daily] = await Promise.all([
     one<{ total: number; today: number; week: number; guests: number }>(sql`

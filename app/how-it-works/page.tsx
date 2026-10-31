@@ -3,6 +3,7 @@ import { Glyph } from "@/components/Glyph";
 import { BUILDER_FEE_STANDARD_TENTHS_BPS, BUILDER_FEE_REFERRED_TENTHS_BPS, BUILDER_FEE_TOP_TENTHS_BPS, BUILDER_MAX_FEE_TENTHS_BPS, TOP_TIER_RANK, REFERRAL_SHARE_PCT, REFERRAL_TOP_SHARE_PCT, REFERRAL_TOP_THRESHOLD, HL_NETWORK } from "@/lib/config";
 import { tenthsBpsToLabel } from "@/lib/fees";
 import { RANKS } from "@/lib/rank";
+import { CREATOR_FOUNDER_PCT, CREATOR_MIN_HOLD_S, CREATOR_PCT, CREATOR_RANKED_LEVEL, CREATOR_RANKED_PCT, FOUNDER_GRACE_DAYS, FOUNDER_L1_LATER_PCT, FOUNDER_L1_MONTHS, FOUNDER_L1_PCT, FOUNDER_L2_PCT, FOUNDER_SEATS, PAYOUT_CAP_PCT } from "@/lib/programme-rates";
 
 export const metadata = { title: "How Perped works · where your money is, start to finish" };
 
@@ -34,7 +35,7 @@ function MoneyPath() {
 
 /** /how-it-works — the trust page, written for someone who has never traded a perp. */
 export default function HowItWorks() {
-  const nav: [string, string][] = [["start", "Start here"], ["money", "Where your money is"], ["demo-path", "Demo, step by step"], ["real-path", "Real money, step by step"], ["permissions", "What we can do"], ["verify", "Check it yourself"], ["fees", "Fees"], ["battles", "Fades & ranks"], ["arena", "The Arena"], ["risk", "Risks"], ["promise", "Our commitments"]];
+  const nav: [string, string][] = [["start", "Start here"], ["money", "Where your money is"], ["demo-path", "Demo, step by step"], ["real-path", "Real money, step by step"], ["permissions", "What we can do"], ["verify", "Check it yourself"], ["fees", "Fees"], ["earn", "Invites & earning"], ["battles", "Fades & ranks"], ["arena", "The Arena"], ["risk", "Risks"], ["promise", "Our commitments"]];
   return (
     <main className="hw-page px-5 pb-14 pt-6">
       <Link href="/" className="when">← Back</Link>
@@ -145,6 +146,18 @@ export default function HowItWorks() {
         <p className="mt-3">Example: $250 margin at 40× is $10,000 of notional. At {F(BUILDER_FEE_STANDARD_TENTHS_BPS)} the Perped fee is <span className="mono">${((10000 * BUILDER_FEE_STANDARD_TENTHS_BPS) / 100000).toFixed(2)}</span> to open and the same to close. Hyperliquid&rsquo;s own fee applies on top and is published on their site.</p>
         <p className="mt-2"><b>Invites.</b> Share a challenge or invite link and anyone who joins through it pays the reduced rate. You receive {REFERRAL_SHARE_PCT}% of the Perped fee on everything they trade ({REFERRAL_TOP_SHARE_PCT}% once {REFERRAL_TOP_THRESHOLD} of your invitees are active), paid in USDC and shown in Settings. It comes out of the fee, never out of anyone&rsquo;s trading balance.</p>
         <p className="mt-2">Demo trading is free, because there is no fill to charge on.</p>
+      </section>
+
+      <section id="earn" className="hw mt-7">
+        <h2 className="text-lg font-bold">Invites, founders and earning</h2>
+        <p className="mt-2">Perped is <b>invite only</b> for real-money trading. Anyone can practise on demo. To go live you need someone&rsquo;s invite code, or a spot from the waitlist, which lets people in every Monday at 9pm Bangkok time, oldest first. Codes have no limit: share yours anywhere.</p>
+        <ul className="mt-2">
+          <li><b>Your friends pay less, forever.</b> Anyone who joins with a code pays {F(BUILDER_FEE_REFERRED_TENTHS_BPS)} per fill instead of {F(BUILDER_FEE_STANDARD_TENTHS_BPS)}, for as long as they trade on Perped.</li>
+          <li><b>You earn from their trades.</b> {REFERRAL_SHARE_PCT}% of the Perped fee on every real fill they make, rising to {REFERRAL_TOP_SHARE_PCT}% once {REFERRAL_TOP_THRESHOLD} of your invitees traded in the last 30 days.</li>
+          <li><b>You earn when people trade off your posts.</b> When someone copies or fades your trade, or trades straight from your call, you get {CREATOR_PCT}% of the fee on that fill ({CREATOR_RANKED_PCT}% from {RANKS.find((r) => r.level === CREATOR_RANKED_LEVEL)?.title} rank up). It counts when the position is held {CREATOR_MIN_HOLD_S / 60}+ minutes, and never for your own trades or accounts.</li>
+          <li><b><Glyph n="crown" tone="gold" /> Founders.</b> Up to {FOUNDER_SEATS} hand-picked traders, numbered seats. Founders earn {FOUNDER_L1_PCT}% of the fees from everyone they invite for the first {FOUNDER_L1_MONTHS} months, then {FOUNDER_L1_LATER_PCT}% for life; {FOUNDER_L2_PCT}% from the people their invitees bring in; and {CREATOR_FOUNDER_PCT}% when their trades or calls are copied, faded or traded. A founder who brings in no real-money trader within {FOUNDER_GRACE_DAYS} days gives the seat back and moves to regular rates.</li>
+        </ul>
+        <p className="mt-2"><b>The rules.</b> Earnings are counted once a day from the builder fees Perped actually collected on Hyperliquid, and paid weekly in USDC to your Perped wallet. They start when someone trades with real money; demo sign-ups don&rsquo;t count. No more than {PAYOUT_CAP_PCT}% of any trader&rsquo;s fees is ever paid out in total. Rates can change for new sign-ups, never retroactively for earnings already counted. Accounts that game the system (self-referral, wash trading, fake accounts) lose their earnings. You&rsquo;re responsible for any tax on what you earn.</p>
       </section>
 
       <section id="battles" className="hw mt-7">

@@ -77,5 +77,5 @@ export function normaliseReferralCode(code: string | null | undefined): string |
 }
 
 export function referralLink(appUrl: string, handle: string) {
-  return `${appUrl.replace(/\/$/, "")}/?ref=${handle}`;
+  return `${appUrl.replace(/\/$/, "")}/i/${handle}`;
 }

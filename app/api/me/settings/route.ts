@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
-import { getAuth, unauthorized } from "@/lib/auth";
+import { getAuth, getProfile, unauthorized } from "@/lib/auth";
+import { canGoLive } from "@/lib/programme";
 
 const Body = z.object({
   showLiquidations: z.boolean().optional(),
@@ -30,6 +31,11 @@ export async function PATCH(req: Request) {
   if (patch.isDemo === false) {
     if (auth.guest) return Response.json({ error: "guest accounts are demo only; sign in with X or a wallet to go live" }, { status: 400 });
     if (!auth.hasExternalWallet) return Response.json({ error: "connect a wallet first to trade real money" }, { status: 400 });
+    const me = await getProfile(auth.privyId);
+    if (me && !canGoLive(me)) {
+      if (!me.waitlistAt) await db.update(schema.users).set({ waitlistAt: new Date() }).where(eq(schema.users.id, auth.privyId));
+      return Response.json({ error: "invite_required", waitlist: true }, { status: 403 });
+    }
     if (auth.address) set.address = auth.address; // their connected wallet becomes the Hyperliquid account
   }
   if (resetDemo) {

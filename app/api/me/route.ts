@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { and, eq, sql } from "drizzle-orm";
+import { byHandle } from "@/lib/programme";
 import { db, schema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized, HANDLE_RE } from "@/lib/auth";
 import { normaliseReferralCode, resolveFeeTier, type FeeInfo } from "@/lib/fees";
@@ -40,24 +41,32 @@ export async function POST(req: Request) {
   const { handle, bio, avatarUrl, referralCode } = parsed.data;
   const taken = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.handle, handle)).limit(1);
   if (taken[0] && taken[0].id !== auth.privyId) return Response.json({ error: "handle taken" }, { status: 409 });
+  // Old handles keep redirecting to whoever renamed away from them, so they can't be reused by someone else.
+  const [reserved] = await db.select({ userId: schema.handleRedirects.userId }).from(schema.handleRedirects).where(eq(schema.handleRedirects.oldHandle, handle)).limit(1);
+  if (reserved && reserved.userId !== auth.privyId) return Response.json({ error: "handle taken" }, { status: 409 });
 
   // Resolve the referrer once, at first signup. Self-referral and unknown codes are ignored silently.
   let referredBy: string | null = null;
   const existing = await getProfile(auth.privyId);
   const code = normaliseReferralCode(referralCode);
   if (!existing && code && code !== handle) {
-    const [ref] = await db.select({ id: schema.users.id, isBot: schema.users.isBot }).from(schema.users).where(eq(schema.users.handle, code)).limit(1);
+    const ref = await byHandle(code);
     if (ref && ref.id !== auth.privyId && !ref.isBot) referredBy = ref.id;
   }
 
-  // Signed up with X only (no wallet connected) → demo until they connect one. Wallet signups start live.
-  const isDemo = !auth.hasExternalWallet || !!auth.guest;
+  // Signed up with X only (no wallet connected) → demo until they connect one. Wallet signups start live,
+  // but only with an invite code: without one they practise on demo until the waitlist lets them in.
+  const isDemo = !auth.hasExternalWallet || !!auth.guest || !referredBy;
   const [row] = await db
     .insert(schema.users)
     .values({ id: auth.privyId, address: auth.address, handle, bio, avatarUrl, referredBy, referredAt: referredBy ? new Date() : null, isDemo })
     .onConflictDoUpdate({ target: schema.users.id, set: { handle, bio, avatarUrl, address: auth.address } })
     .returning();
   await db.insert(schema.stats).values({ userId: row.id }).onConflictDoNothing();
+  if (existing && existing.handle !== handle) {
+    await db.insert(schema.handleRedirects).values({ oldHandle: existing.handle, userId: row.id }).onConflictDoUpdate({ target: schema.handleRedirects.oldHandle, set: { userId: row.id } });
+    await db.delete(schema.handleRedirects).where(eq(schema.handleRedirects.oldHandle, handle));
+  }
   if (referredBy) {
     await db.insert(schema.notifications).values({ userId: referredBy, type: "referral", title: `@${handle} joined with your code`, body: "You earn a share of the Perped fee on every trade they make.", href: "/settings" });
   }

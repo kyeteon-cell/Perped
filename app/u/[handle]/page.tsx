@@ -57,6 +57,8 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
   const demoEq = useDemoEquity(data?.user?.isDemo ? data.user.handle : null, Number(data?.user?.demoBalance ?? 0), mids);
   if (!data) return <SkeletonList n={2} />;
+  const moved = (data as unknown as { redirect?: string }).redirect;
+  if (moved) { if (typeof window !== "undefined") window.location.replace(`/u/${moved}`); return <SkeletonList n={2} />; }
   if ("error" in (data as unknown as Record<string, unknown>)) return <div className="p-5"><p className="muted">No trader with that handle.</p></div>;
   const { user, stats: s, isMe } = data;
   const roiOf = (p: FeedRow) => { const entry = Number(p.post.entryPx); const mark = p.post.status === "open" ? (mids[p.post.coin ?? ""] ?? entry) : Number(p.post.exitPx ?? entry); return ((mark - entry) / entry) * 100 * (p.post.side === "long" ? 1 : -1) * (p.post.leverage ?? 1); };
@@ -107,7 +109,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         <div className="flex items-center gap-4">
           <div className="rounded-full" style={{ border: "4px solid var(--bg)" }}><Avatar handle={user.handle} url={user.avatarUrl} size={84} /></div>
           <div className="min-w-0 flex-1 pt-[46px]">
-            <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1">✓</span>}<RankChip xp={user.xp} compact />{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
+            <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1">✓</span>}<RankChip xp={user.xp} compact />{user.founderSeat != null && user.founderStatus !== "expired" && <span className="fbadge ml-2" style={{ padding: "3px 8px", fontSize: 10, verticalAlign: 3 }}><Glyph n="crown" />#{user.founderSeat}</span>}{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
             <div className="mono when text-xs">{user.isDemo ? "practice account · simulated fills" : `${user.address.slice(0, 6)}…${user.address.slice(-4)} · verified on-chain`}</div>
             <div className="mt-2.5 flex gap-4 text-sm">
               <button className="muted" onClick={() => { setPeopleDir("followers"); setTab("people"); }}><b style={{ color: "var(--text)" }}>{data.followers}</b> followers</button>
@@ -246,6 +248,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           </div>
           <div className="pf-golive mt-3.5"><b>Ready to trade real?</b>Connect a wallet and your trades fill on Hyperliquid from your own wallet. Your record and rank come with you.</div>
           <div className="mt-3.5 grid grid-cols-2 gap-2.5"><Link href="/settings" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Go live</Link><button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ resetDemo: true }) }); mutate(); setBal(false); }}>Reset to $10,000</button></div>
+          <Link href="/invite" className="srow mt-3" style={{ color: "var(--brand)" }} onClick={() => setBal(false)}><span><b>Invite &amp; earn</b><span className="when ml-1.5">your link and earnings</span></span><span>→</span></Link>
         </div>
         </Sheet>
       )}
@@ -260,6 +263,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
             <span className="muted">Open PnL <b className={`mono ${data.positions.reduce((a, p) => a + Number(p.unrealizedPnl), 0) >= 0 ? "green" : "red"}`}>{fmtUsd(data.positions.reduce((a, p) => a + Number(p.unrealizedPnl), 0), { sign: true })}</b></span>
           </div>
           <div className="mt-3.5 grid grid-cols-2 gap-2.5"><button className="btn deposit" style={{ padding: 12, fontSize: 14 }} onClick={() => { setBal(false); setSheet("deposit"); }}>Deposit</button><button className="btn withdraw" style={{ padding: 12, fontSize: 14 }} onClick={() => { setBal(false); setSheet("withdraw"); }}>Withdraw</button></div>
+          <Link href="/invite" className="srow mt-3" style={{ color: "var(--brand)" }} onClick={() => setBal(false)}><span><b>Invite &amp; earn</b><span className="when ml-1.5">your link and earnings</span></span><span>→</span></Link>
         </div>
         </Sheet>
       )}

@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSession } from "@/lib/hooks/useSession";
+import { AdminProgramme } from "@/components/AdminProgramme";
 
 type M = {
   at: string;
@@ -21,7 +23,8 @@ const usd = (n: number) => `$${n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 
 
 /** /admin?key=… — the numbers that matter, for the founder's phone. The key is remembered on this device. */
 export default function Admin() {
-  const [key, setKey] = useState<string | null>(null);
+  const { authenticated, authedFetch, profile, login } = useSession();
+  const [key, setKey] = useState<string | null | undefined>(undefined);
   const [m, setM] = useState<M | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
@@ -29,14 +32,21 @@ export default function Admin() {
     try { k = new URLSearchParams(window.location.search).get("key") || localStorage.getItem("perped:admin-key"); if (k) localStorage.setItem("perped:admin-key", k); } catch {}
     setKey(k);
   }, []);
+  // Signed-in admins and the owner get in with their account; the CRON_SECRET key still works for scripts.
+  const call = useCallback((url: string, init?: RequestInit) => {
+    if (key) { const u = new URL(url, window.location.origin); u.searchParams.set("key", key); return fetch(u.toString(), { ...init, headers: { "content-type": "application/json", ...(init?.headers ?? {}) } }); }
+    return authedFetch(url, init);
+  }, [key, authedFetch]);
+  const staff = !!key || profile?.role === "owner" || profile?.role === "admin";
   useEffect(() => {
-    if (!key) return;
-    const load = () => fetch(`/api/admin/metrics?key=${encodeURIComponent(key)}`).then((r) => r.json()).then((j: M) => (j.error ? setErr(j.error) : (setM(j), setErr(null)))).catch((e) => setErr(String(e)));
+    if (!staff) return;
+    const load = () => call("/api/admin/metrics").then((r) => r.json()).then((j: M) => (j.error ? setErr(j.error) : (setM(j), setErr(null)))).catch((e) => setErr(String(e)));
     load(); const id = setInterval(load, 60_000); return () => clearInterval(id);
-  }, [key]);
+  }, [staff, call]);
 
-  if (key === null) return <main className="p-5"><h1 className="text-xl font-extrabold">Perped numbers</h1><p className="muted mt-2 text-sm">Open this page as <span className="mono">/admin?key=YOUR_CRON_SECRET</span>. The key is in Vercel → Settings → Environment Variables → CRON_SECRET.</p></main>;
-  if (err) return <main className="p-5"><p className="red">{err === "unauthorized" ? "That key doesn't match CRON_SECRET." : err}</p></main>;
+  if (key === undefined) return <main className="p-5"><p className="muted">Loading…</p></main>;
+  if (!staff) return <main className="p-5"><h1 className="text-xl font-extrabold">Admin</h1><p className="muted mt-2 text-sm">{authenticated ? "Your account isn't an admin. Ask the owner to add you." : "Sign in with an admin account."}</p>{!authenticated && <button className="btn ink mt-3" onClick={login}>Sign in</button>}</main>;
+  if (err) return <main className="p-5"><p className="red">{err === "unauthorized" ? "Not authorised." : err}</p></main>;
   if (!m) return <main className="p-5"><p className="muted">Loading…</p></main>;
   const f = m.funnel;
   const tiles: [string, string, string?][] = [
@@ -51,7 +61,9 @@ export default function Admin() {
   ];
   return (
     <main className="px-4 pb-16 pt-5">
-      <h1 className="text-xl font-extrabold">Perped numbers</h1>
+      <h1 className="text-xl font-extrabold">Perped admin</h1>
+      <AdminProgramme call={call} />
+      <h2 className="mt-8 text-[17px] font-extrabold">Numbers</h2>
       <p className="when">Real users only, bots excluded · updated {new Date(m.at).toLocaleTimeString()}</p>
       <div className="adm-grid mt-4">{tiles.map(([k, v, s]) => <div key={k} className="adm-tile"><small>{k}</small><b className="mono">{v}</b>{s && <span>{s}</span>}</div>)}</div>
       <h2 className="mt-6 text-[15px] font-extrabold">Funnel · people who joined in the last 7 days</h2>

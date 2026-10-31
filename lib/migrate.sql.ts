@@ -284,4 +284,31 @@ create index if not exists events_name_time on events (name, created_at);
 update comments set body = btrim(regexp_replace(body, '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]\\uFE0F?\\s?', '', 'g')) where body ~ '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]' and user_id in (select id from users where is_bot);
 update posts set body = btrim(regexp_replace(body, '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]\\uFE0F?\\s?', '', 'g')) where body ~ '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]' and (kind = 'system' or user_id in (select id from users where is_bot));
 update notifications set title = btrim(regexp_replace(title, '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]\\uFE0F?\\s?', '', 'g')), body = btrim(regexp_replace(coalesce(body, ''), '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]\\uFE0F?\\s?', '', 'g')) where title ~ '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]' or body ~ '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]';
+
+-- Invite programme: roles, founders, going-live gate, waitlist, handle redirects, earnings by kind.
+alter table users add column if not exists role text not null default 'user';
+alter table users add column if not exists founder_seat integer;
+alter table users add column if not exists founder_since timestamptz;
+alter table users add column if not exists founder_status text;
+alter table users add column if not exists can_go_live boolean;
+update users set can_go_live = true where can_go_live is null;
+alter table users alter column can_go_live set default false;
+alter table users add column if not exists waitlist_at timestamptz;
+create unique index if not exists users_founder_seat_idx on users (founder_seat) where founder_seat is not null;
+create index if not exists users_waitlist_idx on users (waitlist_at) where waitlist_at is not null;
+update users set role = 'owner' where handle = 'kilo2' and not exists (select 1 from users o where o.role = 'owner');
+create table if not exists handle_redirects (
+  old_handle text primary key,
+  user_id text not null references users(id),
+  created_at timestamptz not null default now()
+);
+create table if not exists app_settings (
+  key text primary key,
+  value jsonb not null,
+  updated_at timestamptz not null default now()
+);
+insert into app_settings (key, value) values ('waitlist', '{"batch":200,"paused":false}') on conflict (key) do nothing;
+alter table referral_earnings add column if not exists kind text not null default 'invite';
+drop index if exists referral_earnings_unique;
+create unique index if not exists referral_earnings_unique2 on referral_earnings (referee_id, day, referrer_id, kind);
 `;

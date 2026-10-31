@@ -24,8 +24,8 @@ export async function GET(req: Request) {
         handle: schema.users.handle,
         avatarUrl: schema.users.avatarUrl,
         joinedAt: schema.users.referredAt,
-        earnedUsd: sql<number>`coalesce((select sum(share_usd) from referral_earnings e where e.referee_id = ${schema.users.id}), 0)`.mapWith(Number),
-        volumeUsd: sql<number>`coalesce((select sum(volume_usd) from referral_earnings e where e.referee_id = ${schema.users.id}), 0)`.mapWith(Number),
+        earnedUsd: sql<number>`coalesce((select sum(share_usd) from referral_earnings e where e.referee_id = ${schema.users.id} and e.referrer_id = ${profile.id}), 0)`.mapWith(Number),
+        volumeUsd: sql<number>`coalesce((select sum(volume_usd) from referral_earnings e where e.referee_id = ${schema.users.id} and e.kind = 'invite'), 0)`.mapWith(Number),
       })
       .from(schema.users)
       .where(eq(schema.users.referredBy, profile.id))
