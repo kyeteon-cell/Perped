@@ -53,7 +53,7 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
         <div className="text-center"><CoinMark coin={b.coin} size="xs" /><div className="when text-[10px]">{settled ? timeAgo(b.settledAt ?? b.createdAt) : "LIVE"}</div></div>
         <div className={`aside r ${tWin ? "lead" : ""}`}><div className="min-w-0 text-right"><div className="flex items-center justify-end gap-1 text-[13px] font-bold"><RankChip xp={b.target.xp} compact size={18} /><span className="truncate">{b.target.handle}</span></div><div className={`mono text-[13px] font-bold ${t >= 0 ? "green" : "red"}`}>{fmtPct(t, 1)}</div></div><span className="arank"><Avatar handle={b.target.handle} url={b.target.avatarUrl} size={36} link={false} /><img src={`/api/share-bg/rank-${rankFor(b.target.xp ?? 0).level}`} alt="" /></span></div>
       </div>
-      <div className="tug mt-2" style={{ height: 6 }}><i style={{ width: `${share}%` }} /></div>
+      <div className="tug mt-2" style={{ height: 6, background: b.targetLeg.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${share}%`, background: b.faderLeg.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
       {badge && <div className="abadge">{badge}</div>}
     </Link>
   );

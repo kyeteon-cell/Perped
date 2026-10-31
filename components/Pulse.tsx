@@ -63,7 +63,7 @@ function DuelCard({ d, mids }: { d: PulseData["duels"][number]; mids: Record<str
         </div>
         <div className="duel-mid">
           <div className="vs">VS</div>
-          <div className="tug"><i style={{ width: `${aShare}%` }} /></div>
+          <div className="tug" style={{ background: d.b.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${aShare}%`, background: d.a.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
           <div className="when text-[11px]">{leader.handle} leads</div>
         </div>
         <div className="duelist">

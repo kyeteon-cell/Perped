@@ -108,7 +108,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         {battle?.status === "settled" && profile && myPost && (
           <button className="btn mt-2" style={{ padding: 11, fontSize: 13 }} onClick={() => setRematch(profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}>⚔ {battle.winnerId === profile.id ? "Run it back" : "Rematch"} · challenge {profile.id === fader.user.id ? tu.user.handle : fader.user.handle}</button>
         )}
-        <div className="tug mt-5" style={{ height: 10 }}><i style={{ width: `${share}%` }} /></div>
+        <div className="tug mt-5" style={{ height: 10, background: target.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${share}%`, background: fade.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
         <div className="when mt-2 text-center">{live ? `${faderLeads ? fader.user.handle : tu.user.handle} is ahead by ${fmtPct(Math.abs(a.roi - b.roi), 1)}` : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
         {live && profile && (profile.id === fader.user.id || profile.id === tu.user.id) && (
           <button className="btn ink mt-4" style={{ padding: 11, fontSize: 13 }} onClick={() => setManage(profile.id === fader.user.id ? fade : target)}>Manage trade</button>
