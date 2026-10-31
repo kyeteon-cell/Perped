@@ -790,3 +790,45 @@ body { letter-spacing: -.005em; }
 /* Tab underline: brushed chrome rather than flat */
 .tabs .on::after { background: linear-gradient(90deg, #02844f 0%, #05e091 18%, #e4e6ea 42%, #ffffff 50%, #e4e6ea 58%, #fd6267 82%, #a3202a 100%); box-shadow: 0 1px 6px rgba(5,224,145,.35); }
 .qc-btn { border-radius: 999px; }
+
+/* =====================================================================
+   Sleek glass pills: tinted glass, thin chrome rim, soft light streak.
+   Replaces the heavier solid-chrome fill above.
+   ===================================================================== */
+:root { --g-ink: #03965f; --r-ink: #d63a40; --g-glass-a: rgba(5,224,145,.20); --g-glass-b: rgba(5,224,145,.08); --r-glass-a: rgba(253,98,103,.20); --r-glass-b: rgba(253,98,103,.08); }
+:root[data-theme="dark"], :root:not([data-theme="light"]).dark-system { --g-ink: #2ff0a8; --r-ink: #ff7d82; --g-glass-a: rgba(5,224,145,.26); --g-glass-b: rgba(5,224,145,.10); --r-glass-a: rgba(253,98,103,.26); --r-glass-b: rgba(253,98,103,.10); }
+
+.btn.long, .btn.brand, .copy, .acts .copy, .swipe.copy .sb-copy, .qc-btn.up, .sio-row button.primary, .realness .chip.on.real-on {
+  position: relative; overflow: hidden; isolation: isolate;
+  border: 1px solid transparent !important;
+  background:
+    linear-gradient(180deg, var(--g-glass-a), var(--g-glass-b)) padding-box,
+    linear-gradient(135deg, rgba(196,255,230,.95) 0%, #05e091 28%, #02844f 50%, #4af3b7 72%, rgba(255,255,255,.95) 100%) border-box !important;
+  color: var(--g-ink) !important; text-shadow: none;
+  backdrop-filter: blur(12px) saturate(160%); -webkit-backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: 0 8px 20px -14px rgba(5,224,145,.9), inset 0 1px 0 rgba(255,255,255,.35) !important;
+}
+.btn.short, .fade, .acts .fade, .swipe.fade .sb-fade, .qc-btn.dn {
+  position: relative; overflow: hidden; isolation: isolate;
+  border: 1px solid transparent !important;
+  background:
+    linear-gradient(180deg, var(--r-glass-a), var(--r-glass-b)) padding-box,
+    linear-gradient(135deg, rgba(255,220,221,.95) 0%, #fd6267 28%, #a3202a 50%, #ff8e92 72%, rgba(255,255,255,.95) 100%) border-box !important;
+  color: var(--r-ink) !important; text-shadow: none;
+  backdrop-filter: blur(12px) saturate(160%); -webkit-backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: 0 8px 20px -14px rgba(253,98,103,.9), inset 0 1px 0 rgba(255,255,255,.35) !important;
+}
+/* the light: a thin chrome streak along the top edge */
+.btn.long::before, .btn.brand::before, .copy::before, .qc-btn.up::before, .sio-row button.primary::before,
+.btn.short::before, .fade::before, .qc-btn.dn::before {
+  content: ""; position: absolute; z-index: -1; left: 14%; right: 14%; top: 1px; height: 45%; border-radius: 999px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 100%);
+}
+/* the sweep: a slim, faint chrome glint instead of a broad flash */
+.btn.long::after, .btn.brand::after, .copy::after, .btn.short::after, .fade::after {
+  background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.35) 50%, transparent 58%) !important;
+  animation-duration: 4.8s !important;
+}
+.qc-btn.up, .qc-btn.dn { font-weight: 800; }
+.real-tag { background: var(--chrome-green-soft) !important; color: var(--g-ink) !important; text-shadow: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--green) 35%, transparent) !important; }
+.btn.long:active, .btn.short:active, .copy:active, .fade:active, .qc-btn:active { transform: scale(.97); filter: brightness(1.08); }
