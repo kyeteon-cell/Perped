@@ -17,7 +17,6 @@ import type { ReactNode } from "react";
 type Leg = ArenaBattle["faderLeg"];
 const liqPx = (l: Leg) => (l.leverage > 1 ? (l.side === "long" ? l.entryPx * (1 - 1 / l.leverage) : l.entryPx * (1 + 1 / l.leverage)) : null);
 const liqDist = (l: Leg, mid: number) => { const q = liqPx(l); return q && mid ? Math.abs((mid - q) / mid) * 100 : 100; };
-const hpOf = (l: Leg, mid: number) => { const q = liqPx(l); if (!q || !mid) return 1; const h = l.side === "long" ? (mid - q) / (l.entryPx - q) : (q - mid) / (q - l.entryPx); return Math.max(0, Math.min(1, h)); };
 type Tab = "all" | "high" | "following" | "blood";
 /** Everything the tabs need about one battle, at the live price. */
 function readBattle(b: ArenaBattle, mid: number) {
@@ -27,12 +26,11 @@ function readBattle(b: ArenaBattle, mid: number) {
   const maxLev = Math.max(b.faderLeg.leverage, b.targetLeg.leverage);
   const notional = Math.max(b.faderLeg.size * b.faderLeg.entryPx, b.targetLeg.size * b.targetLeg.entryPx);
   const minLiq = Math.min(dA, dT), closer = dA <= dT ? b.fader : b.target;
-  const hpMin = Math.min(hpOf(b.faderLeg, mid), hpOf(b.targetLeg, mid));
   const worst = Math.min(a, t), loser = a <= t ? b.fader : b.target, winner = a <= t ? b.target : b.fader, gap = Math.abs(a - t);
   const high = maxLev >= 20 || notional >= 5000 || minLiq <= 10;
   const heat = Math.min(5, 1 + (maxLev >= 10 ? 1 : 0) + (maxLev >= 20 ? 1 : 0) + (maxLev >= 40 ? 1 : 0) + (minLiq < 5 ? 1 : 0));
   // Loosened while volume builds: anyone clearly losing or a lopsided battle.
-  const blood = worst <= -10 || hpMin <= 0.6 || gap >= 15;
+  const blood = gap > 10; // ROI gap of more than 10 points between the fighters
   const risk = (maxLev * Math.max(1, notional / 100)) / (minLiq + 0.5);
   return { a, t, maxLev, minLiq, closer, worst, loser, winner, gap, high, heat, blood, risk };
 }
