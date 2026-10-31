@@ -1,6 +1,7 @@
 "use client";
 
 import { Glyph } from "./Glyph";
+import { Tug } from "./Tug";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
@@ -64,7 +65,7 @@ function DuelCard({ d, mids }: { d: PulseData["duels"][number]; mids: Record<str
         </div>
         <div className="duel-mid">
           <div className="vs">VS</div>
-          <div className="tug" style={{ background: d.b.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${aShare}%`, background: d.a.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
+          <Tug share={aShare} left={d.a.side} right={d.b.side} />
           <div className="when text-[11px]">{leader.handle} leads</div>
         </div>
         <div className="duelist">

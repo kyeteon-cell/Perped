@@ -24,7 +24,7 @@ import type { User, Stats } from "@/lib/schema";
 import type { AssetPosition } from "@/lib/hl-info";
 import type { FeedRow } from "@/lib/feed";
 
-type ProfileRes = { battleStreak?: number; bestStreak?: number; user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
+type ProfileRes = { form?: { r: "W" | "L" | "D"; href: string }[]; vendetta?: null | { handle: string; avatarUrl: string | null; mine: number; theirs: number; draws: number; fights: number }; battleStreak?: number; bestStreak?: number; user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
 type Tab = "activity" | "trades" | "posts" | "people";
 type People = "followers" | "following";
 
@@ -111,6 +111,25 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           {isMe ? <Link href="/settings" className="btn" style={{ padding: 12, fontSize: 14 }}>Edit profile</Link> : <button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={() => (authenticated ? setChallenge(true) : login())}><span className="gl"><Glyph n="swords" />Challenge</span></button>}
         </div>
       </section>
+
+      {((data.form?.length ?? 0) > 0 || data.vendetta) && (
+        <section className="block pb-2">
+          {(data.form?.length ?? 0) > 0 && (
+            <div className="form-row">
+              <span className="eyebrow">Last {data.form!.length} battles</span>
+              <div className="form-dots">{[...data.form!].reverse().map((f, i) => <Link key={i} href={f.href} className={`fd ${f.r}`} aria-label={f.r === "W" ? "Won" : f.r === "L" ? "Lost" : "Draw"}>{f.r}</Link>)}</div>
+            </div>
+          )}
+          {data.vendetta && (
+            <Link href={`/rivalry/${user.handle}/${data.vendetta.handle}`} className="vend-card">
+              <span className="nem-tag gl"><Glyph n="skull" />Vendetta</span>
+              <Avatar handle={data.vendetta.handle} url={data.vendetta.avatarUrl} size={32} link={false} />
+              <div className="min-w-0 flex-1"><div className="truncate text-[14px] font-extrabold">vs {data.vendetta.handle}</div><div className="when">{data.vendetta.fights} fights{data.vendetta.draws ? ` · ${data.vendetta.draws} drawn` : ""}</div></div>
+              <div className="mono text-[18px] font-extrabold"><span className={data.vendetta.mine >= data.vendetta.theirs ? "vend-lead" : ""}>{data.vendetta.mine}</span><span className="muted">–</span><span className={data.vendetta.theirs > data.vendetta.mine ? "vend-lead" : ""}>{data.vendetta.theirs}</span></div>
+            </Link>
+          )}
+        </section>
+      )}
 
       {(pins.length > 0 || isMe) && (
         <section className="block pb-3">

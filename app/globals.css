@@ -1245,3 +1245,48 @@ body { letter-spacing: -.005em; }
 .arow:active { transform: scale(.985); }
 .tomb .arow .ab-f:not(.lead) { filter: grayscale(1); opacity: .55; }
 @media (prefers-reduced-motion: reduce) { .ab-f.lead .ab-av, .ab-live::before { animation: none; } }
+
+/* Tug v2: chrome halves by side, shimmer, mercury bead at the split */
+.tug2 { position: relative; display: flex; border-radius: 999px; margin-top: 8px; box-shadow: inset 0 1px 2px rgba(0,0,0,.15); }
+.tug2 > i, .tug2 > b { display: block; height: 100%; position: relative; overflow: hidden; transition: width .9s var(--ease); }
+.tug2 > i { border-radius: 999px 0 0 999px; } .tug2 > b { flex: 1; border-radius: 0 999px 999px 0; }
+.tug2 .long { background: linear-gradient(180deg, #4af3b7, #05e091 50%, #03a86c); }
+.tug2 .short { background: linear-gradient(180deg, #ff9a9d, #fd6267 50%, #d43b40); }
+.tug2 > i::after, .tug2 > b::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%); transform: translateX(-120%); animation: tugsheen 3.2s ease-in-out infinite; }
+.tug2 > b::after { animation-delay: 1.4s; }
+@keyframes tugsheen { 0%, 40% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+.tug2 > em { position: absolute; top: 50%; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #c9ccd1 55%, #858a92); box-shadow: 0 1px 4px rgba(0,0,0,.4), 0 0 0 2px var(--surface); transition: left .9s var(--ease); z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .tug2 > i::after, .tug2 > b::after { animation: none; } }
+
+/* Profile: battle form + vendetta card */
+.form-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.form-dots { display: flex; gap: 4px; }
+.fd { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-size: 10px; font-weight: 900; text-decoration: none; color: var(--muted); background: color-mix(in srgb, var(--text) 7%, transparent); }
+.fd.W { color: #2a1c00; background: linear-gradient(180deg, #ffd98a, #f2b63a 55%, #c98a05); }
+.fd.L { color: var(--muted); background: color-mix(in srgb, var(--text) 10%, transparent); text-decoration: line-through; }
+.fd:last-child { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line); }
+.vend-card { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 18px; text-decoration: none; color: inherit; border: 1.5px solid transparent; background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(120deg, #8b5cf6, #f2b63a 50%, #8b5cf6) border-box; box-shadow: 0 10px 24px -16px rgba(139,92,246,.7); }
+.vend-lead { color: var(--gold); }
+/* Side ring on arena avatars (green bought, red sold); the leader adds the gold glow outside it. */
+.ab-av.long { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--green); }
+.ab-av.short { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--red); }
+.ab-f.lead .ab-av.long { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--green), 0 0 0 5.5px var(--gold), 0 0 18px 3px color-mix(in srgb, var(--gold) 55%, transparent); animation: leadglow-l 2.6s ease-in-out infinite; }
+.ab-f.lead .ab-av.short { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--red), 0 0 0 5.5px var(--gold), 0 0 18px 3px color-mix(in srgb, var(--gold) 55%, transparent); animation: leadglow-s 2.6s ease-in-out infinite; }
+@keyframes leadglow-l { 50% { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--green), 0 0 0 5.5px var(--gold), 0 0 24px 6px color-mix(in srgb, var(--gold) 65%, transparent); } }
+@keyframes leadglow-s { 50% { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--red), 0 0 0 5.5px var(--gold), 0 0 24px 6px color-mix(in srgb, var(--gold) 65%, transparent); } }
+.arow.flip { animation: leadflip 1.4s var(--ease); }
+@keyframes leadflip { 0% { box-shadow: 0 0 0 2px var(--gold), 0 0 30px 4px color-mix(in srgb, var(--gold) 60%, transparent); background: color-mix(in srgb, var(--gold) 14%, var(--surface)); } 100% { box-shadow: var(--shadow); } }
+@media (prefers-reduced-motion: reduce) { .ab-f.lead .ab-av.long, .ab-f.lead .ab-av.short, .arow.flip { animation: none; } }
+.arena-sticky { position: fixed; left: 50%; top: 0; z-index: 45; width: 100%; max-width: 28rem; transform: translate(-50%, -110%); display: flex; align-items: center; gap: 10px; padding: calc(8px + env(safe-area-inset-top, 0px)) 16px 8px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--line); box-shadow: 0 10px 24px -18px rgba(15,16,18,.5); transition: transform .3s var(--ease); }
+.arena-sticky.on { transform: translate(-50%, 0); }
+.arena-sticky .fightnight { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); border-color: var(--line); }
+.arena-sticky .fightnight.on { color: #2a1c00; }
+/* Battle page: big live gap, finish/save buttons, gold leader glow */
+.bgap { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-top: 10px; }
+.bgap-n { font-size: 34px; font-weight: 800; letter-spacing: -.02em; color: #fff; text-shadow: 0 0 18px rgba(242,182,58,.55); }
+.bgap-l { font-size: 13px; font-weight: 800; color: #f2b63a; }
+.bbtn { display: grid; justify-items: center; gap: 1px; border: 1px solid var(--line); border-radius: 16px; padding: 10px 8px; font: inherit; font-weight: 900; font-size: 13.5px; cursor: pointer; color: var(--text); background: var(--surface); }
+.bbtn small { font-size: 10.5px; font-weight: 700; color: var(--muted); }
+.avring.lead { border-color: var(--gold) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 22%, transparent), 0 0 26px 6px color-mix(in srgb, var(--gold) 45%, transparent) !important; animation: ringglow 2.6s ease-in-out infinite; }
+@keyframes ringglow { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--gold) 26%, transparent), 0 0 34px 10px color-mix(in srgb, var(--gold) 55%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .avring.lead { animation: none; } }

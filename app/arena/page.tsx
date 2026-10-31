@@ -2,7 +2,7 @@
 
 import { Glyph } from "@/components/Glyph";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
@@ -14,6 +14,7 @@ import { rankFor } from "@/lib/rank";
 import type { ArenaBattle, ArenaRes } from "@/app/api/arena/route";
 import { FollowButton, useFollowing } from "@/components/FollowButton";
 import { isFightNight } from "@/lib/fightnight";
+import { Tug } from "@/components/Tug";
 import { BloodPit, BodyCount, FinishSave, KillFeed, RevengeButton } from "@/components/Bloodbath";
 import type { ReactNode } from "react";
 
@@ -44,10 +45,10 @@ const roiOf = (l: ArenaBattle["faderLeg"], mid: number) => {
 };
 
 /** One side of a battle row: the leader's half glows gold; nothing sits on top of the avatar. */
-function Fighter({ u, roi, lead, right }: { u: ArenaBattle["fader"]; roi: number; lead: boolean; right?: boolean }) {
+function Fighter({ u, roi, lead, right, side }: { u: ArenaBattle["fader"]; roi: number; lead: boolean; right?: boolean; side: "long" | "short" }) {
   return (
     <div className={`ab-f ${right ? "r" : ""} ${lead ? "lead" : ""}`}>
-      <span className="ab-av"><Avatar handle={u.handle} url={u.avatarUrl} size={38} link={false} /></span>
+      <span className={`ab-av ${side}`}><Avatar handle={u.handle} url={u.avatarUrl} size={38} link={false} /></span>
       <div className="min-w-0">
         <div className="ab-name"><span className="truncate">{u.handle}</span><RankChip xp={u.xp} compact size={16} /></div>
         <div className={`mono ab-roi ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 1)}</div>
@@ -62,8 +63,16 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
   const total = Math.abs(a) + Math.abs(t) || 1;
   const share = Math.max(8, Math.min(92, 50 + ((a - t) / total) * 50));
   const aWin = settled ? b.winnerId === b.fader.id : a > t, tWin = settled ? b.winnerId === b.target.id : t > a;
+  // Lead change: flash the row gold for a moment.
+  const leader = aWin ? "a" : tWin ? "t" : "";
+  const prevLeader = useRef(leader);
+  const [flip, setFlip] = useState(false);
+  useEffect(() => {
+    if (prevLeader.current && leader && prevLeader.current !== leader) { setFlip(true); const id = setTimeout(() => setFlip(false), 1400); prevLeader.current = leader; return () => clearTimeout(id); }
+    prevLeader.current = leader;
+  }, [leader]);
   return (
-    <Link href={`/battle/${b.faderPostId}`} className={`arow ${b.nemesis ? "nemesis" : ""}`}>
+    <Link href={`/battle/${b.faderPostId}`} className={`arow ${b.nemesis ? "nemesis" : ""} ${flip ? "flip" : ""}`}>
       {b.nemesis && <NemesisBar b={b} />}
       {isFightNight(b.createdAt) && b.status === "open" && <span className="fn-badge gl"><Glyph n="glove" />Fight Night · 2× XP</span>}
       {!settled && (b.faderLeg.status === "closed" || b.targetLeg.status === "closed") && (() => {
@@ -72,11 +81,11 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
         return <span className={`chase-badge gl ${now > bank ? "ahead" : ""}`}><Glyph n="bank" />{banker.handle} banked {fmtPct(bank, 1)} · {chaser.handle} {now > bank ? "ahead" : "chasing"}</span>;
       })()}
       <div className="ab-grid">
-        <Fighter u={b.fader} roi={a} lead={aWin} />
+        <Fighter u={b.fader} roi={a} lead={aWin} side={b.faderLeg.side} />
         <div className="ab-mid"><CoinMark coin={b.coin} size="xs" /><span className="ab-gap mono">{fmtPct(Math.abs(a - t), 1).replace(/^[+−-]/, "")}<small>gap</small></span><span className="when text-[10px]">{settled ? timeAgo(b.settledAt ?? b.createdAt) : <span className="ab-live">LIVE</span>}</span></div>
-        <Fighter u={b.target} roi={t} lead={tWin} right />
+        <Fighter u={b.target} roi={t} lead={tWin} right side={b.targetLeg.side} />
       </div>
-      <div className="tug mt-2" style={{ height: 6, background: b.targetLeg.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${share}%`, background: b.faderLeg.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
+      <Tug share={share} left={b.faderLeg.side} right={b.targetLeg.side} />
       {badge && <div className="abadge">{badge}</div>}
     </Link>
   );
@@ -106,7 +115,7 @@ function NemesisBar({ b }: { b: ArenaBattle }) {
   const lead = n.faderWins === n.targetWins ? "series level" : `${n.faderWins > n.targetWins ? b.fader.handle : b.target.handle} leads`;
   return (
     <div className="nem-bar">
-      <span className="nem-tag gl"><Glyph n="skull" />Nemesis</span>
+      <span className="nem-tag gl"><Glyph n="skull" />Vendetta</span>
       <span className="nem-txt">Meeting #{n.meeting} · <b className="mono">{n.faderWins}–{n.targetWins}</b> · {lead}</span>
     </div>
   );
@@ -151,9 +160,18 @@ export default function ArenaPage() {
   const me = data?.me;
   const lvl = rankFor(profile?.xp ?? 0);
   const callOut = () => (authenticated ? setPicking(true) : login());
+  // Slim bar that pins to the top once you scroll past the header: your record + Fight Night.
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => { const on = () => setStuck(window.scrollY > 240); on(); window.addEventListener("scroll", on, { passive: true }); return () => window.removeEventListener("scroll", on); }, []);
 
   return (
     <div className="fade-in pb-8" data-tint="gold">
+      <div className={`arena-sticky ${stuck ? "on" : ""}`} aria-hidden={!stuck}>
+        <b className="text-[15px] font-extrabold">Arena</b>
+        {me && <span className="mono text-[13px] font-bold"><span className="green">{me.won}</span><span className="muted">–</span><span className="red">{me.lost}</span></span>}
+        {me && me.streak > 0 && <span className="gl text-[13px] font-bold"><Glyph n="flame" tone="gold" />{me.streak}</span>}
+        <span className="ml-auto"><FightNight /></span>
+      </div>
       <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
         <h1 className="h1" style={{ color: "#fff" }}>Arena</h1>
         <div className="text-[12px]" style={{ color: "rgba(255,255,255,.85)" }}>Fade someone and it&rsquo;s a battle. Call them out and it&rsquo;s a duel. Winner takes the XP.</div>
@@ -252,7 +270,7 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   const tabs: { k: Tab; icon: ReactNode; short: string; n: number }[] = [
     { k: "all", icon: <Glyph n="bolt" />, short: "All", n: rows.length },
     { k: "following", icon: <Glyph n="people" />, short: "Following", n: fol.length },
-    { k: "nemesis", icon: <Glyph n="skull" />, short: "Nemesis", n: nem.length },
+    { k: "nemesis", icon: <Glyph n="skull" />, short: "Vendettas", n: nem.length },
     { k: "high", icon: <Glyph n="flame" />, short: "High stakes", n: high.length },
     { k: "blood", icon: <Glyph n="drop" />, short: "Bloodbath", n: blood.length + rekt.length },
   ];
@@ -299,7 +317,7 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
                 <div key={s.user.id} className="flex items-center gap-2.5"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={30} /><span className="flex-1 truncate text-[14px] font-bold">{s.user.handle}<span className="when ml-1.5 gl"><Glyph n="flame" tone="gold" />{s.streak} streak</span></span><FollowButton handle={s.user.handle} compact /></div>
               ))}</div>
             </div>
-          ) : <p className="muted text-sm">{tab === "high" ? "No high-stakes battles right now. Nobody's above 20× or near liquidation." : tab === "blood" ? "No bloodbaths right now. Everyone's still standing." : tab === "nemesis" ? "No nemesis matches right now. Your nemesis is the trader you've fought most, or one you called out." : "No battles running. Fade a trade in the feed to start one."}</p>
+          ) : <p className="muted text-sm">{tab === "high" ? "No high-stakes battles right now. Nobody's above 20× or near liquidation." : tab === "blood" ? "No bloodbaths right now. Everyone's still standing." : tab === "nemesis" ? "No vendettas running right now. A vendetta is a feud between two traders who have fought each other more than anyone else, or where one called the other out." : "No battles running. Fade a trade in the feed to start one."}</p>
         )}
       </div>
     </section>

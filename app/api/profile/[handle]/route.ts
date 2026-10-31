@@ -49,12 +49,21 @@ export async function GET(req: Request, ctx: { params: Promise<{ handle: string 
     /* Hyperliquid unreachable */
   }
   // Battle streak: consecutive wins counting back from the latest settled battle (draws don't break it).
-  const settled = await db.select({ winnerId: schema.battles.winnerId }).from(schema.battles)
+  const settled = await db.select({ winnerId: schema.battles.winnerId, faderPostId: schema.battles.faderPostId }).from(schema.battles)
     .where(and(eq(schema.battles.status, "settled"), or(eq(schema.battles.faderId, user.id), eq(schema.battles.targetId, user.id))))
     .orderBy(desc(schema.battles.settledAt)).limit(200);
   const results = settled.filter((b) => b.winnerId).map((b) => b.winnerId === user.id);
   let battleStreak = 0; for (const w of results) { if (w) battleStreak++; else break; }
   let bestStreak = 0, run = 0; for (const w of [...results].reverse()) { run = w ? run + 1 : 0; bestStreak = Math.max(bestStreak, run); }
+  // Form: the last 10 battles, newest first. Vendetta: their most-fought active rivalry.
+  const form = settled.slice(0, 10).map((b) => ({ r: !b.winnerId ? "D" : b.winnerId === user.id ? "W" : "L", href: `/battle/${b.faderPostId}` }));
+  const [rv] = await db.select().from(schema.rivalries).where(and(eq(schema.rivalries.active, true), or(eq(schema.rivalries.userA, user.id), eq(schema.rivalries.userB, user.id)))).orderBy(desc(schema.rivalries.fights)).limit(1);
+  let vendetta: null | { handle: string; avatarUrl: string | null; mine: number; theirs: number; draws: number; fights: number } = null;
+  if (rv) {
+    const oppId = rv.userA === user.id ? rv.userB : rv.userA;
+    const [o] = await db.select({ handle: schema.users.handle, avatarUrl: schema.users.avatarUrl }).from(schema.users).where(eq(schema.users.id, oppId)).limit(1);
+    if (o) vendetta = { handle: o.handle, avatarUrl: o.avatarUrl, mine: rv.userA === user.id ? rv.aWins : rv.bWins, theirs: rv.userA === user.id ? rv.bWins : rv.aWins, draws: rv.draws, fights: rv.fights };
+  }
   const xpRecent = await db.select({ delta: schema.xpLog.delta, reason: schema.xpLog.reason, ref: schema.xpLog.ref, createdAt: schema.xpLog.createdAt }).from(schema.xpLog).where(eq(schema.xpLog.userId, user.id)).orderBy(desc(schema.xpLog.createdAt)).limit(8);
-  return Response.json({ user, stats: row.stats, followers: row.followers, following: row.following, rivalries: row.rivalries, isFollowing, isMe, positions, accountValue, withdrawable, xpRecent, battleStreak, bestStreak });
+  return Response.json({ user, stats: row.stats, followers: row.followers, following: row.following, rivalries: row.rivalries, isFollowing, isMe, positions, accountValue, withdrawable, xpRecent, battleStreak, bestStreak, form, vendetta });
 }

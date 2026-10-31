@@ -15,6 +15,7 @@ import { BattleArena, type Fighter } from "@/components/BattleArena";
 import { RevengeButton } from "@/components/Bloodbath";
 import { isFightNight } from "@/lib/fightnight";
 import { QuickTrade, legItem } from "@/components/QuickTrade";
+import { Tug } from "@/components/Tug";
 import type { Post, Stats } from "@/lib/schema";
 
 type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null; xp?: number };
@@ -102,11 +103,11 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="fade-in pb-8" data-tint="violet">
-      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Nemesis match" : "Battle"}</div><span className="w-9" /></header>
+      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Vendetta" : "Battle"}</div><span className="w-9" /></header>
       {live && isFightNight(fade.createdAt) && <div className="fn-banner"><span className="gl"><Glyph n="glove" />Fight Night battle · winner earns 2× XP</span></div>}
       {nemesis && (
         <div className="nem-banner">
-          <span className="nem-tag gl"><Glyph n="skull" />Nemesis</span>
+          <span className="nem-tag gl"><Glyph n="skull" />Vendetta</span>
           <span>Meeting #{nemesis.meeting} · {fader.user.handle} <b>{nemesis.faderWins}–{nemesis.targetWins}</b> {tu.user.handle}{nemesis.draws ? ` · ${nemesis.draws} drawn` : ""}</span>
         </div>
       )}
@@ -152,8 +153,9 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         {battle?.status === "settled" && profile && battle.winnerId === profile.id && (
           <button className="btn ghost mt-2" style={{ padding: 10, fontSize: 13 }} onClick={() => shareWin(profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}>{shared ?? <span className="gl"><Glyph n="megaphone" />Share: I just perped {profile.id === fader.user.id ? tu.user.handle : fader.user.handle}</span>}</button>
         )}
-        <div className="tug mt-5" style={{ height: 10, background: target.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${share}%`, background: fade.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
-        <div className="when mt-2 text-center">{live || chasing ? `${faderLeads ? fader.user.handle : tu.user.handle} is ahead by ${fmtPct(Math.abs(a.roi - b.roi), 1)}` : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
+        <Tug share={share} left={fade.side as "long" | "short"} right={target.side as "long" | "short"} height={10} className="mt-5" />
+        {(live || chasing) && <div className="bgap"><span className="bgap-n mono">{fmtPct(Math.abs(a.roi - b.roi), 1).replace(/^[+−-]/, "")}</span><span className="bgap-l">{faderLeads ? fader.user.handle : tu.user.handle} ahead</span></div>}
+        <div className="when mt-2 text-center">{live || chasing ? "the gap between their ROIs, live" : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
         {live && profile && (profile.id === fader.user.id || profile.id === tu.user.id) && (
           <button className="btn ink mt-4" style={{ padding: 11, fontSize: 13 }} onClick={() => setManage(profile.id === fader.user.id ? fade : target)}>Manage trade</button>
         )}
@@ -161,8 +163,11 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         {manage && <ManageTrade post={manage} mid={mid || undefined} onChanged={() => mutate()} onClose={() => setManage(null)} />}
         {live && profile && profile.id !== fader.user.id && profile.id !== tu.user.id && (
           <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => setSide({ p: fade, u: fader.user })}>Side with {fader.user.handle}</button>
-            <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => setSide({ p: target, u: tu.user })}>Side with {tu.user.handle}</button>
+            {/* Spectators: back the leader to finish it, or the trailer for a comeback. */}
+            {(() => { const lead = faderLeads ? { p: fade, u: fader.user } : { p: target, u: tu.user }, trail = faderLeads ? { p: target, u: tu.user } : { p: fade, u: fader.user }; return (<>
+              <button className="bb-finish bbtn" onClick={() => setSide(lead)}><span className="gl"><Glyph n="dagger" />Finish them</span><small>back {lead.u.handle}</small></button>
+              <button className="bb-save bbtn" onClick={() => setSide(trail)}><span className="gl"><Glyph n="buoy" />Save them</span><small>back {trail.u.handle}</small></button>
+            </>); })()}
           </div>
         )}
         {sideWith && <QuickTrade item={legItem({ id: sideWith.p.id, coin: sideWith.p.coin!, side: sideWith.p.side as "long" | "short", leverage: sideWith.p.leverage ?? 1 }, { handle: sideWith.u.handle, avatarUrl: sideWith.u.avatarUrl })} mode="copy" lock title="Side with" onClose={() => setSide(null)} />}

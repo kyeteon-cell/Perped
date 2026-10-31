@@ -42,10 +42,10 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
   },
   {
     k: "arena", eyebrow: "4 · The Arena", title: "Watch it, then jump in",
-    body: ["Tabs for Nemesis matches (your #1 rival), High stakes, Following and Bloodbath, where someone is getting perped.", "In Bloodbath: Finish them backs the winner, Save them backs the loser. Got liquidated? Revenge fades their next trade."],
+    body: ["Tabs for Vendettas (two traders locked in a feud), High stakes, Following and Bloodbath, where someone is getting perped.", "In Bloodbath: Finish them backs the winner, Save them backs the loser. Got liquidated? Revenge fades their next trade."],
     mock: (
       <div className="im-card">
-        <div className="im-tabs"><i>All</i><i className="nem"><Glyph n="skull" /> Nemesis</i><i><Glyph n="flame" /> High</i><i className="on"><Glyph n="drop" /> Bloodbath</i></div>
+        <div className="im-tabs"><i>All</i><i className="nem"><Glyph n="skull" /> Vendettas</i><i><Glyph n="flame" /> High</i><i className="on"><Glyph n="drop" /> Bloodbath</i></div>
         <div className="im-pit"><span className="im-tag"><Glyph n="drop" /> The Pit</span><div className="im-row"><b className="gl">degenpriest<Glyph n="crown" tone="gold" /></b><span className="im-vs">VS</span><b className="crack">wenlambo</b></div><div className="im-acts"><span className="fin"><Glyph n="dagger" /> Finish them</span><span><Glyph n="buoy" /> Save them</span></div></div>
       </div>
     ),

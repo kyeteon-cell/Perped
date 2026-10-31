@@ -67,7 +67,7 @@ export function RevengeButton({ handle, label = <span className="gl"><Glyph n="d
     if (open) setItem(open);
     else {
       await authedFetch("/api/rivalries", { method: "POST", body: JSON.stringify({ handle, action: "call" }) }).catch(() => null);
-      setMsg(`${handle} has no open trade. They're your nemesis now: you'll get a ping the moment they open one.`);
+      setMsg(`${handle} has no open trade. They're now your rival: you'll get a ping the moment they open one.`);
     }
     setBusy(false);
   };
