@@ -25,7 +25,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <PrivyProvider
       appId={appId}
       config={{
-        appearance: { theme: "light", accentColor: "#ff5a36", logo: "/icon-192.png" },
+        appearance: { theme: "light", accentColor: "#05e091", logo: "/api/share-bg/icon-180" },
         loginMethods: ["twitter", "google", "email", "wallet"],
         // Every user gets an embedded EVM wallet; that wallet is their Hyperliquid account.
         embeddedWallets: { ethereum: { createOnLogin: "all-users" }, showWalletUIs: false },

@@ -9,6 +9,7 @@ import { fmtPct, fmtPrice, fmtStake, fmtUsd, pnlForPosition, timeAgo } from "@/l
 import { useSession } from "@/lib/hooks/useSession";
 import { Avatar, CoinMark, Icon, I, ticker, RankChip } from "./ui";
 import { Sparkline } from "./Sparkline";
+import { TradeChart } from "./TradeChart";
 import { ShareSheet } from "./ShareSheet";
 import { ManageTrade } from "./ManageTrade";
 import { QuickTrade } from "./QuickTrade";
@@ -188,8 +189,8 @@ function ClosedTradeCard({ item, onChanged }: Props) {
     <article className={`post ${win ? "tint-green" : "tint-red"} ${isDemoPost(item) ? "demo" : ""}`}>
       <KindTag icon={I.check}>{reason === "liquidation" ? "Liquidated" : reason === "tp" ? "Take profit hit" : reason === "sl" ? "Stop loss hit" : "Closed trade"}</KindTag>
       <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
-      <div className="mt-4 flex items-end justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="trow">
+        <div className="flex min-w-0 items-center gap-3">
           <CoinMark coin={post.coin!} />
           <div>
             <Link href={`/markets/${post.coin}`} className="coin">{ticker(post.coin!, true)}</Link>
@@ -264,7 +265,7 @@ function TradePost({ item, mid, onChanged, full }: Props) {
   }
 
   return (
-    <article className={`post swipe ${swipe.armed ?? ""} ${isDemoPost(item) ? "demo" : ""}`} {...(canAct ? swipe.handlers : {})}>
+    <article className={`post swipe tcard ${swipe.armed ?? ""} ${isDemoPost(item) ? "demo" : ""}`} {...(canAct ? swipe.handlers : {})}>
       <div className="swipe-bg" aria-hidden>
         <span ref={swipe.refs.bgCopy} className="sb sb-copy"><Icon d={I.copy} size={18} />Copy</span>
         <span ref={swipe.refs.bgFade} className="sb sb-fade">Fade<Icon d={I.bolt} size={18} /></span>
@@ -272,15 +273,14 @@ function TradePost({ item, mid, onChanged, full }: Props) {
       {quick && <QuickTrade item={item} mode={quick} onClose={() => setQuick(null)} />}
       <div ref={swipe.refs.fg} className="swipe-fg">
       {post.fadedFromId && <Link href={`/battle/${post.id}`} className="kind battle-link"><Icon d={I.bolt} size={13} />Fade · open the battle →</Link>}
-      {post.copiedFromId && <div className="kind"><Icon d={I.copy} size={13} />Copy trade</div>}
       <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
           <CoinMark coin={post.coin!} />
           <div>
             <Link href={`/markets/${post.coin}`} className="coin">{ticker(post.coin!, true)}</Link>
-            <div className="mono when mt-2">
-              {showSize ? `${fmtStake(Number(post.notionalUsd) / lev)} × ${lev} · ` : ""}in at {fmtPrice(entry)}
+            <div className="mono when tsub">
+              {showSize ? `${fmtStake(Number(post.notionalUsd) / lev)} × ${lev} · ` : ""}in {fmtPrice(entry)}
             </div>
           </div>
         </div>
@@ -289,18 +289,14 @@ function TradePost({ item, mid, onChanged, full }: Props) {
           <div className={`mono text-[13px] ${pos ? "green" : "red"}`}>{labels[1]}</div>
         </div>
       </div>
-      <div className="track"><b style={{ width: `${Math.min(100, Math.abs(roi))}%`, background: pos ? "var(--green)" : "var(--red)" }} /></div>
-      {isOpen && (post.tpPx || post.slPx) && <div className="mono when mt-2 text-[11px]">{post.tpPx ? `TP ${fmtPrice(post.tpPx)}` : ""}{post.tpPx && post.slPx ? " · " : ""}{post.slPx ? `SL ${fmtPrice(post.slPx)}` : ""}</div>}
-      <div className="mt-2 flex items-center justify-between">
+      <TradeChart coin={post.coin!} entry={entry} mark={mark} side={post.side as "long" | "short"} lev={lev} openedAt={post.createdAt} tp={post.tpPx ? Number(post.tpPx) : null} sl={post.slPx ? Number(post.slPx) : null} />
+      <div className="tfoot">
         {isDemoPost(item)
-          ? <Link href="/how-it-works#demo" className="verify">Demo · simulated at live Hyperliquid prices</Link>
-          : <a href={explorerUrl(author?.address)} target="_blank" rel="noreferrer" className="verify real"><Icon d={I.shield} size={12} />Verified on Hyperliquid ↗</a>}
+          ? <Link href="/how-it-works#demo" className="verify">Demo · live prices</Link>
+          : <a href={explorerUrl(author?.address)} target="_blank" rel="noreferrer" className="verify real"><Icon d={I.shield} size={12} />Verified ↗</a>}
+        {(post.tpPx || post.slPx) && <span className="mono">{post.tpPx ? `TP ${fmtPrice(post.tpPx)}` : ""}{post.tpPx && post.slPx ? " · " : ""}{post.slPx ? `SL ${fmtPrice(post.slPx)}` : ""}</span>}
+        {camps > 0 && <span><b>{item.copyCount}</b> copied · <b>{item.fadeCount}</b> faded</span>}
       </div>
-      {camps >= 3 ? (
-        <div className="camps"><span><b>{item.copyCount} copied</b></span><span className="faint text-[11px] font-extrabold">vs</span><span><b>{item.fadeCount} faded</b></span></div>
-      ) : (
-        <div className="camps"><span>Be the first to copy or fade this one</span></div>
-      )}
       {post.body && <RichText text={post.body} />}
       <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id} manage={isOpen && !!author && author.id === profile?.id}>
         {canAct && (
