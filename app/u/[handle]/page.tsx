@@ -97,6 +97,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
               <span className="pf-bal-k">{user.isDemo ? "DEMO" : "USDC"}</span><span className="mono">{balance >= 1e5 ? fmtUsd(balance, { compact: true }) : `$${Math.round(balance).toLocaleString("en-US")}`}</span>
               {Math.abs(balUp) >= 0.5 && <span className={`mono pf-bal-up ${balUp >= 0 ? "green" : "red"}`}>{`${balUp >= 0 ? "+" : "-"}$${Math.abs(balUp) >= 1e3 ? (Math.abs(balUp) / 1e3).toFixed(1) + "K" : Math.round(Math.abs(balUp)).toLocaleString("en-US")}`}</span>}
             </button>
+            {(user.role === "owner" || user.role === "admin") && <Link href="/admin" className="pf-admin">Admin</Link>}
             <Link href="/settings" className="iconbtn" aria-label="Settings"><Icon d={I.gear} /></Link>
           </div>
         ) : <span className="w-9" />}

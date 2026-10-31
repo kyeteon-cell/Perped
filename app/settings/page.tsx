@@ -100,6 +100,12 @@ export default function SettingsPage() {
       <div className="srow"><span>Approved maximum</span><span className="chip" style={{ color: "var(--green)", background: "var(--green-soft)" }}>{BUILDER_MAX_FEE_RATE} max</span></div>
       <div className="when px-5 pb-1 pt-1.5 text-[12px] leading-relaxed">Standard {tenthsBpsToLabel(BUILDER_FEE_STANDARD_TENTHS_BPS)} · with a referral code {tenthsBpsToLabel(BUILDER_FEE_REFERRED_TENTHS_BPS)} · top {TOP_TIER_RANK} on the 30-day board {tenthsBpsToLabel(BUILDER_FEE_TOP_TENTHS_BPS)}. Hyperliquid&apos;s own fee is separate.</div>
 
+      {(profile.role === "owner" || profile.role === "admin") && (
+        <>
+          <div className="eyebrow px-5 pb-1.5 pt-4">{profile.role === "owner" ? "Owner" : "Admin"}</div>
+          <Link href="/admin" className="srow" style={{ color: "var(--brand)" }}><span><b>Admin</b><span className="when ml-1.5">founders, waitlist, admins{profile.role === "owner" ? ", payouts, rename" : ""}</span></span><span>→</span></Link>
+        </>
+      )}
       <div className="eyebrow px-5 pb-1.5 pt-4">Referrals</div>
       <Link href="/invite" className="srow" style={{ color: "var(--brand)" }}><span><b>Invite &amp; earn</b><span className="when ml-1.5">your link, rates, earnings and people</span></span><span>→</span></Link>
       <div className="block mx-4 mt-1 rounded-2xl p-4" style={{ background: "var(--brand-soft)" }}>

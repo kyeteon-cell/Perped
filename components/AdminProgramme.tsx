@@ -20,6 +20,9 @@ export function AdminProgramme({ call }: { call: (url: string, init?: RequestIni
   const [p, setP] = useState<P | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [f, setF] = useState(""), [wl, setWl] = useState(""), [ad, setAd] = useState(""), [rf, setRf] = useState(""), [rt, setRt] = useState(""), [batch, setBatch] = useState("");
+  const [pay, setPay] = useState<{ referrers: { handle: string; address: string; owedUsd: number; earnedUsd: number; paidUsd: number }[]; totals: { totalOwedUsd: number } } | null>(null);
+  const loadPay = useCallback(() => call("/api/admin/referrals").then((r) => (r.ok ? r.json() : null)).then((j) => j && !j.error && setPay(j)).catch(() => null), [call]);
+  useEffect(() => { loadPay(); }, [loadPay]);
   const load = useCallback(() => call("/api/admin/programme").then((r) => r.json()).then((j: P) => (j.error ? setMsg(j.error) : setP(j))).catch(() => null), [call]);
   useEffect(() => { load(); }, [load]);
   const act = async (body: Record<string, unknown>, ok: (j: Record<string, unknown>) => string) => {
@@ -73,8 +76,28 @@ export function AdminProgramme({ call }: { call: (url: string, init?: RequestIni
       <section className="inv-card">
         <div className="flex items-center justify-between"><span className="eyebrow">Earnings paid out · this month</span></div>
         <div className="inv-split"><div><small>Invites</small><b className="mono">{usd(p.month.invite)}</b></div><div><small>2nd level</small><b className="mono">{usd(p.month.invite2)}</b></div><div><small>Copies &amp; fades</small><b className="mono">{usd(p.month.creator)}</b></div></div>
-        <p className="when mt-2">Total {usd(p.month.paidOut)} owed out of fees collected. {owner ? "Weekly payout list: /api/admin/referrals." : ""}</p>
+        <p className="when mt-2">Total {usd(p.month.paidOut)} earned by users this month, out of fees collected.</p>
       </section>
+
+      {owner && (
+        <section className="inv-card">
+          <div className="flex items-center justify-between"><span className="eyebrow">Payouts</span><span className="when">owed in total <b style={{ color: "var(--text)" }}>{usd(pay?.totals.totalOwedUsd ?? 0)}</b></span></div>
+          <p className="when mt-1">Each Monday: copy a wallet, send the USDC on Hyperliquid, then tap Paid to record it. They get an alert.</p>
+          {(pay?.referrers ?? []).filter((x) => x.owedUsd >= 0.01).length ? (pay!.referrers.filter((x) => x.owedUsd >= 0.01).map((x) => (
+            <div key={x.handle} className="adm-row">
+              <div className="min-w-0 flex-1"><b className="block truncate text-[14px]">@{x.handle}</b><button className="when mono underline" onClick={() => navigator.clipboard?.writeText(x.address).then(() => setMsg(`Copied @${x.handle}'s wallet`))}>{x.address.slice(0, 6)}…{x.address.slice(-4)} · copy</button></div>
+              <b className="mono green">{usd(x.owedUsd)}</b>
+              <button className="adm-paid" onClick={async () => {
+                const tx = prompt(`Sent ${usd(x.owedUsd)} to @${x.handle}? Paste the transaction hash (optional):`, "");
+                if (tx === null) return;
+                setMsg("Recording…");
+                const j = await call("/api/admin/referrals", { method: "POST", body: JSON.stringify({ handle: x.handle, amountUsd: Number(x.owedUsd.toFixed(2)), txHash: tx || undefined }) }).then((r) => r.json()).catch(() => ({ error: "network" }));
+                setMsg(j.error ? String(j.error) : `Recorded ${usd(x.owedUsd)} to @${x.handle}`); loadPay();
+              }}>Paid</button>
+            </div>
+          ))) : <p className="when mt-2">Nobody is owed anything yet. Earnings start once the builder address is set and invited people trade real money.</p>}
+        </section>
+      )}
 
       <section className="inv-card">
         <div className="flex items-center justify-between"><span className="eyebrow">Admins</span><span className="when">{owner ? "only you can change these" : "set by the owner"}</span></div>

@@ -135,3 +135,16 @@ export async function renameUser(fromHandle: string, toHandle: string, opts: { b
   await db.insert(schema.handleRedirects).values({ oldHandle: old, userId: u.id }).onConflictDoUpdate({ target: schema.handleRedirects.oldHandle, set: { userId: u.id } });
   return { ok: true, from: old, to, moved } as const;
 }
+
+/** Monday: tell everyone who earned in the last 7 days how much, split into invites and their own trades. */
+export async function weeklyEarningsAlert() {
+  const since = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+  const rows = (await db.execute(sql`select referrer_id as id, coalesce(sum(share_usd) filter (where kind in ('invite','invite2')),0)::float as inv,
+      coalesce(sum(share_usd) filter (where kind = 'creator'),0)::float as cr from referral_earnings where day >= ${since} group by referrer_id having sum(share_usd) >= 0.01`)) as unknown as { id: string; inv: number; cr: number }[];
+  const $ = (n: number) => `$${n.toFixed(2)}`;
+  for (const r of rows) {
+    const parts = [r.inv >= 0.01 ? `${$(r.inv)} from invites` : "", r.cr >= 0.01 ? `${$(r.cr)} from your trades` : ""].filter(Boolean).join(" and ");
+    await notify(r.id, "earnings", `You earned ${$(r.inv + r.cr)} this week`, `${parts}. Paid in USDC this week.`, "/invite").catch(() => null);
+  }
+  return rows.length;
+}

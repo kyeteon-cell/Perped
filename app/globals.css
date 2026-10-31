@@ -1375,3 +1375,6 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .adm-st { font-size: 10px; font-weight: 900; letter-spacing: .06em; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
 .adm-st.ok { background: var(--green-soft); color: var(--green); } .adm-st.warn { background: color-mix(in srgb, #f2b63a 20%, transparent); color: var(--gold); } .adm-st.bad { background: var(--red-soft); color: var(--red); }
 .adm-row .gold { color: var(--gold); }
+
+.pf-admin { height: 36px; padding: 0 12px; border-radius: 999px; display: inline-flex; align-items: center; font-size: 12px; font-weight: 900; letter-spacing: .04em; color: #2a1c00; background: linear-gradient(180deg, #ffe3a3, #f2b63a 55%, #c98a05); text-decoration: none; }
+.adm-paid { border: 0; border-radius: 10px; padding: 7px 12px; font: inherit; font-weight: 900; font-size: 12px; background: var(--text); color: var(--bg); cursor: pointer; }
