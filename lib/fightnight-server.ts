@@ -15,7 +15,7 @@ export async function fightNightKickoff() {
   const claimed = (await db.execute(sql`insert into schema_meta (key, value) values (${key}, 'sent') on conflict (key) do nothing returning key`)) as unknown as unknown[];
   if (!Array.from(claimed as Iterable<unknown>).length) return 0;
   const title = "Fight Night is LIVE";
-  const body = "For the next hour every battle you start pays double XP. Get in the Arena.";
+  const body = "For the next hour every fade you start pays double XP. Get in the Arena.";
   const active = (await db.execute(sql`
     select distinct u.id from users u
     where not u.is_bot and (u.created_at > now() - interval '14 days'
@@ -26,6 +26,6 @@ export async function fightNightKickoff() {
   const subs = (await db.execute(sql`select distinct user_id from push_subs`)) as unknown as { user_id: string }[];
   const pushIds = Array.from(subs as Iterable<{ user_id: string }>).map((r) => r.user_id);
   if (pushIds.length) await pushTo(pushIds, { title, body, href: "/arena", tag: "fightnight" });
-  await systemPost("fightnight", "Fight Night is live. Every battle started in the next hour pays double XP.", { endsAt: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15)).toISOString() });
+  await systemPost("fightnight", "Fight Night is live. Every fade started in the next hour pays double XP.", { endsAt: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15)).toISOString() });
   return ids.length;
 }

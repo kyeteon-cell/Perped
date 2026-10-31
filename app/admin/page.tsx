@@ -56,7 +56,7 @@ export default function Admin() {
       <div className="adm-grid mt-4">{tiles.map(([k, v, s]) => <div key={k} className="adm-tile"><small>{k}</small><b className="mono">{v}</b>{s && <span>{s}</span>}</div>)}</div>
       <h2 className="mt-6 text-[15px] font-extrabold">Funnel · people who joined in the last 7 days</h2>
       <div className="adm-funnel mt-2">
-        {([["Visited", m.events.visitors_week, m.events.visitors_week], ["Finished the intro", m.events.intro_week, m.events.visitors_week], ["Joined", f.cohort, m.events.visitors_week], ["Made a trade", f.traded, f.cohort], ["Got into a battle", f.battled, f.cohort], ["Came back the next day", f.returned, f.cohort]] as [string, number, number][]).map(([k, n, of]) => (
+        {([["Visited", m.events.visitors_week, m.events.visitors_week], ["Finished the intro", m.events.intro_week, m.events.visitors_week], ["Joined", f.cohort, m.events.visitors_week], ["Made a trade", f.traded, f.cohort], ["Got into a fade", f.battled, f.cohort], ["Came back the next day", f.returned, f.cohort]] as [string, number, number][]).map(([k, n, of]) => (
           <div key={k} className="adm-step"><span>{k}</span><b className="mono">{n}</b><em>{pct(n, of)}</em><i style={{ width: of ? `${Math.min(100, (n / of) * 100)}%` : "0%" }} /></div>
         ))}
       </div>

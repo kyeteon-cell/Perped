@@ -21,7 +21,7 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
   },
   {
     k: "fade", eyebrow: "2 · Copy or fade", title: "Back them or take the other side",
-    body: ["Swipe right to copy. Swipe left, or tap Quick fade, to bet against them.", "Quick fade only asks for your size. It matches their leverage, flips the side, adds a stop loss and drops you straight into the battle."],
+    body: ["Swipe right to copy. Swipe left, or tap Quick fade, to bet against them.", "Quick fade only asks for your size. It matches their leverage, flips the side, adds a stop loss and drops you straight into the fade."],
     mock: (
       <div className="im-card">
         <div className="im-swipe"><span className="im-sw copy">Copy →</span><span className="im-sw fade">← Fade</span></div>
@@ -30,7 +30,7 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
     ),
   },
   {
-    k: "battle", eyebrow: "3 · Battles", title: "Every fade is a head-to-head",
+    k: "battle", eyebrow: "3 · Fades", title: "Every fade is a head-to-head",
     body: ["Higher ROI when both close wins. Close first and your ROI is banked: they have to beat it. Get liquidated and you lose on the spot.", "Health bars run from your entry to your stop loss (or liquidation if you have none). Under 40% they start to bleed."],
     mock: (
       <div className="im-card">
@@ -52,7 +52,7 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
   },
   {
     k: "rank", eyebrow: "5 · Ranks", title: "Earn XP. Lose it too.",
-    body: ["Wins, calls and battles earn XP and ranks. From Knife Catcher up, losses cost XP, so ranks can be lost.", "Beat someone on a 5+ win streak and you claim their bounty. Fight the same trader three times and you’re rivals. Fight Night is 9pm Bangkok, every night."],
+    body: ["Wins, calls and fades earn XP and ranks. From Knife Catcher up, losses cost XP, so ranks can be lost.", "Beat someone on a 5+ win streak and you claim their bounty. Fight the same trader three times and you’re rivals. Fight Night is 9pm Bangkok, every night."],
     mock: (
       <div className="im-card">
         <div className="im-ranks">{[1, 3, 5, 7, 9].map((l) => <img key={l} src={`/api/share-bg/rank-${l}`} alt="" />)}</div>

@@ -87,7 +87,7 @@ export function MarketTape({ coin, traders, lens, setLens, followingAny, mid, se
                   <Link href={`/trade?copy=${t.postId}`} className="copy">Copy</Link>
                   <Link href={`/trade?fade=${t.postId}`} className="fade">Fade</Link>
                   <Link href={`/post/${t.postId}`} className="chip">Thread</Link>
-                  {t.fadedFromId && <Link href={`/battle/${t.postId}`} className="chip">Battle</Link>}
+                  {t.fadedFromId && <Link href={`/battle/${t.postId}`} className="chip">Fade</Link>}
                 </div>
               )}
             </div>

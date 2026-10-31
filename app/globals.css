@@ -1292,3 +1292,11 @@ body { letter-spacing: -.005em; }
 @media (prefers-reduced-motion: reduce) { .avring.lead { animation: none; } }
 .share-toast { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 60; background: var(--ink); color: var(--ink-fg); font-weight: 800; font-size: 13px; padding: 8px 14px; border-radius: 999px; box-shadow: var(--shadow-lg); animation: rise .3s var(--ease) both; }
 .bshare-prev img { width: 100%; border-radius: 18px; display: block; box-shadow: var(--shadow-lg); }
+
+/* Profile record line: fades W–L, win %, rank and XP progress in one tappable row. */
+.recline { display: grid; gap: 7px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); color: var(--text); box-shadow: 0 1px 2px rgba(15,16,18,.04), 0 10px 26px -18px rgba(15,16,18,.25); transition: transform .12s; }
+.recline:active { transform: scale(.985); }
+.recline-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; font-weight: 800; }
+.recline-top em { font-style: normal; color: var(--muted); font-weight: 700; }
+.recline-rank { color: var(--text); } .recline-rank.lv3 { color: var(--blue); } .recline-rank.lv4 { color: var(--violet); } .recline-rank.lv5 { color: var(--green); } .recline-rank.lv6 { color: var(--red); } .recline-rank.lv7, .recline-rank.lv8 { color: var(--gold); }
+.recline-sub { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--muted); }

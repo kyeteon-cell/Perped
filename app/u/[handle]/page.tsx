@@ -9,7 +9,7 @@ import { DepositSheet } from "@/components/DepositSheet";
 import { ChallengeSheet } from "@/components/ChallengeSheet";
 import { PerformanceCard } from "@/components/Performance";
 import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/components/ui";
-import { RankCard } from "@/components/RankCard";
+import { RankCard, RecordLine } from "@/components/RankCard";
 import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
 import { FollowButton } from "@/components/FollowButton";
 import { ActivityFeed } from "@/components/ActivityFeed";
@@ -106,6 +106,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           </div>
         </div>
         {user.bio && <p className="mt-3.5">{user.bio}</p>}
+        <RecordLine xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} />
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           {isMe ? <Link href="/compose" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Write a post</Link> : <FollowButton handle={user.handle} />}
           {isMe ? <Link href="/settings" className="btn" style={{ padding: 12, fontSize: 14 }}>Edit profile</Link> : <button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={() => (authenticated ? setChallenge(true) : login())}><span className="gl"><Glyph n="swords" />Challenge</span></button>}
@@ -116,7 +117,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         <section className="block pb-2">
           {(data.form?.length ?? 0) > 0 && (
             <div className="form-row">
-              <span className="eyebrow">Last {data.form!.length} battles</span>
+              <span className="eyebrow">Last {data.form!.length} fades</span>
               <div className="form-dots">{[...data.form!].reverse().map((f, i) => <Link key={i} href={f.href} className={`fd ${f.r}`} aria-label={f.r === "W" ? "Won" : f.r === "L" ? "Lost" : "Draw"}>{f.r}</Link>)}</div>
             </div>
           )}
@@ -140,7 +141,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
               {(s?.battlesWon ?? 0) + (s?.battlesLost ?? 0) > 0 && <span className="mono when"><span className="green">{s?.battlesWon ?? 0}W</span>–<span className="red">{s?.battlesLost ?? 0}L</span></span>}
             </span>
           </div>
-          {isMe && showingTop && <div className="when mt-0.5 text-[11px]">Showing your best results. Pin your own picks from any trade or battle.</div>}
+          {isMe && showingTop && <div className="when mt-0.5 text-[11px]">Showing your best results. Pin your own picks from any trade or fade.</div>}
           <div className="hstrip mt-3" style={{ margin: "12px -20px 0", padding: "0 20px 6px" }}>
             {pins.map((p) => <PinCard key={p.post.id} item={p} roi={roiOf(p)} />)}
             {isMe && <button className="hcard grid place-items-center text-center" style={{ background: "transparent", border: "1px dashed var(--line)", minWidth: 120 }} onClick={() => { setTab("trades"); setTradeTab("closed"); }}><div><Icon d={I.plus} /><div className="when mt-1 text-[12px]">Pin a trade</div></div></button>}

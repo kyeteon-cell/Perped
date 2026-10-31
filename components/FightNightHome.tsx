@@ -36,7 +36,7 @@ export function FightNightHome() {
         <span className="fnh-x">2× XP</span>
         <span className="fnh-t">{phase.label}</span>
       </div>
-      {!phase.live && <p className="fnh-p">From 9pm every battle you start pays double XP. Line up your fades.</p>}
+      {!phase.live && <p className="fnh-p">From 9pm every fade you start pays double XP. Line up your fades.</p>}
       {phase.live && (
         <div className="fnh-list">
           {top.map((b) => (
@@ -49,7 +49,7 @@ export function FightNightHome() {
               <span className="ml-auto flex items-center gap-1 when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)} {Math.max(b.faderLeg.leverage, b.targetLeg.leverage)}×</span>
             </Link>
           ))}
-          {!top.length && <p className="fnh-p">No battles yet. Start the first one: fade a trade in the feed.</p>}
+          {!top.length && <p className="fnh-p">No fades yet. Start the first one: fade a trade in the feed.</p>}
         </div>
       )}
       <Link href="/arena" className="fnh-cta">{phase.live ? "Enter the Arena →" : "See the Arena →"}</Link>

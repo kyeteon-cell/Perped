@@ -131,11 +131,11 @@ export async function settleBattles(mids: Record<string, string | number>) {
     const fmt = (r: number) => `${r >= 0 ? "+" : "−"}${Math.abs(r).toFixed(1)}%`;
     const line = `${fu?.handle} ${fmt(fr.roi)} vs ${tu?.handle} ${fmt(tr.roi)}${fn ? " · Fight Night 2× XP" : ""}`;
     if (!winnerId) {
-      for (const id of [b.faderId, b.targetId]) await notify(id, "battle", `Battle drawn on ${b.coin}`, `${line} · +${XP.battleDraw} XP`, href);
+      for (const id of [b.faderId, b.targetId]) await notify(id, "battle", `Fade drawn on ${b.coin}`, `${line} · +${XP.battleDraw} XP`, href);
     } else {
       const wh = winnerId === b.faderId ? fu?.handle : tu?.handle, lh = winnerId === b.faderId ? tu?.handle : fu?.handle;
       const wx = winnerId === b.faderId ? xpF : xpT, lx = winnerId === b.faderId ? xpT : xpF;
-      await notify(winnerId, "battle", `You won the battle vs ${lh}`, `${b.coin} · ${line} · +${wx} XP${reason === "liquidation" ? " · they got liquidated" : ""} · tap to pin it to your profile`, href);
+      await notify(winnerId, "battle", `You won the fade vs ${lh}`, `${b.coin} · ${line} · +${wx} XP${reason === "liquidation" ? " · they got liquidated" : ""} · tap to pin it to your profile`, href);
       await notify(loserId!, "battle", `You got perped by ${wh}`, `${b.coin} · ${line}${lx > 0 ? ` · +${lx} XP for showing up` : lx < 0 ? ` · ${lx} XP (losses cost at your rank)` : " · liquidated, no XP"}`, href);
       const lastClose = Math.max(...[f.closedAt, t.closedAt].filter(Boolean).map((d) => new Date(d as Date).getTime()), 0);
       const fresh = reason === "timeout" || Date.now() - lastClose < 6 * 60 * 60 * 1000;

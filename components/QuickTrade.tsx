@@ -34,7 +34,7 @@ export function QuickTrade({ item, mode, onClose, lock = false, title }: { item:
           <CoinMark coin={post.coin!} size="sm" />
         </div>
         <TradeTicket key={mode} seed={seed} compact quick onDone={onClose} />
-        <p className="faint px-5 pb-2 text-center text-[11px]">{mode === "fade" ? `Same ${post.leverage}× leverage, opposite side, stop loss ${(autoStopDist(post.leverage ?? 1) * 100).toFixed(1)}% away (−${Math.round(autoStopDist(post.leverage ?? 1) * (post.leverage ?? 1) * 100)}% of your margin). You land straight in the battle. ` : "Want limit orders, TP/SL or a note? "}<a href={`/trade?${mode}=${post.id}`} className="underline">Open the full ticket</a></p>
+        <p className="faint px-5 pb-2 text-center text-[11px]">{mode === "fade" ? `Same ${post.leverage}× leverage, opposite side, stop loss ${(autoStopDist(post.leverage ?? 1) * 100).toFixed(1)}% away (−${Math.round(autoStopDist(post.leverage ?? 1) * (post.leverage ?? 1) * 100)}% of your margin). You land straight in the fade. ` : "Want limit orders, TP/SL or a note? "}<a href={`/trade?${mode}=${post.id}`} className="underline">Open the full ticket</a></p>
     </Sheet>
   );
 }

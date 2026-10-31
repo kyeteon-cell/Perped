@@ -73,7 +73,7 @@ export default function RivalryPage({ params }: { params: Promise<{ a: string; b
           <div className="stat"><small>{A.handle} made</small><div className={`v mono ${data.pnlA >= 0 ? "green" : "red"}`}>{fmtUsd(data.pnlA, { sign: true })}</div></div>
           <div className="stat"><small>{B.handle} made</small><div className={`v mono ${data.pnlB >= 0 ? "green" : "red"}`}>{fmtUsd(data.pnlB, { sign: true })}</div></div>
         </div>
-        <p className="faint mt-2 text-[11px]">P&amp;L across the battles between them. Duels are scored on direction, not size.</p>
+        <p className="faint mt-2 text-[11px]">P&amp;L across the fades between them. Duels are scored on direction, not size.</p>
       </section>
 
       <section className="block">

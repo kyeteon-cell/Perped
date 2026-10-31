@@ -43,8 +43,8 @@ export function lossPenalty(level: number, kind: "battle" | "duel" | "liquidatio
 }
 
 export const XP_REASON_LABEL: Record<string, string> = {
-  battle_win: "Won a battle", battle_loss: "Lost a battle", battle_draw: "Drew a battle",
+  battle_win: "Won a fade", battle_loss: "Lost a fade", battle_draw: "Drew a fade",
   duel_win: "Won a duel", duel_loss: "Lost a duel",
   call_hit: "Call hit", call_miss: "Call missed",
-  trade_win: "Profitable trade", trade_loss: "Losing trade", liquidation: "Liquidated", season_start: "Season start", rival_lead: "Took the rivalry lead", battle_reopened: "Battle reopened (still live)", streak_bounty: "Claimed a streak bounty", rival_sweep: "Rivalry sweep",
+  trade_win: "Profitable trade", trade_loss: "Losing trade", liquidation: "Liquidated", season_start: "Season start", rival_lead: "Took the rivalry lead", battle_reopened: "Fade reopened (still live)", streak_bounty: "Claimed a streak bounty", rival_sweep: "Rivalry sweep",
 };

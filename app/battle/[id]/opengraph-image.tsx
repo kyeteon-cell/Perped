@@ -7,7 +7,7 @@ import { pnlForPosition } from "@/lib/format";
 export const runtime = "nodejs";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "A battle on Perped";
+export const alt = "A fade on Perped";
 
 type P = typeof schema.posts.$inferSelect;
 const roiOf = (p: P, mid: number) => {
@@ -56,7 +56,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", fontSize: 48, fontWeight: 900, letterSpacing: -1 }}>perped.</div>
         <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 28, fontWeight: 800, letterSpacing: 3, color: "#c9ccd1" }}>
-          <div style={{ display: "flex", width: 14, height: 14, borderRadius: 99, background: status === "SETTLED" ? "#6e727a" : GOLD }} />{`BATTLE · ${coin} · ${status}`}
+          <div style={{ display: "flex", width: 14, height: 14, borderRadius: 99, background: status === "SETTLED" ? "#6e727a" : GOLD }} />{`FADE · ${coin} · ${status}`}
         </div>
       </div>
       <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "space-between", marginTop: 18 }}>

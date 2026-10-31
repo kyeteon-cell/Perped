@@ -64,7 +64,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ handle: string
       const my = Number(b.faderId === u.id ? b.faderRoi : b.targetRoi), their = Number(b.faderId === u.id ? b.targetRoi : b.faderRoi);
       items.push({ type: "battle", at: b.settledAt.toISOString(), coin: b.coin, won, who: opp, href, text: won === true ? `Perped ${opp} on ${b.coin} · ${my >= 0 ? "+" : ""}${my.toFixed(1)}% vs ${their >= 0 ? "+" : ""}${their.toFixed(1)}%` : won === false ? `Perped by ${opp} on ${b.coin} · ${my >= 0 ? "+" : ""}${my.toFixed(1)}% vs ${their >= 0 ? "+" : ""}${their.toFixed(1)}%` : `Drew with ${opp} on ${b.coin}` });
     } else {
-      items.push({ type: "battle", at: b.createdAt.toISOString(), coin: b.coin, won: null, who: opp, href, text: `Battle live vs ${opp} on ${b.coin}` });
+      items.push({ type: "battle", at: b.createdAt.toISOString(), coin: b.coin, won: null, who: opp, href, text: `Fade live vs ${opp} on ${b.coin}` });
     }
   }
 

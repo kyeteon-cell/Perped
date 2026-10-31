@@ -105,7 +105,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="fade-in pb-8" data-tint="violet">
-      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Vendetta" : "Battle"}</div><button className="iconbtn" aria-label="Share this battle" onClick={() => setSharing(true)}><Icon d={I.share} /></button></header>
+      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Vendetta" : "Fade"}</div><button className="iconbtn" aria-label="Share this fade" onClick={() => setSharing(true)}><Icon d={I.share} /></button></header>
       {sharing && (() => {
         const fBank = fade.status === "closed", bank = fBank ? a.roi : b.roi, now = fBank ? b.roi : a.roi;
         const banker = fBank ? fader.user.handle : tu.user.handle, chaser = fBank ? tu.user.handle : fader.user.handle;
@@ -123,7 +123,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         }} />;
       })()}
       {shared && <div className="share-toast">{shared}</div>}
-      {live && isFightNight(fade.createdAt) && <div className="fn-banner"><span className="gl"><Glyph n="glove" />Fight Night battle · winner earns 2× XP</span></div>}
+      {live && isFightNight(fade.createdAt) && <div className="fn-banner"><span className="gl"><Glyph n="glove" />Fight Night fade · winner earns 2× XP</span></div>}
       {nemesis && (
         <div className="nem-banner">
           <span className="nem-tag gl"><Glyph n="skull" />Vendetta</span>
@@ -194,7 +194,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
 
       {(live || mid > 0) && <BattleArena coin={coin} live={mid || Number(fade.exitPx ?? fade.entryPx)} a={fighter(fader.user, fade, a)} b={fighter(tu.user, target, b)} />}
 
-      <div className="px-5 py-2 text-right"><Link href="/how-it-works#battles" className="when underline">How a battle is won →</Link></div>
+      <div className="px-5 py-2 text-right"><Link href="/how-it-works#battles" className="when underline">How a fade is won →</Link></div>
 
       <section className="block">
         <div className="flex items-center justify-between"><span className="eyebrow">Head to head</span><span className="when">{record.fader + record.target ? `record ${record.fader}–${record.target}` : "first meeting"}</span></div>

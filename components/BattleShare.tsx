@@ -144,10 +144,10 @@ export function BattleShare({ data, onClose }: { data: BattleShareData; onClose:
   const copy = async () => { try { await navigator.clipboard.writeText(frozen.url); setMsg("Link copied"); } catch {} };
 
   return (
-    <Sheet label="Share this battle" onClose={onClose}>
+    <Sheet label="Share this fade" onClose={onClose}>
       <div className="px-5 pb-6">
-        <div className="text-lg font-extrabold" data-sheet-handle>Share this battle</div>
-        <div className="bshare-prev mt-3">{png ? <img src={png} alt="Battle scorecard" /> : <div className="skel" style={{ aspectRatio: "4 / 5", borderRadius: 18 }} />}</div>
+        <div className="text-lg font-extrabold" data-sheet-handle>Share this fade</div>
+        <div className="bshare-prev mt-3">{png ? <img src={png} alt="Fade scorecard" /> : <div className="skel" style={{ aspectRatio: "4 / 5", borderRadius: 18 }} />}</div>
         <div className="eyebrow mt-4">Background</div>
         <div className="themes mt-2">
           {BGS.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === bg ? "on" : ""}`} onClick={() => setBg(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(/api/share-bg/${t.key})` }} /><span>{t.name}</span></button>)}

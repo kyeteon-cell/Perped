@@ -28,12 +28,12 @@ export function FirstBattle({ rows }: { rows: FeedRow[] }) {
   const mySide = p.side === "long" ? "short" : "long";
   return (
     <div className="firstb">
-      <div className="firstb-top"><span className="firstb-tag gl"><Glyph n="swords" />Your first battle</span><button className="when" onClick={done}>Not now</button></div>
+      <div className="firstb-top"><span className="firstb-tag gl"><Glyph n="swords" />Your first fade</span><button className="when" onClick={done}>Not now</button></div>
       <div className="firstb-row">
         <Avatar handle={a.handle} url={a.avatarUrl} size={40} link={false} />
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-extrabold"><span className="truncate">{a.handle}</span> is <span className={p.side === "long" ? "green" : "red"}>{p.side === "long" ? "long" : "short"}</span> {ticker(p.coin!)} {p.leverage}×</div>
-          <div className="when">Think they&rsquo;re wrong? Go <b className={mySide === "long" ? "green" : "red"}>{mySide}</b> with demo money and it&rsquo;s a battle.</div>
+          <div className="when">Think they&rsquo;re wrong? Go <b className={mySide === "long" ? "green" : "red"}>{mySide}</b> with demo money and it&rsquo;s a head-to-head.</div>
         </div>
         <CoinMark coin={p.coin!} size="sm" />
       </div>

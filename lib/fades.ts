@@ -17,7 +17,7 @@ export async function fadeBlockReason(userId: string, srcPostId: number, mine?: 
   if (already) return "you've already faded this trade";
   if (src.fadedFromId) {
     const [orig] = await db.select({ userId: schema.posts.userId }).from(schema.posts).where(eq(schema.posts.id, src.fadedFromId)).limit(1);
-    if (orig?.userId === userId) return "they faded you on this trade, so you're already in a battle with them";
+    if (orig?.userId === userId) return "they faded you on this trade, so you're already in a fade with them";
   }
   return null;
 }

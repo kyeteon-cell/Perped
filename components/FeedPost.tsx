@@ -314,7 +314,7 @@ function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
       <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id} manage={isOpen && !!author && author.id === profile?.id}>
         {canAct && (
           <>
-            {canFade ? <button className="fade ml-auto" onClick={() => setQuick("fade")}><span className="gl"><Glyph n="bolt" />Quick fade</span></button> : item.noFade ? <span className="when ml-auto text-[11px]">already in a battle</span> : null}
+            {canFade ? <button className="fade ml-auto" onClick={() => setQuick("fade")}><span className="gl"><Glyph n="bolt" />Quick fade</span></button> : item.noFade ? <span className="when ml-auto text-[11px]">already in a fade</span> : null}
             {canCopy && <button className={canFade || item.noFade ? "copy" : "copy ml-auto"} onClick={() => setQuick("copy")}>Copy</button>}
           </>
         )}
@@ -329,7 +329,7 @@ function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
 /** Faceoff strip on a fade: the original trader vs the fader, live ROI each, who's ahead, tap to watch. */
 function BattleHead({ item, mark, myRoi }: { item: FeedRow; mark: number; myRoi: number }) {
   const { post, author, src } = item;
-  if (!src || !author) return <Link href={`/battle/${post.id}`} className="kind battle-link"><Icon d={I.bolt} size={13} />Battle · watch →</Link>;
+  if (!src || !author) return <Link href={`/battle/${post.id}`} className="kind battle-link"><Icon d={I.bolt} size={13} />Fade · watch →</Link>;
   const entry = Number(src.entryPx ?? 0), lev = src.leverage ?? 1;
   const theirMark = src.status === "open" ? mark : Number(src.exitPx ?? entry);
   const theirRoi = entry && src.side ? pnlForPosition(src.side, entry, theirMark, Number(src.size ?? 0)).pct * lev : 0;
@@ -337,7 +337,7 @@ function BattleHead({ item, mark, myRoi }: { item: FeedRow; mark: number; myRoi:
   const share = Math.max(10, Math.min(90, 50 + ((theirRoi - myRoi) / (Math.abs(theirRoi) + Math.abs(myRoi) || 1)) * 50));
   return (
     <Link href={`/battle/${post.id}`} className="bhead" onClick={(e) => e.stopPropagation()}>
-      <div className="bh-top"><span className="bh-tag"><Icon d={I.bolt} size={12} />Battle{src.nemesis && <span className="bh-nem gl"><Glyph n="skull" />Vendetta</span>}</span><span className="bh-watch">{even ? "Dead level" : `${meAhead ? author.handle : src.handle} ahead`} · watch →</span></div>
+      <div className="bh-top"><span className="bh-tag"><Icon d={I.bolt} size={12} />Fade{src.nemesis && <span className="bh-nem gl"><Glyph n="skull" />Vendetta</span>}</span><span className="bh-watch">{even ? "Dead level" : `${meAhead ? author.handle : src.handle} ahead`} · watch →</span></div>
       <div className="bh-row">
         <div className={`bh-f ${!meAhead && !even ? "lead" : ""}`}>
           <span className={`bh-av ${src.side ?? "long"}`}><Avatar handle={src.handle} url={src.avatarUrl} size={30} link={false} /></span>
@@ -479,14 +479,14 @@ function SystemPost({ item, onChanged }: Props) {
     const wr = Number(meta.winnerRoi ?? 0), lr = Number(meta.loserRoi ?? 0);
     return (
       <article className="post duel">
-        <div className="duel-head"><span className="lbl gold"><Glyph n="bolt" /> Battle settled</span><span className="when">{post.coin ?? ""} · {timeAgo(post.createdAt)} ago</span></div>
+        <div className="duel-head"><span className="lbl gold"><Glyph n="bolt" /> Fade settled</span><span className="when">{post.coin ?? ""} · {timeAgo(post.createdAt)} ago</span></div>
         <div className="duel-body">
           <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} link={false} /></Link><div className="name mt-1.5">{winner}</div><span className="mono green text-[13px] font-bold">{fmtPct(wr, 1)}</span></div>
           <div className="duel-mid"><div className="mono muted text-xs">perped</div><div className="duel-bar"><i style={{ width: "100%" }} /></div><div className="when">{meta.reason === "liquidation" ? "by liquidation" : `${fmtPct(Math.abs(wr - lr), 1)} gap`}</div></div>
           <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} link={false} /></Link><div className="name mt-1.5">{loser}</div><span className="mono red text-[13px] font-bold">{fmtPct(lr, 1)}</span></div>
         </div>
         <Acts item={item} onChanged={onChanged}>
-          {typeof meta.faderPostId === "number" && <Link href={`/battle/${meta.faderPostId}`} className="chip ml-auto">See the battle</Link>}
+          {typeof meta.faderPostId === "number" && <Link href={`/battle/${meta.faderPostId}`} className="chip ml-auto">See the fade</Link>}
         </Acts>
       </article>
     );

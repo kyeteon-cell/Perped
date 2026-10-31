@@ -174,7 +174,7 @@ export default function ArenaPage() {
       </div>
       <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
         <h1 className="h1" style={{ color: "#fff" }}>Arena</h1>
-        <div className="text-[12px]" style={{ color: "rgba(255,255,255,.85)" }}>Fade someone and it&rsquo;s a battle. Call them out and it&rsquo;s a duel. Winner takes the XP.</div>
+        <div className="text-[12px]" style={{ color: "rgba(255,255,255,.85)" }}>Fade someone and it&rsquo;s on. Call them out and it&rsquo;s a duel. Winner takes the XP.</div>
         <div className="mt-3 flex flex-wrap items-center gap-2"><button className="arena-cta" onClick={callOut}><span className="gl"><Glyph n="swords" />Call someone out</span></button><FightNight /></div>
       </header>
 
@@ -245,7 +245,7 @@ export default function ArenaPage() {
         </section>
       )}
 
-      <div className="px-5 py-2 text-center"><Link href="/how-it-works#battles" className="when underline">How battles and duels are scored →</Link></div>
+      <div className="px-5 py-2 text-center"><Link href="/how-it-works#battles" className="when underline">How fades and duels are scored →</Link></div>
 
       {picking && <CallOut rivals={(me?.rivals ?? []).map((r) => r.user.handle)} onClose={() => setPicking(false)} onPick={(h) => { setPicking(false); setTarget(h); }} />}
       {target && <ChallengeSheet handle={target} onClose={() => setTarget(null)} />}
@@ -275,11 +275,11 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
     { k: "blood", icon: <Glyph n="drop" />, short: "Bloodbath", n: blood.length + rekt.length },
   ];
   const flames = (n: number) => <span className="flames">{Array.from({ length: n }, (_, i) => <Glyph key={i} n="flame" tone="gold" />)}</span>;
-  const tag = (b: ArenaBattle) => mine(b) ? "your battle" : rivals.has(b.fader.handle) ? `your rival ${b.fader.handle}` : rivals.has(b.target.handle) ? `your rival ${b.target.handle}` : follow.has(b.fader.handle) ? `you follow ${b.fader.handle}` : follow.has(b.target.handle) ? `you follow ${b.target.handle}` : "";
+  const tag = (b: ArenaBattle) => mine(b) ? "your fade" : rivals.has(b.fader.handle) ? `your rival ${b.fader.handle}` : rivals.has(b.target.handle) ? `your rival ${b.target.handle}` : follow.has(b.fader.handle) ? `you follow ${b.fader.handle}` : follow.has(b.target.handle) ? `you follow ${b.target.handle}` : "";
   const list = tab === "all" ? rows : tab === "nemesis" ? nem : tab === "high" ? high : tab === "following" ? fol : blood;
   return (
     <section className="block">
-      <div className="flex items-center justify-between"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Live battles</span><span className="when">{rows.length} live</span></div>
+      <div className="flex items-center justify-between"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Live fades</span><span className="when">{rows.length} live</span></div>
       {/* Every tab in one bar, no scrolling: levels of heat from everything to the bloodbath. */}
       <div className="alevels mt-3" role="tablist">
         {tabs.map((t) => <button key={t.k} role="tab" aria-selected={tab === t.k} className={`alv lv-${t.k} ${tab === t.k ? "on" : ""}`} onClick={() => setTab(t.k)}><span className="alv-ic">{t.icon}</span><span className="alv-l">{t.short}</span><span className="alv-n mono">{t.n}</span></button>)}
@@ -312,12 +312,12 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
         {!list.length && !(tab === "blood" && rekt.length) && (
           tab === "following" ? (
             <div className="aempty">
-              <p className="muted text-sm">Follow traders to fill this tab. Their battles show up here the moment they fade or get faded.</p>
+              <p className="muted text-sm">Follow traders to fill this tab. Their fades show up here the moment they fade or get faded.</p>
               <div className="mt-2 flex flex-col gap-2">{data.streaks.slice(0, 3).map((s) => (
                 <div key={s.user.id} className="flex items-center gap-2.5"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={30} /><span className="flex-1 truncate text-[14px] font-bold">{s.user.handle}<span className="when ml-1.5 gl"><Glyph n="flame" tone="gold" />{s.streak} streak</span></span><FollowButton handle={s.user.handle} compact /></div>
               ))}</div>
             </div>
-          ) : <p className="muted text-sm">{tab === "high" ? "No high-stakes battles right now. Nobody's above 20× or near liquidation." : tab === "blood" ? "No bloodbaths right now. Everyone's still standing." : tab === "nemesis" ? "No vendettas running right now. A vendetta is a feud between two traders who have fought each other more than anyone else, or where one called the other out." : "No battles running. Fade a trade in the feed to start one."}</p>
+          ) : <p className="muted text-sm">{tab === "high" ? "No high-stakes fades right now. Nobody's above 20× or near liquidation." : tab === "blood" ? "No bloodbaths right now. Everyone's still standing." : tab === "nemesis" ? "No vendettas running right now. A vendetta is a feud between two traders who have fought each other more than anyone else, or where one called the other out." : "No fades running. Fade a trade in the feed to start one."}</p>
         )}
       </div>
     </section>

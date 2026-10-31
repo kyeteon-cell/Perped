@@ -43,7 +43,7 @@ function cardData(item: FeedRow, mid?: number, shareUrl?: string): CardData {
     const held = post.closedAt ? Math.max(1, Math.round((new Date(post.closedAt).getTime() - new Date(post.createdAt).getTime()) / 3_600_000)) : 0;
     const battle = (post.meta as { battle?: { won: boolean | null; vs?: string; myRoi: number; theirRoi: number } } | null)?.battle;
     return {
-      kind: open ? "LIVE TRADE" : battle ? (battle.won === true ? "BATTLE WON" : battle.won === false ? "BATTLE LOST" : "BATTLE DRAWN") : "CLOSED TRADE", handle, url, tag, loss: pnl < 0,
+      kind: open ? "LIVE TRADE" : battle ? (battle.won === true ? "FADE WON" : battle.won === false ? "FADE LOST" : "FADE DRAWN") : "CLOSED TRADE", handle, url, tag, loss: pnl < 0,
       title: `${ticker(post.coin!, true)} · ${post.side === "long" ? "Long" : "Short"} ${lev}×`,
       headline: fmtPct(roi, 1),
       sub: `${fmtUsd(pnl, { sign: true })}${open ? " unrealised" : " banked"}`,

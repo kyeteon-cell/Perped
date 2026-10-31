@@ -39,9 +39,9 @@ export function BattleSummary({ battles, size = "md" }: { battles: TradeBattle[]
       </button>
       {open && (
         <span onClick={(e) => e.stopPropagation()}>
-          <Sheet label="Battles on this trade" onClose={() => setOpen(false)}>
+          <Sheet label="Fades on this trade" onClose={() => setOpen(false)}>
             <div className="px-5 pb-6">
-              <div className="text-lg font-extrabold" data-sheet-handle>Battles on this trade</div>
+              <div className="text-lg font-extrabold" data-sheet-handle>Fades on this trade</div>
               <div className="when">{wins.length} won · {losses.length} lost{draws.length ? ` · ${draws.length} drawn` : ""}</div>
               <div className="mt-3 flex flex-col">
                 {battles.map((b) => (

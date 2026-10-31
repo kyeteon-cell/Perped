@@ -31,7 +31,7 @@ export function PushPrompt({ compact = false }: { compact?: boolean }) {
         <b>Don&rsquo;t miss a fade</b>
         {state === "ios-install"
           ? <p>On iPhone: tap <b>Share</b> → <b>Add to Home Screen</b>, open Perped from there, then turn alerts on here.</p>
-          : <p>Get a ping when someone fades you, a rival trades, or a battle turns into a bloodbath.</p>}
+          : <p>Get a ping when someone fades you, a rival trades, or a fade turns into a bloodbath.</p>}
         <div className="mt-2 flex gap-2">
           {state === "off" && <button className="chip on" onClick={enable} disabled={busy}>{busy ? "Turning on…" : "Turn on alerts"}</button>}
           <button className="chip" onClick={close}>Not now</button>
