@@ -882,3 +882,6 @@ body { letter-spacing: -.005em; }
 .ar-ov .ar-dot { right: -4px; }
 .ar-ov.race { left: 6px; right: 14px; top: 26px; bottom: 14px; }
 .ar-ov.race .ar-zero { right: -12px; }
+/* BUY/SELL pill pinned to the left edge at the entry price; level labels move to the right edge */
+.tc-act { left: 4px !important; transform: translateY(-50%) !important; }
+.tc-lv { left: auto !important; right: 4px; }

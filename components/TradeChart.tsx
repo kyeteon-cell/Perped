@@ -95,7 +95,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
           {candles.length > 0 && (
             <>
               {lvls.filter((l) => near(l.p)).map((l) => <span key={l.key} className={`tc-lv ${l.cls}`} style={{ top: pct(l.p) }}>{l.label}</span>)}
-              <span className={`tc-act ${side}`} style={{ left: `${(ex / W) * 100}%`, top: pct(entry) }}>{side === "long" ? "▲ BUY" : "▼ SELL"}</span>
+              <span className={`tc-act ${side}`} style={{ top: pct(entry) }}>{side === "long" ? "▲ BUY" : "▼ SELL"}</span>
               <i className={`tc-dot ${priceUp ? "g" : "r"}`} style={{ top: pct(live) }} />
             </>
           )}
