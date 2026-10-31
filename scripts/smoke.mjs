@@ -10,7 +10,7 @@ mkdirSync("smoke-out", { recursive: true });
 const pages = [
   { path: "/", wait: ".home-banner", name: "home" },
   { path: "/arena", wait: "text=Live battles", name: "arena" },
-  { path: "/markets", wait: "text=BTC", name: "markets" },
+  { path: "/markets", wait: "a.hairline.block", name: "markets" },
   { path: "/intro", wait: ".intro", name: "intro" },
   { path: "/how-it-works", wait: "text=The Arena", name: "how-it-works" },
   { path: "/leaderboard", wait: "main, body", name: "leaderboard" },
