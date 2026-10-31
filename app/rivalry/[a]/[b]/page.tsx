@@ -50,7 +50,7 @@ export default function RivalryPage({ params }: { params: Promise<{ a: string; b
             </Link>
           ))}
         </div>
-        <div className="tug mt-4" style={{ height: 8 }}><i style={{ width: `${(data.aWins / total) * 100}%` }} /></div>
+        <div className="tug neutral mt-4" style={{ height: 8 }}><i style={{ width: `${(data.aWins / total) * 100}%` }} /></div>
         <div className="mt-2 text-center text-[13px]" style={{ color: "rgba(255,255,255,.85)" }}>{lead ? `${lead} leads ${Math.max(data.aWins, data.bWins)}–${Math.min(data.aWins, data.bWins)}` : data.fights ? "All square" : "No fights yet"}{data.draws ? ` · ${data.draws} drawn` : ""}</div>
         {me && them && (
           <div className="mt-4 grid grid-cols-2 gap-2">

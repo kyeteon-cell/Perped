@@ -997,3 +997,7 @@ body { letter-spacing: -.005em; }
   55% { opacity: 1; transform: translateY(24px) scale(.9, 1.05); }
   62%, 100% { opacity: 0; transform: translateY(28px) scale(.7); }
 }
+/* Colour rule: green/red only ever mean buy/sell or profit/loss. Leaders get gold, not green. */
+.aside.lead .av { box-shadow: 0 0 0 2px var(--gold); }
+.avring.lead { border-color: var(--gold); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 18%, transparent); }
+.tug.neutral { background: var(--line); } .tug.neutral i { background: var(--gold); }
