@@ -76,7 +76,7 @@ function FightNight() {
     tick(); const id = setInterval(tick, 30_000); return () => clearInterval(id);
   }, []);
   if (!t) return null;
-  return <span className={`fightnight ${t === "live" ? "on" : ""}`}>{t === "live" ? "🥊 Fight Night · LIVE" : `🥊 Fight Night in ${t}`}</span>;
+  return <Link href="/how-it-works#fight-night" className={`fightnight ${t === "live" ? "on" : ""}`}>{t === "live" ? "🥊 Fight Night · LIVE" : `🥊 Fight Night in ${t}`}</Link>;
 }
 
 /** Sworn rivals meeting again: the series so far and which meeting this is. */

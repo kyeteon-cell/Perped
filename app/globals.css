@@ -1146,3 +1146,6 @@ body { letter-spacing: -.005em; }
 .firstb-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
 .season-bar { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 14%, var(--surface)), var(--surface)); border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line)); font-size: 13px; }
 .season-bar span { color: var(--muted); font-size: 12px; }
+.fightnight { text-decoration: none; display: inline-flex; align-items: center; }
+#fight-night { scroll-margin-top: 80px; }
+#fight-night:target { background: var(--gold-soft); border-radius: 12px; padding: 8px 10px; transition: background 1s; }
