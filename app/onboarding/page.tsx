@@ -10,6 +10,7 @@ import { normaliseReferralCode, referralLink } from "@/lib/fees";
 import { Icon, I } from "@/components/ui";
 import { SignInOptions } from "@/components/SignInOptions";
 import { Intro } from "@/components/Intro";
+import { track } from "@/lib/track";
 
 /**
  * Five steps: welcome/login → handle → how it works → fee approval (skippable) → funded or explore.
@@ -108,7 +109,7 @@ export default function OnboardingPage() {
       {step === 3 && (
         <div className="flex-1 pt-2">
           <div className="px-6"><Progress n={3} /></div>
-          <Intro onDone={() => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} setStep(hasExternalWallet ? 4 : 5); }} doneLabel="Got it" />
+          <Intro onDone={() => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} track("intro_done"); setStep(hasExternalWallet ? 4 : 5); }} doneLabel="Got it" />
         </div>
       )}
 

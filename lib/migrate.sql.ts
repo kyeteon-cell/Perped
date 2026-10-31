@@ -272,4 +272,12 @@ create table if not exists push_subs (
 );
 create unique index if not exists push_subs_endpoint on push_subs (endpoint);
 create index if not exists push_subs_user on push_subs (user_id);
+create table if not exists events (
+  id serial primary key,
+  name text not null,
+  anon text,
+  user_id text,
+  created_at timestamptz not null default now()
+);
+create index if not exists events_name_time on events (name, created_at);
 `;

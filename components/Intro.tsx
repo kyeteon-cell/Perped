@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useSession } from "@/lib/hooks/useSession";
+import { track } from "@/lib/track";
 
 /** The six things to know, one per slide. Each has a tiny live-looking mock so it reads at a glance. */
 const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock: React.ReactNode }[] = [
@@ -73,10 +75,17 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
 /** First visit: the intro as a full-screen overlay, shown once per device. */
 export function IntroOnce() {
   const [show, setShow] = useState(false);
+  const { authenticated, startGuest } = useSession();
   useEffect(() => { try { if (!localStorage.getItem("perped:intro-seen")) setShow(true); } catch {} }, []);
   if (!show) return null;
-  const done = () => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} setShow(false); };
-  return <div className="intro-overlay" role="dialog" aria-label="Welcome to Perped"><Intro onDone={done} /></div>;
+  const done = () => {
+    try { localStorage.setItem("perped:intro-seen", "1"); } catch {}
+    track("intro_done");
+    setShow(false);
+    // Straight into a free demo account so the first trade is one tap away.
+    if (!authenticated) startGuest().catch(() => null);
+  };
+  return <div className="intro-overlay" role="dialog" aria-label="Welcome to Perped"><Intro onDone={done} doneLabel={authenticated ? "Start trading" : "Try it free"} /></div>;
 }
 
 export function Intro({ onDone, doneLabel = "Start trading" }: { onDone: () => void; doneLabel?: string }) {

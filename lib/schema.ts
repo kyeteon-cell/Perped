@@ -336,3 +336,16 @@ export const pushSubs = pgTable(
   },
   (t) => [uniqueIndex("push_subs_endpoint").on(t.endpoint), index("push_subs_user").on(t.userId)],
 );
+
+/** Lightweight product analytics: visits, intro completions, alert opt-ins. Trades/battles are counted from their own tables. */
+export const events = pgTable(
+  "events",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    anon: text("anon"),
+    userId: text("user_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("events_name_time").on(t.name, t.createdAt)],
+);

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "./useSession";
+import { track } from "@/lib/track";
 
 const b64ToBytes = (b64: string) => {
   const pad = "=".repeat((4 - (b64.length % 4)) % 4);
@@ -42,6 +43,7 @@ export function usePush() {
       const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(publicKey) }));
       const r = await authedFetch("/api/push", { method: "POST", body: JSON.stringify(sub.toJSON()) });
       setState(r.ok ? "on" : "off");
+      if (r.ok) track("push_on");
       return r.ok;
     } catch {
       setState("off");

@@ -3,7 +3,8 @@
 import { SignInSheet } from "@/components/SignInSheet";
 import { SessionProvider } from "@/lib/hooks/useSession";
 import { PrivyProvider, usePrivy, useWallets } from "@privy-io/react-auth";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
+import { track } from "@/lib/track";
 import { SWRConfig } from "swr";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { HL_NETWORK } from "@/lib/config";
@@ -34,7 +35,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         supportedChains: [chain],
       }}
     >
-      <AuthedSWR><SessionProvider>{children}<SignInSheet /></SessionProvider></AuthedSWR>
+      <AuthedSWR><SessionProvider><Visit />{children}<SignInSheet /></SessionProvider></AuthedSWR>
     </PrivyProvider>
   );
 }
@@ -56,4 +57,10 @@ function AuthedSWR({ children }: { children: React.ReactNode }) {
     return fetch(url, { headers }).then((r) => r.json());
   }, [authenticated, getAccessToken, wallets]);
   return <SWRConfig value={{ fetcher, revalidateOnFocus: false, keepPreviousData: true, dedupingInterval: 4000, errorRetryCount: 2 }}>{children}</SWRConfig>;
+}
+
+/** One "visit" event per device per day (for the funnel on /admin). */
+function Visit() {
+  useEffect(() => { track("visit", { once: true }); }, []);
+  return null;
 }

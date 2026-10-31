@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { Sheet } from "./Sheet";
+import { track } from "@/lib/track";
 import useSWR from "swr";
 import type { FeedRow } from "@/lib/feed";
 import { TradeTicket } from "./TradeTicket";
@@ -18,6 +20,7 @@ export function QuickTrade({ item, mode, onClose, lock = false, title }: { item:
   const { data: me } = useSWR<{ stats: { closedTrades: number } | null }>(profile ? `/api/profile/${profile.handle}` : null);
   const s = post.side as "long" | "short";
   const side = mode === "fade" ? (s === "long" ? "short" : "long") : s;
+  useEffect(() => { if (mode === "fade") track("quick_fade_open"); }, [mode]);
   const seed = { coin: post.coin!, side, leverage: post.leverage ?? 2, copiedFromId: mode === "copy" ? post.id : undefined, fadedFromId: mode === "fade" ? post.id : undefined, handle: author?.handle, closedTrades: me?.stats?.closedTrades ?? 0, lockLev: mode === "fade" || lock, toBattle: mode === "fade" };
   return (
     <Sheet className="qt" label={mode === "copy" ? "Copy trade" : "Quick fade"} onClose={onClose}>

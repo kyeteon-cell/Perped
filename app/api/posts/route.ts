@@ -86,7 +86,13 @@ export async function GET(req: Request) {
     const forYou = q.tab === "foryou" || (!q.tab && !q.handle && !q.coin && !q.status);
     let posts = await queryFeed({ where: and(...conds.filter(Boolean)), limit: forYou ? limit * 3 : limit, viewerId: auth?.privyId, pinnedFirst: !!q.handle });
     if (forYou) posts = diversify(posts, limit);
-    return Response.json({ posts, nextCursor: posts.length >= limit ? new Date(posts[posts.length - 1].post.createdAt).getTime() : null });
+    // Real people first: on the top page, live posts by humans from the last 3 hours float above the bots.
+    if (forYou && !q.cursor) {
+      const fresh = (r: (typeof posts)[number]) => !!r.author && !r.author.isBot && Date.now() - new Date(r.post.createdAt).getTime() < 3 * 3_600_000;
+      posts = [...posts.filter(fresh), ...posts.filter((r) => !fresh(r))];
+    }
+    const oldest = posts.reduce((m, r) => Math.min(m, new Date(r.post.createdAt).getTime()), Infinity);
+    return Response.json({ posts, nextCursor: posts.length >= limit && Number.isFinite(oldest) ? oldest : null });
   } catch (e) {
     console.error("[posts] feed query failed", e);
     return Response.json({ posts: [], nextCursor: null, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
