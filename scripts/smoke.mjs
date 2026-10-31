@@ -20,6 +20,8 @@ const ctx = await browser.newContext({ ...devices["iPhone 13"] });
 // Don't let the first-visit intro overlay cover every page.
 await ctx.addInitScript(() => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} });
 let failed = 0;
+// Results also go out as annotations so they show on the commit without opening the logs.
+const note = (ok, msg) => console.log(`::${ok ? "notice" : "error"} title=${ok ? "PASS" : "FAIL"}::${msg.replace(/\n/g, " ")}`);
 
 async function check(path, waitFor, name) {
   const page = await ctx.newPage();
@@ -35,6 +37,7 @@ async function check(path, waitFor, name) {
   await page.screenshot({ path: `smoke-out/${name}.png`, fullPage: false }).catch(() => {});
   const ok = !errors.length;
   console.log(`${ok ? "PASS" : "FAIL"} ${path} ${ms}ms${errors.length ? "\n   " + errors.join("\n   ") : ""}`);
+  note(ok, `${path} ${ms}ms${errors.length ? " — " + errors.join(" | ") : ""}`);
   if (!ok) failed++;
   await page.close();
   return page;
@@ -47,7 +50,7 @@ try {
   const r = await (await fetch(BASE + "/api/arena")).json();
   const b = r.live?.[0] ?? r.recent?.[0];
   if (b) await check(`/battle/${b.faderPostId}`, "text=Margin/SL health", "battle");
-} catch (e) { console.log("FAIL could not load a battle:", e.message); failed++; }
+} catch (e) { note(false, "could not load a battle: " + e.message); failed++; }
 
 // The Bloodbath tab renders.
 {
@@ -59,6 +62,7 @@ try {
   await page.waitForTimeout(800);
   await page.screenshot({ path: "smoke-out/bloodbath.png" }).catch(() => {});
   console.log(`${errors.length ? "FAIL" : "PASS"} arena → Bloodbath tab${errors.length ? "\n   " + errors.join("\n   ") : ""}`);
+  note(!errors.length, `arena → Bloodbath tab${errors.length ? " — " + errors.join(" | ") : ""}`);
   if (errors.length) failed++;
 }
 

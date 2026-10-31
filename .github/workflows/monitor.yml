@@ -24,7 +24,7 @@ jobs:
               [ "$code" != "200" ] && { echo "::error::$p returned $code"; fail=1; }
               best=$(python3 -c "print(min($best,$t))")
             done
-            echo "$p ${best}s"
+            echo "::notice title=$p::${best}s"
             python3 -c "import sys; sys.exit(0 if $best < 1.0 else 1)" || { echo "::error::$p took ${best}s (over 1s)"; fail=1; }
           done
           exit $fail
