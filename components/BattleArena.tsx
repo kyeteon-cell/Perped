@@ -100,7 +100,9 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
   const pctY = (p: number) => `${(y(p) / H) * 100}%`;
   const n = Math.max(candles.length, 1), cw = (W - RIGHT) / n, bw = Math.max(1.5, cw * 0.66);
   const ms = IVS[iv], t0 = candles[0]?.t ?? Date.now();
-  const xOf = (t: number) => Math.max(0, Math.min(n - 1, Math.floor((t - t0) / ms))) * cw + cw / 2;
+  const idxOf = (t: number) => Math.max(0, Math.min(n - 1, Math.floor((t - t0) / ms)));
+  const xOf = (t: number) => idxOf(t) * cw + cw / 2;
+  const entryIdx = [idxOf(ts(a.openedAt)), idxOf(ts(b.openedAt))];
 
   // Territory: the long side profits above its entry, the short side below its entry.
   const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
@@ -121,7 +123,8 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
           {candles.map((c, i) => {
             const up = c.c >= c.o, x = i * cw + cw / 2, col = up ? GREEN : RED;
             return (
-              <g key={c.t} opacity={c.t + ms < start ? 0.5 : 1}>
+              <g key={c.t} opacity={c.t + ms < start && !entryIdx.includes(i) ? 0.5 : 1}>
+                {entryIdx.includes(i) && <rect x={x - cw / 2} y="0" width={cw} height={H} fill={entryIdx[0] === i ? sideCol(a) : sideCol(b)} opacity=".14" />}
                 <line x1={x} x2={x} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth="1" vectorEffect="non-scaling-stroke" />
                 <rect x={x - bw / 2} y={y(Math.max(c.o, c.c))} width={bw} height={Math.max(1.2, Math.abs(y(c.o) - y(c.c)))} fill={col} />
               </g>
@@ -157,6 +160,12 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
           ))}
           <span className="ar-axis now" style={{ top: pctY(px) }}>{fmtPrice(px)}</span>
           <i className="ar-dot" style={{ top: pctY(px) }} />
+          {[a, b].map((f, i) => (
+            <span key={`pin${i}`} className={`ar-pin ${f.side}`} style={{ left: `${(xOf(ts(f.openedAt)) / W) * 100}%`, top: pctY(f.entry) }} title={`${f.handle} ${f.side === "long" ? "bought" : "sold"} at ${fmtPrice(f.entry)}`}>
+              <Avatar handle={f.handle} url={f.avatarUrl} size={18} link={false} />
+              <em>{f.side === "long" ? "▲" : "▼"}</em>
+            </span>
+          ))}
         </div>
       )}
       {offLv.filter((l) => l.p > top).length > 0 && <span className="ar-edges up">{offLv.filter((l) => l.p > top).map((l) => <b key={l.key} className={l.kind === "LIQ" ? "liq" : l.f.side}><Avatar handle={l.f.handle} url={l.f.avatarUrl} size={12} link={false} />{l.kind} ↑</b>)}</span>}
@@ -169,46 +178,46 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
 }
 
 function RaceChart({ coin, live, a, b }: { coin: string; live: number; a: Fighter; b: Fighter }) {
-  const [iv, pick] = useIv();
-  const candles = useCandles(coin, iv, 120);
+  const candles = useCandles(coin, "5m", 60);
+  const [go, setGo] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setGo(true), 60); return () => clearTimeout(t); }, []);
   const start = Math.max(ts(a.openedAt), ts(b.openedAt));
   const roiAt = (f: Fighter, p: number) => (f.side === "long" ? (p - f.entry) / f.entry : (f.entry - p) / f.entry) * 100 * f.lev;
-  const pts = candles.filter((c) => c.t + IVS[iv] >= start).map((c) => c.c);
+  const pts = candles.filter((c) => c.t + IVS["5m"] >= start).map((c) => c.c);
   if (live) pts.push(live);
   const series = pts.map((p) => [roiAt(a, p), roiAt(b, p)] as const);
-  const W = 300, H = 200, PAD = 12;
-  const vals = series.flatMap((s) => [s[0], s[1]]).concat(0);
-  const vTop = Math.max(...vals), vBot = Math.min(...vals), span = Math.max(vTop - vBot, 2);
-  const y = (v: number) => PAD + (1 - (v - (vBot - span * 0.08)) / (span * 1.16)) * (H - PAD * 2);
-  const x = (i: number) => (series.length > 1 ? (i / (series.length - 1)) * (W - 16) : 0);
-  const line = (k: 0 | 1) => series.map((s, i) => `${x(i).toFixed(1)},${y(s[k]).toFixed(1)}`).join(" ");
   let changes = 0, aLead = 0;
   series.forEach((s, i) => { if (s[0] >= s[1]) aLead++; if (i > 0 && Math.sign(s[0] - s[1]) !== Math.sign(series[i - 1][0] - series[i - 1][1]) && s[0] !== s[1]) changes++; });
   const aShare = series.length ? Math.round((aLead / series.length) * 100) : 50;
-  const last = series[series.length - 1];
-
-  return (
-    <div className="ar-race">
-      <div className="ar-chart race">
-        {series.length > 1 ? (
-          <>
-            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
-              <line x1="0" x2={W} y1={y(0)} y2={y(0)} stroke="var(--text)" strokeWidth="1" opacity=".3" vectorEffect="non-scaling-stroke" />
-              <polyline points={line(1)} fill="none" stroke={sideCol(b)} strokeWidth="2.4" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-              <polyline points={line(0)} fill="none" stroke={sideCol(a)} strokeWidth="2.4" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-            </svg>
-            <div className="ar-ov race">
-            <span className="ar-head" style={{ left: `${(x(series.length - 1) / W) * 100}%`, top: `${(y(last[0]) / H) * 100}%`, boxShadow: `0 0 0 2px ${sideCol(a)}` }}><Avatar handle={a.handle} url={a.avatarUrl} size={22} link={false} /></span>
-            <span className="ar-head" style={{ left: `${(x(series.length - 1) / W) * 100}%`, top: `${(y(last[1]) / H) * 100}%`, boxShadow: `0 0 0 2px ${sideCol(b)}` }}><Avatar handle={b.handle} url={b.avatarUrl} size={22} link={false} /></span>
-            <span className="ar-zero" style={{ top: `${(y(0) / H) * 100}%` }}>0%</span>
-            </div>
-          </>
-        ) : <div className="ar-empty">The race starts with the next candle.</div>}
-        <span className="tc-ivs ar-ivs" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-          {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === iv ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
-        </span>
-        <span className="ar-cap">ROI since the fade</span>
+  // momentum: ROI change over the last ~6 candles
+  const mom = (k: 0 | 1) => (series.length > 6 ? series[series.length - 1][k] - series[series.length - 7][k] : 0);
+  const scale = Math.max(10, Math.ceil(Math.max(Math.abs(a.roi), Math.abs(b.roi)) * 1.25 / 10) * 10);
+  const pos = (r: number) => Math.max(4, Math.min(96, 50 + (r / scale) * 46));
+  const leader = a.roi === b.roi ? null : a.roi > b.roi ? a : b;
+  const gap = Math.abs(a.roi - b.roi);
+  const Lane = ({ f, m }: { f: Fighter; m: number }) => {
+    const p = go ? pos(f.roi) : 50, up = f.roi >= 0;
+    return (
+      <div className={`rc-lane ${leader === f ? "lead" : ""}`}>
+        <div className="rc-name"><Avatar handle={f.handle} url={f.avatarUrl} size={18} link={false} /><b>{f.handle}</b><span className={`lbl ${f.side}`}><i />{f.side === "long" ? "Long" : "Short"} {f.lev}×</span>{leader === f && <span className="rc-crown">Leading</span>}</div>
+        <div className="rc-track">
+          <span className="rc-mid" />
+          <span className="rc-trail" style={{ left: `${Math.min(50, p)}%`, width: `${Math.abs(p - 50)}%`, background: up ? "var(--green)" : "var(--red)" }} />
+          <span className={`rc-runner ${up ? "g" : "r"}`} style={{ left: `${p}%` }}>
+            <Avatar handle={f.handle} url={f.avatarUrl} size={28} link={false} />
+            <b className={`mono ${up ? "green" : "red"}`}>{fmtPct(f.roi, 1)}</b>
+          </span>
+        </div>
+        <div className={`rc-mom ${m >= 0 ? "green" : "red"}`}>{Math.abs(m) < 0.05 ? "holding steady" : m > 0 ? `▲ gaining ${m.toFixed(1)}% in the last 30m` : `▼ fading ${Math.abs(m).toFixed(1)}% in the last 30m`}</div>
       </div>
+    );
+  };
+  return (
+    <div className="rc">
+      <div className="rc-gap">{leader ? <><b>{leader.handle}</b> ahead by <b className="mono">{gap.toFixed(1)}%</b></> : "Dead level"}</div>
+      <Lane f={a} m={mom(0)} />
+      <Lane f={b} m={mom(1)} />
+      <div className="rc-scale"><span className="mono red">−{scale}%</span><span className="muted">start</span><span className="mono green">+{scale}%</span></div>
       <div className="ar-lead">
         <div className="ar-leadhead"><span>Time in the lead</span><span>{changes} lead change{changes === 1 ? "" : "s"}</span></div>
         <div className="ar-leadbar"><i className={a.side} style={{ width: `${aShare}%` }} /><i className={b.side} style={{ width: `${100 - aShare}%` }} /></div>
