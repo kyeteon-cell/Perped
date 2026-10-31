@@ -980,3 +980,5 @@ body { letter-spacing: -.005em; }
   100% { opacity: 0; transform: translateY(26px) scaleY(.6); }
 }
 @media (prefers-reduced-motion: reduce) { .ar-hpbar i::after, .ar-hpbar.bleed i, .ar-drips b { animation: none; } .ar-drips { display: none; } }
+.ar-hpbox.r .ar-hpbar { display: block; }
+.ar-hptrack { width: 100%; }
