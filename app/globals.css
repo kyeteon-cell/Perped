@@ -873,23 +873,7 @@ body { letter-spacing: -.005em; }
 .ar-taperow > b { font-size: 13.5px; } .ar-taperow > b:last-child { text-align: right; }
 .ar-taperow.head > b { font-family: inherit; font-size: 12px; font-weight: 900; } .ar-taperow.head > span { color: var(--muted); }
 
-/* Ladder in fade cards */
-.ladder { display: flex; flex-direction: column; gap: 5px; margin-top: 12px; padding: 12px; border-radius: 16px; background: #0b0c0e; color: #f4f5f7; border: 1px solid #24262b; position: relative; text-decoration: none; overflow: hidden;
-  --green: #05e091; --red: #fd6267; --muted: #9a9ea6; }
-.ld-rail { position: absolute; left: 50%; top: 12px; bottom: 58px; width: 4px; margin-left: -2px; border-radius: 999px; background: linear-gradient(180deg, #ffffff, #c9ccd1 40%, #6e727a 52%, #e4e6ea); opacity: .5; }
-.ld-row { display: grid; grid-template-columns: minmax(0,1fr) 30px minmax(0,1fr); align-items: center; gap: 8px; position: relative; font-family: var(--font-mono), "Barlow", sans-serif; font-size: 12px; font-weight: 700; min-height: 18px; }
-.ld-l { text-align: right; } .ld-r { text-align: left; }
-.ld-row.long .ld-l, .ld-row.long .ld-r { color: var(--green); } .ld-row.short .ld-l, .ld-row.short .ld-r { color: var(--red); }
-.ld-row.liq .ld-l, .ld-row.liq .ld-r { color: #f4f5f7; opacity: .85; }
-.ld-tick { height: 2px; border-radius: 2px; background: currentColor; }
-.ld-row.long .ld-tick { background: var(--green); box-shadow: 0 0 6px var(--green); } .ld-row.short .ld-tick { background: var(--red); box-shadow: 0 0 6px var(--red); } .ld-row.liq .ld-tick { background: #f4f5f7; }
-.ld-row.now { grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); margin: 3px 0; }
-.ld-row.now .ld-l { font-family: inherit; font-size: 10px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
-.ld-row.now .ld-r { font-family: inherit; font-size: 10px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-.ld-puck { background: #f4f5f7; color: #0b0c0e; border-radius: 999px; padding: 4px 11px; font-size: 13.5px; font-weight: 800; box-shadow: 0 0 0 3px #0b0c0e, 0 0 20px rgba(255,255,255,.5); z-index: 1; }
-.ld-meters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
-.ld-mh { display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
-.ld-mh b { color: #f4f5f7; }
+
 
 .ar-ov { position: absolute; left: 6px; right: 56px; top: 26px; bottom: 24px; z-index: 2; }
 .ar-ov > * { position: absolute; }

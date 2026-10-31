@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import useSWR from "swr";
 import { useEffect, useState, type MouseEvent } from "react";
 import type { Candle } from "@/lib/hl-info";
@@ -239,44 +238,5 @@ function Tape({ a, b }: { a: Fighter; b: Fighter }) {
       <div className="ar-taperow head"><b style={{ color: sideCol(a) }}>{a.handle}</b><span>Tale of the tape</span><b style={{ color: sideCol(b) }}>{b.handle}</b></div>
       {rows.map(([k, x, z]) => <div key={k} className="ar-taperow"><b className="mono">{x}</b><span>{k}</span><b className="mono">{z}</b></div>)}
     </div>
-  );
-}
-
-/* ======================================================================
-   Ladder: the compact battle view for feed cards
-   ====================================================================== */
-export function BattleLadder({ battleId, live, a, b }: { battleId: number; live: number; a: Fighter; b: Fighter }) {
-  type Row = { p: number; side: "a" | "b" | "now"; label: string; cls: string };
-  const rows: Row[] = [{ p: live, side: "now", label: fmtPrice(live), cls: "now" }];
-  for (const [k, f] of [["a", a], ["b", b]] as const) {
-    rows.push({ p: f.entry, side: k, label: `${f.side === "long" ? "▲ BOUGHT" : "▼ SOLD"} ${fmtPrice(f.entry)}`, cls: f.side });
-    if (f.tp) rows.push({ p: f.tp, side: k, label: `TP ${fmtPrice(f.tp)}`, cls: f.side });
-    if (f.sl) rows.push({ p: f.sl, side: k, label: `SL ${fmtPrice(f.sl)}`, cls: f.side });
-    const l = liqOf(f); if (l) rows.push({ p: l, side: k, label: `LIQ ${fmtPrice(l)}`, cls: "liq" });
-  }
-  rows.sort((x, z) => z.p - x.p);
-  const leader = a.roi >= b.roi ? a : b;
-  const ha = healthOf(a, live), hb = healthOf(b, live);
-  return (
-    <Link href={`/battle/${battleId}`} className="ladder" onClick={(e) => e.stopPropagation()}>
-      <div className="ld-rail" aria-hidden />
-      {rows.map((r, i) => r.side === "now" ? (
-        <div key={i} className="ld-row now">
-          <span className="ld-l" style={{ color: sideCol(leader) }}>{leader.handle} winning</span>
-          <span className="ld-puck">{r.label}</span>
-          <span className="ld-r">now</span>
-        </div>
-      ) : (
-        <div key={i} className={`ld-row ${r.cls}`}>
-          <span className="ld-l">{r.side === "a" ? r.label : ""}</span>
-          <span className="ld-tick" />
-          <span className="ld-r">{r.side === "b" ? r.label : ""}</span>
-        </div>
-      ))}
-      <div className="ld-meters">
-        <div><div className="ld-mh"><span>{a.handle} HP</span><b>{Math.round(ha * 100)}%</b></div><div className="ar-hpbar"><i className={a.side} style={{ width: `${Math.max(3, ha * 100)}%` }} /></div></div>
-        <div><div className="ld-mh"><span>{b.handle} HP</span><b>{Math.round(hb * 100)}%</b></div><div className="ar-hpbar"><i className={b.side} style={{ width: `${Math.max(3, hb * 100)}%` }} /></div></div>
-      </div>
-    </Link>
   );
 }
