@@ -311,7 +311,7 @@ function TradePost({ item, mid, onChanged, full }: Props) {
       <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id} manage={isOpen && !!author && author.id === profile?.id}>
         {canAct && (
           <>
-            {canFade ? <button className="fade ml-auto" onClick={() => setQuick("fade")}>Fade</button> : item.noFade ? <span className="when ml-auto text-[11px]">already in a battle</span> : null}
+            {canFade ? <button className="fade ml-auto" onClick={() => setQuick("fade")}>⚡ Quick fade</button> : item.noFade ? <span className="when ml-auto text-[11px]">already in a battle</span> : null}
             {canCopy && <button className={canFade || item.noFade ? "copy" : "copy ml-auto"} onClick={() => setQuick("copy")}>Copy</button>}
           </>
         )}

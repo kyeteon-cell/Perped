@@ -21,6 +21,10 @@ export type Seed = {
   leverage?: number;
   copiedFromId?: number;
   fadedFromId?: number;
+  /** Quick fade: side and leverage are fixed to the opposite of the post; only the size is asked. */
+  lockLev?: boolean;
+  /** After filling, go straight to the battle page for the new position. */
+  toBattle?: boolean;
   backsCallId?: number;
   handle?: string;
   /** Stats of the current user for guardrails (closed trade count). */
@@ -107,6 +111,17 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     return r;
   };
 
+  /** Where to go once the trade is posted: the battle for a quick fade, otherwise close the sheet / go home. */
+  const finish = async (r: Response) => {
+    if (seed.toBattle) {
+      const j = await r.json().catch(() => null);
+      const id = j?.post?.id;
+      if (id) { onDone?.(); return router.push(`/battle/${id}`); }
+    }
+    if (onDone) return onDone();
+    router.push(seed.duelId ? `/duels/${seed.duelId}` : "/");
+  };
+
   const submit = async () => {
     if (!authenticated) return login();
     if (!profile) return router.push("/onboarding");
@@ -123,8 +138,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       const r = await postTrade(mid, size, undefined, true);
       setBusy(null);
       if (!r.ok) return setErr((await r.json()).error ?? "Couldn't place demo trade");
-      if (onDone) return onDone();
-      return router.push(seed.duelId ? `/duels/${seed.duelId}` : "/");
+      return finish(r);
     }
     if (!walletClient || !address) return setErr("Wallet still loading, try again in a second.");
     setBusy("Signing order…");
@@ -140,8 +154,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     const r = await postTrade(res.avgPx ?? refPx, res.totalSz ?? size, res.oid);
     setBusy(null);
     if (!r.ok) return setErr("Filled on Hyperliquid but posting failed; refresh your profile.");
-    if (onDone) return onDone();
-    router.push(seed.duelId ? `/duels/${seed.duelId}` : "/");
+    return finish(r);
   };
 
   const cta = `${orderType === "limit" ? "Limit " : ""}${isFade ? "Fade · " : ""}${side === "long" ? "Long" : "Short"} ${ticker(coin)} ${lev}× · ${fmtUsd(notional)}`;
@@ -171,21 +184,25 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
         </div>
       )}
 
-      <div className="block">
+      {!seed.lockLev && <div className="block">
         <div className="grid grid-cols-2 gap-2.5">
           <button onClick={() => setSide("long")} className={`btn ${side === "long" ? "long" : ""}`}>Long</button>
           <button onClick={() => setSide("short")} className={`btn ${side === "short" ? "short" : ""}`}>Short</button>
         </div>
         {!quick && <div className="seg mt-3.5">{(["market", "limit"] as const).map((t) => <button key={t} className={`chip capitalize ${t === orderType ? "info" : ""}`} onClick={() => setOrderType(t)}>{t}</button>)}</div>}
         {orderType === "limit" && <div className="mt-3 flex items-center justify-between text-sm"><span className="muted">Limit price</span><input type="number" inputMode="decimal" className="field mono !w-36 !py-2.5 text-right" placeholder={mid ? String(mid) : ""} value={limitPx} onChange={(e) => setLimitPx(e.target.value)} /></div>}
-      </div>
+      </div>}
 
       <div className="block">
         <div className="flex items-center justify-between text-sm"><span className="muted">Margin ({isDemo ? "demo USDC" : "USDC"})</span><span className="when">{isDemo ? `Available ${fmtUsd(Number(profile?.demoBalance ?? 0))}` : "Hyperliquid minimum $10 notional"}</span></div>
         <div className="mono my-2 text-[40px] font-semibold tracking-tight"><span className="muted text-2xl align-top">$</span><input type="number" inputMode="decimal" className="mono inline-block w-40 border-0 bg-transparent p-0 text-[40px] font-semibold tracking-tight outline-none" value={usd} min={1} onChange={(e) => setUsd(Math.max(0, Number(e.target.value)))} /></div>
         <div className="seg">{QUICK.map((q) => <button key={q} className={`chip ${usd === q ? "on" : ""}`} onClick={() => setUsd(q)}>{q}</button>)}</div>
-        <div className="mt-4 flex items-center justify-between text-sm"><span className="muted">Leverage</span><span className="mono font-bold">{lev}×<span className="when ml-2">Hyperliquid max {maxLev}×</span></span></div>
-        <input type="range" min={1} max={maxLev} value={lev} onChange={(e) => setLev(Number(e.target.value))} className="range my-1.5" />
+        {seed.lockLev ? (
+          <div className="mt-4 mb-3 flex items-center justify-between text-sm"><span className="muted">Leverage</span><span className="mono font-bold">{lev}×<span className="when ml-2">matched to {seed.handle ?? "theirs"}</span></span></div>
+        ) : (<>
+          <div className="mt-4 flex items-center justify-between text-sm"><span className="muted">Leverage</span><span className="mono font-bold">{lev}×<span className="when ml-2">Hyperliquid max {maxLev}×</span></span></div>
+          <input type="range" min={1} max={maxLev} value={lev} onChange={(e) => setLev(Number(e.target.value))} className="range my-1.5" />
+        </>)}
         <div className="grid grid-cols-3 gap-2.5">
           <div className="stat"><small>Position</small><div className="v mono">{fmtUsd(notional, { compact: notional >= 10000 })}</div></div>
           <div className="stat"><small>Size</small><div className="v mono">{market ? fmtSize(size, market.szDecimals) : "—"}</div></div>
