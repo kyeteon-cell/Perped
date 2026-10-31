@@ -75,14 +75,18 @@ function Hp({ f, live, right }: { f: Fighter; live: number; right?: boolean }) {
   const liqDist = liq ? Math.abs((live - liq) / live) * 100 : null;
   const slDist = f.sl ? Math.abs((live - f.sl) / live) * 100 : null;
   const danger = h < 0.35;
-  const label = stop.kind === "SL" ? "Stop-loss HP" : stop.kind === "LOCKED" ? "Profit locked" : "Margin HP";
+  const bleed = h < 0.4;
   const foot = stop.kind === "SL" ? `SL ${slDist!.toFixed(1)}% away${liqDist !== null ? ` · Liq ${liqDist.toFixed(1)}%` : ""}`
     : stop.kind === "LOCKED" ? `SL in profit at ${fmtPrice(f.sl!)}`
     : liqDist !== null ? `Liq ${liqDist.toFixed(1)}% away · no SL` : "No liquidation at 1× · no SL";
+  const w = `${Math.max(3, h * 100)}%`;
   return (
     <div className={`ar-hpbox ${right ? "r" : ""}`}>
-      <div className="ar-hphead"><span>{label}</span><b style={{ color: danger ? "var(--gold)" : sideCol(f) }}>{Math.round(h * 100)}%</b></div>
-      <div className="ar-hpbar"><i className={f.side} style={{ width: `${Math.max(3, h * 100)}%` }} /></div>
+      <div className="ar-hphead"><span>Margin/SL health</span><b style={{ color: danger || bleed ? "var(--red)" : sideCol(f) }}>{Math.round(h * 100)}%</b></div>
+      <div className={`ar-hpbar ${bleed ? "bleed" : ""}`}>
+        <div className="ar-hptrack"><i className={f.side} style={{ width: w }} /></div>
+        {bleed && <div className="ar-drips" style={{ width: w }} aria-hidden="true"><b /><b /><b /><b /></div>}
+      </div>
       <div className="ar-hpfoot">{foot}</div>
     </div>
   );
