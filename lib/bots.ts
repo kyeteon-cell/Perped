@@ -203,14 +203,17 @@ export async function botTick() {
     const openCount = open.length;
     // Bots never run dry: top up the practice balance so volume keeps flowing.
     if (Number(me.demoBalance) < 5000) { await db.update(schema.users).set({ demoBalance: "50000" }).where(eq(schema.users.id, b.id)); me.demoBalance = "50000"; }
-    if (openCount < 5 && Math.random() < (openCount === 0 ? 0.9 : 0.55)) {
-      const coin = pick(b.coins), mid = Number(mids[coin] ?? 0);
+    // More of their own trades: up to 2 new positions a run, up to 8 open at once.
+    const tries = openCount === 0 ? 2 : openCount < 4 ? (Math.random() < 0.5 ? 2 : 1) : 1;
+    for (let k = 0; k < tries; k++) if (openCount + k < 8 && Math.random() < (openCount === 0 ? 0.95 : 0.75)) {
+      const coin = Math.random() < 0.75 ? pick(b.coins) : pick(["BTC", "ETH", "SOL", "HYPE", "XRP", "DOGE", "SUI", "WIF"]), mid = Number(mids[coin] ?? 0);
       if (mid && Number(me.demoBalance) > 30) {
         const side = Math.random() < b.bias ? "long" : "short";
         const lev = pickLev(b, coin, maxMap);
         const margin = Math.min(pick([100, 250, 250, 500, 750, 1000, 2000]), Number(me.demoBalance) * 0.3);
         await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, body: Math.random() < b.chatty ? pick(NOTES_OPEN) : null, slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
-        await db.update(schema.users).set({ demoBalance: (Number(me.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, b.id));
+        me.demoBalance = (Number(me.demoBalance) - margin).toFixed(2);
+        await db.update(schema.users).set({ demoBalance: me.demoBalance }).where(eq(schema.users.id, b.id));
         const [justOpened] = await db.select({ id: schema.posts.id, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage }).from(schema.posts).where(eq(schema.posts.userId, b.id)).orderBy(desc(schema.posts.id)).limit(1);
         if (justOpened) await alertRivals(b.id, justOpened).catch(() => 0);
         log.push(`${b.handle} opened ${side} ${coin}`);
@@ -240,15 +243,15 @@ export async function botTick() {
     const botLive = await db.select({ id: schema.posts.id, userId: schema.posts.userId, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage })
       .from(schema.posts).innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
       .where(and(eq(schema.users.isBot, true), ne(schema.posts.userId, b.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), gte(schema.posts.createdAt, new Date(now - hours(3)))))
-      .orderBy(sql`random()`).limit(2);
+      .orderBy(sql`random()`).limit(1);
     for (const t of botLive) {
       const other = BOTS.find((x) => x.id === t.userId);
       if (!other || !t.coin || !t.side) continue;
       const mid = Number(mids[t.coin] ?? 0);
       if (!mid || Number(me.demoBalance) < 60) continue;
       const alike = similarity(b, other);
-      const fade = b.fader ? Math.random() < 0.65 : Math.random() < 0.15;
-      const copy = !fade && Math.random() < alike * 0.4;
+      const fade = b.fader ? Math.random() < 0.45 : Math.random() < 0.08;
+      const copy = !fade && Math.random() < alike * 0.2;
       if (!fade && !copy) continue;
       const [dup] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), sql`(${schema.posts.copiedFromId} = ${t.id} or ${schema.posts.fadedFromId} = ${t.id})`)).limit(1);
       if (dup) continue;
