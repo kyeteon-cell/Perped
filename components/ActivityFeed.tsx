@@ -29,7 +29,7 @@ export function ActivityFeed({ handle }: { handle: string }) {
   const [f, setF] = useState<Filter>("all");
   if (!data) return <SkeletonList n={4} card={false} />;
   if (!data.items.length) return <p className="muted p-5 text-sm">Nothing yet. The first trade starts the story.</p>;
-  const items = data.items.filter((it) => FILTERS[f].types.includes(it.type));
+  const items = data.items.filter((it) => (FILTERS[f].types as readonly ActivityItem["type"][]).includes(it.type));
   // Group by day so a long stream still scans.
   const groups: { day: string; items: ActivityItem[] }[] = [];
   for (const it of items) {
