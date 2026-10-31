@@ -43,6 +43,19 @@ const roiOf = (l: ArenaBattle["faderLeg"], mid: number) => {
   return pnlForPosition(l.side, l.entryPx, mark, l.size).pct * l.leverage;
 };
 
+/** One side of a battle row: the leader's half glows gold; nothing sits on top of the avatar. */
+function Fighter({ u, roi, lead, right }: { u: ArenaBattle["fader"]; roi: number; lead: boolean; right?: boolean }) {
+  return (
+    <div className={`ab-f ${right ? "r" : ""} ${lead ? "lead" : ""}`}>
+      <span className="ab-av"><Avatar handle={u.handle} url={u.avatarUrl} size={38} link={false} /></span>
+      <div className="min-w-0">
+        <div className="ab-name"><span className="truncate">{u.handle}</span><RankChip xp={u.xp} compact size={16} /></div>
+        <div className={`mono ab-roi ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 1)}</div>
+      </div>
+    </div>
+  );
+}
+
 function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: ReactNode }) {
   const settled = b.status === "settled";
   const a = settled ? b.faderRoi ?? 0 : roiOf(b.faderLeg, mid), t = settled ? b.targetRoi ?? 0 : roiOf(b.targetLeg, mid);
@@ -58,10 +71,10 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
         const bank = fBanked ? a : t, now = fBanked ? t : a;
         return <span className={`chase-badge gl ${now > bank ? "ahead" : ""}`}><Glyph n="bank" />{banker.handle} banked {fmtPct(bank, 1)} · {chaser.handle} {now > bank ? "ahead" : "chasing"}</span>;
       })()}
-      <div className="flex items-center justify-between gap-2">
-        <div className={`aside ${aWin ? "lead" : ""}`}><span className="arank"><Avatar handle={b.fader.handle} url={b.fader.avatarUrl} size={36} link={false} /><img src={`/api/share-bg/rank-${rankFor(b.fader.xp ?? 0).level}`} alt="" /></span><div className="min-w-0"><div className="flex items-center gap-1 text-[13px] font-bold"><span className="truncate">{b.fader.handle}</span><RankChip xp={b.fader.xp} compact size={18} /></div><div className={`mono text-[13px] font-bold ${a >= 0 ? "green" : "red"}`}>{fmtPct(a, 1)}</div></div></div>
-        <div className="text-center"><CoinMark coin={b.coin} size="xs" /><div className="when text-[10px]">{settled ? timeAgo(b.settledAt ?? b.createdAt) : "LIVE"}</div></div>
-        <div className={`aside r ${tWin ? "lead" : ""}`}><div className="min-w-0 text-right"><div className="flex items-center justify-end gap-1 text-[13px] font-bold"><RankChip xp={b.target.xp} compact size={18} /><span className="truncate">{b.target.handle}</span></div><div className={`mono text-[13px] font-bold ${t >= 0 ? "green" : "red"}`}>{fmtPct(t, 1)}</div></div><span className="arank"><Avatar handle={b.target.handle} url={b.target.avatarUrl} size={36} link={false} /><img src={`/api/share-bg/rank-${rankFor(b.target.xp ?? 0).level}`} alt="" /></span></div>
+      <div className="ab-grid">
+        <Fighter u={b.fader} roi={a} lead={aWin} />
+        <div className="ab-mid"><CoinMark coin={b.coin} size="xs" /><span className="ab-gap mono">{fmtPct(Math.abs(a - t), 1).replace(/^[+−-]/, "")}<small>gap</small></span><span className="when text-[10px]">{settled ? timeAgo(b.settledAt ?? b.createdAt) : <span className="ab-live">LIVE</span>}</span></div>
+        <Fighter u={b.target} roi={t} lead={tWin} right />
       </div>
       <div className="tug mt-2" style={{ height: 6, background: b.targetLeg.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${share}%`, background: b.faderLeg.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
       {badge && <div className="abadge">{badge}</div>}
@@ -236,12 +249,12 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   const fol = rows.filter((x) => mine(x.b) || followed(x.b)).sort((x, y) => Number(mine(y.b)) - Number(mine(x.b)) || +new Date(y.b.createdAt) - +new Date(x.b.createdAt));
   const blood = rows.filter((x) => x.r.blood).sort((x, y) => y.r.gap - x.r.gap);
   const rekt = (data.rekt ?? []).map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) }));
-  const tabs: { k: Tab; label: ReactNode; n: number }[] = [
-    { k: "all", label: "All", n: rows.length },
-    ...(nem.length ? [{ k: "nemesis" as Tab, label: <span className="gl"><Glyph n="skull" />Nemesis</span>, n: nem.length }] : []),
-    { k: "high", label: <span className="gl"><Glyph n="flame" />High stakes</span>, n: high.length },
-    { k: "following", label: <span className="gl"><Glyph n="people" />Following</span>, n: fol.length },
-    { k: "blood", label: <span className="gl"><Glyph n="drop" />Bloodbath</span>, n: blood.length + rekt.length },
+  const tabs: { k: Tab; icon: ReactNode; short: string; n: number }[] = [
+    { k: "all", icon: <Glyph n="bolt" />, short: "All", n: rows.length },
+    { k: "following", icon: <Glyph n="people" />, short: "Following", n: fol.length },
+    { k: "nemesis", icon: <Glyph n="skull" />, short: "Nemesis", n: nem.length },
+    { k: "high", icon: <Glyph n="flame" />, short: "High stakes", n: high.length },
+    { k: "blood", icon: <Glyph n="drop" />, short: "Bloodbath", n: blood.length + rekt.length },
   ];
   const flames = (n: number) => <span className="flames">{Array.from({ length: n }, (_, i) => <Glyph key={i} n="flame" tone="gold" />)}</span>;
   const tag = (b: ArenaBattle) => mine(b) ? "your battle" : rivals.has(b.fader.handle) ? `your rival ${b.fader.handle}` : rivals.has(b.target.handle) ? `your rival ${b.target.handle}` : follow.has(b.fader.handle) ? `you follow ${b.fader.handle}` : follow.has(b.target.handle) ? `you follow ${b.target.handle}` : "";
@@ -249,8 +262,9 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   return (
     <section className="block">
       <div className="flex items-center justify-between"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Live battles</span><span className="when">{rows.length} live</span></div>
-      <div className="seg mt-3">
-        {tabs.map((t) => <button key={t.k} className={`chip ${tab === t.k ? "on" : ""}`} onClick={() => setTab(t.k)}>{t.label}<span className="atab-n">{t.n}</span></button>)}
+      {/* Every tab in one bar, no scrolling: levels of heat from everything to the bloodbath. */}
+      <div className="alevels mt-3" role="tablist">
+        {tabs.map((t) => <button key={t.k} role="tab" aria-selected={tab === t.k} className={`alv lv-${t.k} ${tab === t.k ? "on" : ""}`} onClick={() => setTab(t.k)}><span className="alv-ic">{t.icon}</span><span className="alv-l">{t.short}</span><span className="alv-n mono">{t.n}</span></button>)}
       </div>
       {tab === "blood" && (
         <div className="mt-3 flex flex-col gap-3">
@@ -285,7 +299,7 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
                 <div key={s.user.id} className="flex items-center gap-2.5"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={30} /><span className="flex-1 truncate text-[14px] font-bold">{s.user.handle}<span className="when ml-1.5 gl"><Glyph n="flame" tone="gold" />{s.streak} streak</span></span><FollowButton handle={s.user.handle} compact /></div>
               ))}</div>
             </div>
-          ) : <p className="muted text-sm">{tab === "high" ? "No high-stakes battles right now. Nobody's above 20× or near liquidation." : tab === "blood" ? "No bloodbaths right now. Everyone's still standing." : "No battles running. Fade a trade in the feed to start one."}</p>
+          ) : <p className="muted text-sm">{tab === "high" ? "No high-stakes battles right now. Nobody's above 20× or near liquidation." : tab === "blood" ? "No bloodbaths right now. Everyone's still standing." : tab === "nemesis" ? "No nemesis matches right now. Your nemesis is the trader you've fought most, or one you called out." : "No battles running. Fade a trade in the feed to start one."}</p>
         )}
       </div>
     </section>
