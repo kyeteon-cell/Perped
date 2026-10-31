@@ -62,7 +62,11 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
           <Avatar handle={author.handle} url={author.avatarUrl} link={false} />
           <div>
             <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}<RankChip xp={author.xp} compact />{item.rival ? <span className={`rival-chip ${item.rival.mine > item.rival.theirs ? "lead" : ""}`}>⚔ {item.rival.mine}–{item.rival.theirs}</span> : null}{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</div>
-            <div className="when">{timeAgo(post.createdAt)} ago{post.copiedFromId ? " · copied" : ""}{post.fadedFromId ? " · faded" : ""}{post.kind === "trade" && post.status === "closed" ? " · closed" : ""}</div>
+            <div className="when">{timeAgo(post.createdAt)} ago{post.kind === "trade" && (
+              post.copiedFromId ? <> · copied {item.src ? <Link href={`/u/${item.src.handle}`} className="srcname" onClick={(e) => e.stopPropagation()}>@{item.src.handle}</Link> : "a trade"}</>
+              : post.fadedFromId ? <> · faded {item.src ? <Link href={`/u/${item.src.handle}`} className="srcname" onClick={(e) => e.stopPropagation()}>@{item.src.handle}</Link> : "a trade"}</>
+              : post.side === "short" ? " · sold" : " · bought"
+            )}{post.kind === "trade" && post.status === "closed" ? " · closed" : ""}</div>
           </div>
         </Link>
       ) : null}
@@ -265,14 +269,14 @@ function TradePost({ item, mid, onChanged, full }: Props) {
   }
 
   return (
-    <article className={`post swipe tcard ${swipe.armed ?? ""} ${isDemoPost(item) ? "demo" : ""}`} {...(canAct ? swipe.handlers : {})}>
+    <article className={`post swipe tcard ${post.fadedFromId ? "battlecard" : ""} ${swipe.armed ?? ""} ${isDemoPost(item) ? "demo" : ""}`} {...(canAct ? swipe.handlers : {})}>
       <div className="swipe-bg" aria-hidden>
         <span ref={swipe.refs.bgCopy} className="sb sb-copy"><Icon d={I.copy} size={18} />Copy</span>
         <span ref={swipe.refs.bgFade} className="sb sb-fade">Fade<Icon d={I.bolt} size={18} /></span>
       </div>
       {quick && <QuickTrade item={item} mode={quick} onClose={() => setQuick(null)} />}
       <div ref={swipe.refs.fg} className="swipe-fg">
-      {post.fadedFromId && <Link href={`/battle/${post.id}`} className="kind battle-link"><Icon d={I.bolt} size={13} />Fade · open the battle →</Link>}
+      {post.fadedFromId && <BattleHead item={item} mark={mark} myRoi={roi} />}
       <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -308,6 +312,36 @@ function TradePost({ item, mid, onChanged, full }: Props) {
       </Acts>
       </div>
     </article>
+  );
+}
+
+/* ---------- battle header (fades) ---------- */
+
+/** Faceoff strip on a fade: the original trader vs the fader, live ROI each, who's ahead, tap to watch. */
+function BattleHead({ item, mark, myRoi }: { item: FeedRow; mark: number; myRoi: number }) {
+  const { post, author, src } = item;
+  if (!src || !author) return <Link href={`/battle/${post.id}`} className="kind battle-link"><Icon d={I.bolt} size={13} />Battle · watch →</Link>;
+  const entry = Number(src.entryPx ?? 0), lev = src.leverage ?? 1;
+  const theirMark = src.status === "open" ? mark : Number(src.exitPx ?? entry);
+  const theirRoi = entry && src.side ? pnlForPosition(src.side, entry, theirMark, Number(src.size ?? 0)).pct * lev : 0;
+  const meAhead = myRoi > theirRoi, even = Math.abs(myRoi - theirRoi) < 0.05;
+  const share = Math.max(10, Math.min(90, 50 + ((theirRoi - myRoi) / (Math.abs(theirRoi) + Math.abs(myRoi) || 1)) * 50));
+  return (
+    <Link href={`/battle/${post.id}`} className="bhead" onClick={(e) => e.stopPropagation()}>
+      <div className="bh-top"><span className="bh-tag"><Icon d={I.bolt} size={12} />Battle</span><span className="bh-watch">{even ? "Dead level" : `${meAhead ? author.handle : src.handle} ahead`} · watch →</span></div>
+      <div className="bh-row">
+        <div className={`bh-f ${!meAhead && !even ? "lead" : ""}`}>
+          <span className={`bh-av ${src.side ?? "long"}`}><Avatar handle={src.handle} url={src.avatarUrl} size={30} link={false} /></span>
+          <div className="min-w-0"><div className="bh-name"><span className="truncate">{src.handle}</span><RankChip xp={src.xp} compact size={16} /></div><div className={`mono bh-roi ${theirRoi >= 0 ? "green" : "red"}`}>{fmtPct(theirRoi, 1)}</div></div>
+        </div>
+        <span className="bh-vs">VS</span>
+        <div className={`bh-f r ${meAhead && !even ? "lead" : ""}`}>
+          <div className="min-w-0 text-right"><div className="bh-name r"><RankChip xp={author.xp} compact size={16} /><span className="truncate">{author.handle}</span></div><div className={`mono bh-roi ${myRoi >= 0 ? "green" : "red"}`}>{fmtPct(myRoi, 1)}</div></div>
+          <span className={`bh-av ${post.side ?? "short"}`}><Avatar handle={author.handle} url={author.avatarUrl} size={30} link={false} /></span>
+        </div>
+      </div>
+      <div className="bh-tug" style={{ background: post.side === "long" ? "var(--green)" : "var(--red)" }}><i style={{ width: `${share}%`, background: src.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
+    </Link>
   );
 }
 

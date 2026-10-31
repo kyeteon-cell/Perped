@@ -50,9 +50,9 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
   return (
     <Link href={`/battle/${b.faderPostId}`} className="arow">
       <div className="flex items-center justify-between gap-2">
-        <div className={`aside ${aWin ? "lead" : ""}`}><Avatar handle={b.fader.handle} url={b.fader.avatarUrl} size={34} link={false} /><div className="min-w-0"><div className="truncate text-[13px] font-bold">{b.fader.handle}</div><div className={`mono text-[13px] font-bold ${a >= 0 ? "green" : "red"}`}>{fmtPct(a, 1)}</div></div></div>
+        <div className={`aside ${aWin ? "lead" : ""}`}><span className="arank"><Avatar handle={b.fader.handle} url={b.fader.avatarUrl} size={36} link={false} /><img src={`/api/share-bg/rank-${rankFor(b.fader.xp ?? 0).level}`} alt="" /></span><div className="min-w-0"><div className="flex items-center gap-1 text-[13px] font-bold"><span className="truncate">{b.fader.handle}</span><RankChip xp={b.fader.xp} compact size={18} /></div><div className={`mono text-[13px] font-bold ${a >= 0 ? "green" : "red"}`}>{fmtPct(a, 1)}</div></div></div>
         <div className="text-center"><CoinMark coin={b.coin} size="xs" /><div className="when text-[10px]">{settled ? timeAgo(b.settledAt ?? b.createdAt) : "LIVE"}</div></div>
-        <div className={`aside r ${tWin ? "lead" : ""}`}><div className="min-w-0 text-right"><div className="truncate text-[13px] font-bold">{b.target.handle}</div><div className={`mono text-[13px] font-bold ${t >= 0 ? "green" : "red"}`}>{fmtPct(t, 1)}</div></div><Avatar handle={b.target.handle} url={b.target.avatarUrl} size={34} link={false} /></div>
+        <div className={`aside r ${tWin ? "lead" : ""}`}><div className="min-w-0 text-right"><div className="flex items-center justify-end gap-1 text-[13px] font-bold"><RankChip xp={b.target.xp} compact size={18} /><span className="truncate">{b.target.handle}</span></div><div className={`mono text-[13px] font-bold ${t >= 0 ? "green" : "red"}`}>{fmtPct(t, 1)}</div></div><span className="arank"><Avatar handle={b.target.handle} url={b.target.avatarUrl} size={36} link={false} /><img src={`/api/share-bg/rank-${rankFor(b.target.xp ?? 0).level}`} alt="" /></span></div>
       </div>
       <div className="tug mt-2" style={{ height: 6 }}><i style={{ width: `${share}%` }} /></div>
       {badge && <div className="abadge">{badge}</div>}
