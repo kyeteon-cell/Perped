@@ -1,5 +1,6 @@
 "use client";
 
+import { PushPrompt } from "@/components/PushPrompt";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ProfileEditor } from "@/components/ProfileEditor";
@@ -87,6 +88,7 @@ export default function SettingsPage() {
       <div className="srow"><span>Default leverage</span><Seg value={String(local.defaultLeverage ?? 3)} options={levOptions} onChange={(v) => save({ defaultLeverage: Number(v) })} /></div>
       <div className="srow"><span>Max leverage<span className="when ml-1.5">per market, same as Hyperliquid</span></span><span className="mono">up to {topCap}×</span></div>
       <div className="srow"><span>Your Perped fee<span className="when ml-1.5">{fee.reason}</span></span><span className="mono font-bold">{fee.label}</span></div>
+      <PushPrompt compact />
       <Link href="/intro" className="srow"><span>Replay the 60-second tour</span><span>→</span></Link>
       <Link href="/how-it-works" className="srow" style={{ color: "var(--brand)" }}><span>How Perped works · where your money is · fees · risks</span><span>→</span></Link>
       <div className="srow"><span>Approved maximum</span><span className="chip" style={{ color: "var(--green)", background: "var(--green-soft)" }}>{BUILDER_MAX_FEE_RATE} max</span></div>

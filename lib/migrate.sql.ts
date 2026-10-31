@@ -262,4 +262,14 @@ create index if not exists battles_target_post_idx on battles (target_post_id);
 create index if not exists battles_status_idx on battles (status);
 alter table users add column if not exists signup_ip text;
 create index if not exists users_signup_ip_idx on users (signup_ip, created_at) where signup_ip is not null;
+create table if not exists push_subs (
+  id serial primary key,
+  user_id text not null references users(id),
+  endpoint text not null,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists push_subs_endpoint on push_subs (endpoint);
+create index if not exists push_subs_user on push_subs (user_id);
 `;

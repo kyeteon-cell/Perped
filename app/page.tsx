@@ -1,5 +1,6 @@
 "use client";
 
+import { PushPrompt } from "@/components/PushPrompt";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -85,6 +86,7 @@ export default function HomePage() {
       </div>
 
       {tab === "foryou" && <Hero onDeposit={() => setDeposit(true)} />}
+      {tab === "foryou" && <PushPrompt />}
       {tab === "foryou" && <QuickCall mids={mids} />}
       {tab !== "live" && <QuickPost onPosted={() => mutate()} />}
       {tab !== "following" && <Pulse mids={mids} />}

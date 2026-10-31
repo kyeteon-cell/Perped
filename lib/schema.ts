@@ -322,3 +322,17 @@ export type ReferralEarning = typeof referralEarnings.$inferSelect;
 export type ReferralPayout = typeof referralPayouts.$inferSelect;
 
 export type Battle = typeof battles.$inferSelect;
+
+/** Phone/browser push subscriptions (Web Push). One row per device. */
+export const pushSubs = pgTable(
+  "push_subs",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("push_subs_endpoint").on(t.endpoint), index("push_subs_user").on(t.userId)],
+);

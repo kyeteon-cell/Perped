@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "./db";
+import { pushTo } from "./push";
 
 /** The shape every feed consumer gets. Counts are computed in SQL so the feed is one query. */
 export const feedSelect = {
@@ -75,4 +76,5 @@ export async function systemPost(systemType: string, body: string, meta: Record<
 
 export async function notify(userId: string, type: string, title: string, body?: string, href?: string) {
   await db.insert(schema.notifications).values({ userId, type, title, body, href });
+  await pushTo(userId, { title, body, href, tag: type });
 }

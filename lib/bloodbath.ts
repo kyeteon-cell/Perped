@@ -1,6 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db, schema } from "./db";
 import { pnlForPosition } from "./format";
+import { pushTo } from "./push";
 
 /** ROI (%) at which a fighter counts as "getting perped" — the Bloodbath tab threshold. */
 export const BLOODBATH_ROI = -20;
@@ -42,6 +43,7 @@ export async function alertBloodbath(mids: Record<string, string | number>): Pro
     await db.insert(schema.notifications).values({ userId: h.userId, type: "laststand", href: h.battleHref,
       title: `🩸 You're getting perped by ${H.get(h.oppId) ?? "your opponent"}`,
       body: `${h.roi.toFixed(0)}% on ${h.coin}. Last stand: cut it, or double down.` });
+    await pushTo(h.userId, { title: `🩸 You're getting perped by ${H.get(h.oppId) ?? "your opponent"}`, body: `${h.roi.toFixed(0)}% on ${h.coin}. Last stand: cut it, or double down.`, href: h.battleHref, tag: "laststand" });
     sent++;
   }
   for (const h of hurting) {
@@ -58,6 +60,7 @@ export async function alertBloodbath(mids: Record<string, string | number>): Pro
       title: `💀 ${who} is getting perped`,
       body: `${who} is ${h.roi.toFixed(0)}% on ${h.coin} against ${opp}. Watch it live.`,
     })));
+    await pushTo(todo, { title: `💀 ${who} is getting perped`, body: `${who} is ${h.roi.toFixed(0)}% on ${h.coin} against ${opp}. Watch it live.`, href: h.battleHref, tag: "bloodbath" });
     sent += todo.length;
   }
   return sent;

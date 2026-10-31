@@ -1,5 +1,6 @@
 "use client";
 
+import { PushPrompt } from "@/components/PushPrompt";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -38,6 +39,7 @@ export default function NotificationsPage() {
   return (
     <div data-tint="brand" className="fade-in">
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Notifications</div><span className="w-9" /></header>
+      <PushPrompt />
       {!authenticated && <p className="muted p-5 text-sm">Log in to see notifications.</p>}
       {authenticated && rows.length === 0 && <p className="muted p-5 text-sm">Nothing yet. When someone copies you, your call resolves, or a stop triggers, it lands here.</p>}
       {today.length > 0 && <div className="eyebrow px-5 pb-1.5 pt-3.5">Today</div>}
