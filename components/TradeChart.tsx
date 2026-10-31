@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import useSWR from "swr";
+import { useEffect, useState, type MouseEvent } from "react";
 import type { Candle } from "@/lib/hl-info";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { fmtPct, fmtPrice, fmtUsd } from "@/lib/format";
+
+type Iv = "1m" | "5m" | "15m" | "1h";
+const IVS: Record<Iv, number> = { "1m": 60_000, "5m": 300_000, "15m": 900_000, "1h": 3_600_000 };
 
 type Props = { coin: string; entry: number; mark: number; side: "long" | "short"; lev: number; openedAt?: string | Date | null; tp?: number | null; sl?: number | null };
 
@@ -15,10 +19,11 @@ type Props = { coin: string; entry: number; mark: number; side: "long" | "short"
  */
 export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: Props) {
   const opened = openedAt ? new Date(openedAt).getTime() : Date.now();
-  const age = Date.now() - opened;
-  // Frame the chart on the trade: fresh trades get 1m candles, older ones zoom out.
-  // ~40 wide candles, sized so the entry stays inside the window.
-  const [iv, ms, limit] = age < 35 * 60_000 ? ["1m", 60_000, 40] : age < 3 * 3_600_000 ? ["5m", 300_000, 40] : age < 9 * 3_600_000 ? ["15m", 900_000, 40] : ["1h", 3_600_000, 40];
+  // Interval is a quick switch on the card (remembered across cards); 5m by default.
+  const [iv, setIv] = useState<Iv>("5m");
+  useEffect(() => { try { const v = localStorage.getItem("perped:tc-iv") as Iv | null; if (v && IVS[v]) setIv(v); } catch {} }, []);
+  const pick = (e: MouseEvent, v: Iv) => { e.preventDefault(); e.stopPropagation(); setIv(v); try { localStorage.setItem("perped:tc-iv", v); } catch {} };
+  const ms = IVS[iv], limit = 40;
   const { data } = useSWR<{ candles: Candle[] }>(`/api/markets/${coin}/candles?interval=${iv}&limit=${limit}`, { refreshInterval: 60_000, dedupingInterval: 30_000, revalidateOnFocus: false });
   const { markets } = useMarkets();
   const m = markets.find((x) => x.name === coin);
@@ -85,7 +90,9 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
           )}
           {offTp && <span className={`tc-edge tp ${offTp}`}>TP {offTp === "up" ? "↑" : "↓"}</span>}
           {offSl && <span className={`tc-edge sl ${offSl}`}>SL {offSl === "up" ? "↑" : "↓"}</span>}
-          <span className="tc-range">{iv}</span>
+          <span className="tc-ivs" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+            {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === iv ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
+          </span>
         </div>
         <div className="tc-box">
           <div><small>Entry</small><b className="mono">{fmtPrice(entry)}</b></div>
