@@ -12,7 +12,8 @@ const mono = Barlow({ subsets: ["latin"], weight: ["500", "600", "700", "800"], 
 export const metadata: Metadata = {
   title: { default: `${APP_NAME} — get perped`, template: `%s · ${APP_NAME}` },
   description: "Social perps on Hyperliquid. Every trade is a post. Copy the best, fade the rest.",
-  metadataBase: new URL(APP_URL),
+  // Absolute links for share previews: the custom domain once set, else the Vercel production URL.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : APP_URL)),
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [{ url: "/api/share-bg/icon-32", sizes: "32x32", type: "image/png" }, { url: "/api/share-bg/icon-512", sizes: "512x512", type: "image/png" }],
