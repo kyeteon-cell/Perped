@@ -596,10 +596,11 @@ html { scroll-behavior: smooth; }
 
 /* Home banner */
 .home-banner{position:relative;height:150px;overflow:hidden;background:#0b0c0e;isolation:isolate}
-.home-banner-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;z-index:-2}
+.home-banner-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:right 45%;z-index:-2}
 .home-banner-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.15) 0%,rgba(0,0,0,.35) 55%,var(--bg) 100%)}
 .home-banner-row{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px 0}
 .wordmark{font-family:var(--font-mono),"Barlow",sans-serif;font-weight:800;font-style:italic;font-size:38px;line-height:1;letter-spacing:.02em;color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.55);position:relative;display:inline-block;padding-bottom:6px}
 .wordmark::after{content:"";position:absolute;left:2px;right:4px;bottom:0;height:4px;border-radius:4px;background:#ff5a36;box-shadow:0 0 14px rgba(255,90,54,.7)}
 .home-banner-sub{margin-top:8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.8);text-shadow:0 1px 8px rgba(0,0,0,.6)}
 .iconbtn.glass{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.logo-wordmark{display:block;height:46px;width:auto;filter:drop-shadow(0 4px 14px rgba(0,0,0,.55))}

@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   description: "Social perps on Hyperliquid. Every trade is a post. Copy the best, fade the rest.",
   metadataBase: new URL(APP_URL),
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/api/share-bg/icon-32", sizes: "32x32", type: "image/png" }, { url: "/api/share-bg/icon-512", sizes: "512x512", type: "image/png" }],
+    apple: [{ url: "/api/share-bg/icon-180", sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: { capable: true, statusBarStyle: "default", title: APP_NAME },
   openGraph: { title: `${APP_NAME} — get perped`, description: "Social perps on Hyperliquid.", type: "website" },
 };

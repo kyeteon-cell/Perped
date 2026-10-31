@@ -45,11 +45,11 @@ export default function HomePage() {
   return (
     <div data-tint="brand" className="fade-in">
       <header className="home-banner">
-        <img src="/api/share-bg/banner-candles" alt="" className="home-banner-img" />
+        <img src="/api/share-bg/banner-mercury" alt="" className="home-banner-img" />
         <div className="home-banner-shade" />
         <div className="home-banner-row">
         <div>
-          <h1 className="wordmark">PERPED</h1>
+          <h1 className="m-0"><img src="/api/share-bg/logo-wordmark" alt="perped" className="logo-wordmark" /></h1>
           <div className="home-banner-sub">Powered by Hyperliquid</div>
         </div>
         <div className="flex gap-2">
