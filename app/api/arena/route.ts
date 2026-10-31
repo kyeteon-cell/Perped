@@ -30,8 +30,11 @@ export async function GET(req: Request) {
   ]);
   const U = new Map(users.map((u) => [u.id, u as Mini]));
   // Active rivalries among these fighters: those battles are nemesis matches.
-  const riv = userIds.length ? await db.select().from(schema.rivalries).where(and(eq(schema.rivalries.active, true), inArray(schema.rivalries.userA, userIds), inArray(schema.rivalries.userB, userIds))) : [];
-  const R = new Map(riv.map((r) => [`${r.userA}|${r.userB}`, r]));
+  // A nemesis is your #1 rival: the pair is each other's most-fought opponent, or one called the other out.
+  const riv = userIds.length ? await db.select().from(schema.rivalries).where(and(eq(schema.rivalries.active, true), or(inArray(schema.rivalries.userA, userIds), inArray(schema.rivalries.userB, userIds)))) : [];
+  const top = new Map<string, number>();
+  for (const r of riv) for (const u of [r.userA, r.userB]) top.set(u, Math.max(top.get(u) ?? 0, r.fights));
+  const R = new Map(riv.filter((r) => r.calledBy || (r.fights >= (top.get(r.userA) ?? 0) && r.fights >= (top.get(r.userB) ?? 0))).map((r) => [`${r.userA}|${r.userB}`, r]));
   const nemesisOf = (f: string, t: string): Nemesis | null => {
     const r = R.get(f < t ? `${f}|${t}` : `${t}|${f}`); if (!r) return null;
     const fIsA = r.userA === f;
