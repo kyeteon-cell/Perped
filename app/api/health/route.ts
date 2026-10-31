@@ -47,6 +47,10 @@ export async function GET(req: Request) {
   const unjammed = admin ? await unjam().catch((e) => `unjam failed: ${e instanceof Error ? e.message : String(e)}`) : "skipped (no key)";
   await ensureSchema();
   const origin = new URL(req.url).origin;
+  // Where the database lives vs where this function runs: a cross-region hop adds latency to every query.
+  const dbRegion = (process.env.DATABASE_URL ?? "").match(/\.([a-z]{2}-[a-z]+-\d)\.aws\.neon\.tech/)?.[1] ?? "unknown";
+  const t0 = Date.now(); await db.execute(sql`select 1`).catch(() => null); const t1 = Date.now(); await db.execute(sql`select 1`).catch(() => null);
+  const dbPingMs = { first: t1 - t0, second: Date.now() - t1 }, fnRegion = process.env.VERCEL_REGION ?? "unknown";
   const privy = await privyCheck(origin);
   try {
     const rows = (await db.execute(sql`select table_name from information_schema.tables where table_schema = 'public' order by 1`)) as unknown as { table_name: string }[];
@@ -67,7 +71,7 @@ export async function GET(req: Request) {
     let feed: unknown;
     try { const rows = await queryFeed({ limit: 3 }); feed = { ok: true, rows: rows.length, newest: rows[0]?.post.createdAt ?? null }; } catch (e) { feed = { ok: false, error: e instanceof Error ? e.message : String(e) }; }
     const [counts] = (await db.execute(sql`select (select count(*) from posts) as posts, (select count(*) from users where is_bot) as bots, (select max(created_at) from posts where user_id in (select id from users where is_bot)) as last_bot_post`)) as unknown as { posts: string; bots: string; last_bot_post: string | null }[];
-    return Response.json({ ok: missing.length === 0, unjammed, feed, counts, botsPaused: process.env.BOTS_PAUSED === "1", app: APP_NAME, version: "0.4.0", trading: HL_NETWORK, prices: HL_DATA_NETWORK, builderConfigured: BUILDER_CONFIGURED, privy, bots, tables, missing });
+    return Response.json({ ok: missing.length === 0, dbRegion, fnRegion, dbPingMs, unjammed, feed, counts, botsPaused: process.env.BOTS_PAUSED === "1", app: APP_NAME, version: "0.4.0", trading: HL_NETWORK, prices: HL_DATA_NETWORK, builderConfigured: BUILDER_CONFIGURED, privy, bots, tables, missing });
   } catch (e) {
     return Response.json({ ok: false, unjammed, privy, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
