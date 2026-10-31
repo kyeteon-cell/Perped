@@ -61,7 +61,7 @@ try {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(BASE + "/arena", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /Bloodbath/ }).first().click({ timeout: 15000 }).catch((e) => errors.push(e.message));
+  await page.getByRole("tab", { name: /Bloodbath/ }).first().click({ timeout: 15000 }).catch((e) => errors.push(e.message));
   await page.waitForTimeout(800);
   await page.screenshot({ path: "smoke-out/bloodbath.png" }).catch(() => {});
   console.log(`${errors.length ? "FAIL" : "PASS"} arena → Bloodbath tab${errors.length ? "\n   " + errors.join("\n   ") : ""}`);
