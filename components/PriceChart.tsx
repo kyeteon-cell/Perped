@@ -25,8 +25,8 @@ function cssVar(name: string, fallback: string) {
  * pinch-zoom and drag to pan, crosshair with OHLC, live last candle from the WebSocket mid.
  */
 export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin: string; livePx?: number; markers?: ChartMarker[]; onMarkerClick?: (id: string) => void }) {
-  const [interval, setInterval_] = useState<Interval>(() => { try { return (localStorage.getItem("perped-chart-iv") as Interval) || "15m"; } catch { return "15m"; } });
-  const [mode, setMode] = useState<Mode>(() => { try { return (localStorage.getItem("perped-chart") as Mode) || "candles"; } catch { return "candles"; } });
+  const [interval, setInterval_] = useState<Interval>("15m");
+  const [mode, setMode] = useState<Mode>("candles");
   const [legend, setLegend] = useState<Candle | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
@@ -34,7 +34,14 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
   const vol = useRef<ISeriesApi<"Histogram"> | null>(null);
   const lastRef = useRef<Candle | null>(null);
   const clickRef = useRef(onMarkerClick); clickRef.current = onMarkerClick;
-  const [showPins, setShowPins] = useState<boolean>(() => { try { return localStorage.getItem("perped-chart-pins") !== "0"; } catch { return true; } });
+  const [showPins, setShowPins] = useState<boolean>(true);
+  useEffect(() => {
+    try {
+      const iv = localStorage.getItem("perped-chart-iv") as Interval | null; if (iv) setInterval_(iv);
+      const m = localStorage.getItem("perped-chart") as Mode | null; if (m) setMode(m);
+      if (localStorage.getItem("perped-chart-pins") === "0") setShowPins(false);
+    } catch {}
+  }, []);
   const showPinsRef = useRef(showPins); showPinsRef.current = showPins;
   const [pins, setPins] = useState<{ id: string; x: number; y: number; n: number; m: ChartMarker }[]>([]);
   const markersRef = useRef<ChartMarker[]>(markers); markersRef.current = markers;

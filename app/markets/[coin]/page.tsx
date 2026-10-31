@@ -29,7 +29,8 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
 
   // Social overlay: who's in this market (followed / top / everyone), as chart pins + a live tape.
   const { traders, followingAny, loaded } = useMarketTraders(coin);
-  const [lens, setLens] = useState<Lens>(() => { try { return (localStorage.getItem("perped:lens") as Lens) || "following"; } catch { return "following"; } });
+  const [lens, setLens] = useState<Lens>("following");
+  useEffect(() => { try { const l = localStorage.getItem("perped:lens") as Lens | null; if (l) setLens(l); } catch {} }, []);
   useEffect(() => { try { localStorage.setItem("perped:lens", lens); } catch {} }, [lens]);
   // Default to Top 10 for people who don't follow anyone yet.
   useEffect(() => { if (loaded && !followingAny && lens === "following") setLens("top"); }, [loaded, followingAny, lens]);
@@ -69,7 +70,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
       {(feed?.posts.length ?? 0) > 0 && (
         <section className="mt-2" data-tint="brand">
           <div className="eyebrow px-5 pb-2 pt-4">Perped on {ticker(coin)}</div>
-          {feed!.posts.map((item) => <FeedPost key={item.post.id} item={item} mid={px || undefined} onChanged={() => mutate()} />)}
+          {feed!.posts.map((item) => <FeedPost key={item.post.id} item={item} mid={px || undefined} onChanged={mutate} />)}
         </section>
       )}
     </div>

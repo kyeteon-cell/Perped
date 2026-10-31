@@ -1,6 +1,7 @@
 "use client";
 
 import { SignInSheet } from "@/components/SignInSheet";
+import { SessionProvider } from "@/lib/hooks/useSession";
 import { PrivyProvider, usePrivy, useWallets } from "@privy-io/react-auth";
 import { useCallback } from "react";
 import { SWRConfig } from "swr";
@@ -33,7 +34,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         supportedChains: [chain],
       }}
     >
-      <AuthedSWR>{children}<SignInSheet /></AuthedSWR>
+      <AuthedSWR><SessionProvider>{children}<SignInSheet /></SessionProvider></AuthedSWR>
     </PrivyProvider>
   );
 }

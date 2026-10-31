@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
@@ -17,7 +17,12 @@ const STYLE: Record<string, { icon: string; tint: string }> = {
 export default function NotificationsPage() {
   const { authedFetch, authenticated, refreshMe } = useSession();
   const { data, mutate } = useSWR<{ notifications: Notification[] }>(authenticated ? "/api/notifications" : null, async () => (await authedFetch("/api/notifications")).json());
-  useEffect(() => { if (data?.notifications.some((n) => !n.read)) authedFetch("/api/notifications", { method: "POST" }).then(() => { mutate(); refreshMe(); }); }, [data, authedFetch, mutate, refreshMe]);
+  const marked = useRef(false);
+  useEffect(() => {
+    if (marked.current || !data?.notifications?.some((n) => !n.read)) return;
+    marked.current = true;
+    authedFetch("/api/notifications", { method: "POST" }).then(() => { mutate(); refreshMe(); }).catch(() => { marked.current = false; });
+  }, [data, authedFetch, mutate, refreshMe]);
   const rows = data?.notifications ?? [];
   const today = rows.filter((n) => Date.now() - new Date(n.createdAt).getTime() < 86_400_000), earlier = rows.filter((n) => !today.includes(n));
   const Row = ({ n }: { n: Notification }) => {

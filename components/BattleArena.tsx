@@ -238,13 +238,13 @@ function RaceChart({ coin, live, a, b }: { coin: string; live: number; a: Fighte
   return (
     <div className="rc">
       <div className="rc-gap">{leader ? <><b>{leader.handle}</b> ahead by <b className="mono">{gap.toFixed(1)}%</b></> : "Dead level"}</div>
-      <Lane f={a} m={mom(0)} />
+      {Lane({ f: a, m: mom(0) })}
       {leader && (
         <div className="rc-gapbar">
           <span className="rc-bracket" style={{ left: `${pos(Math.min(a.roi, b.roi))}%`, width: `${pos(Math.max(a.roi, b.roi)) - pos(Math.min(a.roi, b.roi))}%` }}><b className="mono">{gapAbs.toFixed(gapAbs < 10 ? 2 : 1)}% gap</b></span>
         </div>
       )}
-      <Lane f={b} m={mom(1)} />
+      {Lane({ f: b, m: mom(1) })}
       <div className="rc-scale"><span className="muted">each tick = {step}% ROI</span>{ticks.includes(0) && <span className="muted">| = start (0%)</span>}</div>
       <div className="ar-lead">
         <div className="ar-leadhead"><span>Time in the lead</span><span>{changes} lead change{changes === 1 ? "" : "s"}</span></div>

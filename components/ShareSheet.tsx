@@ -161,7 +161,9 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
   const challengeable = (item.post.kind === "trade" && item.post.status === "open") || (item.post.kind === "call" && item.post.callStatus === "open");
   const refQ = profile ? `?ref=${profile.handle}` : "";
   const challengeUrl = challengeable ? `${origin}/c/${item.post.id}${refQ}` : undefined;
-  const data = useMemo(() => cardData(item, mid, challengeUrl), [item, mid, challengeUrl]);
+  // Freeze the price when the sheet opens so the card isn't redrawn on every tick.
+  const [mid0] = useState(mid);
+  const data = useMemo(() => cardData(item, mid0, challengeUrl), [item, mid0, challengeUrl]);
   const mine = !!profile && item.author?.id === profile.id;
   const theme = THEMES.find((t) => t.key === themeId) ?? THEMES[0];
   useEffect(() => {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets, type Market } from "@/lib/hooks/useMarkets";
@@ -66,7 +66,8 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     getMaxBuilderFee(address, BUILDER_ADDRESS).then((f) => setApproved(f >= fee.tenthsBps));
   }, [address, fee.tenthsBps]);
   // Fades default to an automatic 5% stop.
-  useEffect(() => { if (isFade && mid && !sl) setSl((side === "long" ? mid * 0.95 : mid * 1.05).toFixed(market?.szDecimals ? 6 - market.szDecimals : 2)); }, [isFade, mid, side, sl, market]);
+  const slSeeded = useRef(false);
+  useEffect(() => { if (isFade && mid && !sl && !slSeeded.current) { slSeeded.current = true; setSl((side === "long" ? mid * 0.95 : mid * 1.05).toFixed(market?.szDecimals ? 6 - market.szDecimals : 2)); } }, [isFade, mid, side, sl, market]);
 
   const refPx = orderType === "limit" && Number(limitPx) > 0 ? Number(limitPx) : mid;
   const notional = usd * lev;

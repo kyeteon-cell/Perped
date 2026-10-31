@@ -49,9 +49,9 @@ export default function DuelPage({ params }: { params: Promise<{ id: string }> }
         <div className="duel-head"><span className="lbl gold">⚔ {d.status === "pending" ? "Challenge" : d.status === "live" ? "Live" : d.status === "settled" ? "Settled" : "Declined"}</span><span className="when">{fmtUsd(Number(d.stakeUsd))} each · {d.status === "live" ? leftTxt : new Date(d.settlesAt).toLocaleDateString()}</span></div>
         <div className="mt-3 flex items-center gap-2.5"><CoinMark coin={d.coin} /><b className="text-xl">{ticker(d.coin, true)}</b><span className="mono muted ml-auto">{mid ? fmtPrice(mid) : "…"}</span></div>
         <div className="duel-body">
-          <Side u={challenger} side={d.challengerSide} roi={a} post={cp} />
+          {Side({ u: challenger, side: d.challengerSide, roi: a, post: cp })}
           <div className="duel-mid"><div className="vs">VS</div>{d.startPx && <div className="when">from {fmtPrice(d.startPx)}</div>}</div>
-          <Side u={opponent} side={oppSide} roi={b} post={op} />
+          {Side({ u: opponent, side: oppSide, roi: b, post: op })}
         </div>
         {d.status === "settled" && <p className="say text-center"><b>{d.winnerId === challenger.id ? challenger.handle : opponent.handle}</b> won. {d.startPx && d.endPx ? `${fmtPrice(d.startPx)} → ${fmtPrice(d.endPx)}` : ""}</p>}
         <p className="when mt-3 text-center">Stakes are each trader&apos;s own position. Nothing is pooled, nobody holds anything.</p>

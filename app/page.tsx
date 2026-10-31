@@ -20,16 +20,29 @@ import { fmtUsd, fmtPct } from "@/lib/format";
 
 type Tab = "foryou" | "following" | "live";
 
+/** Only live trades and open calls need the ticking price; closed cards stay still. */
+const isLive = (p: FeedRow["post"]) => (p.kind === "trade" ? p.status === "open" : p.kind === "call" && p.callStatus === "open");
+
 export default function HomePage() {
   const { authenticated, profile, authedFetch, unread } = useSession();
   const { mids, connected } = useMids();
+  const liveMid = (it: FeedRow) => (it.post.coin && isLive(it.post) ? mids[it.post.coin] : undefined);
   const [tab, setTab] = useState<Tab>("foryou");
-  const [realness, setRealness] = useState<"all" | "real" | "demo">(() => { try { return (localStorage.getItem("perped:realness") as "all" | "real" | "demo") || "all"; } catch { return "all"; } });
+  const [realness, setRealness] = useState<"all" | "real" | "demo">("all");
   const setRealnessP = (v: "all" | "real" | "demo") => { setRealness(v); try { localStorage.setItem("perped:realness", v); } catch {} };
   const [deposit, setDeposit] = useState(false);
-  const [filter, setFilter] = useState<FeedFilter>(() => { try { return { ...EMPTY_FILTER, ...JSON.parse(localStorage.getItem("perped:filter") || "{}") }; } catch { return EMPTY_FILTER; } });
+  const [filter, setFilter] = useState<FeedFilter>(EMPTY_FILTER);
   const [filtering, setFiltering] = useState(false);
-  useEffect(() => { try { localStorage.setItem("perped:filter", JSON.stringify(filter)); } catch {} }, [filter]);
+  // Saved choices load after mount (reading storage during render breaks hydration).
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    try {
+      const r = localStorage.getItem("perped:realness") as "all" | "real" | "demo" | null; if (r) setRealness(r);
+      setFilter({ ...EMPTY_FILTER, ...JSON.parse(localStorage.getItem("perped:filter") || "{}") });
+    } catch {}
+    setLoaded(true);
+  }, []);
+  useEffect(() => { if (loaded) try { localStorage.setItem("perped:filter", JSON.stringify(filter)); } catch {} }, [filter, loaded]);
   const nFilters = activeCount(filter);
   // Referral links land here (/?ref=handle). Remember the code until onboarding uses it.
   useEffect(() => {
@@ -95,7 +108,7 @@ export default function HomePage() {
 
       {groupFeed(posts).map((g, i) => (
         <div key={g.kind === "strip" ? `strip-${g.items[0].post.id}` : g.item.post.id}>
-          {g.kind === "strip" ? <RankStrip items={g.items} /> : <FeedPost item={g.item} mid={g.item.post.coin ? mids[g.item.post.coin] : undefined} onChanged={() => mutate()} />}
+          {g.kind === "strip" ? <RankStrip items={g.items} /> : <FeedPost item={g.item} mid={liveMid(g.item)} onChanged={mutate} />}
           {i === 4 && suggested.length > 0 && <Suggested rows={suggested} />}
         </div>
       ))}

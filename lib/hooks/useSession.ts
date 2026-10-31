@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLinkAccount, useLogin, usePrivy, useWallets } from "@privy-io/react-auth";
 import { createWalletClient, custom, type WalletClient } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
@@ -12,7 +12,7 @@ import { resolveFeeTier, type FeeInfo } from "@/lib/fees";
 const chain = HL_NETWORK === "mainnet" ? arbitrum : arbitrumSepolia;
 
 /** Everything a page needs about the logged-in user: wallet, viem client, profile, authed fetch. */
-export function useSession() {
+function useSessionState() {
   const { ready: privyReady, authenticated: privyAuthed, logout: privyLogout, getAccessToken, user } = usePrivy();
   // Guest demo: a signed token in localStorage, no third-party login.
   const [guestToken, setGuestToken] = useState<string | null>(null);
@@ -154,4 +154,20 @@ export function useSession() {
     linkError,
     refreshMe,
   };
+}
+
+type Session = ReturnType<typeof useSessionState>;
+const SessionCtx = createContext<Session | null>(null);
+
+/** One session for the whole app: guest sign-in, profile and wallet client are shared by every component. */
+export function SessionProvider({ children }: { children: ReactNode }) {
+  const s = useSessionState();
+  return createElement(SessionCtx.Provider, { value: s }, children);
+}
+
+/** Everything a page needs about the logged-in user: wallet, viem client, profile, authed fetch. */
+export function useSession(): Session {
+  const s = useContext(SessionCtx);
+  if (!s) throw new Error("useSession must be used inside <SessionProvider>");
+  return s;
 }

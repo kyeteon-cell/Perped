@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSWRConfig } from "swr";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtPrice, fmtStake, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
 import { useSession } from "@/lib/hooks/useSession";
@@ -32,7 +32,10 @@ export type BattleStamp = { battleId: number; faderPostId: number; vs?: string; 
 const d = (x: Date | string | null | undefined) => (x ? new Date(x) : null);
 
 /** One feed item. Dispatches on post.kind: trade, call, poll, text, system. */
-export function FeedPost(props: Props) {
+/** Memoised: a feed card only re-renders when its own item or price changes. */
+export const FeedPost = memo(FeedPostInner);
+
+function FeedPostInner(props: Props) {
   const k = props.item.post.kind;
   if (k === "system") return <SystemPost {...props} />;
   if (k === "poll") return <PollPost {...props} />;
@@ -58,17 +61,17 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
       {author ? (
-        <Link href={`/u/${author.handle}`} className="flex items-center gap-3">
-          <Avatar handle={author.handle} url={author.avatarUrl} link={false} />
+        <div className="flex items-center gap-3">
+          <Link href={`/u/${author.handle}`} onClick={(e) => e.stopPropagation()}><Avatar handle={author.handle} url={author.avatarUrl} link={false} /></Link>
           <div>
-            <div className="name">{author.handle}{author.verified && <span className="vbadge">✓</span>}<RankChip xp={author.xp} compact />{item.rival ? <span className={`rival-chip ${item.rival.mine > item.rival.theirs ? "lead" : ""}`}>⚔ {item.rival.mine}–{item.rival.theirs}</span> : null}{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</div>
+            <Link href={`/u/${author.handle}`} className="name block" onClick={(e) => e.stopPropagation()}>{author.handle}{author.verified && <span className="vbadge">✓</span>}<RankChip xp={author.xp} compact />{item.rival ? <span className={`rival-chip ${item.rival.mine > item.rival.theirs ? "lead" : ""}`}>⚔ {item.rival.mine}–{item.rival.theirs}</span> : null}{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</Link>
             <div className="when">{timeAgo(post.createdAt)} ago{post.kind === "trade" && (
               post.copiedFromId ? <> · copied {item.src ? <Link href={`/u/${item.src.handle}`} className="srcname" onClick={(e) => e.stopPropagation()}>@{item.src.handle}</Link> : "a trade"}</>
               : post.fadedFromId ? <> · faded {item.src ? <Link href={`/u/${item.src.handle}`} className="srcname" onClick={(e) => e.stopPropagation()}>@{item.src.handle}</Link> : "a trade"}</>
               : post.side === "short" ? " · sold" : " · bought"
             )}{post.kind === "trade" && post.status === "closed" ? " · closed" : ""}</div>
           </div>
-        </Link>
+        </div>
       ) : null}
       {author && !author.isBot ? <FollowButton handle={author.handle} compact /> : null}
       <div className="ml-auto flex gap-1.5">{right}</div>
@@ -85,6 +88,8 @@ function Acts({ item, onChanged, children, mid, challenge, manage }: { item: Fee
   const [mine, setMine] = useState<number | null>(item.myVote ?? null);
   const [commenting, setCommenting] = useState(false);
   const [commentCount, setCommentCount] = useState(item.commentCount);
+  // Pick up fresh counts when the feed refreshes.
+  useEffect(() => { setLikes(item.likes); setDislikes(item.dislikes); setMine(item.myVote ?? null); setCommentCount(item.commentCount); }, [item.likes, item.dislikes, item.myVote, item.commentCount]);
   const vote = async (value: 1 | -1) => {
     if (!authenticated) return login();
     // Optimistic: flip instantly, reconcile with the server, revert on failure.
@@ -140,7 +145,7 @@ function useSwipeToAct(onCopy: () => void, onFade: () => void, enabled: boolean,
     if (bgCopy.current) bgCopy.current.style.opacity = String(Math.min(1, Math.max(0, dx / 48)));
     if (bgFade.current) bgFade.current.style.opacity = String(Math.min(1, Math.max(0, -dx / 48)));
   };
-  const onTouchStart = (e: React.TouchEvent) => { if (!enabled) return; const t = e.touches[0]; start.current = { x: t.clientX, y: t.clientY, locked: null }; };
+  const onTouchStart = (e: React.TouchEvent) => { if (!enabled || !e.currentTarget.contains(e.target as Node)) return; const t = e.touches[0]; start.current = { x: t.clientX, y: t.clientY, locked: null }; };
   const onTouchMove = (e: React.TouchEvent) => {
     const s0 = start.current; if (!s0) return;
     const t = e.touches[0]; const mx = t.clientX - s0.x, my = t.clientY - s0.y;
@@ -231,6 +236,7 @@ function TradePost({ item, mid, onChanged, full }: Props) {
   const { pnl, pct } = pnlForPosition(post.side!, entry, mark, size);
   const roi = pct * lev, pos = pnl >= 0;
   const [mode, setMode] = useState<0 | 1 | 2>(profile?.pnlDisplay === "usd" ? 1 : profile?.pnlDisplay === "roi" ? 2 : 0);
+  useEffect(() => { if (profile?.pnlDisplay) setMode(profile.pnlDisplay === "usd" ? 1 : profile.pnlDisplay === "roi" ? 2 : 0); }, [profile?.pnlDisplay]);
   const pillRef = useRef<HTMLDivElement>(null);
   const prev = useRef(mark);
   useEffect(() => {
@@ -254,13 +260,13 @@ function TradePost({ item, mid, onChanged, full }: Props) {
     // Closed trade: one compact row. The feed is about what's live; banked results are a footnote.
     return (
       <article className={`post row ${isDemoPost(item) ? "demo" : ""}`} onClick={() => router.push(`/post/${post.id}`)} role="link">
-        {author ? <Link href={`/u/${author.handle}`}><Avatar handle={author.handle} url={author.avatarUrl} size={34} link={false} /></Link> : <span />}
+        {author ? <Link href={`/u/${author.handle}`} onClick={(e) => e.stopPropagation()}><Avatar handle={author.handle} url={author.avatarUrl} size={34} link={false} /></Link> : <span />}
         <CoinMark coin={post.coin!} size="sm" />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px]"><b>{author?.handle}</b> <span className="muted">closed</span> <b>{ticker(post.coin!)}</b> <span className={post.side === "long" ? "green" : "red"}>{post.side}</span> <span className="muted">{lev}×</span>{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : <span className="real-tag ml-1.5">Real</span>}</div>
           <div className="mono when text-[12px]">{fmtPrice(entry)} → {fmtPrice(mark)} · {timeAgo(post.closedAt ?? post.createdAt)} ago{camps ? ` · ${item.copyCount} copied, ${item.fadeCount} faded` : ""}</div>
         </div>
-        <Link href={`/post/${post.id}`} className="text-right">
+        <Link href={`/post/${post.id}`} className="text-right" onClick={(e) => e.stopPropagation()}>
           <div className={`pnl mono ${pos ? "green" : "red"}`}>{fmtPct(roi, 1)}</div>
           <div className={`mono text-[12px] ${pos ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</div>
         </Link>

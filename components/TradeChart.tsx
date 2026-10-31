@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useEffect, useState, type MouseEvent } from "react";
 import type { Candle } from "@/lib/hl-info";
@@ -18,6 +18,7 @@ type Props = { coin: string; entry: number; mark: number; side: "long" | "short"
  * Candle requests are keyed per coin + interval, so a feed full of BTC trades shares one request.
  */
 export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: Props) {
+  const router = useRouter();
   const opened = openedAt ? new Date(openedAt).getTime() : Date.now();
   // Interval is a quick switch on the card (remembered across cards); 5m by default.
   const [iv, setIv] = useState<Iv>("5m");
@@ -70,7 +71,9 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const offUp = off.filter((l) => l.p > top), offDn = off.filter((l) => l.p < bot);
 
   return (
-    <Link href={`/markets/${coin}`} className="tchart" onClick={(e) => e.stopPropagation()} aria-label={`${coin} chart`}>
+    <div role="link" tabIndex={0} className="tchart" aria-label={`${coin} chart`}
+      onClick={(e) => { e.stopPropagation(); router.push(`/markets/${coin}`); }}
+      onKeyDown={(e) => { if (e.key === "Enter") router.push(`/markets/${coin}`); }}>
       <div className="tc-grid">
         <div className="tchart-plot">
           {candles.length ? (
@@ -119,6 +122,6 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
         <div><small>Volume</small><b className="mono">{m ? fmtUsd(m.volume24h, { compact: true }) : "—"}</b></div>
         <div><small>Funding</small><b className={`mono ${(m?.funding8h ?? 0) >= 0 ? "" : "red"}`}>{m ? `${m.funding8h >= 0 ? "+" : ""}${m.funding8h.toFixed(4)}%` : "—"}</b></div>
       </div>
-    </Link>
+    </div>
   );
 }

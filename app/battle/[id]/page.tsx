@@ -90,9 +90,9 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
       <section className="battle photo mx-4 mt-4" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
         <div className="flex items-center justify-between"><span className="pc-tag violet">{live ? "● Live fade" : "Settled fade"} · {timeAgo(fade.createdAt)} ago</span><Link href={`/markets/${coin}`} className="flex items-center gap-1.5 text-sm"><CoinMark coin={coin} size="sm" /><b>{ticker(coin, true)}</b><span className="mono muted">{mid ? fmtPrice(mid) : ""}</span></Link></div>
         <div className="bgrid mt-4">
-          <Side u={fader.user} p={fade} r={a} left />
+          {Side({ u: fader.user, p: fade, r: a, left: true })}
           <div className="bmid"><div className="vs">VS</div><div className="when text-[11px] mt-1">{fader.user.handle} faded</div></div>
-          <Side u={tu.user} p={target} r={b} left={false} />
+          {Side({ u: tu.user, p: target, r: b, left: false })}
         </div>
         {battle?.status === "settled" && (
           <div className="verdict mt-4">

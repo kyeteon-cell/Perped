@@ -52,7 +52,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const { data: pinned, mutate: mutatePinned } = useSWR<{ posts: FeedRow[] }>(`/api/posts?handle=${handle}&kind=trade&limit=60`);
   const { data: peopleList } = useSWR<{ users: { handle: string; avatarUrl: string | null; pnl7d: string | null; winRate: string | null }[] }>(tab === "people" ? `/api/follows?handle=${handle}&dir=${people}` : null);
 
-  const demoEq = useDemoEquity(data?.user.isDemo ? data.user.handle : null, Number(data?.user.demoBalance ?? 0), mids);
+  const demoEq = useDemoEquity(data?.user?.isDemo ? data.user.handle : null, Number(data?.user?.demoBalance ?? 0), mids);
   if (!data) return <SkeletonList n={2} />;
   if ("error" in (data as unknown as Record<string, unknown>)) return <div className="p-5"><p className="muted">No trader with that handle.</p></div>;
   const { user, stats: s, isMe } = data;
@@ -181,8 +181,8 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
       {tab === "posts" && (
         <>
-          {(calls?.posts ?? []).map((item) => <FeedPost key={item.post.id} item={item} mid={item.post.coin ? mids[item.post.coin] : undefined} onChanged={() => mutateFeed()} />)}
-          {(feed?.posts ?? []).map((item) => <FeedPost key={item.post.id} item={item} onChanged={() => mutateFeed()} />)}
+          {(calls?.posts ?? []).map((item) => <FeedPost key={item.post.id} item={item} mid={item.post.coin ? mids[item.post.coin] : undefined} onChanged={mutateFeed} />)}
+          {(feed?.posts ?? []).map((item) => <FeedPost key={item.post.id} item={item} onChanged={mutateFeed} />)}
           {(feed?.posts.length ?? 0) + (calls?.posts.length ?? 0) === 0 && <p className="muted p-5 text-sm">No posts yet.</p>}
         </>
       )}
@@ -192,7 +192,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           <div className="seg px-5 pb-1 pt-3.5"><button className={`chip ${tradeTab === "open" ? "on" : ""}`} onClick={() => setTradeTab("open")}>Open · {user.isDemo ? (feed?.posts.length ?? 0) : data.positions.length}</button><button className={`chip ${tradeTab === "closed" ? "on" : ""}`} onClick={() => setTradeTab("closed")}>Closed · {s?.closedTrades ?? 0}</button></div>
           {tradeTab === "open" && user.isDemo && (feed?.posts ?? []).map((item) => (
             <div key={item.post.id} className="relative">
-              <FeedPost item={item} mid={item.post.coin ? mids[item.post.coin] : undefined} onChanged={() => mutateFeed()} />
+              <FeedPost item={item} mid={item.post.coin ? mids[item.post.coin] : undefined} onChanged={mutateFeed} />
             </div>
           ))}
           {tradeTab === "open" && !user.isDemo && data.positions.map((p) => {
@@ -217,7 +217,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         <>
           <div className="seg px-5 pb-1 pt-3.5">{(["followers", "following"] as People[]).map((d) => <button key={d} className={`chip capitalize ${people === d ? "on" : ""}`} onClick={() => setPeopleDir(d)}>{d} · {d === "followers" ? data.followers : data.following}</button>)}</div>
           {(peopleList?.users ?? []).map((u) => (
-            <Link key={u.handle} href={`/u/${u.handle}`} className="lb"><Avatar handle={u.handle} url={u.avatarUrl} size={44} link={false} /><FollowButton handle={u.handle} compact className="order-last" /><div className="min-w-0 flex-1"><div className="name">{u.handle}</div><div className="when">{fmtUsd(Number(u.pnl7d ?? 0), { sign: true, compact: true })} · 7 days · {fmtPct(Number(u.winRate ?? 0), 0)} win</div></div></Link>
+            <div key={u.handle} className="lb"><Link href={`/u/${u.handle}`} className="flex min-w-0 flex-1 items-center gap-3"><Avatar handle={u.handle} url={u.avatarUrl} size={44} link={false} /><div className="min-w-0 flex-1"><div className="name">{u.handle}</div><div className="when">{fmtUsd(Number(u.pnl7d ?? 0), { sign: true, compact: true })} · 7 days · {fmtPct(Number(u.winRate ?? 0), 0)} win</div></div></Link><FollowButton handle={u.handle} compact /></div>
           ))}
           {(peopleList?.users.length ?? 0) === 0 && <p className="muted p-5 text-sm">Nobody here yet.</p>}
         </>

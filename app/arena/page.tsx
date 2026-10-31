@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
@@ -63,7 +63,9 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
 function CallOut({ onPick, onClose, rivals }: { onPick: (h: string) => void; onClose: () => void; rivals: string[] }) {
   const { profile } = useSession();
   const [q, setQ] = useState("");
-  const { data } = useSWR<{ users: { handle: string; avatarUrl: string | null; xp: number }[] }>(`/api/users?q=${encodeURIComponent(q)}`);
+  const [dq, setDq] = useState("");
+  useEffect(() => { const t = setTimeout(() => setDq(q), 250); return () => clearTimeout(t); }, [q]);
+  const { data } = useSWR<{ users: { handle: string; avatarUrl: string | null; xp: number }[] }>(`/api/users?q=${encodeURIComponent(dq)}`);
   const list = (data?.users ?? []).filter((u) => u.handle !== profile?.handle);
   return (
     <Sheet label="Call someone out" onClose={onClose}>

@@ -1001,3 +1001,4 @@ body { letter-spacing: -.005em; }
 .aside.lead .av { box-shadow: 0 0 0 2px var(--gold); }
 .avring.lead { border-color: var(--gold); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 18%, transparent); }
 .tug.neutral { background: var(--line); } .tug.neutral i { background: var(--gold); }
+.tchart { cursor: pointer; }

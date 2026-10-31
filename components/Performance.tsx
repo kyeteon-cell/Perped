@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import useSWR from "swr";
 import type { FeedRow } from "@/lib/feed";
 import type { Stats } from "@/lib/schema";
@@ -33,13 +33,14 @@ function equity(closed: Closed[]) {
 
 /** Area line with a zero baseline; green when the series ends above where it started. */
 function Curve({ pts, h = 110, w = 340, showAxis = true }: { pts: { t: number; v: number }[]; h?: number; w?: number; showAxis?: boolean }) {
+  const uid = useId().replace(/:/g, "");
   if (pts.length < 2) return <div className="grid place-items-center text-xs" style={{ height: h, color: "var(--muted)" }}>Not enough closed trades yet</div>;
   const vs = pts.map((p) => p.v); const min = Math.min(0, ...vs), max = Math.max(0, ...vs), span = max - min || 1;
   const x = (i: number) => (i / (pts.length - 1)) * w, y = (v: number) => 8 + ((max - v) / span) * (h - 16);
   const path = pts.map((p, i) => `${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
   const up = vs[vs.length - 1] >= 0; const col = up ? "var(--green)" : "var(--red)";
   const zero = y(0);
-  const id = `eq${Math.round(Math.random() * 1e6)}`;
+  const id = `eq${uid}`;
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height: h }} role="img" aria-label="Cumulative P&L">
       <defs><linearGradient id={id} x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={col} stopOpacity=".28" /><stop offset="1" stopColor={col} stopOpacity="0" /></linearGradient></defs>

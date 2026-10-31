@@ -28,7 +28,7 @@ export function QuickTrade({ item, mode, onClose }: { item: FeedRow; mode: "copy
           </div>
           <CoinMark coin={post.coin!} size="sm" />
         </div>
-        <TradeTicket seed={seed} compact quick onDone={onClose} />
+        <TradeTicket key={mode} seed={seed} compact quick onDone={onClose} />
         <p className="faint px-5 pb-2 text-center text-[11px]">{mode === "fade" ? "Fades get an automatic 5% stop; change it later from Manage. " : "Want limit orders, TP/SL or a note? "}<a href={`/trade?${mode}=${post.id}`} className="underline">Open the full ticket</a></p>
     </Sheet>
   );
