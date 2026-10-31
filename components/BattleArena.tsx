@@ -158,7 +158,7 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
           {[a, b].map((f, i) => (
             <span key={`pin${i}`} className={`ar-pin ${f.side}`} style={{ left: pctX(xOf(ts(f.openedAt))), top: pctY(f.entry) }} title={`${f.handle} ${f.side === "long" ? "bought" : "sold"} at ${fmtPrice(f.entry)}`}>
               <Avatar handle={f.handle} url={f.avatarUrl} size={20} link={false} />
-              <em className={`ar-pinlbl ${f.side}`}>{f.side === "long" ? "▲ BUY" : "▼ SELL"} {fmtPrice(f.entry)}</em>
+              <em>{f.side === "long" ? "▲" : "▼"}</em>
             </span>
           ))}
           <i className="ar-dot" style={{ left: pctX(CA), top: pctY(px) }} />
