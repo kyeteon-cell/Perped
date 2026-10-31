@@ -41,5 +41,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   }).from(schema.posts).where(sql`copied_from_id = ${target.id} or faded_from_id = ${target.id}`);
 
   const [battle] = await db.select().from(schema.battles).where(eq(schema.battles.faderPostId, fade.id)).limit(1);
-  return Response.json({ fade, target, fader: f, targetUser: t, history: hist, record, camps, battle: battle ?? null });
+  // Sworn rivals? Then this is a nemesis match.
+  const [ua, ub] = fade.userId! < target.userId! ? [fade.userId!, target.userId!] : [target.userId!, fade.userId!];
+  const [rv] = await db.select().from(schema.rivalries).where(and(eq(schema.rivalries.userA, ua), eq(schema.rivalries.userB, ub), eq(schema.rivalries.active, true))).limit(1);
+  const fIsA = rv?.userA === fade.userId;
+  const nemesis = rv ? { fights: rv.fights, faderWins: fIsA ? rv.aWins : rv.bWins, targetWins: fIsA ? rv.bWins : rv.aWins, draws: rv.draws, meeting: rv.fights + (battle?.status === "settled" ? 0 : 1) } : null;
+  return Response.json({ fade, target, fader: f, targetUser: t, history: hist, record, camps, battle: battle ?? null, nemesis });
 }

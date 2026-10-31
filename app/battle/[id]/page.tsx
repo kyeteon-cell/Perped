@@ -19,6 +19,7 @@ type Res = {
   history: { id: number; userId: string; coin: string; pnl: string | null; closedAt: string | null; side: "long" | "short"; leverage: number | null; entryPx: string; exitPx: string | null }[];
   record: { fader: number; target: number }; camps: { copied: number; faded: number }; error?: string;
   battle: { id: number; status: "open" | "settled"; winnerId: string | null; faderRoi: string | null; targetRoi: string | null; reason: string | null; xpFader: number | null; xpTarget: number | null; settledAt: string | null } | null;
+  nemesis?: { fights: number; faderWins: number; targetWins: number; draws: number; meeting: number } | null;
 };
 
 function roi(p: Post, mid: number) {
@@ -39,7 +40,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const { profile, authedFetch } = useSession();
   if (!data) return <SkeletonList n={2} />;
   if (data.error) return <p className="muted p-5 text-sm">That isn&apos;t a fade.</p>;
-  const { fade, target, fader, targetUser: tu, history, record, camps, battle } = data;
+  const { fade, target, fader, targetUser: tu, history, record, camps, battle, nemesis } = data;
   const myPost = profile ? (profile.id === fader.user.id ? fade : profile.id === tu.user.id ? target : null) : null;
   const pinnedWin = pinOverride ?? !!myPost?.pinned;
   const pinWin = async () => {
@@ -85,7 +86,13 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="fade-in pb-8" data-tint="violet">
-      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Battle</div><span className="w-9" /></header>
+      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Nemesis match" : "Battle"}</div><span className="w-9" /></header>
+      {nemesis && (
+        <div className="nem-banner">
+          <span className="nem-tag">☠ Nemesis</span>
+          <span>Meeting #{nemesis.meeting} · {fader.user.handle} <b>{nemesis.faderWins}–{nemesis.targetWins}</b> {tu.user.handle}{nemesis.draws ? ` · ${nemesis.draws} drawn` : ""}</span>
+        </div>
+      )}
 
       <section className="battle photo mx-4 mt-4" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
         <div className="flex items-center justify-between"><span className="pc-tag violet">{live ? "● Live fade" : "Settled fade"} · {timeAgo(fade.createdAt)} ago</span><Link href={`/markets/${coin}`} className="flex items-center gap-1.5 text-sm"><CoinMark coin={coin} size="sm" /><b>{ticker(coin, true)}</b><span className="mono muted">{mid ? fmtPrice(mid) : ""}</span></Link></div>

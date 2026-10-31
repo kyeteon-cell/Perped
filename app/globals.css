@@ -1002,3 +1002,16 @@ body { letter-spacing: -.005em; }
 .avring.lead { border-color: var(--gold); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 18%, transparent); }
 .tug.neutral { background: var(--line); } .tug.neutral i { background: var(--gold); }
 .tchart { cursor: pointer; }
+
+/* Nemesis matches: sworn rivals meeting again. Violet + gold (green/red stay reserved for buy/sell and P&L). */
+.arow.nemesis { position: relative; isolation: isolate; border: 1.5px solid transparent; background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(120deg, #8b5cf6, #f2b63a 50%, #8b5cf6) border-box; box-shadow: 0 10px 26px -16px rgba(139,92,246,.7); }
+.arow.nemesis::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; background: radial-gradient(80% 120% at 50% 0%, color-mix(in srgb, #8b5cf6 12%, transparent), transparent 70%); }
+.nem-bar { display: flex; align-items: center; gap: 8px; margin: -2px 0 8px; font-size: 11.5px; color: var(--muted); }
+.nem-tag { background: linear-gradient(180deg, #a78bfa, #7c3aed); color: #fff; font-weight: 900; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 4px 12px -4px rgba(124,58,237,.7); animation: nempulse 2.4s ease-in-out infinite; }
+.nem-txt b { color: var(--text); }
+@keyframes nempulse { 0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 4px 12px -4px rgba(124,58,237,.7); } 50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 0 0 4px rgba(139,92,246,.18), 0 4px 16px -2px rgba(124,58,237,.9); } }
+.nem-banner { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 14px 0; padding: 10px 14px; border-radius: 18px; color: #fff; background: linear-gradient(120deg, #2a1559, #5b21b6 55%, #2a1559); box-shadow: 0 0 0 1.5px rgba(242,182,58,.55), 0 14px 30px -18px rgba(124,58,237,.9); font-size: 13px; }
+.nem-banner .nem-tag { background: linear-gradient(180deg, #ffd98a, #f2b63a 55%, #c98a05); color: #2a1c00; }
+.nem-banner b { font-family: var(--font-mono), "Barlow", sans-serif; }
+.bh-nem { margin-left: 6px; background: linear-gradient(180deg, #a78bfa, #7c3aed); color: #fff; font-weight: 900; font-size: 9.5px; letter-spacing: .1em; padding: 2px 7px; border-radius: 999px; }
+@media (prefers-reduced-motion: reduce) { .nem-tag { animation: none; } }

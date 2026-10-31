@@ -334,7 +334,7 @@ function BattleHead({ item, mark, myRoi }: { item: FeedRow; mark: number; myRoi:
   const share = Math.max(10, Math.min(90, 50 + ((theirRoi - myRoi) / (Math.abs(theirRoi) + Math.abs(myRoi) || 1)) * 50));
   return (
     <Link href={`/battle/${post.id}`} className="bhead" onClick={(e) => e.stopPropagation()}>
-      <div className="bh-top"><span className="bh-tag"><Icon d={I.bolt} size={12} />Battle</span><span className="bh-watch">{even ? "Dead level" : `${meAhead ? author.handle : src.handle} ahead`} · watch →</span></div>
+      <div className="bh-top"><span className="bh-tag"><Icon d={I.bolt} size={12} />Battle{src.nemesis && <span className="bh-nem">☠ Nemesis</span>}</span><span className="bh-watch">{even ? "Dead level" : `${meAhead ? author.handle : src.handle} ahead`} · watch →</span></div>
       <div className="bh-row">
         <div className={`bh-f ${!meAhead && !even ? "lead" : ""}`}>
           <span className={`bh-av ${src.side ?? "long"}`}><Avatar handle={src.handle} url={src.avatarUrl} size={30} link={false} /></span>

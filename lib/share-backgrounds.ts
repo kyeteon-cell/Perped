@@ -50,5 +50,7 @@ export const BOT_AVATARS = [
   { key: "bot-fundingfarmer", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184943_0fcf59c0-51bd-4670-a90b-4d5b4b1fc420_min.webp" },
   { key: "bot-wickhunter", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184942_42c9b5fb-d95b-499c-8f0e-0233b3060a63_min.webp" },
   { key: "bot-contrarian_kate", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184942_4594247a-be86-4571-90b9-163f55093cb4_min.webp" },
+  { key: "bot-bull_barry", url: "https://d2ol7oe51mr4n9.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/1d9df532-f0ad-4bac-abc9-6cd6d39a0baf.png" },
+  { key: "bot-bear_bianca", url: "https://d2ol7oe51mr4n9.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/896a31e4-8004-4d7c-bb1b-b6962d1560e1.png" },
   { key: "bot-mooncat", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184942_096b37ee-54f5-4be4-8bde-706242548c1f_min.webp" },
 ];

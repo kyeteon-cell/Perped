@@ -6,7 +6,9 @@ export const dynamic = "force-dynamic";
 
 type Mini = { id: string; handle: string; avatarUrl: string | null; xp: number };
 type Leg = { postId: number; side: "long" | "short"; entryPx: number; size: number; leverage: number; status: string; exitPx: number | null };
-export type ArenaBattle = { id: number; faderPostId: number; coin: string; status: "open" | "settled"; winnerId: string | null; fader: Mini; target: Mini; faderLeg: Leg; targetLeg: Leg; faderRoi: number | null; targetRoi: number | null; settledAt: string | null; createdAt: string; reason: string | null };
+export type ArenaBattle = { id: number; faderPostId: number; coin: string; status: "open" | "settled"; winnerId: string | null; fader: Mini; target: Mini; faderLeg: Leg; targetLeg: Leg; faderRoi: number | null; targetRoi: number | null; settledAt: string | null; createdAt: string; reason: string | null; nemesis?: Nemesis | null };
+/** Set when the two fighters are sworn rivals (an active rivalry): the series so far, from the fader's side. */
+export type Nemesis = { fights: number; faderWins: number; targetWins: number; draws: number; meeting: number };
 export type ArenaRes = {
   live: ArenaBattle[];
   rekt: ArenaBattle[];
@@ -27,12 +29,20 @@ export async function GET(req: Request) {
     postIds.length ? db.select({ id: schema.posts.id, side: schema.posts.side, entryPx: schema.posts.entryPx, size: schema.posts.size, leverage: schema.posts.leverage, status: schema.posts.status, exitPx: schema.posts.exitPx }).from(schema.posts).where(inArray(schema.posts.id, postIds)) : Promise.resolve([]),
   ]);
   const U = new Map(users.map((u) => [u.id, u as Mini]));
+  // Active rivalries among these fighters: those battles are nemesis matches.
+  const riv = userIds.length ? await db.select().from(schema.rivalries).where(and(eq(schema.rivalries.active, true), inArray(schema.rivalries.userA, userIds), inArray(schema.rivalries.userB, userIds))) : [];
+  const R = new Map(riv.map((r) => [`${r.userA}|${r.userB}`, r]));
+  const nemesisOf = (f: string, t: string): Nemesis | null => {
+    const r = R.get(f < t ? `${f}|${t}` : `${t}|${f}`); if (!r) return null;
+    const fIsA = r.userA === f;
+    return { fights: r.fights, faderWins: fIsA ? r.aWins : r.bWins, targetWins: fIsA ? r.bWins : r.aWins, draws: r.draws, meeting: r.fights + 1 };
+  };
   const P = new Map(posts.map((p) => [p.id, p]));
   const leg = (id: number): Leg => { const p = P.get(id); return { postId: id, side: (p?.side ?? "long") as "long" | "short", entryPx: Number(p?.entryPx ?? 0), size: Number(p?.size ?? 0), leverage: p?.leverage ?? 1, status: p?.status ?? "closed", exitPx: p?.exitPx ? Number(p.exitPx) : null }; };
   const shape = (b: typeof rows[number]): ArenaBattle | null => {
     const f = U.get(b.faderId), t = U.get(b.targetId);
     if (!f || !t) return null;
-    return { id: b.id, faderPostId: b.faderPostId, coin: b.coin, status: b.status as "open" | "settled", winnerId: b.winnerId, fader: f, target: t, faderLeg: leg(b.faderPostId), targetLeg: leg(b.targetPostId), faderRoi: b.faderRoi != null ? Number(b.faderRoi) : null, targetRoi: b.targetRoi != null ? Number(b.targetRoi) : null, settledAt: b.settledAt?.toISOString() ?? null, createdAt: b.createdAt.toISOString(), reason: b.reason ?? null };
+    return { id: b.id, faderPostId: b.faderPostId, coin: b.coin, status: b.status as "open" | "settled", winnerId: b.winnerId, fader: f, target: t, faderLeg: leg(b.faderPostId), targetLeg: leg(b.targetPostId), faderRoi: b.faderRoi != null ? Number(b.faderRoi) : null, targetRoi: b.targetRoi != null ? Number(b.targetRoi) : null, settledAt: b.settledAt?.toISOString() ?? null, createdAt: b.createdAt.toISOString(), reason: b.reason ?? null, nemesis: nemesisOf(b.faderId, b.targetId) };
   };
 
   const live = rows.filter((b) => b.status === "open").map(shape).filter((x): x is ArenaBattle => !!x && x.faderLeg.status === "open" && x.targetLeg.status === "open").slice(0, 80);

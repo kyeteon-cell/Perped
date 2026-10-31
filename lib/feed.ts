@@ -11,11 +11,11 @@ export const feedSelect = {
   copyCount: sql<number>`(select count(*) from posts p2 where p2.copied_from_id = ${schema.posts.id})`.mapWith(Number),
   fadeCount: sql<number>`(select count(*) from posts p3 where p3.faded_from_id = ${schema.posts.id})`.mapWith(Number),
   /** The trade this one copied or faded, with its author: names the source and powers the battle header. */
-  src: sql<FeedSrc | null>`(select json_build_object('handle', su.handle, 'avatarUrl', su.avatar_url, 'xp', su.xp, 'side', sp.side, 'entryPx', sp.entry_px, 'leverage', sp.leverage, 'size', sp.size, 'status', sp.status, 'exitPx', sp.exit_px) from posts sp join users su on su.id = sp.user_id where sp.id = coalesce(${schema.posts.copiedFromId}, ${schema.posts.fadedFromId}))`,
+  src: sql<FeedSrc | null>`(select json_build_object('handle', su.handle, 'avatarUrl', su.avatar_url, 'xp', su.xp, 'side', sp.side, 'entryPx', sp.entry_px, 'leverage', sp.leverage, 'size', sp.size, 'status', sp.status, 'exitPx', sp.exit_px, 'nemesis', exists(select 1 from rivalries rv where rv.active and ((rv.user_a = su.id and rv.user_b = ${schema.posts.userId}) or (rv.user_b = su.id and rv.user_a = ${schema.posts.userId})))) from posts sp join users su on su.id = sp.user_id where sp.id = coalesce(${schema.posts.copiedFromId}, ${schema.posts.fadedFromId}))`,
   pollCounts: sql<number[]>`(select coalesce(array_agg(coalesce(c.cnt, 0)::int order by gs.i), '{}') from generate_series(0, greatest(coalesce(jsonb_array_length(${schema.posts.options}), 0) - 1, -1)) gs(i) left join (select pv.option as opt, count(*)::int as cnt from poll_votes pv where pv.post_id = ${schema.posts.id} group by pv.option) c on c.opt = gs.i)`.mapWith((v) => (Array.isArray(v) ? v.map(Number) : [])),
 };
 
-export type FeedSrc = { handle: string; avatarUrl: string | null; xp: number; side: "long" | "short" | null; entryPx: string | null; leverage: number | null; size: string | null; status: string; exitPx: string | null };
+export type FeedSrc = { handle: string; avatarUrl: string | null; xp: number; side: "long" | "short" | null; entryPx: string | null; leverage: number | null; size: string | null; status: string; exitPx: string | null; nemesis?: boolean };
 
 export type FeedRow = {
   src?: FeedSrc | null;

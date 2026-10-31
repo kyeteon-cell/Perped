@@ -17,7 +17,7 @@ import type { ReactNode } from "react";
 type Leg = ArenaBattle["faderLeg"];
 const liqPx = (l: Leg) => (l.leverage > 1 ? (l.side === "long" ? l.entryPx * (1 - 1 / l.leverage) : l.entryPx * (1 + 1 / l.leverage)) : null);
 const liqDist = (l: Leg, mid: number) => { const q = liqPx(l); return q && mid ? Math.abs((mid - q) / mid) * 100 : 100; };
-type Tab = "all" | "high" | "following" | "blood";
+type Tab = "all" | "nemesis" | "high" | "following" | "blood";
 /** Everything the tabs need about one battle, at the live price. */
 function readBattle(b: ArenaBattle, mid: number) {
   const settled = b.status === "settled";
@@ -47,7 +47,8 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
   const share = Math.max(8, Math.min(92, 50 + ((a - t) / total) * 50));
   const aWin = settled ? b.winnerId === b.fader.id : a > t, tWin = settled ? b.winnerId === b.target.id : t > a;
   return (
-    <Link href={`/battle/${b.faderPostId}`} className="arow">
+    <Link href={`/battle/${b.faderPostId}`} className={`arow ${b.nemesis ? "nemesis" : ""}`}>
+      {b.nemesis && <NemesisBar b={b} />}
       <div className="flex items-center justify-between gap-2">
         <div className={`aside ${aWin ? "lead" : ""}`}><span className="arank"><Avatar handle={b.fader.handle} url={b.fader.avatarUrl} size={36} link={false} /><img src={`/api/share-bg/rank-${rankFor(b.fader.xp ?? 0).level}`} alt="" /></span><div className="min-w-0"><div className="flex items-center gap-1 text-[13px] font-bold"><span className="truncate">{b.fader.handle}</span><RankChip xp={b.fader.xp} compact size={18} /></div><div className={`mono text-[13px] font-bold ${a >= 0 ? "green" : "red"}`}>{fmtPct(a, 1)}</div></div></div>
         <div className="text-center"><CoinMark coin={b.coin} size="xs" /><div className="when text-[10px]">{settled ? timeAgo(b.settledAt ?? b.createdAt) : "LIVE"}</div></div>
@@ -56,6 +57,18 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
       <div className="tug mt-2" style={{ height: 6, background: b.targetLeg.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${share}%`, background: b.faderLeg.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
       {badge && <div className="abadge">{badge}</div>}
     </Link>
+  );
+}
+
+/** Sworn rivals meeting again: the series so far and which meeting this is. */
+function NemesisBar({ b }: { b: ArenaBattle }) {
+  const n = b.nemesis!;
+  const lead = n.faderWins === n.targetWins ? "series level" : `${n.faderWins > n.targetWins ? b.fader.handle : b.target.handle} leads`;
+  return (
+    <div className="nem-bar">
+      <span className="nem-tag">☠ Nemesis</span>
+      <span className="nem-txt">Meeting #{n.meeting} · <b className="mono">{n.faderWins}–{n.targetWins}</b> · {lead}</span>
+    </div>
   );
 }
 
@@ -186,7 +199,9 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   const [tab, setTab] = useState<Tab>("all");
   const { set: follow } = useFollowing();
   const rivals = new Set((data.me?.rivals ?? []).map((r) => r.user.handle));
-  const rows = data.live.map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) }));
+  // Nemesis matches float to the top of the live list.
+  const rows = data.live.map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) })).sort((x, y) => Number(!!y.b.nemesis) - Number(!!x.b.nemesis));
+  const nem = rows.filter((x) => !!x.b.nemesis);
   const mine = (b: ArenaBattle) => !!me && (b.fader.handle === me || b.target.handle === me);
   const followed = (b: ArenaBattle) => follow.has(b.fader.handle) || follow.has(b.target.handle) || rivals.has(b.fader.handle) || rivals.has(b.target.handle);
   const high = rows.filter((x) => x.r.high).sort((x, y) => y.r.risk - x.r.risk);
@@ -195,13 +210,14 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   const rekt = (data.rekt ?? []).map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) }));
   const tabs: { k: Tab; label: string; n: number }[] = [
     { k: "all", label: "All", n: rows.length },
+    ...(nem.length ? [{ k: "nemesis" as Tab, label: "☠ Nemesis", n: nem.length }] : []),
     { k: "high", label: "🔥 High stakes", n: high.length },
     { k: "following", label: "👥 Following", n: fol.length },
     { k: "blood", label: "💀 Bloodbath", n: blood.length + rekt.length },
   ];
   const flames = (n: number) => "🔥".repeat(n);
   const tag = (b: ArenaBattle) => mine(b) ? "your battle" : rivals.has(b.fader.handle) ? `your rival ${b.fader.handle}` : rivals.has(b.target.handle) ? `your rival ${b.target.handle}` : follow.has(b.fader.handle) ? `you follow ${b.fader.handle}` : follow.has(b.target.handle) ? `you follow ${b.target.handle}` : "";
-  const list = tab === "all" ? rows : tab === "high" ? high : tab === "following" ? fol : blood;
+  const list = tab === "all" ? rows : tab === "nemesis" ? nem : tab === "high" ? high : tab === "following" ? fol : blood;
   return (
     <section className="block">
       <div className="flex items-center justify-between"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Live battles</span><span className="when">{rows.length} live</span></div>
