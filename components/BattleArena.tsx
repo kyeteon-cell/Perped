@@ -18,10 +18,21 @@ const IVS: Record<Iv, number> = { "1m": 60_000, "5m": 300_000, "15m": 900_000, "
 const GREEN = "var(--green)", RED = "var(--red)";
 
 export const liqOf = (f: Fighter) => (f.lev > 1 ? (f.side === "long" ? f.entry * (1 - 1 / f.lev) : f.entry * (1 + 1 / f.lev)) : null);
-/** Margin health: 100% at entry or better, 0% at liquidation. */
+/** The price that ends this fighter's battle: their stop loss if it sits between entry and liquidation, otherwise liquidation. */
+export function stopOf(f: Fighter): { p: number | null; kind: "SL" | "LIQ" | "LOCKED" | null } {
+  const liq = liqOf(f), sl = f.sl ?? null;
+  if (sl) {
+    const lossSide = f.side === "long" ? sl < f.entry : sl > f.entry;
+    if (!lossSide) return { p: sl, kind: "LOCKED" }; // stop already in profit: can't lose this one
+    const beforeLiq = !liq || (f.side === "long" ? sl > liq : sl < liq);
+    if (beforeLiq) return { p: sl, kind: "SL" };
+  }
+  return liq ? { p: liq, kind: "LIQ" } : { p: null, kind: null };
+}
+/** Health: 100% at entry or better, 0% at the stop loss (or liquidation when there is no stop). */
 export function healthOf(f: Fighter, live: number) {
-  const liq = liqOf(f); if (!liq) return 1;
-  const h = f.side === "long" ? (live - liq) / (f.entry - liq) : (liq - live) / (liq - f.entry);
+  const { p, kind } = stopOf(f); if (!p || kind === "LOCKED") return 1;
+  const h = f.side === "long" ? (live - p) / (f.entry - p) : (p - live) / (p - f.entry);
   return Math.max(0, Math.min(1, h));
 }
 const sideCol = (f: Fighter) => (f.side === "long" ? GREEN : RED);
@@ -60,15 +71,19 @@ export function BattleArena({ coin, live, a, b }: { coin: string; live: number; 
 }
 
 function Hp({ f, live, right }: { f: Fighter; live: number; right?: boolean }) {
-  const h = healthOf(f, live), liq = liqOf(f);
+  const h = healthOf(f, live), liq = liqOf(f), stop = stopOf(f);
   const liqDist = liq ? Math.abs((live - liq) / live) * 100 : null;
   const slDist = f.sl ? Math.abs((live - f.sl) / live) * 100 : null;
-  const danger = h < 0.35 || (slDist !== null && slDist < 0.5);
+  const danger = h < 0.35;
+  const label = stop.kind === "SL" ? "Stop-loss HP" : stop.kind === "LOCKED" ? "Profit locked" : "Margin HP";
+  const foot = stop.kind === "SL" ? `SL ${slDist!.toFixed(1)}% away${liqDist !== null ? ` · Liq ${liqDist.toFixed(1)}%` : ""}`
+    : stop.kind === "LOCKED" ? `SL in profit at ${fmtPrice(f.sl!)}`
+    : liqDist !== null ? `Liq ${liqDist.toFixed(1)}% away · no SL` : "No liquidation at 1× · no SL";
   return (
     <div className={`ar-hpbox ${right ? "r" : ""}`}>
-      <div className="ar-hphead"><span>Margin HP</span><b style={{ color: danger ? "var(--gold)" : sideCol(f) }}>{Math.round(h * 100)}%</b></div>
+      <div className="ar-hphead"><span>{label}</span><b style={{ color: danger ? "var(--gold)" : sideCol(f) }}>{Math.round(h * 100)}%</b></div>
       <div className="ar-hpbar"><i className={f.side} style={{ width: `${Math.max(3, h * 100)}%` }} /></div>
-      <div className="ar-hpfoot">{liqDist !== null ? `Liq ${liqDist.toFixed(1)}% away` : "No liquidation at 1×"}{slDist !== null ? ` · SL ${slDist.toFixed(1)}%` : ""}</div>
+      <div className="ar-hpfoot">{foot}</div>
     </div>
   );
 }
