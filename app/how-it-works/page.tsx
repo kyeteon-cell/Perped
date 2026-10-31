@@ -181,7 +181,7 @@ export default function HowItWorks() {
           <li>When something breaks, we say so in the app and in public, not quietly.</li>
         </ul>
         <p className="mt-3">If you take one thing from this page: your trust should rest on Hyperliquid&rsquo;s design and on your own wallet, not on us. We built Perped so that it has to be that way.</p>
-        <p className="muted mt-3 text-[13px]">Perped is an independent builder on Hyperliquid, not affiliated with Hyperliquid Labs. Questions or something that looks wrong: message <a href="https://x.com/perped" target="_blank" rel="noreferrer">@perped on X</a>.</p>
+        <p className="muted mt-3 text-[13px]">Perped is an independent builder on Hyperliquid, not affiliated with Hyperliquid Labs. Questions or something that looks wrong: message <a href="https://x.com/perped_" target="_blank" rel="noreferrer">@perped_ on X</a>.</p>
       </section>
     </main>
   );
