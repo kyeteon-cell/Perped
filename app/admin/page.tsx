@@ -33,9 +33,14 @@ export default function Admin() {
     setKey(k);
   }, []);
   // Signed-in admins and the owner get in with their account; the CRON_SECRET key still works for scripts.
-  const call = useCallback((url: string, init?: RequestInit) => {
-    if (key) { const u = new URL(url, window.location.origin); u.searchParams.set("key", key); return fetch(u.toString(), { ...init, headers: { "content-type": "application/json", ...(init?.headers ?? {}) } }); }
-    return authedFetch(url, init);
+  // Always send your login; add the saved key too if there is one. Either is enough on the server, so an old
+  // or wrong saved key can't lock the owner out. A key that doesn't work is forgotten.
+  const call = useCallback(async (url: string, init?: RequestInit) => {
+    const u = new URL(url, window.location.origin);
+    if (key) u.searchParams.set("key", key);
+    const r = await authedFetch(u.pathname + u.search, init);
+    if (r.status === 401 && key) { try { localStorage.removeItem("perped:admin-key"); } catch {} setKey(null); return authedFetch(url, init); }
+    return r;
   }, [key, authedFetch]);
   const staff = !!key || profile?.role === "owner" || profile?.role === "admin";
   useEffect(() => {
@@ -46,7 +51,7 @@ export default function Admin() {
 
   if (key === undefined) return <main className="p-5"><p className="muted">Loading…</p></main>;
   if (!staff) return <main className="p-5"><h1 className="text-xl font-extrabold">Admin</h1><p className="muted mt-2 text-sm">{authenticated ? "Your account isn't an admin. Ask the owner to add you." : "Sign in with an admin account."}</p>{!authenticated && <button className="btn ink mt-3" onClick={login}>Sign in</button>}</main>;
-  if (err) return <main className="p-5"><p className="red">{err === "unauthorized" ? "Not authorised." : err}</p></main>;
+  if (err) return <main className="p-5"><p className="red">{err === "unauthorized" ? `Not authorised. Signed in as @${profile?.handle ?? "nobody"}${profile?.role ? ` (${profile.role})` : ""}. Sign out and back in, then try again.` : err}</p></main>;
   if (!m) return <main className="p-5"><p className="muted">Loading…</p></main>;
   const f = m.funnel;
   const tiles: [string, string, string?][] = [
