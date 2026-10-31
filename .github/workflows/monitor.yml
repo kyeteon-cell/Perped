@@ -1,0 +1,30 @@
+name: Uptime & speed
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every key endpoint answers 200 in under 1s
+        run: |
+          base=https://perped-final.vercel.app
+          fail=0
+          for p in / /arena /markets "/api/posts?tab=foryou" /api/arena /api/markets /api/leaderboard /api/health; do
+            # warm once, then measure the best of three
+            curl -s -o /dev/null "$base$p" || true
+            best=99
+            for i in 1 2 3; do
+              out=$(curl -s -o /dev/null -w "%{http_code} %{time_total}" --max-time 10 "$base$p" || echo "000 99")
+              code=${out% *}; t=${out#* }
+              [ "$code" != "200" ] && { echo "::error::$p returned $code"; fail=1; }
+              best=$(python3 -c "print(min($best,$t))")
+            done
+            echo "$p ${best}s"
+            python3 -c "import sys; sys.exit(0 if $best < 1.0 else 1)" || { echo "::error::$p took ${best}s (over 1s)"; fail=1; }
+          done
+          exit $fail
