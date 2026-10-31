@@ -6,6 +6,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
 import { DepositSheet } from "@/components/DepositSheet";
+import { Sheet } from "@/components/Sheet";
 import { ChallengeSheet } from "@/components/ChallengeSheet";
 import { PerformanceCard } from "@/components/Performance";
 import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/components/ui";
@@ -25,7 +26,7 @@ import type { AssetPosition } from "@/lib/hl-info";
 import type { FeedRow } from "@/lib/feed";
 
 type ProfileRes = { form?: { r: "W" | "L" | "D"; href: string }[]; vendetta?: null | { handle: string; avatarUrl: string | null; mine: number; theirs: number; draws: number; fights: number }; battleStreak?: number; bestStreak?: number; user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
-type Tab = "activity" | "trades" | "posts" | "people";
+type Tab = "me" | "fades" | "trades" | "stats" | "people";
 type People = "followers" | "following";
 
 export default function ProfilePage({ params }: { params: Promise<{ handle: string }> }) {
@@ -34,17 +35,18 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const { authedFetch, walletClient, authenticated, login, fee } = useSession();
   const { mids } = useMids();
   const { markets } = useMarkets();
-  const [tab, setTab] = useState<Tab>("activity");
+  const [tab, setTab] = useState<Tab>("me");
   const [people, setPeopleDir] = useState<People>("followers");
   const [tradeTab, setTradeTab] = useState<"open" | "closed">("open");
   const [sheet, setSheet] = useState<"deposit" | "withdraw" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [challenge, setChallenge] = useState(false);
+  const [bal, setBal] = useState(false);
+  const [ladder, setLadder] = useState(false);
 
-  const postsKey = tab === "posts" ? `/api/posts?handle=${handle}&kind=text` : tab === "trades" ? `/api/posts?handle=${handle}&kind=trade&status=${tradeTab}` : null;
+  const postsKey = tab === "trades" ? `/api/posts?handle=${handle}&kind=trade&status=${tradeTab}` : null;
   const { data: feed, mutate: mutateFeed } = useSWR<{ posts: FeedRow[] }>(postsKey);
-  const { data: calls } = useSWR<{ posts: FeedRow[] }>(tab === "posts" ? `/api/posts?handle=${handle}&kind=call&limit=10` : null);
   const { data: theirRivals } = useSWR<{ rivals: RivalRow[] }>(`/api/rivalries?handle=${handle}`);
   const { profile: viewer } = useSession();
   const { data: myRivals, mutate: mutateMyRivals } = useSWR<{ rivals: RivalRow[] }>(viewer && viewer.handle !== handle ? `/api/rivalries?handle=${viewer.handle}` : null);
@@ -64,6 +66,9 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   // Always something in view: pinned trades if they've chosen any, otherwise their best results (battle wins first).
   const pins = pinsOnly.length ? pinsOnly : [...closedAll].sort((a, b) => Number(wonBattle(b)) - Number(wonBattle(a)) || roiOf(b) - roiOf(a)).slice(0, 6);
   const showingTop = pinsOnly.length === 0;
+  const nFades = (s?.battlesWon ?? 0) + (s?.battlesLost ?? 0);
+  const balance = user.isDemo ? demoEq.equity : Number(data.accountValue ?? 0);
+  const balUp = user.isDemo ? demoEq.upnl : data.positions.reduce((a, p) => a + Number(p.unrealizedPnl), 0);
   const callHit = s && s.callsResolved ? (s.callsHit / s.callsResolved) * 100 : null;
 
   const closePos = async (p: AssetPosition, fraction: number) => {
@@ -84,7 +89,15 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
     <div className="fade-in profile">
       <header className="flex items-center justify-between px-4 py-3">
         <h1 className="text-xl font-bold">{user.handle}</h1>
-        {isMe ? <Link href="/settings" className="iconbtn" aria-label="Settings"><Icon d={I.gear} /></Link> : <span className="w-9" />}
+        {isMe ? (
+          <div className="flex items-center gap-2">
+            <button className="pf-bal" onClick={() => setBal(true)} aria-label="Your balance">
+              <span className="pf-bal-k">{user.isDemo ? "DEMO" : "USDC"}</span><span className="mono">{balance >= 1e5 ? fmtUsd(balance, { compact: true }) : `$${Math.round(balance).toLocaleString("en-US")}`}</span>
+              {Math.abs(balUp) >= 0.5 && <span className={`mono pf-bal-up ${balUp >= 0 ? "green" : "red"}`}>{`${balUp >= 0 ? "+" : "-"}$${Math.abs(balUp) >= 1e3 ? (Math.abs(balUp) / 1e3).toFixed(1) + "K" : Math.round(Math.abs(balUp)).toLocaleString("en-US")}`}</span>}
+            </button>
+            <Link href="/settings" className="iconbtn" aria-label="Settings"><Icon d={I.gear} /></Link>
+          </div>
+        ) : <span className="w-9" />}
       </header>
       <div className="pf-banner relative" style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : undefined}>
         {isMe && <Link href="/settings#profile" className="absolute right-4 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: "rgba(0,0,0,.45)", color: "#fff" }}>Edit photo &amp; banner</Link>}
@@ -106,110 +119,87 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           </div>
         </div>
         {user.bio && <p className="mt-3.5">{user.bio}</p>}
-        <RecordLine xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} />
+        <RecordLine xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} onOpen={() => { setLadder(true); setTab("stats"); requestAnimationFrame(() => document.getElementById("pf-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" })); }} />
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           {isMe ? <Link href="/compose" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Write a post</Link> : <FollowButton handle={user.handle} />}
           {isMe ? <Link href="/settings" className="btn" style={{ padding: 12, fontSize: 14 }}>Edit profile</Link> : <button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={() => (authenticated ? setChallenge(true) : login())}><span className="gl"><Glyph n="swords" />Challenge</span></button>}
         </div>
       </section>
 
-      {((data.form?.length ?? 0) > 0 || data.vendetta) && (
-        <section className="block pb-2">
-          {(data.form?.length ?? 0) > 0 && (
-            <div className="form-row">
-              <span className="eyebrow">Last {data.form!.length} fades</span>
-              <div className="form-dots">{[...data.form!].reverse().map((f, i) => <Link key={i} href={f.href} className={`fd ${f.r}`} aria-label={f.r === "W" ? "Won" : f.r === "L" ? "Lost" : "Draw"}>{f.r}</Link>)}</div>
-            </div>
-          )}
-          {data.vendetta && (
-            <Link href={`/rivalry/${user.handle}/${data.vendetta.handle}`} className="vend-card">
-              <span className="nem-tag gl"><Glyph n="skull" />Vendetta</span>
-              <Avatar handle={data.vendetta.handle} url={data.vendetta.avatarUrl} size={32} link={false} />
-              <div className="min-w-0 flex-1"><div className="truncate text-[14px] font-extrabold">vs {data.vendetta.handle}</div><div className="when">{data.vendetta.fights} fights{data.vendetta.draws ? ` · ${data.vendetta.draws} drawn` : ""}</div></div>
-              <div className="mono text-[18px] font-extrabold"><span className={data.vendetta.mine >= data.vendetta.theirs ? "vend-lead" : ""}>{data.vendetta.mine}</span><span className="muted">–</span><span className={data.vendetta.theirs > data.vendetta.mine ? "vend-lead" : ""}>{data.vendetta.theirs}</span></div>
-            </Link>
-          )}
-        </section>
-      )}
+      <div className="pf-pillbar" id="pf-tabs"><div className="pf-pills" role="tablist">
+        {([["me", isMe ? "Me" : user.handle], ["fades", "Fades"], ["trades", "Trades"], ["stats", "Stats"]] as [Tab, string][]).map(([t, label]) => (
+          <button key={t} role="tab" aria-selected={tab === t} className={`${tab === t ? "on" : ""} ${t === "me" ? "me" : ""}`} title={t === "me" ? label : undefined} onClick={() => { setTab(t); if (t !== "stats") setLadder(false); }}>
+            <span className="pf-pl">{label}</span>{t === "fades" && nFades > 0 && <small className="mono">{nFades}</small>}
+          </button>
+        ))}
+      </div></div>
 
-      {(pins.length > 0 || isMe) && (
-        <section className="block pb-3">
-          <div className="flex items-center justify-between">
-            <span className="eyebrow">{showingTop ? "Top trades" : "Pinned"}</span>
-            <span className="flex items-center gap-2">
-              {(data.battleStreak ?? 0) >= 2 && <span className="pin-streak gl"><Glyph n="flame" tone="gold" />{data.battleStreak}-win streak</span>}
-              {(s?.battlesWon ?? 0) + (s?.battlesLost ?? 0) > 0 && <span className="mono when"><span className="green">{s?.battlesWon ?? 0}W</span>–<span className="red">{s?.battlesLost ?? 0}L</span></span>}
-            </span>
-          </div>
-          {isMe && showingTop && <div className="when mt-0.5 text-[11px]">Showing your best results. Pin your own picks from any trade or fade.</div>}
-          <div className="hstrip mt-3" style={{ margin: "12px -20px 0", padding: "0 20px 6px" }}>
-            {pins.map((p) => <PinCard key={p.post.id} item={p} roi={roiOf(p)} />)}
-            {isMe && <button className="hcard grid place-items-center text-center" style={{ background: "transparent", border: "1px dashed var(--line)", minWidth: 120 }} onClick={() => { setTab("trades"); setTradeTab("closed"); }}><div><Icon d={I.plus} /><div className="when mt-1 text-[12px]">Pin a trade</div></div></button>}
-          </div>
-        </section>
-      )}
+      {tab === "me" && <ActivityFeed handle={handle} />}
 
-      <RankCard xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} recent={data.xpRecent ?? []} />
-
-      {(theirRivals?.rivals.length ?? 0) > 0 && (
-        <section className="block">
-          <div className="flex items-center justify-between"><span className="eyebrow">Rivals</span><span className="when">{theirRivals!.rivals.length}</span></div>
-          <div className="mt-2 flex flex-col">
-            {theirRivals!.rivals.slice(0, 4).map((r) => (
-              <Link key={r.handle} href={`/rivalry/${user.handle}/${r.handle}`} className="lb">
-                <Avatar handle={r.handle} url={r.avatarUrl} size={40} link={false} />
-                <div className="min-w-0 flex-1"><div className="name">{r.handle}<RankChip xp={r.xp} compact /></div><div className="when">{r.fights} fights{r.runHolderIsMe !== null && r.runLen >= 2 ? ` · ${r.runHolderIsMe ? user.handle : r.handle} on a ${r.runLen}-run` : ""}{r.calledByThem ? " · called them out" : ""}</div></div>
-                <div className="text-right"><div className="mono text-[18px] font-bold"><span className={r.mine >= r.theirs ? "green" : "muted"}>{r.mine}</span><span className="muted">–</span><span className={r.theirs > r.mine ? "red" : "muted"}>{r.theirs}</span></div>{r.mine > r.theirs && <div className="when text-[10px] gl"><Glyph n="crown" tone="gold" />leads</div>}</div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {isMe && user.isDemo && (
-        <section className="block">
-          <div className="flex items-center justify-between"><span className="eyebrow">Demo account</span><span className="when">live · practice USDC</span></div>
-          <div className="mono mt-2 text-[36px] font-semibold tracking-tight">{fmtUsd(demoEq.equity)}</div>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            <div className="stat"><small>Available</small><div className="v mono">{fmtUsd(demoEq.cash)}</div></div>
-            <div className="stat"><small>In trades</small><div className="v mono">{fmtUsd(demoEq.margin)}</div></div>
-            <div className="stat"><small>Unrealised</small><div className={`v mono ${demoEq.upnl >= 0 ? "green" : "red"}`}>{fmtUsd(demoEq.upnl, { sign: true })}</div></div>
-          </div>
-          <p className="muted mt-2 text-[13px]">Simulated fills at live prices. When you&apos;re ready for real trades, turn demo off in Settings and deposit.</p>
-          <div className="mt-3.5 grid grid-cols-2 gap-2.5"><Link href="/settings" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Go live</Link><button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ resetDemo: true }) }); mutate(); }}>Reset to $10,000</button></div>
-        </section>
-      )}
-      {isMe && !user.isDemo && (
-        <section className="block">
-          <div className="flex items-center justify-between"><span className="eyebrow">Account balance</span><span className="when">USDC on Hyperliquid</span></div>
-          <div className="mono mt-2 text-[36px] font-semibold tracking-tight">{fmtUsd(data.accountValue ?? 0)}</div>
-          <div className="mt-2 flex gap-4 text-[13px]">
-            <span className="muted">Available <b className="mono" style={{ color: "var(--text)" }}>{fmtUsd(data.withdrawable ?? 0)}</b></span>
-            <span className="muted">In positions <b className="mono" style={{ color: "var(--text)" }}>{fmtUsd(data.positions.reduce((a, p) => a + Number(p.marginUsed), 0))}</b></span>
-            <span className="muted">Open PnL <b className={`mono ${data.positions.reduce((a, p) => a + Number(p.unrealizedPnl), 0) >= 0 ? "green" : "red"}`}>{fmtUsd(data.positions.reduce((a, p) => a + Number(p.unrealizedPnl), 0), { sign: true })}</b></span>
-          </div>
-          <div className="mt-3.5 grid grid-cols-2 gap-2.5"><button className="btn deposit" style={{ padding: 12, fontSize: 14 }} onClick={() => setSheet("deposit")}>Deposit</button><button className="btn withdraw" style={{ padding: 12, fontSize: 14 }} onClick={() => setSheet("withdraw")}>Withdraw</button></div>
-        </section>
-      )}
-
-      <PerformanceCard handle={handle} stats={s} />
-
-      <div className="tabs" style={{ gridTemplateColumns: "repeat(4, 1fr)", top: 0 }}>
-        {(["activity", "trades", "posts", "people"] as Tab[]).map((t) => <button key={t} className={`capitalize ${tab === t ? "on" : ""}`} onClick={() => setTab(t)}>{t}</button>)}
-      </div>
-
-      {tab === "activity" && <ActivityFeed handle={handle} />}
-
-      {tab === "posts" && (
+      {tab === "fades" && (
         <>
-          {(calls?.posts ?? []).map((item) => <FeedPost key={item.post.id} item={item} mid={item.post.coin ? mids[item.post.coin] : undefined} onChanged={mutateFeed} />)}
-          {(feed?.posts ?? []).map((item) => <FeedPost key={item.post.id} item={item} onChanged={mutateFeed} />)}
-          {(feed?.posts.length ?? 0) + (calls?.posts.length ?? 0) === 0 && <p className="muted p-5 text-sm">No posts yet.</p>}
+          {((data.form?.length ?? 0) > 0 || data.vendetta) ? (
+            <>
+          <section className="block pb-2">
+            {(data.form?.length ?? 0) > 0 && (
+              <div className="form-row">
+                <span className="eyebrow">Last {data.form!.length} fades</span>
+                <div className="form-dots">{[...data.form!].reverse().map((f, i) => <Link key={i} href={f.href} className={`fd ${f.r}`} aria-label={f.r === "W" ? "Won" : f.r === "L" ? "Lost" : "Draw"}>{f.r}</Link>)}</div>
+              </div>
+            )}
+            {data.vendetta && (
+              <Link href={`/rivalry/${user.handle}/${data.vendetta.handle}`} className="vend-card">
+                <span className="nem-tag gl"><Glyph n="skull" />Vendetta</span>
+                <Avatar handle={data.vendetta.handle} url={data.vendetta.avatarUrl} size={32} link={false} />
+                <div className="min-w-0 flex-1"><div className="truncate text-[14px] font-extrabold">vs {data.vendetta.handle}</div><div className="when">{data.vendetta.fights} fights{data.vendetta.draws ? ` · ${data.vendetta.draws} drawn` : ""}</div></div>
+                <div className="mono text-[18px] font-extrabold"><span className={data.vendetta.mine >= data.vendetta.theirs ? "vend-lead" : ""}>{data.vendetta.mine}</span><span className="muted">–</span><span className={data.vendetta.theirs > data.vendetta.mine ? "vend-lead" : ""}>{data.vendetta.theirs}</span></div>
+              </Link>
+            )}
+          </section>
+            </>
+          ) : <p className="muted p-5 text-sm">No fades yet. Fade a trade in the feed and it starts here.</p>}
+          {(theirRivals?.rivals.length ?? 0) > 0 && (
+          <section className="block">
+            <div className="flex items-center justify-between"><span className="eyebrow">Rivals</span><span className="when">{theirRivals!.rivals.length}</span></div>
+            <div className="mt-2 flex flex-col">
+              {theirRivals!.rivals.slice(0, 4).map((r) => (
+                <Link key={r.handle} href={`/rivalry/${user.handle}/${r.handle}`} className="lb">
+                  <Avatar handle={r.handle} url={r.avatarUrl} size={40} link={false} />
+                  <div className="min-w-0 flex-1"><div className="name">{r.handle}<RankChip xp={r.xp} compact /></div><div className="when">{r.fights} fights{r.runHolderIsMe !== null && r.runLen >= 2 ? ` · ${r.runHolderIsMe ? user.handle : r.handle} on a ${r.runLen}-run` : ""}{r.calledByThem ? " · called them out" : ""}</div></div>
+                  <div className="text-right"><div className="mono text-[18px] font-bold"><span className={r.mine >= r.theirs ? "green" : "muted"}>{r.mine}</span><span className="muted">–</span><span className={r.theirs > r.mine ? "red" : "muted"}>{r.theirs}</span></div>{r.mine > r.theirs && <div className="when text-[10px] gl"><Glyph n="crown" tone="gold" />leads</div>}</div>
+                </Link>
+              ))}
+            </div>
+          </section>
+          )}
+        </>
+      )}
+
+      {tab === "stats" && (
+        <>
+          <PerformanceCard handle={handle} stats={s} />
+          <RankCard key={ladder ? "open" : "shut"} ladder={ladder} xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} recent={data.xpRecent ?? []} />
         </>
       )}
 
       {tab === "trades" && (
         <>
+          {(pins.length > 0 || isMe) && (
+          <section className="block pb-3">
+            <div className="flex items-center justify-between">
+              <span className="eyebrow">{showingTop ? "Top trades" : "Pinned"}</span>
+              <span className="flex items-center gap-2">
+                {(data.battleStreak ?? 0) >= 2 && <span className="pin-streak gl"><Glyph n="flame" tone="gold" />{data.battleStreak}-win streak</span>}
+                {(s?.battlesWon ?? 0) + (s?.battlesLost ?? 0) > 0 && <span className="mono when"><span className="green">{s?.battlesWon ?? 0}W</span>–<span className="red">{s?.battlesLost ?? 0}L</span></span>}
+              </span>
+            </div>
+            {isMe && showingTop && <div className="when mt-0.5 text-[11px]">Showing your best results. Pin your own picks from any trade or fade.</div>}
+            <div className="hstrip mt-3" style={{ margin: "12px -20px 0", padding: "0 20px 6px" }}>
+              {pins.map((p) => <PinCard key={p.post.id} item={p} roi={roiOf(p)} />)}
+              {isMe && <button className="hcard grid place-items-center text-center" style={{ background: "transparent", border: "1px dashed var(--line)", minWidth: 120 }} onClick={() => { setTab("trades"); setTradeTab("closed"); }}><div><Icon d={I.plus} /><div className="when mt-1 text-[12px]">Pin a trade</div></div></button>}
+            </div>
+          </section>
+          )}
           <div className="seg px-5 pb-1 pt-3.5"><button className={`chip ${tradeTab === "open" ? "on" : ""}`} onClick={() => setTradeTab("open")}>Open · {user.isDemo ? (feed?.posts.length ?? 0) : data.positions.length}</button><button className={`chip ${tradeTab === "closed" ? "on" : ""}`} onClick={() => setTradeTab("closed")}>Closed · {s?.closedTrades ?? 0}</button></div>
           {tradeTab === "open" && user.isDemo && (feed?.posts ?? []).map((item) => (
             <div key={item.post.id} className="relative">
@@ -242,6 +232,36 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           ))}
           {(peopleList?.users.length ?? 0) === 0 && <p className="muted p-5 text-sm">Nobody here yet.</p>}
         </>
+      )}
+
+      {bal && isMe && user.isDemo && (
+        <Sheet label="Demo balance" onClose={() => setBal(false)}>
+        <div className="px-5 pb-6">
+          <div className="flex items-center justify-between"><span className="eyebrow" data-sheet-handle>Demo balance</span><span className="when">live · practice USDC</span></div>
+          <div className="mono mt-2 text-[36px] font-semibold tracking-tight">{fmtUsd(demoEq.equity)}</div>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="stat"><small>Available</small><div className="v mono">{fmtUsd(demoEq.cash)}</div></div>
+            <div className="stat"><small>In trades</small><div className="v mono">{fmtUsd(demoEq.margin)}</div></div>
+            <div className="stat"><small>Unrealised</small><div className={`v mono ${demoEq.upnl >= 0 ? "green" : "red"}`}>{fmtUsd(demoEq.upnl, { sign: true })}</div></div>
+          </div>
+          <div className="pf-golive mt-3.5"><b>Ready to trade real?</b>Connect a wallet and your trades fill on Hyperliquid from your own wallet. Your record and rank come with you.</div>
+          <div className="mt-3.5 grid grid-cols-2 gap-2.5"><Link href="/settings" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Go live</Link><button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ resetDemo: true }) }); mutate(); setBal(false); }}>Reset to $10,000</button></div>
+        </div>
+        </Sheet>
+      )}
+      {bal && isMe && !user.isDemo && (
+        <Sheet label="Account balance" onClose={() => setBal(false)}>
+        <div className="px-5 pb-6">
+          <div className="flex items-center justify-between"><span className="eyebrow" data-sheet-handle>Account balance</span><span className="when">USDC on Hyperliquid</span></div>
+          <div className="mono mt-2 text-[36px] font-semibold tracking-tight">{fmtUsd(data.accountValue ?? 0)}</div>
+          <div className="mt-2 flex gap-4 text-[13px]">
+            <span className="muted">Available <b className="mono" style={{ color: "var(--text)" }}>{fmtUsd(data.withdrawable ?? 0)}</b></span>
+            <span className="muted">In positions <b className="mono" style={{ color: "var(--text)" }}>{fmtUsd(data.positions.reduce((a, p) => a + Number(p.marginUsed), 0))}</b></span>
+            <span className="muted">Open PnL <b className={`mono ${data.positions.reduce((a, p) => a + Number(p.unrealizedPnl), 0) >= 0 ? "green" : "red"}`}>{fmtUsd(data.positions.reduce((a, p) => a + Number(p.unrealizedPnl), 0), { sign: true })}</b></span>
+          </div>
+          <div className="mt-3.5 grid grid-cols-2 gap-2.5"><button className="btn deposit" style={{ padding: 12, fontSize: 14 }} onClick={() => { setBal(false); setSheet("deposit"); }}>Deposit</button><button className="btn withdraw" style={{ padding: 12, fontSize: 14 }} onClick={() => { setBal(false); setSheet("withdraw"); }}>Withdraw</button></div>
+        </div>
+        </Sheet>
       )}
 
       {sheet && <DepositSheet initial={sheet} onClose={() => setSheet(null)} />}

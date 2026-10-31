@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { RANKS, rankFor, XP_REASON_LABEL } from "@/lib/rank";
 import { RankEmblem } from "./ui";
 import { timeAgo } from "@/lib/format";
 
 /** Rank, XP progress to the next title, battle record, and how the last few points were earned. */
-export function RankCard({ xp, won, lost, recent }: { xp: number; won: number; lost: number; recent: { delta: number; reason: string; ref: string | null; createdAt: string }[] }) {
+export function RankCard({ xp, won, lost, recent, ladder = false }: { ladder?: boolean; xp: number; won: number; lost: number; recent: { delta: number; reason: string; ref: string | null; createdAt: string }[] }) {
   const r = rankFor(xp);
-  const [open, setOpen] = useState(false);
-  // The record line at the top of the profile opens the ladder here.
-  useEffect(() => { const f = () => setOpen(true); window.addEventListener("perped:ladder", f); return () => window.removeEventListener("perped:ladder", f); }, []);
+  const [open, setOpen] = useState(ladder);
   return (
     <section className="block" id="rank" style={{ scrollMarginTop: 64 }}>
       <div className="flex items-center justify-between"><span className="eyebrow">Rank</span><button className="when" onClick={() => setOpen((v) => !v)}>{open ? "hide ladder" : "see the ladder"}</button></div>
@@ -50,11 +48,10 @@ export function RankCard({ xp, won, lost, recent }: { xp: number; won: number; l
 }
 
 /** One tappable line under the profile header: fade record, win rate, rank and progress to the next rank. Tap → the rank ladder. */
-export function RecordLine({ xp, won, lost }: { xp: number; won: number; lost: number }) {
+export function RecordLine({ xp, won, lost, onOpen }: { xp: number; won: number; lost: number; onOpen: () => void }) {
   const r = rankFor(xp), n = won + lost;
-  const go = () => { window.dispatchEvent(new Event("perped:ladder")); requestAnimationFrame(() => document.getElementById("rank")?.scrollIntoView({ behavior: "smooth", block: "start" })); };
   return (
-    <button type="button" className="recline mt-3.5" onClick={go} aria-label="See the rank ladder">
+    <button type="button" className="recline mt-3.5" onClick={onOpen} aria-label="See the rank ladder">
       <div className="recline-top">
         <span>Fades <span className="mono green">{won}W</span>–<span className="mono red">{lost}L</span></span>
         {n > 0 && <><em>·</em><span className="mono">{Math.round((won / n) * 100)}% win</span></>}
