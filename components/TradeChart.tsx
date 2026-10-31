@@ -17,7 +17,7 @@ export function TradeChart({ coin, entry, mark, side, tp, sl }: { coin: string; 
   const candles = (data?.candles ?? []).slice(-96);
   const live = mark || m?.mid || candles[candles.length - 1]?.c || entry;
 
-  const W = 320, H = 92, PAD = 6;
+  const W = 320, H = 70, PAD = 5;
   const hi = candles.length ? Math.max(...candles.map((c) => c.h)) : live;
   const lo = candles.length ? Math.min(...candles.map((c) => c.l)) : live;
   const span = Math.max(hi - lo, live * 0.002);

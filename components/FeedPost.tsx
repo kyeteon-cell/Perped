@@ -189,8 +189,8 @@ function ClosedTradeCard({ item, onChanged }: Props) {
     <article className={`post ${win ? "tint-green" : "tint-red"} ${isDemoPost(item) ? "demo" : ""}`}>
       <KindTag icon={I.check}>{reason === "liquidation" ? "Liquidated" : reason === "tp" ? "Take profit hit" : reason === "sl" ? "Stop loss hit" : "Closed trade"}</KindTag>
       <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
-      <div className="mt-4 flex items-end justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="trow">
+        <div className="flex min-w-0 items-center gap-3">
           <CoinMark coin={post.coin!} />
           <div>
             <Link href={`/markets/${post.coin}`} className="coin">{ticker(post.coin!, true)}</Link>
@@ -265,7 +265,7 @@ function TradePost({ item, mid, onChanged, full }: Props) {
   }
 
   return (
-    <article className={`post swipe ${swipe.armed ?? ""} ${isDemoPost(item) ? "demo" : ""}`} {...(canAct ? swipe.handlers : {})}>
+    <article className={`post swipe tcard ${swipe.armed ?? ""} ${isDemoPost(item) ? "demo" : ""}`} {...(canAct ? swipe.handlers : {})}>
       <div className="swipe-bg" aria-hidden>
         <span ref={swipe.refs.bgCopy} className="sb sb-copy"><Icon d={I.copy} size={18} />Copy</span>
         <span ref={swipe.refs.bgFade} className="sb sb-fade">Fade<Icon d={I.bolt} size={18} /></span>
@@ -273,15 +273,14 @@ function TradePost({ item, mid, onChanged, full }: Props) {
       {quick && <QuickTrade item={item} mode={quick} onClose={() => setQuick(null)} />}
       <div ref={swipe.refs.fg} className="swipe-fg">
       {post.fadedFromId && <Link href={`/battle/${post.id}`} className="kind battle-link"><Icon d={I.bolt} size={13} />Fade · open the battle →</Link>}
-      {post.copiedFromId && <div className="kind"><Icon d={I.copy} size={13} />Copy trade</div>}
       <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
           <CoinMark coin={post.coin!} />
           <div>
             <Link href={`/markets/${post.coin}`} className="coin">{ticker(post.coin!, true)}</Link>
-            <div className="mono when mt-2">
-              {showSize ? `${fmtStake(Number(post.notionalUsd) / lev)} × ${lev} · ` : ""}in at {fmtPrice(entry)}
+            <div className="mono when tsub">
+              {showSize ? `${fmtStake(Number(post.notionalUsd) / lev)} × ${lev} · ` : ""}in {fmtPrice(entry)}
             </div>
           </div>
         </div>
