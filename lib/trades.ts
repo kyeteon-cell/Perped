@@ -3,6 +3,7 @@ import { db, schema } from "./db";
 import { pnlForPosition } from "./format";
 import { systemPost, notify } from "./feed";
 import { getMids } from "./hl-info";
+import { closingFills } from "./hlfills";
 import { awardXp } from "./xp";
 import { lossPenalty, rankFor, XP } from "./rank";
 
@@ -28,6 +29,12 @@ export async function closeTradePost(postId: number, userId: string, opts: { exi
     const mid = Number(mids[post.coin!] ?? 0);
     if (!mid) return { error: "no live price right now, try again in a moment", status: 503 } as const;
     exitPx = mid;
+  }
+  if (!post.paper && !opts.trusted) {
+    // Real trades: the exit is what Hyperliquid actually filled, not what the client says.
+    const [u] = await db.select({ address: schema.users.address }).from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+    const ex = u?.address ? await closingFills(u.address, post.coin!, new Date(post.createdAt).getTime()).catch(() => null) : null;
+    if (ex) { exitPx = ex.px; if (ex.liquidated) reason = "liquidation"; }
   }
   const size = Number(post.size), notional = Number(post.notionalUsd), lev = post.leverage ?? 1;
   const sliceSize = size * fraction, sliceNotional = notional * fraction, sliceMargin = sliceNotional / lev;

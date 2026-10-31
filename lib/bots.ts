@@ -212,13 +212,14 @@ export async function botTick() {
       log.push(`${b.handle} closed ${t.coin} ${pnl >= 0 ? "+" : ""}${pnl.toFixed(0)}`);
     }
 
-    // 3. Maybe open something new (keep 1–3 open)
-    const openCount = open.length;
+    // 3. Open their own trades. Only their own positions count toward the cap (fades/copies don't crowd them out).
+    const openCount = open.filter((t) => !t.copiedFromId && !t.fadedFromId).length;
+    const reactiveOpen = open.length - openCount;
     // Bots never run dry: top up the practice balance so volume keeps flowing.
     if (Number(me.demoBalance) < 5000) { await db.update(schema.users).set({ demoBalance: "50000" }).where(eq(schema.users.id, b.id)); me.demoBalance = "50000"; }
     // More of their own trades: up to 2 new positions a run, up to 8 open at once.
-    const tries = openCount === 0 ? 2 : openCount < 4 ? (Math.random() < 0.5 ? 2 : 1) : 1;
-    for (let k = 0; k < tries; k++) if (openCount + k < 8 && Math.random() < (openCount === 0 ? 0.95 : 0.75)) {
+    const tries = openCount === 0 ? 3 : openCount < 4 ? 2 : 1;
+    for (let k = 0; k < tries; k++) if (openCount + k < 6 && Math.random() < (openCount === 0 ? 0.95 : 0.8)) {
       const coin = Math.random() < 0.75 ? pick(b.coins) : pick(["BTC", "ETH", "SOL", "HYPE", "XRP", "DOGE", "SUI", "WIF"]), mid = Number(mids[coin] ?? 0);
       if (mid && Number(me.demoBalance) > 30) {
         const side = Math.random() < b.bias ? "long" : "short";
@@ -256,14 +257,16 @@ export async function botTick() {
     const botLive = await db.select({ id: schema.posts.id, userId: schema.posts.userId, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage })
       .from(schema.posts).innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
       .where(and(eq(schema.users.isBot, true), ne(schema.posts.userId, b.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), gte(schema.posts.createdAt, new Date(now - hours(3)))))
-      .orderBy(sql`random()`).limit(2);
+      .orderBy(sql`random()`).limit(reactiveOpen >= 4 ? 0 : 2);
     const nemesis = (b as { nemesis?: string }).nemesis;
     if (nemesis) {
       const theirs = await db.select({ id: schema.posts.id, userId: schema.posts.userId, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage })
         .from(schema.posts).where(and(eq(schema.posts.userId, nemesis), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), gte(schema.posts.createdAt, new Date(now - hours(8))))).orderBy(desc(schema.posts.id)).limit(2);
       botLive.unshift(...theirs.filter((t) => !botLive.some((x) => x.id === t.id)));
     }
+    let reacted = 0;
     for (const t of botLive) {
+      if (reacted >= 1 || reactiveOpen + reacted >= 5) break; // at most one fade/copy per bot per run
       const other = BOTS.find((x) => x.id === t.userId);
       if (!other || !t.coin || !t.side) continue;
       const mid = Number(mids[t.coin] ?? 0);
@@ -272,7 +275,7 @@ export async function botTick() {
       // Mostly trades and fades: fades are common, copies rare.
       // Mostly trades and fades, some copies. Feuding bots fade each other on sight.
       const feud = !!nemesis && t.userId === nemesis;
-      const fade = feud ? Math.random() < 0.9 : b.fader ? Math.random() < 0.7 : Math.random() < 0.35;
+      const fade = feud ? Math.random() < 0.9 : b.fader ? Math.random() < 0.5 : Math.random() < 0.22;
       const copy = !feud && !fade && Math.random() < 0.12 + alike * 0.15;
       if (!fade && !copy) continue;
       const [dup] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), sql`(${schema.posts.copiedFromId} = ${t.id} or ${schema.posts.fadedFromId} = ${t.id})`)).limit(1);
@@ -287,6 +290,7 @@ export async function botTick() {
       await notify(t.userId!, fade ? "faded" : "copied", `${b.handle} ${fade ? "faded" : "copied"} your ${t.coin} trade`, `$${margin * lev} at ${mid}`, `/post/${t.id}`);
       if (feud || Math.random() < 0.5) await db.insert(schema.comments).values({ postId: t.id, userId: b.id, body: feud ? pick(FEUD_LINES) : fade ? pick(["fading this 🫡", "see you on the other side", "nope"]) : pick(["copied at your entry", "in", "same read"]) });
       log.push(`${b.handle} ${fade ? "faded" : "copied"} ${other.handle} ${t.coin}`);
+      reacted++;
     }
 
     // 4d. Duels: challenge someone who faded you recently (or a rival); accept pending challenges

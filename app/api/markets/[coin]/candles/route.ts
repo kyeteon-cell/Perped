@@ -28,5 +28,5 @@ export async function GET(req: Request, ctx: { params: Promise<{ coin: string }>
     iv = range.interval; since = Date.now() - range.ms;
   }
   const candles = await getCandles(coin.toUpperCase(), iv, since);
-  return Response.json({ coin: coin.toUpperCase(), interval: iv, candles });
+  return Response.json({ coin: coin.toUpperCase(), interval: iv, candles }, { headers: { "cache-control": "public, s-maxage=10, stale-while-revalidate=60" } });
 }

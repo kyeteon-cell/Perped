@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { newGuestToken, guestAddress, guestCookie, verifyGuestToken, tokenForGuestId } from "@/lib/guest";
 import { DEMO_ENABLED } from "@/lib/config";
@@ -12,6 +12,13 @@ const B = ["maxi", "hunter", "lord", "cat", "enjoyer", "andy", "farmer", "wizard
 export async function POST(req: Request) {
   if (!DEMO_ENABLED) return Response.json({ error: "demo mode is off" }, { status: 403 });
   await ensureSchema();
+  // Rate limit: 5 new guest accounts per network per hour (stops XP farming with throwaway accounts).
+  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || req.headers.get("x-real-ip") || "";
+  if (ip) {
+    const [n] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(schema.users)
+      .where(and(eq(schema.users.signupIp, ip), gt(schema.users.createdAt, new Date(Date.now() - 3_600_000))));
+    if ((n?.n ?? 0) >= 5) return Response.json({ error: "too many new demo accounts from this network, try again in an hour" }, { status: 429 });
+  }
   try {
     const { id, token } = newGuestToken();
     // Unique fun handle: adjective + noun + 2 digits; retry on the rare collision.
@@ -34,7 +41,7 @@ export async function POST(req: Request) {
     } catch {}
     const [profile] = await db
       .insert(schema.users)
-      .values({ id, address: guestAddress(id), handle, bio: "Guest account. Practising with $10,000 of demo money.", isDemo: true, referredBy, referredAt: referredBy ? new Date() : null })
+      .values({ id, signupIp: ip || null, address: guestAddress(id), handle, bio: "Guest account. Practising with $10,000 of demo money.", isDemo: true, referredBy, referredAt: referredBy ? new Date() : null })
       .returning();
     await db.insert(schema.stats).values({ userId: profile.id }).onConflictDoNothing();
     if (referredBy) await notify(referredBy, "referral", `@${handle} joined from your link`, "They're on demo for now. When they trade real money you earn a share of every fee.", "/settings");

@@ -5,6 +5,7 @@ import { notify, systemPost } from "@/lib/feed";
 import { closeTradePost } from "@/lib/trades";
 import { backfillBattles, backfillBattleStamps, settleBattles } from "@/lib/battles";
 import { alertBloodbath } from "@/lib/bloodbath";
+import { syncRealPositions } from "@/lib/realsync";
 import { awardXp } from "@/lib/xp";
 import { rebuildRivalries, recordFight } from "@/lib/rivalries";
 import { lossPenalty, rankFor, XP } from "@/lib/rank";
@@ -120,13 +121,15 @@ export async function GET(req: Request) {
   // Clean up bursts of battle cards (a backfill settling many in the same minute): keep 3 per minute, drop the rest.
   await db.execute(sql`delete from posts where id in (select id from (select id, row_number() over (partition by date_trunc('minute', created_at) order by created_at desc) as rn from posts where kind = 'system' and system_type = 'battle_settled' and created_at > now() - interval '12 hours') x where rn > 3)`).catch(() => null);
   await rebuildRivalries().catch(() => 0);
+  // Real-money positions closed directly on Hyperliquid: close the post at the real exit.
+  const realSynced = await syncRealPositions().catch(() => 0);
   // Battles (fades): make sure every fade has one, then settle the decided ones.
   await backfillBattles().catch(() => 0);
   const battles = await settleBattles(mids).catch(() => 0);
   await backfillBattleStamps().catch(() => 0);
   const bloodbath = await alertBloodbath(mids).catch(() => 0);
 
-  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, battles, bloodbath, at: now.toISOString() });
+  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, realSynced, battles, bloodbath, at: now.toISOString() });
 }
 
 // keep isNull imported for future invalidation-by-candle checks

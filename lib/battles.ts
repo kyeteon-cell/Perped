@@ -73,14 +73,17 @@ export async function settleBattles(mids: Record<string, string | number>) {
 
     // XP: win pays; a big margin and beating a higher rank pay more; a liquidated loser gets nothing.
     const [[fu], [tu]] = await Promise.all([
-      db.select({ handle: schema.users.handle, xp: schema.users.xp }).from(schema.users).where(eq(schema.users.id, b.faderId)).limit(1),
-      db.select({ handle: schema.users.handle, xp: schema.users.xp }).from(schema.users).where(eq(schema.users.id, b.targetId)).limit(1),
+      db.select({ handle: schema.users.handle, xp: schema.users.xp, createdAt: schema.users.createdAt }).from(schema.users).where(eq(schema.users.id, b.faderId)).limit(1),
+      db.select({ handle: schema.users.handle, xp: schema.users.xp, createdAt: schema.users.createdAt }).from(schema.users).where(eq(schema.users.id, b.targetId)).limit(1),
     ]);
     const xpFor = (id: string) => {
       const me = id === b.faderId ? fu : tu, them = id === b.faderId ? tu : fu;
       const myRoi = id === b.faderId ? fr : tr;
       if (!winnerId) return XP.battleDraw;
       if (id === winnerId) {
+        // Beating a guest account made today pays draw XP only (no farming wins off throwaway accounts).
+        const oppId = id === b.faderId ? b.targetId : b.faderId;
+        if (oppId.startsWith("guest:") && them?.createdAt && Date.now() - new Date(them.createdAt).getTime() < DAY) return XP.battleDraw;
         let x: number = XP.battleWin;
         if (Math.abs(gap) >= 20) x += XP.battleWinBigMargin;
         if (rankFor(them?.xp ?? 0).level - rankFor(me?.xp ?? 0).level >= 2) x += XP.upsetBonus;

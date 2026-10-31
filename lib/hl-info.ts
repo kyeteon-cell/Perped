@@ -97,8 +97,20 @@ export async function resolveTradingAsset(asset: PerpAsset): Promise<PerpAsset> 
   }
 }
 
+/** Short in-process cache with request de-duplication: many requests in the same second share one Hyperliquid call. */
+const memoStore = new Map<string, { at: number; v: Promise<unknown> }>();
+function memo<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
+  const hit = memoStore.get(key), now = Date.now();
+  if (hit && now - hit.at < ttlMs) return hit.v as Promise<T>;
+  const v = fn();
+  memoStore.set(key, { at: now, v });
+  v.catch(() => { if (memoStore.get(key)?.v === v) memoStore.delete(key); });
+  if (memoStore.size > 500) for (const [k, e] of memoStore) if (now - e.at > 120_000) memoStore.delete(k);
+  return v;
+}
+
 export async function getMids(): Promise<Mids> {
-  return info<Mids>({ type: "allMids" });
+  return memo("mids", 2_000, () => info<Mids>({ type: "allMids" }));
 }
 
 export async function getClearinghouseState(user: string): Promise<ClearinghouseState> {
@@ -188,6 +200,9 @@ export type MarketRow = PerpAsset & {
 
 /** Universe + live context in one call (metaAndAssetCtxs). */
 export async function getMarkets(): Promise<MarketRow[]> {
+  return memo("markets", 5_000, loadMarkets);
+}
+async function loadMarkets(): Promise<MarketRow[]> {
   const [meta, ctxs] = await info<[{ universe: { name: string; szDecimals: number; maxLeverage: number; onlyIsolated?: boolean; isDelisted?: boolean }[] }, AssetCtx[]]>(
     { type: "metaAndAssetCtxs" },
   );
@@ -215,6 +230,10 @@ export type Candle = { t: number; o: number; h: number; l: number; c: number; v:
 
 /** Candles for a coin. interval: "1m" | "5m" | "15m" | "1h" | "4h" | "1d". */
 export async function getCandles(coin: string, interval: string, startTime: number, endTime = Date.now()): Promise<Candle[]> {
+  // Same coin/interval/window within 10s shares one fetch (start rounded to the minute).
+  return memo(`c:${coin}:${interval}:${Math.round(startTime / 60_000)}`, 10_000, () => loadCandles(coin, interval, startTime, endTime));
+}
+async function loadCandles(coin: string, interval: string, startTime: number, endTime: number): Promise<Candle[]> {
   const raw = await info<{ t: number; o: string; h: string; l: string; c: string; v: string }[]>({
     type: "candleSnapshot",
     req: { coin, interval, startTime, endTime },

@@ -25,6 +25,8 @@ export async function PATCH(req: Request) {
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const { resetDemo, ...patch } = parsed.data;
   const set: Record<string, unknown> = { ...patch };
+  // The X handle that counts toward "verified" comes from the linked X login, never from free text.
+  if ("xHandle" in patch) set.xHandle = auth.xHandle ?? null;
   if (patch.isDemo === false) {
     if (auth.guest) return Response.json({ error: "guest accounts are demo only; sign in with X or a wallet to go live" }, { status: 400 });
     if (!auth.hasExternalWallet) return Response.json({ error: "connect a wallet first to trade real money" }, { status: 400 });

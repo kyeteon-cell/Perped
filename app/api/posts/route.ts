@@ -7,7 +7,8 @@ import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { queryFeed, notify } from "@/lib/feed";
 import { DEMO_ENABLED } from "@/lib/config";
-import { getMids, getPerpAssets } from "@/lib/hl-info";
+import { getFrontendOpenOrders, getMids, getPerpAssets } from "@/lib/hl-info";
+import { fillsForOrder, vwap } from "@/lib/hlfills";
 
 /**
  * Keep the For-you feed mixed: system cards (battle / duel results, milestones, settlements, market stories)
@@ -176,6 +177,25 @@ export async function POST(req: Request) {
     const [paid] = await db.update(schema.users).set({ demoBalance: sql`${schema.users.demoBalance} - ${margin.toFixed(2)}` })
       .where(and(eq(schema.users.id, profile.id), sql`${schema.users.demoBalance} >= ${margin.toFixed(2)}`)).returning({ id: schema.users.id });
     if (!paid) return Response.json({ error: "not enough demo balance" }, { status: 400 });
+  }
+  if (b.kind === "trade" && !values.paper) {
+    // Real money: entry and size come from the actual fills on Hyperliquid, looked up by order id.
+    if (!auth.address) return Response.json({ error: "connect your wallet to post a live trade" }, { status: 400 });
+    if (!b.oid) return Response.json({ error: "missing Hyperliquid order id" }, { status: 400 });
+    let fills = await fillsForOrder(auth.address, b.oid, b.coin.toUpperCase()).catch(() => null);
+    if (fills && !fills.length) { await new Promise((r) => setTimeout(r, 1500)); fills = await fillsForOrder(auth.address, b.oid, b.coin.toUpperCase()).catch(() => null); } // fills can lag the order by a moment
+    if (fills && fills.length) {
+      const v = vwap(fills)!;
+      const bought = fills[0].side === "B";
+      if ((b.side === "long") !== bought) return Response.json({ error: "that order was on the other side" }, { status: 400 });
+      b.entryPx = v.px; b.size = v.sz; b.notionalUsd = v.px * v.sz;
+    } else if (fills) {
+      const resting = await getFrontendOpenOrders(auth.address).then((o) => o.some((x) => x.oid === b.oid)).catch(() => false);
+      if (!resting) return Response.json({ error: "we couldn't find that order on Hyperliquid" }, { status: 400 });
+      values.meta = { ...(values.meta ?? {}), pendingFill: true };
+    } else {
+      values.meta = { ...(values.meta ?? {}), unverified: true }; // Hyperliquid didn't answer; checked again by the sync cron
+    }
   }
   if (b.kind === "trade") {
     Object.assign(values, {

@@ -29,6 +29,7 @@ export const users = pgTable(
     // Referral: who brought them in (set once at signup, never changed). Their own code is their handle.
     referredBy: text("referred_by"),
     referredAt: timestamp("referred_at", { withTimezone: true }),
+    signupIp: text("signup_ip"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [uniqueIndex("users_handle_idx").on(t.handle), uniqueIndex("users_address_idx").on(t.address), index("users_referred_by_idx").on(t.referredBy)],

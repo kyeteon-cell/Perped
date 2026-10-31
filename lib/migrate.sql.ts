@@ -260,4 +260,6 @@ create index if not exists posts_kind_status_idx on posts (kind, status);
 create index if not exists follows_followee_idx on follows (followee_id);
 create index if not exists battles_target_post_idx on battles (target_post_id);
 create index if not exists battles_status_idx on battles (status);
+alter table users add column if not exists signup_ip text;
+create index if not exists users_signup_ip_idx on users (signup_ip, created_at) where signup_ip is not null;
 `;

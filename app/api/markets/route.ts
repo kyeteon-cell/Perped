@@ -8,5 +8,5 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const markets = await getMarkets();
   markets.sort((a, b) => b.volume24h - a.volume24h);
-  return Response.json({ markets, at: Date.now() });
+  return Response.json({ markets, at: Date.now() }, { headers: { "cache-control": "public, s-maxage=5, stale-while-revalidate=30" } });
 }
