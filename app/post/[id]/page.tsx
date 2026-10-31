@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
@@ -19,6 +19,8 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   const { id } = use(params);
   const { authedFetch, authenticated, login, profile } = useSession();
   const { mids } = useMids();
+  const [autoQuick, setAutoQuick] = useState<"copy" | "fade" | null>(null);
+  useEffect(() => { try { const q = new URLSearchParams(window.location.search); setAutoQuick(q.get("fade") === "1" ? "fade" : q.get("copy") === "1" ? "copy" : null); } catch {} }, []);
   const { data, mutate } = useSWR<{ post: FeedRow }>(`/api/posts/${id}`, async () => (await authedFetch(`/api/posts/${id}`)).json());
   const { data: cm, mutate: mutateC } = useSWR<{ comments: C[] }>(`/api/posts/${id}/comments`);
   const coin = data?.post?.post.coin;
@@ -59,7 +61,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     <div data-tint="brand" className="fade-in pb-40">
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Thread</div>{post ? <button className="iconbtn" aria-label="Share" onClick={() => setReceipt(true)}><Icon d={I.share} /></button> : <span className="w-9" />}</header>
       {!post && <SkeletonList n={1} />}
-      {post && <FeedPost item={post} full mid={post.post.coin ? mids[post.post.coin] : undefined} onChanged={() => mutate()} />}
+      {post && <FeedPost item={post} full autoQuick={autoQuick} mid={post.post.coin ? mids[post.post.coin] : undefined} onChanged={() => mutate()} />}
       {roots.map((c) => (<div key={c.comment.id}>{Row({ c })}{children(c.comment.id).map((r) => <div key={r.comment.id}>{Row({ c: r, reply: true })}</div>)}</div>))}
       {cm && roots.length === 0 && <p className="muted p-5 text-sm">No comments yet. Respect or roast.</p>}
       <div style={{ bottom: "calc(88px + env(safe-area-inset-bottom, 0px))", background: "var(--bg)", borderColor: "var(--line)" }} className="fixed left-1/2 flex w-full max-w-md -translate-x-1/2 items-center gap-2.5 border-t px-4 py-2.5">

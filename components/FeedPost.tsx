@@ -25,7 +25,7 @@ export function explorerUrl(address?: string | null) {
   return address ? `${base}/address/${address}` : base;
 }
 
-type Props = { item: FeedRow; mid?: number; onChanged?: () => void; compact?: boolean; full?: boolean };
+type Props = { item: FeedRow; mid?: number; onChanged?: () => void; compact?: boolean; full?: boolean; autoQuick?: "copy" | "fade" | null };
 export type BattleStamp = { battleId: number; faderPostId: number; vs?: string; won: boolean | null; myRoi: number; theirRoi: number; reason?: string };
 
 // Dates arrive as ISO strings over JSON; normalise once.
@@ -226,7 +226,7 @@ function ClosedTradeCard({ item, onChanged }: Props) {
 
 /* ---------- trade ---------- */
 
-function TradePost({ item, mid, onChanged, full }: Props) {
+function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
   const { post, author } = item;
   const { profile } = useSession();
   const router = useRouter();
@@ -251,6 +251,8 @@ function TradePost({ item, mid, onChanged, full }: Props) {
   const camps = item.copyCount + item.fadeCount;
   const canAct = isOpen && !!author && author.id !== profile?.id;
   const [quick, setQuick] = useState<"copy" | "fade" | null>(null);
+  // Deep link from an alert (/post/:id?fade=1): open the quick sheet once the trade is known to be live.
+  useEffect(() => { if (autoQuick && canAct) setQuick(autoQuick); }, [autoQuick, canAct]);
   const canFade = author?.allowFade !== false && !item.noFade;
   const canCopy = author?.allowCopy !== false;
   const swipe = useSwipeToAct(() => setQuick("copy"), () => setQuick("fade"), canAct, canFade, canCopy);
@@ -521,9 +523,9 @@ function SystemPost({ item, onChanged }: Props) {
   }
 
   const isLiq = t === "liquidation";
-  const tint = isLiq ? "tint-red" : t === "settled" ? "tint-green" : t === "milestone" ? "tint-gold" : "tint-brand";
-  const icon = isLiq ? I.bolt : t === "milestone" ? I.trophy : t === "settled" ? I.list : I.markets;
-  const title = isLiq ? "Liquidation" : t === "milestone" ? "Milestone" : t === "settled" ? "Settled" : t === "rank" ? "Leaderboard" : "Perped";
+  const tint = isLiq ? "tint-red" : t === "settled" ? "tint-green" : t === "milestone" || t === "bounty" ? "tint-gold" : "tint-brand";
+  const icon = isLiq ? I.bolt : t === "milestone" || t === "bounty" ? I.trophy : t === "settled" ? I.list : I.markets;
+  const title = isLiq ? "Liquidation" : t === "bounty" ? "💰 Bounty claimed" : t === "milestone" ? "Milestone" : t === "settled" ? "Settled" : t === "rank" ? "Leaderboard" : "Perped";
   return (
     <article className={`post alert ${tint}`}>
       <div className="flex items-center gap-3">

@@ -124,7 +124,7 @@ export async function alertRivals(traderId: string, post: { id: number; coin: st
     const last = otherIsA ? r.lastAlertA : r.lastAlertB;
     if (last && now - last.getTime() < ALERT_GAP_MS) continue;
     const mine = otherIsA ? r.aWins : r.bWins, theirs = otherIsA ? r.bWins : r.aWins;
-    await notify(other, "rival", `Your rival ${T.handle} just went ${post.side} ${post.coin} ${post.leverage ?? 1}×`, `Series ${mine}–${theirs}. Fade them?`, `/post/${post.id}`);
+    await notify(other, "rival", `Your rival ${T.handle} just went ${post.side} ${post.coin} ${post.leverage ?? 1}×`, `Series ${mine}–${theirs}. Tap to quick fade.`, `/post/${post.id}?fade=1`);
     await db.update(schema.rivalries).set(otherIsA ? { lastAlertA: new Date() } : { lastAlertB: new Date() }).where(eq(schema.rivalries.id, r.id));
     sent++;
   }

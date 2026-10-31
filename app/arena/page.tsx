@@ -12,6 +12,7 @@ import { Sheet } from "@/components/Sheet";
 import { rankFor } from "@/lib/rank";
 import type { ArenaBattle, ArenaRes } from "@/app/api/arena/route";
 import { FollowButton, useFollowing } from "@/components/FollowButton";
+import { BloodPit, BodyCount, FinishSave, KillFeed, RevengeButton } from "@/components/Bloodbath";
 import type { ReactNode } from "react";
 
 type Leg = ArenaBattle["faderLeg"];
@@ -58,6 +59,24 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
       {badge && <div className="abadge">{badge}</div>}
     </Link>
   );
+}
+
+/** Fight Night: every day 9–10pm Bangkok (14:00–15:00 UTC). Countdown, then LIVE. */
+function FightNight() {
+  const [t, setT] = useState<string | null>(null);
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date(), start = new Date(now); start.setUTCHours(14, 0, 0, 0);
+      const end = new Date(start.getTime() + 3_600_000);
+      if (now >= end) start.setUTCDate(start.getUTCDate() + 1);
+      if (now >= start && now < end) return setT("live");
+      const ms = start.getTime() - now.getTime(), h = Math.floor(ms / 3_600_000), m = Math.floor((ms % 3_600_000) / 60_000);
+      setT(h ? `${h}h ${m}m` : `${m}m`);
+    };
+    tick(); const id = setInterval(tick, 30_000); return () => clearInterval(id);
+  }, []);
+  if (!t) return null;
+  return <span className={`fightnight ${t === "live" ? "on" : ""}`}>{t === "live" ? "🥊 Fight Night · LIVE" : `🥊 Fight Night in ${t}`}</span>;
 }
 
 /** Sworn rivals meeting again: the series so far and which meeting this is. */
@@ -117,7 +136,7 @@ export default function ArenaPage() {
       <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
         <h1 className="h1" style={{ color: "#fff" }}>Arena</h1>
         <div className="text-[12px]" style={{ color: "rgba(255,255,255,.85)" }}>Fade someone and it&rsquo;s a battle. Call them out and it&rsquo;s a duel. Winner takes the XP.</div>
-        <button className="arena-cta mt-3" onClick={callOut}>⚔ Call someone out</button>
+        <div className="mt-3 flex flex-wrap items-center gap-2"><button className="arena-cta" onClick={callOut}>⚔ Call someone out</button><FightNight /></div>
       </header>
 
       {!data && <SkeletonList n={3} card={false} />}
@@ -172,6 +191,7 @@ export default function ArenaPage() {
                 <div className="flex justify-center"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={44} /></div>
                 <div className="name mt-1.5 truncate text-[13px]">{s.user.handle}</div>
                 <div className="text-[18px] font-extrabold">🔥 {s.streak}</div>
+                {s.streak >= 5 && <div className="bounty">💰 Bounty +{25 + s.streak * 10} XP</div>}
                 {profile?.handle !== s.user.handle && <button className="chip mt-1.5 w-full justify-center" style={{ fontSize: 11, padding: "5px 8px" }} onClick={() => (authenticated ? setTarget(s.user.handle) : login())}>Break it</button>}
               </div>
             ))}
@@ -224,18 +244,31 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
       <div className="seg mt-3">
         {tabs.map((t) => <button key={t.k} className={`chip ${tab === t.k ? "on" : ""}`} onClick={() => setTab(t.k)}>{t.label}<span className="atab-n">{t.n}</span></button>)}
       </div>
+      {tab === "blood" && (
+        <div className="mt-3 flex flex-col gap-3">
+          {blood[0] && <BloodPit b={blood[0].b} mid={mids[blood[0].b.coin] ?? 0} winner={blood[0].r.winner} loser={blood[0].r.loser} worst={blood[0].r.worst} minLiq={blood[0].r.minLiq} />}
+          <KillFeed kills={data.kills ?? []} />
+        </div>
+      )}
       <div className="mt-3 flex flex-col gap-2">
         {tab === "blood" && rekt.map(({ b, r }) => (
-          <BattleRow key={`rekt${b.id}`} b={b} mid={mids[b.coin] ?? 0} badge={<><span className="rekt">REKT</span><b>{r.loser.handle}</b> got liquidated by <b>{r.winner.handle}</b></>} />
+          <div key={`rekt${b.id}`} className="tomb">
+            <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={<><span className="rekt">REKT</span><span>🪦 <b>{r.loser.handle}</b> got liquidated by <b>{r.winner.handle}</b></span></>} />
+            <div className="bb-under"><RevengeButton handle={r.winner.handle} label={`🩸 Revenge on ${r.winner.handle}`} /></div>
+          </div>
         ))}
-        {list.map(({ b, r }) => (
-          <BattleRow key={b.id} b={b} mid={mids[b.coin] ?? 0} badge={
+        {(tab === "blood" ? list.slice(1) : list).map(({ b, r }) => (
+          <div key={b.id}>
+          <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={
             tab === "high" ? <><span>{flames(r.heat)}</span><b className="mono">{b.faderLeg.leverage}× vs {b.targetLeg.leverage}×</b>{r.minLiq < 50 && <span className="ab-warn">{r.closer.handle} liq in {r.minLiq.toFixed(1)}%</span>}</>
             : tab === "blood" ? <><span>💀</span><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted">{r.winner.handle} 👑</span></>
             : tab === "following" && tag(b) ? <span className="ab-tag">{tag(b)}</span>
             : undefined
           } />
+          {tab === "blood" && <div className="bb-under"><FinishSave b={b} winner={r.winner} loser={r.loser} /></div>}
+          </div>
         ))}
+        {tab === "blood" && <BodyCount board={data.board} />}
         {!list.length && !(tab === "blood" && rekt.length) && (
           tab === "following" ? (
             <div className="aempty">

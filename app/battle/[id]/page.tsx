@@ -11,6 +11,8 @@ import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format"
 import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
 import { rankFor } from "@/lib/rank";
 import { BattleArena, type Fighter } from "@/components/BattleArena";
+import { RevengeButton } from "@/components/Bloodbath";
+import { QuickTrade, legItem } from "@/components/QuickTrade";
 import type { Post, Stats } from "@/lib/schema";
 
 type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null; xp?: number };
@@ -34,6 +36,15 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const { data, mutate } = useSWR<Res>(`/api/battle/${id}`, { refreshInterval: 15_000 });
   const [manage, setManage] = useState<Res["fade"] | null>(null);
   const [rematch, setRematch] = useState<string | null>(null);
+  const [sideWith, setSide] = useState<null | { p: Post; u: U }>(null);
+  const [shared, setShared] = useState<string | null>(null);
+  const shareWin = async (opp: string) => {
+    const url = window.location.href, text = `I just perped @${opp} on Perped ⚔`;
+    try {
+      if (navigator.share) { await navigator.share({ title: "Perped", text, url }); return; }
+      await navigator.clipboard.writeText(`${text} ${url}`); setShared("Link copied ✓");
+    } catch { /* cancelled */ }
+  };
   const [pinOverride, setPinOverride] = useState<boolean | null>(null);
   const [pinBusy, setPinBusy] = useState(false);
   const { mids } = useMids();
@@ -112,8 +123,17 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         {battle?.status === "settled" && profile && battle.winnerId === profile.id && myPost && (
           <button className={`pinwin ${pinnedWin ? "on" : ""}`} onClick={pinWin} disabled={pinBusy}>{pinnedWin ? "📌 Pinned" : "📌 Pin this win"}</button>
         )}
-        {battle?.status === "settled" && profile && myPost && (
-          <button className="btn mt-2" style={{ padding: 11, fontSize: 13 }} onClick={() => setRematch(profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}>⚔ {battle.winnerId === profile.id ? "Run it back" : "Rematch"} · challenge {profile.id === fader.user.id ? tu.user.handle : fader.user.handle}</button>
+        {battle?.status === "settled" && profile && myPost && (() => {
+          const opp = profile.id === fader.user.id ? tu.user.handle : fader.user.handle;
+          return (
+            <div className="mt-2 grid grid-cols-2 gap-2.5">
+              <RevengeButton handle={opp} label={battle.winnerId === profile.id ? "⚡ Run it back" : "🩸 Revenge"} className="btn short runback" />
+              <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => setRematch(opp)}>⚔ Duel {opp}</button>
+            </div>
+          );
+        })()}
+        {battle?.status === "settled" && profile && battle.winnerId === profile.id && (
+          <button className="btn ghost mt-2" style={{ padding: 10, fontSize: 13 }} onClick={() => shareWin(profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}>{shared ?? "📣 Share: I just perped " + (profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}</button>
         )}
         <div className="tug mt-5" style={{ height: 10, background: target.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${share}%`, background: fade.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
         <div className="when mt-2 text-center">{live ? `${faderLeads ? fader.user.handle : tu.user.handle} is ahead by ${fmtPct(Math.abs(a.roi - b.roi), 1)}` : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
@@ -124,10 +144,11 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         {manage && <ManageTrade post={manage} mid={mid || undefined} onChanged={() => mutate()} onClose={() => setManage(null)} />}
         {live && profile && profile.id !== fader.user.id && profile.id !== tu.user.id && (
           <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <Link href={`/trade?copy=${fade.id}`} className="btn" style={{ padding: 11, fontSize: 13 }}>Side with {fader.user.handle}</Link>
-            <Link href={`/trade?copy=${target.id}`} className="btn" style={{ padding: 11, fontSize: 13 }}>Side with {tu.user.handle}</Link>
+            <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => setSide({ p: fade, u: fader.user })}>Side with {fader.user.handle}</button>
+            <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => setSide({ p: target, u: tu.user })}>Side with {tu.user.handle}</button>
           </div>
         )}
+        {sideWith && <QuickTrade item={legItem({ id: sideWith.p.id, coin: sideWith.p.coin!, side: sideWith.p.side as "long" | "short", leverage: sideWith.p.leverage ?? 1 }, { handle: sideWith.u.handle, avatarUrl: sideWith.u.avatarUrl })} mode="copy" lock title="Side with" onClose={() => setSide(null)} />}
       </section>
 
       {(live || mid > 0) && <BattleArena coin={coin} live={mid || Number(fade.exitPx ?? fade.entryPx)} a={fighter(fader.user, fade, a)} b={fighter(tu.user, target, b)} />}

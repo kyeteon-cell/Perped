@@ -7,6 +7,8 @@ import { awardXp } from "./xp";
 import { recordFight } from "./rivalries";
 
 const DAY = 24 * 60 * 60 * 1000;
+/** A win streak this long carries a bounty for whoever breaks it. */
+export const BOUNTY_STREAK = 5;
 
 /** Record a battle when someone fades a trade. Safe to call twice. */
 export async function ensureBattle(faderPostId: number) {
@@ -103,6 +105,18 @@ export async function settleBattles(mids: Record<string, string | number>) {
     await awardXp(b.faderId, xpF, winnerId ? (winnerId === b.faderId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
     await awardXp(b.targetId, xpT, winnerId ? (winnerId === b.targetId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
     if (winnerId && loserId) {
+      // Streak bounty: breaking someone's 5+ win streak pays a bonus and makes the feed.
+      const prev = await db.select({ w: schema.battles.winnerId }).from(schema.battles)
+        .where(and(eq(schema.battles.status, "settled"), sql`${schema.battles.id} <> ${b.id}`, sql`(${schema.battles.faderId} = ${loserId} or ${schema.battles.targetId} = ${loserId})`, sql`${schema.battles.winnerId} is not null`))
+        .orderBy(desc(schema.battles.settledAt)).limit(20);
+      let broke = 0; for (const p of prev) { if (p.w === loserId) broke++; else break; }
+      if (broke >= BOUNTY_STREAK) {
+        const bonus = 25 + broke * 10;
+        await awardXp(winnerId, bonus, "streak_bounty", `battle:${b.id}`);
+        const wh = winnerId === b.faderId ? fu?.handle : tu?.handle, lh = winnerId === b.faderId ? tu?.handle : fu?.handle;
+        await systemPost("bounty", `${wh} broke ${lh}'s ${broke}-win streak on ${b.coin} and claimed the bounty: +${bonus} XP.`, { handle: wh, loser: lh, streak: broke, bonus, battleId: b.id, faderPostId: b.faderPostId }, b.coin);
+        await notify(winnerId, "battle", `💰 Bounty claimed: you broke ${lh}'s ${broke}-win streak`, `+${bonus} XP on top of the win`, `/battle/${b.faderPostId}`);
+      }
       await db.update(schema.stats).set({ battlesWon: sql`${schema.stats.battlesWon} + 1` }).where(eq(schema.stats.userId, winnerId));
       await db.update(schema.stats).set({ battlesLost: sql`${schema.stats.battlesLost} + 1` }).where(eq(schema.stats.userId, loserId));
     }

@@ -12,6 +12,10 @@ export type Nemesis = { fights: number; faderWins: number; targetWins: number; d
 export type ArenaRes = {
   live: ArenaBattle[];
   rekt: ArenaBattle[];
+  /** Liquidations in the last 24h, newest first: the kill feed. */
+  kills: ArenaBattle[];
+  /** This week: who perped the most people, and who got perped the most. */
+  board: { butchers: { user: Mini; n: number }[]; rekt: { user: Mini; n: number }[] };
   recent: ArenaBattle[];
   streaks: { user: Mini; streak: number }[];
   me: null | { won: number; lost: number; drawn: number; streak: number; best: number; rivals: { user: Mini; won: number; lost: number }[]; challenges: { id: number; coin: string; side: "long" | "short"; stakeUsd: number; hours: number; from: Mini }[] };
@@ -54,6 +58,17 @@ export async function GET(req: Request) {
   // Liquidations in the last hour stay in Bloodbath as REKT cards.
   const rekt = settled.filter((b) => b.reason === "liquidation" && b.settledAt && Date.now() - b.settledAt.getTime() < 6 * 3_600_000).slice(0, 10).map(shape).filter((x): x is ArenaBattle => !!x);
 
+  const kills = settled.filter((b) => b.reason === "liquidation" && b.settledAt && Date.now() - b.settledAt.getTime() < 24 * 3_600_000).slice(0, 12).map(shape).filter((x): x is ArenaBattle => !!x);
+  const weekAgo = Date.now() - 7 * 24 * 3_600_000;
+  const wins = new Map<string, number>(), losses = new Map<string, number>();
+  for (const b of settled) {
+    if (!b.winnerId || !b.settledAt || b.settledAt.getTime() < weekAgo) continue;
+    const loser = b.winnerId === b.faderId ? b.targetId : b.faderId;
+    wins.set(b.winnerId, (wins.get(b.winnerId) ?? 0) + 1); losses.set(loser, (losses.get(loser) ?? 0) + 1);
+  }
+  const topOf = (m: Map<string, number>) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([uid, n]) => ({ user: U.get(uid)!, n })).filter((x) => x.user);
+  const board = { butchers: topOf(wins), rekt: topOf(losses) };
+
   // Current win streak per user: consecutive wins counting back from their latest settled battle.
   const byUser = new Map<string, boolean[]>(); // newest first; true = win, false = loss (draws break nothing)
   for (const b of settled) {
@@ -86,5 +101,5 @@ export async function GET(req: Request) {
     const challenges = duels.map((d) => ({ id: d.id, coin: d.coin, side: d.challengerSide as "long" | "short", stakeUsd: Number(d.stakeUsd), hours: Math.max(1, Math.round((d.settlesAt.getTime() - d.createdAt.getTime()) / 3_600_000)), from: from.find((f) => f.id === d.challengerId) as Mini })).filter((c) => c.from);
     me = { won, lost: mine.length - won - drawn, drawn, streak: streakOf(arr), best: bestOf(arr), rivals, challenges };
   }
-  return Response.json({ live, rekt, recent, streaks, me } satisfies ArenaRes);
+  return Response.json({ live, rekt, kills, board, recent, streaks, me } satisfies ArenaRes);
 }
