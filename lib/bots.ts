@@ -166,7 +166,12 @@ export async function botTick() {
     .where(and(eq(schema.users.isBot, false), gte(schema.posts.createdAt, new Date(now - hours(1))), isNull(schema.posts.systemType)))
     .orderBy(desc(schema.posts.id)).limit(10);
 
+  // Bots step back as real people arrive: at 50+ human trades an hour they act a third as often.
+  const [hc] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(schema.posts).innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
+    .where(and(eq(schema.users.isBot, false), eq(schema.posts.kind, "trade"), gte(schema.posts.createdAt, new Date(now - hours(1)))));
+  const botActivity = Math.max(0.33, 1 - (hc?.n ?? 0) / 75);
   for (const b of BOTS) {
+    if (Math.random() > botActivity) continue;
     const [me] = await db.select().from(schema.users).where(eq(schema.users.id, b.id)).limit(1);
     if (!me) continue;
 
