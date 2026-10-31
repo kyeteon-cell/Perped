@@ -1290,3 +1290,4 @@ body { letter-spacing: -.005em; }
 .avring.lead { border-color: var(--gold) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 22%, transparent), 0 0 26px 6px color-mix(in srgb, var(--gold) 45%, transparent) !important; animation: ringglow 2.6s ease-in-out infinite; }
 @keyframes ringglow { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--gold) 26%, transparent), 0 0 34px 10px color-mix(in srgb, var(--gold) 55%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .avring.lead { animation: none; } }
+.share-toast { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 60; background: var(--ink); color: var(--ink-fg); font-weight: 800; font-size: 13px; padding: 8px 14px; border-radius: 999px; box-shadow: var(--shadow-lg); animation: rise .3s var(--ease) both; }

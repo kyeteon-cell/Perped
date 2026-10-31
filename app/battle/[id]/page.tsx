@@ -41,6 +41,21 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const [rematch, setRematch] = useState<string | null>(null);
   const [sideWith, setSide] = useState<null | { p: Post; u: U }>(null);
   const [shared, setShared] = useState<string | null>(null);
+  /** Share any battle: the link unfurls into the battle card (opengraph image); on phones, the native share sheet. */
+  const shareBattle = async () => {
+    const url = window.location.href.split("?")[0];
+    const a = data?.fader.user.handle, b = data?.targetUser.user.handle, coin = data?.fade.coin;
+    const text = `${a} vs ${b} on ${coin}. Pick a side on Perped`;
+    try {
+      // Attach the card image itself where the phone supports sharing files.
+      const img = await fetch(`${url}/opengraph-image`).then((r) => (r.ok ? r.blob() : null)).catch(() => null);
+      const file = img ? new File([img], "perped-battle.png", { type: "image/png" }) : null;
+      if (file && navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], text: `${text} ${url}` }); return; }
+      if (navigator.share) { await navigator.share({ title: "Perped battle", text, url }); return; }
+      await navigator.clipboard.writeText(`${text} ${url}`); setShared("Link copied");
+      setTimeout(() => setShared(null), 2000);
+    } catch { /* cancelled */ }
+  };
   const shareWin = async (opp: string) => {
     const url = window.location.href, text = `I just perped @${opp} on Perped`;
     try {
@@ -103,7 +118,8 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="fade-in pb-8" data-tint="violet">
-      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Vendetta" : "Battle"}</div><span className="w-9" /></header>
+      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Vendetta" : "Battle"}</div><button className="iconbtn" aria-label="Share this battle" onClick={shareBattle}><Icon d={I.share} /></button></header>
+      {shared && <div className="share-toast">{shared}</div>}
       {live && isFightNight(fade.createdAt) && <div className="fn-banner"><span className="gl"><Glyph n="glove" />Fight Night battle · winner earns 2× XP</span></div>}
       {nemesis && (
         <div className="nem-banner">
