@@ -1318,3 +1318,7 @@ body { letter-spacing: -.005em; }
 .act-filters::-webkit-scrollbar { display: none; }
 .act-filters button { flex: none; border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 6px 12px; font: inherit; font-weight: 800; font-size: 12.5px; cursor: pointer; }
 .act-filters button.on { background: var(--text); color: var(--bg); border-color: transparent; }
+
+/* The P&L pill never shrinks or gets pushed off the card, whatever the coin line beside it says. */
+.pnlpill { flex: none; max-width: 60%; }
+.pnlpill .pnl, .pnlpill > div { white-space: nowrap; }

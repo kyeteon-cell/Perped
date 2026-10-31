@@ -288,11 +288,11 @@ function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
       {post.fadedFromId && <BattleHead item={item} mark={mark} myRoi={roi} />}
       <Who item={item} right={<span className={`lbl ${post.side}`}><i />{post.side === "long" ? "Long" : "Short"} {lev}×</span>} />
       <div className="mt-4 flex items-end justify-between gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <CoinMark coin={post.coin!} />
-          <div>
+          <div className="min-w-0">
             <Link href={`/markets/${post.coin}`} className="coin">{ticker(post.coin!, true)}</Link>
-            <div className="mono when tsub">
+            <div className="mono when tsub truncate">
               {showSize ? `${fmtStake(Number(post.notionalUsd) / lev)} × ${lev} · ` : ""}in {fmtPrice(entry)}
             </div>
           </div>
@@ -376,9 +376,9 @@ function CallPost({ item, mid, onChanged }: Props) {
       <KindTag icon={I.trophy}>{quick ? (open ? "One-hour call" : post.callStatus === "hit" ? "Called it" : "Got perped") : open ? "Price call" : post.callStatus === "hit" ? "Call hit" : "Call missed"}</KindTag>
       <Who item={item} right={<>{post.backedPostId && <span className="lbl backed">Backed</span>}<span className={`lbl ${open ? "call" : post.callStatus === "hit" ? "long" : "short"}`}><i />{open ? "Call" : post.callStatus === "hit" ? "Hit" : "Missed"}</span></>} />
       <div className="mt-4 flex items-end justify-between gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <CoinMark coin={post.coin!} />
-          <div>
+          <div className="min-w-0">
             <div className="coin" style={{ fontSize: 24 }}>{ticker(post.coin!, true)} <span className="muted text-sm font-semibold tracking-normal">{quick ? (up ? "higher" : "lower") : `${up ? "↑" : "↓"} ${fmtPrice(target)}`}</span></div>
             <div className="mono when mt-2">{quick ? `from ${fmtPrice(fromPx || target)}${deadline ? ` · settles ${deadline.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}` : ""}` : `${fromPx ? `from ${fmtPrice(fromPx)} · ${fmtPct(pctToTarget, 1)}` : up ? "up" : "down"}${deadline ? ` · by ${deadline.toLocaleDateString("en-US", { weekday: "short" })}` : ""}${post.invalidPx ? ` · invalid ${up ? "below" : "above"} ${fmtPrice(post.invalidPx)}` : ""}`}</div>
           </div>
