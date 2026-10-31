@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#ffffff" }, { media: "(prefers-color-scheme: dark)", color: "#0f1012" }],
+  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f6f7f9" }, { media: "(prefers-color-scheme: dark)", color: "#0b0c0e" }],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -41,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-dvh">
         <Providers>
-          <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col pb-24">
+          <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col pb-32">
             <Ticker />
             {children}
           </div>
