@@ -16,6 +16,7 @@ import { RevengeButton } from "@/components/Bloodbath";
 import { isFightNight } from "@/lib/fightnight";
 import { QuickTrade, legItem } from "@/components/QuickTrade";
 import { Tug } from "@/components/Tug";
+import { BattleShare } from "@/components/BattleShare";
 import type { Post, Stats } from "@/lib/schema";
 
 type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null; xp?: number };
@@ -41,21 +42,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const [rematch, setRematch] = useState<string | null>(null);
   const [sideWith, setSide] = useState<null | { p: Post; u: U }>(null);
   const [shared, setShared] = useState<string | null>(null);
-  /** Share any battle: the link unfurls into the battle card (opengraph image); on phones, the native share sheet. */
-  const shareBattle = async () => {
-    const url = window.location.href.split("?")[0];
-    const a = data?.fader.user.handle, b = data?.targetUser.user.handle, coin = data?.fade.coin;
-    const text = `${a} vs ${b} on ${coin}. Pick a side on Perped`;
-    try {
-      // Attach the card image itself where the phone supports sharing files.
-      const img = await fetch(`${url}/opengraph-image`).then((r) => (r.ok ? r.blob() : null)).catch(() => null);
-      const file = img ? new File([img], "perped-battle.png", { type: "image/png" }) : null;
-      if (file && navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], text: `${text} ${url}` }); return; }
-      if (navigator.share) { await navigator.share({ title: "Perped battle", text, url }); return; }
-      await navigator.clipboard.writeText(`${text} ${url}`); setShared("Link copied");
-      setTimeout(() => setShared(null), 2000);
-    } catch { /* cancelled */ }
-  };
+  const [sharing, setSharing] = useState(false);
   const shareWin = async (opp: string) => {
     const url = window.location.href, text = `I just perped @${opp} on Perped`;
     try {
@@ -118,7 +105,23 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="fade-in pb-8" data-tint="violet">
-      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Vendetta" : "Battle"}</div><button className="iconbtn" aria-label="Share this battle" onClick={shareBattle}><Icon d={I.share} /></button></header>
+      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Vendetta" : "Battle"}</div><button className="iconbtn" aria-label="Share this battle" onClick={() => setSharing(true)}><Icon d={I.share} /></button></header>
+      {sharing && (() => {
+        const fBank = fade.status === "closed", bank = fBank ? a.roi : b.roi, now = fBank ? b.roi : a.roi;
+        const banker = fBank ? fader.user.handle : tu.user.handle, chaser = fBank ? tu.user.handle : fader.user.handle;
+        const settledBox = battle?.status === "settled";
+        const winnerHandle = battle?.winnerId ? (battle.winnerId === fader.user.id ? fader.user.handle : tu.user.handle) : null;
+        const f = (u: U, p: Post, r: { roi: number; pnl: number }, lead: boolean) => ({ handle: u.handle, avatarUrl: u.avatarUrl, demo: u.isDemo, side: p.side as "long" | "short", lev: p.leverage ?? 1, roi: settledBox ? Number(p === fade ? battle!.faderRoi : battle!.targetRoi) : r.roi, pnl: r.pnl, entry: Number(p.entryPx), exit: p.status === "closed" && p.exitPx ? Number(p.exitPx) : null, lead });
+        const aLead = settledBox ? battle!.winnerId === fader.user.id : faderLeads, bLead = settledBox ? battle!.winnerId === tu.user.id : !faderLeads && a.roi !== b.roi;
+        return <BattleShare onClose={() => setSharing(false)} data={{
+          coin, price: mid || Number(fade.entryPx), status: live ? "LIVE FADE" : chasing ? "CHASE ON" : "SETTLED", age: `${timeAgo(fade.createdAt)} ago`, faderHandle: fader.user.handle,
+          a: f(fader.user, fade, a, aLead), b: f(tu.user, target, b, bLead),
+          box: chasing ? { title: "Bank and chase", headline: `${banker} banked`, headlineValue: { text: fmtPct(bank, 1), good: bank >= 0 }, line: `${chaser} needs better than ${fmtPct(bank, 1)} · now ${fmtPct(now, 1)} · ${now > bank ? "on course to win" : "behind"}` }
+            : settledBox ? { title: "Verdict", headline: winnerHandle ? `${winnerHandle} perped ${winnerHandle === fader.user.handle ? tu.user.handle : fader.user.handle}` : "Too close to call", line: `${fader.user.handle} ${fmtPct(Number(battle!.faderRoi), 1)} · ${tu.user.handle} ${fmtPct(Number(battle!.targetRoi), 1)}` }
+            : null,
+          gap: Math.abs(a.roi - b.roi), leaderHandle: (aLead ? fader.user : tu.user).handle, share, url: window.location.href.split("?")[0],
+        }} />;
+      })()}
       {shared && <div className="share-toast">{shared}</div>}
       {live && isFightNight(fade.createdAt) && <div className="fn-banner"><span className="gl"><Glyph n="glove" />Fight Night battle · winner earns 2× XP</span></div>}
       {nemesis && (
