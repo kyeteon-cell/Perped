@@ -894,3 +894,11 @@ body { letter-spacing: -.005em; }
 .rc-runner.g { color: var(--green); } .rc-runner.r { color: var(--red); }
 .rc-mom { font-size: 11.5px; font-weight: 700; margin-top: 2px; }
 .rc-scale { display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; margin: 6px 4px 0; }
+
+/* Arena live tabs */
+.atab-n { margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 999px; background: color-mix(in srgb, currentColor 14%, transparent); font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; }
+.abadge { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: 12px; }
+.ab-warn { background: var(--gold-soft); color: var(--gold); font-weight: 800; border-radius: 999px; padding: 2px 8px; font-size: 11px; }
+.ab-tag { background: var(--blue-soft); color: var(--blue); font-weight: 800; border-radius: 999px; padding: 2px 8px; font-size: 11px; }
+.rekt { background: var(--red); color: #fff; font-weight: 900; letter-spacing: .1em; border-radius: 6px; padding: 2px 7px; font-size: 11px; transform: rotate(-3deg); display: inline-block; }
+.aempty { padding: 4px 0; }

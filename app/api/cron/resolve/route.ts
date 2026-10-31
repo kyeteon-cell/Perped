@@ -4,6 +4,7 @@ import { getMids } from "@/lib/hl-info";
 import { notify, systemPost } from "@/lib/feed";
 import { closeTradePost } from "@/lib/trades";
 import { backfillBattles, backfillBattleStamps, settleBattles } from "@/lib/battles";
+import { alertBloodbath } from "@/lib/bloodbath";
 import { awardXp } from "@/lib/xp";
 import { rebuildRivalries, recordFight } from "@/lib/rivalries";
 import { lossPenalty, rankFor, XP } from "@/lib/rank";
@@ -117,8 +118,9 @@ export async function GET(req: Request) {
   await backfillBattles().catch(() => 0);
   const battles = await settleBattles(mids).catch(() => 0);
   await backfillBattleStamps().catch(() => 0);
+  const bloodbath = await alertBloodbath(mids).catch(() => 0);
 
-  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, battles, at: now.toISOString() });
+  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, battles, bloodbath, at: now.toISOString() });
 }
 
 // keep isNull imported for future invalidation-by-candle checks

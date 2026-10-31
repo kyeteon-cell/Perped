@@ -6,9 +6,10 @@ export const dynamic = "force-dynamic";
 
 type Mini = { id: string; handle: string; avatarUrl: string | null; xp: number };
 type Leg = { postId: number; side: "long" | "short"; entryPx: number; size: number; leverage: number; status: string; exitPx: number | null };
-export type ArenaBattle = { id: number; faderPostId: number; coin: string; status: "open" | "settled"; winnerId: string | null; fader: Mini; target: Mini; faderLeg: Leg; targetLeg: Leg; faderRoi: number | null; targetRoi: number | null; settledAt: string | null; createdAt: string };
+export type ArenaBattle = { id: number; faderPostId: number; coin: string; status: "open" | "settled"; winnerId: string | null; fader: Mini; target: Mini; faderLeg: Leg; targetLeg: Leg; faderRoi: number | null; targetRoi: number | null; settledAt: string | null; createdAt: string; reason: string | null };
 export type ArenaRes = {
   live: ArenaBattle[];
+  rekt: ArenaBattle[];
   recent: ArenaBattle[];
   streaks: { user: Mini; streak: number }[];
   me: null | { won: number; lost: number; drawn: number; streak: number; best: number; rivals: { user: Mini; won: number; lost: number }[]; challenges: { id: number; coin: string; side: "long" | "short"; stakeUsd: number; hours: number; from: Mini }[] };
@@ -31,12 +32,14 @@ export async function GET(req: Request) {
   const shape = (b: typeof rows[number]): ArenaBattle | null => {
     const f = U.get(b.faderId), t = U.get(b.targetId);
     if (!f || !t) return null;
-    return { id: b.id, faderPostId: b.faderPostId, coin: b.coin, status: b.status as "open" | "settled", winnerId: b.winnerId, fader: f, target: t, faderLeg: leg(b.faderPostId), targetLeg: leg(b.targetPostId), faderRoi: b.faderRoi != null ? Number(b.faderRoi) : null, targetRoi: b.targetRoi != null ? Number(b.targetRoi) : null, settledAt: b.settledAt?.toISOString() ?? null, createdAt: b.createdAt.toISOString() };
+    return { id: b.id, faderPostId: b.faderPostId, coin: b.coin, status: b.status as "open" | "settled", winnerId: b.winnerId, fader: f, target: t, faderLeg: leg(b.faderPostId), targetLeg: leg(b.targetPostId), faderRoi: b.faderRoi != null ? Number(b.faderRoi) : null, targetRoi: b.targetRoi != null ? Number(b.targetRoi) : null, settledAt: b.settledAt?.toISOString() ?? null, createdAt: b.createdAt.toISOString(), reason: b.reason ?? null };
   };
 
-  const live = rows.filter((b) => b.status === "open").map(shape).filter((x): x is ArenaBattle => !!x && x.faderLeg.status === "open" && x.targetLeg.status === "open").slice(0, 12);
+  const live = rows.filter((b) => b.status === "open").map(shape).filter((x): x is ArenaBattle => !!x && x.faderLeg.status === "open" && x.targetLeg.status === "open").slice(0, 80);
   const settled = rows.filter((b) => b.status === "settled").sort((a, b) => (b.settledAt?.getTime() ?? 0) - (a.settledAt?.getTime() ?? 0));
   const recent = settled.slice(0, 12).map(shape).filter((x): x is ArenaBattle => !!x);
+  // Liquidations in the last hour stay in Bloodbath as REKT cards.
+  const rekt = settled.filter((b) => b.reason === "liquidation" && b.settledAt && Date.now() - b.settledAt.getTime() < 3_600_000).slice(0, 10).map(shape).filter((x): x is ArenaBattle => !!x);
 
   // Current win streak per user: consecutive wins counting back from their latest settled battle.
   const byUser = new Map<string, boolean[]>(); // newest first; true = win, false = loss (draws break nothing)
@@ -70,5 +73,5 @@ export async function GET(req: Request) {
     const challenges = duels.map((d) => ({ id: d.id, coin: d.coin, side: d.challengerSide as "long" | "short", stakeUsd: Number(d.stakeUsd), hours: Math.max(1, Math.round((d.settlesAt.getTime() - d.createdAt.getTime()) / 3_600_000)), from: from.find((f) => f.id === d.challengerId) as Mini })).filter((c) => c.from);
     me = { won, lost: mine.length - won - drawn, drawn, streak: streakOf(arr), best: bestOf(arr), rivals, challenges };
   }
-  return Response.json({ live, recent, streaks, me } satisfies ArenaRes);
+  return Response.json({ live, rekt, recent, streaks, me } satisfies ArenaRes);
 }
