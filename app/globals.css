@@ -790,3 +790,21 @@ body { letter-spacing: -.005em; }
 .tc-ivs button.on { background: var(--ink); color: var(--ink-fg); }
 .tcard .tchart-plot, .tchart-plot { height: 92px; }
 .tchart-plot svg { inset: 22px 4px 6px 4px !important; height: calc(100% - 28px) !important; }
+
+/* Trade chart v3: unmistakable BUY / SELL marker, labelled TP / SL / LIQ */
+.tc-act { position: absolute; transform: translate(-50%, -50%); z-index: 2; font-family: var(--font-mono), "Barlow", sans-serif; font-size: 9px; font-weight: 900; letter-spacing: .03em; line-height: 1; padding: 3px 5px; border-radius: 6px; color: #fff; white-space: nowrap; box-shadow: 0 0 0 2px var(--surface), 0 3px 8px -2px rgba(0,0,0,.35); }
+.tc-act.long { background: var(--green); color: #04130d; } .tc-act.short { background: var(--red); }
+.tc-in { display: none; }
+.tc-lv { position: absolute; left: 4px; transform: translateY(-50%); z-index: 1; font-family: var(--font-mono), "Barlow", sans-serif; font-size: 8.5px; font-weight: 900; line-height: 1; padding: 2px 4px; border-radius: 5px; }
+.tc-lv.tp { background: var(--green-soft); color: var(--green); } .tc-lv.sl { background: var(--red-soft); color: var(--red); }
+.tc-lv.liq, .tc-edges b.liq { background: var(--ink); color: var(--ink-fg); }
+.tc-edge { display: none; }
+.tc-edges { position: absolute; left: 4px; display: flex; gap: 3px; z-index: 2; }
+.tc-edges.up { top: 5px; } .tc-edges.down { bottom: 4px; }
+.tc-edges b { font-family: var(--font-mono), "Barlow", sans-serif; font-size: 8.5px; font-weight: 900; line-height: 1; padding: 2px 4px; border-radius: 5px; }
+.tc-edges b.tp { background: var(--green-soft); color: var(--green); } .tc-edges b.sl { background: var(--red-soft); color: var(--red); }
+.tc-box .now { grid-column: 1 / -1; }
+.tc-box > div:nth-child(2) { grid-column: auto; order: 0; }
+.tc-box .now b { font-size: 15px; }
+.tc-box > div:nth-child(2) b { font-size: 12.5px; }
+.tc-box small .faint { font-weight: 700; letter-spacing: 0; text-transform: none; }
