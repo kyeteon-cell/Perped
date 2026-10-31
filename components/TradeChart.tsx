@@ -17,7 +17,8 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const opened = openedAt ? new Date(openedAt).getTime() : Date.now();
   const age = Date.now() - opened;
   // Frame the chart on the trade: fresh trades get 1m candles, older ones zoom out.
-  const [iv, ms, limit] = age < 50 * 60_000 ? ["1m", 60_000, 60] : age < 5 * 3_600_000 ? ["5m", 300_000, 72] : age < 20 * 3_600_000 ? ["15m", 900_000, 96] : ["1h", 3_600_000, 72];
+  // ~40 wide candles, sized so the entry stays inside the window.
+  const [iv, ms, limit] = age < 35 * 60_000 ? ["1m", 60_000, 40] : age < 3 * 3_600_000 ? ["5m", 300_000, 40] : age < 9 * 3_600_000 ? ["15m", 900_000, 40] : ["1h", 3_600_000, 40];
   const { data } = useSWR<{ candles: Candle[] }>(`/api/markets/${coin}/candles?interval=${iv}&limit=${limit}`, { refreshInterval: 60_000, dedupingInterval: 30_000, revalidateOnFocus: false });
   const { markets } = useMarkets();
   const m = markets.find((x) => x.name === coin);
@@ -31,13 +32,19 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const W = 200, H = 80, PAD = 6, RIGHT = 8;
   const hi = candles.length ? Math.max(...candles.map((c) => c.h)) : live;
   const lo = candles.length ? Math.min(...candles.map((c) => c.l)) : live;
-  const span = Math.max(hi - lo, live * 0.002);
-  const near = (p?: number | null) => !!p && p > lo - span * 0.5 && p < hi + span * 0.5;
-  const levels = [live, entry, ...(near(tp) ? [tp!] : []), ...(near(sl) ? [sl!] : [])];
-  const top = Math.max(hi, ...levels), bot = Math.min(lo, ...levels);
-  const rng = Math.max(top - bot, live * 0.002);
+  // Frame on the candles + entry + live price so the candles fill the box; TP/SL only widen it a little,
+  // anything further away is pinned to the edge as a chip instead of squashing the candles.
+  const fTop = Math.max(hi, live, entry), fBot = Math.min(lo, live, entry);
+  const fSpan = Math.max(fTop - fBot, live * 0.0015);
+  const near = (p?: number | null) => !!p && p <= fTop + fSpan * 0.35 && p >= fBot - fSpan * 0.35;
+  const levels = [fTop, fBot, ...(near(tp) ? [tp!] : []), ...(near(sl) ? [sl!] : [])];
+  const pad = fSpan * 0.08;
+  const top = Math.max(...levels) + pad, bot = Math.min(...levels) - pad;
+  const rng = Math.max(top - bot, live * 0.0015);
+  const offTp = tp && !near(tp) ? (tp > top ? "up" : "down") : null;
+  const offSl = sl && !near(sl) ? (sl > top ? "up" : "down") : null;
   const y = (p: number) => PAD + (1 - (p - bot) / rng) * (H - PAD * 2);
-  const n = Math.max(candles.length, 1), cw = (W - RIGHT) / n, bw = Math.max(1, cw * 0.6);
+  const n = Math.max(candles.length, 1), cw = (W - RIGHT) / n, bw = Math.max(1.4, cw * 0.68);
   // x of the candle the trade was opened in (clamped to the left edge if it's older than the window)
   const t0 = candles[0]?.t ?? opened;
   const ei = Math.max(0, Math.min(n - 1, Math.floor((opened - t0) / ms)));
@@ -57,9 +64,9 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
                 const up = c.c >= c.o, x = i * cw + cw / 2, col = up ? "var(--green)" : "var(--red)";
                 const before = i < ei;
                 return (
-                  <g key={c.t} opacity={before ? 0.35 : 1}>
+                  <g key={c.t} opacity={before ? 0.5 : 1}>
                     <line x1={x} x2={x} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                    <rect x={x - bw / 2} y={y(Math.max(c.o, c.c))} width={bw} height={Math.max(0.8, Math.abs(y(c.o) - y(c.c)))} fill={col} />
+                    <rect x={x - bw / 2} y={y(Math.max(c.o, c.c))} width={bw} height={Math.max(1.2, Math.abs(y(c.o) - y(c.c)))} fill={col} />
                   </g>
                 );
               })}
@@ -76,6 +83,8 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
               <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: `${(ly / H) * 100}%` }} />
             </>
           )}
+          {offTp && <span className={`tc-edge tp ${offTp}`}>TP {offTp === "up" ? "↑" : "↓"}</span>}
+          {offSl && <span className={`tc-edge sl ${offSl}`}>SL {offSl === "up" ? "↑" : "↓"}</span>}
           <span className="tc-range">{iv}</span>
         </div>
         <div className="tc-box">

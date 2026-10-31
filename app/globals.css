@@ -781,3 +781,7 @@ body { letter-spacing: -.005em; }
 .tc-box b { display: block; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tc-box > div:nth-child(2) b { font-size: 15px; }
 .tc-box em { font-style: normal; font-size: 11px; opacity: .9; }
+.tc-edge { position: absolute; left: 6px; font-family: var(--font-mono), "Barlow", sans-serif; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 6px; line-height: 1; }
+.tc-edge.up { top: 4px; } .tc-edge.down { bottom: 4px; }
+.tc-edge.tp { background: var(--green-soft); color: var(--green); } .tc-edge.sl { background: var(--red-soft); color: var(--red); }
+.tc-edge.tp.up + .tc-edge.sl.up, .tc-edge.tp.down + .tc-edge.sl.down { left: 44px; }
