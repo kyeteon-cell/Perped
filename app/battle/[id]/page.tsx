@@ -10,6 +10,7 @@ import { ChallengeSheet } from "@/components/ChallengeSheet";
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
 import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
 import { rankFor } from "@/lib/rank";
+import { BattleArena, type Fighter } from "@/components/BattleArena";
 import type { Post, Stats } from "@/lib/schema";
 
 type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null; xp?: number };
@@ -53,6 +54,11 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const live = fade.status === "open" && target.status === "open";
   const faderLeads = a.roi > b.roi;
   const share = Math.max(8, Math.min(92, 50 + ((a.roi - b.roi) / (Math.abs(a.roi) + Math.abs(b.roi) || 1)) * 50));
+  const fighter = (u: U, p: Post, r: { roi: number }): Fighter => ({
+    handle: u.handle, avatarUrl: u.avatarUrl, side: p.side as "long" | "short", lev: p.leverage ?? 1, entry: Number(p.entryPx),
+    tp: p.tpPx ? Number(p.tpPx) : null, sl: p.slPx ? Number(p.slPx) : null, openedAt: p.createdAt,
+    margin: p.notionalUsd ? Number(p.notionalUsd) / (p.leverage ?? 1) : null, roi: r.roi,
+  });
   const fs = fader.stats, ts = tu.stats;
   const n = (v: unknown) => Number(v ?? 0);
   const rows: { k: string; a: string; b: string; win: -1 | 0 | 1; }[] = [
@@ -116,6 +122,8 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
           </div>
         )}
       </section>
+
+      {(live || mid > 0) && <BattleArena coin={coin} live={mid || Number(fade.exitPx ?? fade.entryPx)} a={fighter(fader.user, fade, a)} b={fighter(tu.user, target, b)} />}
 
       <div className="px-5 py-2 text-right"><Link href="/how-it-works#battles" className="when underline">How a battle is won →</Link></div>
 
