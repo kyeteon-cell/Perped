@@ -100,3 +100,12 @@ function trimZeros(s: string) {
 export function demoLiqPx(side: "long" | "short", entry: number, lev: number) {
   return side === "long" ? entry * (1 - 1 / lev) : entry * (1 + 1 / lev);
 }
+
+/**
+ * Automatic stop for fades, as a fraction of price: −10% of margin, but never tighter than a 1% price move
+ * (so normal noise doesn't stop you out at high leverage), and always well inside liquidation (≤ 60% of the way).
+ */
+export function autoStopDist(lev: number) {
+  const l = Math.max(1, lev);
+  return Math.max(0.1 / l, Math.min(0.01, 0.6 / l));
+}

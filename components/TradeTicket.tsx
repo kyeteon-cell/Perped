@@ -9,7 +9,7 @@ import { useMarkets, type Market } from "@/lib/hooks/useMarkets";
 import { useMids } from "@/lib/hooks/useMids";
 import { makeExchangeClient, placeMarketOrder, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
-import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice } from "@/lib/format";
+import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice, autoStopDist } from "@/lib/format";
 import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE } from "@/lib/config";
 import { CoinMark, ticker } from "./ui";
 
@@ -69,9 +69,9 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     if (isDemo || !address || !BUILDER_CONFIGURED) return setApproved(true);
     getMaxBuilderFee(address, BUILDER_ADDRESS).then((f) => setApproved(f >= fee.tenthsBps));
   }, [address, fee.tenthsBps]);
-  // Fades default to an automatic stop at −10% on the margin (price move of 10% ÷ leverage).
+  // Fades default to an automatic stop (see autoStopDist): −10% of margin, never tighter than a 1% move.
   const slSeeded = useRef(false);
-  useEffect(() => { if (isFade && mid && !sl && !slSeeded.current) { slSeeded.current = true; setSl((side === "long" ? mid * (1 - 0.1 / Math.max(1, lev)) : mid * (1 + 0.1 / Math.max(1, lev))).toFixed(market?.szDecimals ? 6 - market.szDecimals : 2)); } }, [isFade, mid, side, sl, market, lev]);
+  useEffect(() => { if (isFade && mid && !sl && !slSeeded.current) { slSeeded.current = true; setSl((side === "long" ? mid * (1 - autoStopDist(lev)) : mid * (1 + autoStopDist(lev))).toFixed(market?.szDecimals ? 6 - market.szDecimals : 2)); } }, [isFade, mid, side, sl, market, lev]);
 
   const refPx = orderType === "limit" && Number(limitPx) > 0 ? Number(limitPx) : mid;
   const notional = usd * lev;
