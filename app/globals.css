@@ -1201,8 +1201,7 @@ body { letter-spacing: -.005em; }
 .chase-badge.ahead { color: #2a1c00; background: var(--gold-soft); }
 
 /* Perped glyphs (replace emoji) */
-.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex: none; }
-.g + * , * + .g { }
+svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex: none; }
 .g-gold { color: var(--gold); } .g-blood { color: var(--red); } .g-violet { color: #8b5cf6; } .g-muted { color: var(--muted); }
 .gl { display: inline-flex; align-items: center; gap: .35em; }
 
