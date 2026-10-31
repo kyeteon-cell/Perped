@@ -9,7 +9,7 @@ mkdirSync("smoke-out", { recursive: true });
 
 const pages = [
   { path: "/", wait: ".home-banner", name: "home" },
-  { path: "/arena", wait: "text=Live battles", name: "arena" },
+  { path: "/arena", wait: "text=Live fades", name: "arena" },
   { path: "/markets", wait: "a.hairline.block", name: "markets" },
   { path: "/intro", wait: ".intro", name: "intro" },
   { path: "/how-it-works", wait: "text=The Arena", name: "how-it-works" },
@@ -58,7 +58,7 @@ try {
     const page = await ctx.newPage(); const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(`${BASE}/battle/${b.faderPostId}`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: "Share this battle" }).click({ timeout: 15000 }).catch((e) => errors.push(e.message));
+    await page.getByRole("button", { name: "Share this fade" }).click({ timeout: 15000 }).catch((e) => errors.push(e.message));
     await page.locator(".bshare-prev img").waitFor({ timeout: 20000 }).catch((e) => errors.push("scorecard image not drawn: " + e.message.split("\n")[0]));
     await page.screenshot({ path: "smoke-out/battle-share.png" }).catch(() => {});
     note(!errors.length, `battle share card${errors.length ? " — " + errors.join(" | ") : ""}`);
