@@ -33,11 +33,12 @@ function MoneyPath() {
 
 /** /how-it-works — the trust page, written for someone who has never traded a perp. */
 export default function HowItWorks() {
-  const nav: [string, string][] = [["start", "Start here"], ["money", "Where your money is"], ["demo-path", "Demo, step by step"], ["real-path", "Real money, step by step"], ["permissions", "What we can do"], ["verify", "Check it yourself"], ["fees", "Fees"], ["battles", "Battles & ranks"], ["risk", "Risks"], ["promise", "Our commitments"]];
+  const nav: [string, string][] = [["start", "Start here"], ["money", "Where your money is"], ["demo-path", "Demo, step by step"], ["real-path", "Real money, step by step"], ["permissions", "What we can do"], ["verify", "Check it yourself"], ["fees", "Fees"], ["battles", "Battles & ranks"], ["arena", "The Arena"], ["risk", "Risks"], ["promise", "Our commitments"]];
   return (
     <main className="hw-page px-5 pb-14 pt-6">
       <Link href="/" className="when">← Back</Link>
       <h1 className="mt-3 text-2xl font-extrabold tracking-tight">How Perped works</h1>
+      <Link href="/intro" className="chip on mt-3 inline-flex" style={{ fontSize: 13 }}>New here? The 60-second tour →</Link>
       <p className="muted mt-1">Perped never holds your money. Your trades live on Hyperliquid, in your own wallet&rsquo;s account; Perped is the social layer that lets people copy you, fade you and keep score. This page explains all of it from scratch.</p>
       <div className="mt-4 flex flex-wrap gap-1.5">{nav.map(([id, t]) => <a key={id} href={`#${id}`} className="chip" style={{ padding: "6px 10px", fontSize: 12 }}>{t}</a>)}</div>
 
@@ -67,6 +68,7 @@ export default function HowItWorks() {
         </ul>
       </section>
 
+      <span id="demo" />
       <section id="demo-path" className="hw mt-7">
         <h2 className="text-lg font-bold">Demo, step by step</h2>
         <p className="mt-2">Most people start here. Demo is $10,000 of practice money at live prices. Nothing goes to Hyperliquid and nothing can be lost.</p>
@@ -75,7 +77,8 @@ export default function HowItWorks() {
           <li><b>Make a one-hour call.</b> Top of Home: &ldquo;Where&rsquo;s BTC in an hour?&rdquo; Tap Higher or Lower. It settles against the price it was made at, on the hour. This is the gentlest way in: no leverage, no sizing.</li>
           <li><b>Open a trade.</b> Markets → pick a coin → Long or Short → choose margin and leverage → confirm. The fill is simulated at the live Hyperliquid price and appears in the feed as your post, marked <span className="demo-tag">Demo</span>.</li>
           <li><b>Manage it.</b> Every open trade of yours has a <b>Manage</b> pill: close 25/50/75/100%, set a take-profit or stop-loss (with presets in % terms), or add to it. Demo stops are checked against the live price every few minutes.</li>
-          <li><b>Get social.</b> Copy or fade other people&rsquo;s trades (swipe right to copy, left to fade). Fading starts a <b>battle</b>: whoever ends with the higher ROI wins. Share any trade as a challenge link; a friend who taps it lands straight in the opposite trade.</li>
+          <li><b>Copy or fade.</b> Swipe a live trade right to copy it, or left to fade it. <b>⚡ Quick fade</b> asks for one thing, your size: it takes the opposite side at the trader&rsquo;s exact leverage, adds a stop loss for you, and drops you straight into the battle page.</li>
+          <li><b>Fight.</b> Every fade is a <b>battle</b>: whoever ends with the higher ROI wins. Watch it live on the battle page, and in the Arena with everyone else&rsquo;s. Share any trade as a challenge link; a friend who taps it lands straight in the opposite trade.</li>
           <li><b>Climb.</b> Wins, calls and battles earn XP and ranks. The demo leaderboard ranks practice accounts against each other; it never mixes with real-money results.</li>
         </ol>
       </section>
@@ -146,14 +149,35 @@ export default function HowItWorks() {
       <section id="battles" className="hw mt-7">
         <h2 className="text-lg font-bold">Battles, duels and ranks</h2>
         <ul className="hw-list">
-          <li><b>A battle starts when someone fades a trade</b> (takes the other side of the same coin). It settles when both positions are closed: higher leverage-adjusted ROI wins; under 0.5% apart is a draw. A liquidation loses on the spot. If one side closes and the other sits open for 24 hours, the open side is marked at the live price.</li>
-          <li><b>One fade per person per trade.</b> You can fade a given trade once, and you can&rsquo;t fade back someone who faded you on that trade: you&rsquo;re already in a battle with them. Anyone else can still pile in, so one trade can fight many battles, and every name it beats shows on its card.</li>
-          <li><b>Rivalries.</b> Fight the same trader three times (battles and duels both count), or call them out, and you become rivals. You get an alert when your rival opens a trade, the series score shows next to their name everywhere, and taking back the lead pays +25 XP; five straight wins over the same rival is a sweep, +50 XP. Either side can mute alerts.</li>
-          <li><b>A duel</b> is a timed head-to-head you accept by link: whoever is ahead when the clock runs out wins.</li>
-          <li><b>XP is slow and it can go down.</b> Battle win +60 (+30 for a 20%+ margin, +40 for beating someone two ranks above you), loss +10, draw +20. Duel +75 / +10. One-hour call +6 / +2. Closed trade +4 / +1. Liquidations earn nothing. From Knife Catcher up, losing costs XP — battle −15, duel −10, liquidation −25, multiplied by how many ranks you are above Wick Hunter — so a Liquidator who gets liquidated loses 75 XP, and ranks can be lost.</li>
+          <li><b>A battle starts when someone fades a trade:</b> same coin, the other side. Higher leverage-adjusted ROI wins; under 0.5% apart is a draw; a liquidation loses on the spot. It settles when both positions close. If one side closes and the other is still open 24 hours later, or nobody closes for a week, the open side is marked at the live price.</li>
+          <li><b>Quick fade&rsquo;s automatic stop.</b> It aims for a 10% loss on your margin, but never sits closer than a 1% price move (so normal wobble doesn&rsquo;t stop you out at high leverage), and always closes well before liquidation. At 10× that is 1% away; at 25×, 1% away and −25% of margin; at 2×, 5% away. Change it any time from Manage.</li>
+          <li><b>Margin/SL health.</b> The bars on a battle run from 100% at your entry to 0% at your stop loss, or at liquidation if you have no stop. Under 40% they turn red chrome and bleed. A stop already in profit shows full: you can&rsquo;t lose that one.</li>
+          <li><b>Colours always mean the same thing.</b> Green is bought or in profit, red is sold or in loss. Prices are coloured by which way the market moved; your P&amp;L by whether you&rsquo;re up. Leaders get a gold ring, never a green one.</li>
+          <li><b>One fade per person per trade.</b> You can fade a trade once, and you can&rsquo;t fade back someone who faded you on it: you&rsquo;re already in a battle with them. Anyone else can pile in, so one trade can fight many battles.</li>
+          <li><b>Rivals and nemeses.</b> Fight the same trader three times (battles and duels both count), or call them out, and you become rivals: you get an alert with a one-tap quick fade whenever they open a trade, and the series score shows next to their name. Your <b>nemesis</b> is your #1 rival, the person you&rsquo;ve fought most (or called out). Nemesis battles get their own ☠ tag and tab. Taking back the lead in a series pays +25 XP; five straight wins is a sweep, +50 XP.</li>
+          <li><b>A duel</b> is a timed head-to-head you accept by link. The start price is the live price when it&rsquo;s accepted; whoever is ahead when the clock runs out wins.</li>
+          <li><b>XP is slow and it can go down.</b> Battle win +60 (+30 for a 20%+ margin, +40 for beating someone two ranks above you), loss +10, draw +20. Duel +75 / +10. One-hour call +6 / +2. Closed trade +4 / +1. Liquidations earn nothing. From Knife Catcher up, losing costs XP: battle −15, duel −10, liquidation −25, multiplied by how many ranks you are above Wick Hunter, so ranks can be lost. Beating a guest account made that same day pays draw XP only.</li>
+          <li><b>💰 Streak bounties.</b> Anyone on a 5+ battle win streak carries a bounty. Break it and you get 25 XP plus 10 XP for every win in their streak, on top of the win, and a feed post.</li>
           <li><b>Ranks.</b> Your emblem shows next to your name everywhere. Demo and real accounts earn XP the same way; the leaderboard still separates them.
             <div className="ladder mt-3">{RANKS.map((r) => <div key={r.level} className="lad"><img src={`/api/share-bg/rank-${r.level}`} alt="" /><div className="text-[12px] font-bold">{r.title}</div><div className="mono when text-[11px]">{r.min.toLocaleString()} XP</div></div>)}</div>
           </li>
+        </ul>
+      </section>
+
+      <section id="arena" className="hw mt-7">
+        <h2 className="text-lg font-bold">The Arena</h2>
+        <p className="mt-2">Every live battle on Perped, sorted so the good ones are easy to find, with a way to jump into each.</p>
+        <ul className="hw-list mt-3">
+          <li><b>☠ Nemesis</b> (shown when any are running): battles between sworn rivals, pinned to the top with the series score and which meeting this is.</li>
+          <li><b>🔥 High stakes:</b> 20× or more, big positions, or someone close to liquidation.</li>
+          <li><b>👥 Following:</b> your battles, and battles of people you follow or your rivals.</li>
+          <li><b>💀 Bloodbath:</b> battles where the two sides are more than 7 ROI points apart. At the top is <b>The Pit</b>, the most one-sided fight right now, with both health bars live.</li>
+          <li><b>🗡 Finish them / 🛟 Save them:</b> on every Bloodbath battle. Finish backs the winner, Save backs the loser for a comeback. One tap, size only, at their leverage.</li>
+          <li><b>REKT and Revenge:</b> liquidations stay in Bloodbath for six hours as tombstones. <b>🩸 Revenge</b> quick-fades the winner&rsquo;s newest open trade; if they have none, they become your nemesis and you&rsquo;re pinged when they next trade. The <b>kill feed</b> lists the last day&rsquo;s liquidations.</li>
+          <li><b>Body count:</b> this week&rsquo;s 🗡 Butcher (most people perped) and 🪦 Most rekt.</li>
+          <li><b>Last stand:</b> if you&rsquo;re 20% down in a battle you get one alert: cut it, or double down. Your followers get one too.</li>
+          <li><b>🥊 Fight Night:</b> every night, 9–10pm Bangkok time. The countdown is in the Arena header.</li>
+          <li><b>Side with / Run it back:</b> on a live battle you&rsquo;re watching, Side with copies either fighter in one tap. On a battle you just finished, Run it back (or Revenge) quick-fades your opponent&rsquo;s next trade.</li>
         </ul>
       </section>
 

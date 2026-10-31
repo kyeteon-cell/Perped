@@ -9,6 +9,7 @@ import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, BUILDER_MAX_
 import { normaliseReferralCode, referralLink } from "@/lib/fees";
 import { Icon, I } from "@/components/ui";
 import { SignInOptions } from "@/components/SignInOptions";
+import { Intro } from "@/components/Intro";
 
 /**
  * Five steps: welcome/login → handle → how it works → fee approval (skippable) → funded or explore.
@@ -105,23 +106,10 @@ export default function OnboardingPage() {
       )}
 
       {step === 3 && (
-        <>
-          <div className="flex-1 px-6 pb-3 pt-6">
-            <Progress n={3} />
-            <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">How Perped works</h2>
-            <div className="mt-5 flex flex-col gap-2.5">
-              {[
-                [I.markets, "brand", "Every trade is a post", "Open a position and it appears in the feed with your name on it, live P&L and all. Wins and losses."],
-                [I.copy, "blue", "Copy or fade anyone in one tap", "Copy at your own size, or fade and take the other side. Track records come from the chain, so nobody can fake them."],
-                [I.shield, "green", "Your money stays on Hyperliquid", "Perped never holds funds. Trades fill on Hyperliquid's order book from your own wallet. We're the screen, not the exchange."],
-                [I.warn, "red", "Perps are risky", "Leverage cuts both ways and you can lose your margin. Start small, use stops, and treat every post as an opinion, not advice."],
-              ].map(([icon, tint, t, b]) => (
-                <div key={t as string} className="card flex items-start gap-3.5 p-3.5"><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: `var(--${tint}-soft)`, color: `var(--${tint})` }}><Icon d={icon as string} /></div><div><b>{t as string}</b><p className="muted mt-1 text-[13px] leading-relaxed">{b as string}</p></div></div>
-              ))}
-            </div>
-          </div>
-          <div className="px-6 pb-8"><button className="btn ink" onClick={() => setStep(hasExternalWallet ? 4 : 5)}>Got it</button></div>
-        </>
+        <div className="flex-1 pt-2">
+          <div className="px-6"><Progress n={3} /></div>
+          <Intro onDone={() => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} setStep(hasExternalWallet ? 4 : 5); }} doneLabel="Got it" />
+        </div>
       )}
 
       {step === 4 && (

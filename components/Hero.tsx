@@ -27,7 +27,7 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
         <div className="big" style={{ fontSize: 26, lineHeight: 1.1 }}>Trade in public.<br />Get perped or get paid.</div>
         <div className="mt-2.5 text-[13px] opacity-95">Post your position. Someone will copy it, someone will fade it, and the chain decides who was right.</div>
         <div className="mt-4"><SignInOptions compact onDark /></div>
-        <div className="hero-actions" style={{ marginTop: 10 }}><Link href="/markets">Browse markets first</Link><Link href="/how-it-works">Where your money is →</Link></div>
+        <div className="hero-actions" style={{ marginTop: 10 }}><Link href="/intro">How it works in 60s</Link><Link href="/how-it-works">Where your money is →</Link></div>
       </div>
     );
   }
