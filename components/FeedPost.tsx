@@ -289,7 +289,7 @@ function TradePost({ item, mid, onChanged, full }: Props) {
           <div className={`mono text-[13px] ${pos ? "green" : "red"}`}>{labels[1]}</div>
         </div>
       </div>
-      <TradeChart coin={post.coin!} entry={entry} mark={mark} side={post.side as "long" | "short"} tp={post.tpPx ? Number(post.tpPx) : null} sl={post.slPx ? Number(post.slPx) : null} />
+      <TradeChart coin={post.coin!} entry={entry} mark={mark} side={post.side as "long" | "short"} lev={lev} openedAt={post.createdAt} tp={post.tpPx ? Number(post.tpPx) : null} sl={post.slPx ? Number(post.slPx) : null} />
       <div className="tfoot">
         {isDemoPost(item)
           ? <Link href="/how-it-works#demo" className="verify">Demo · live prices</Link>
