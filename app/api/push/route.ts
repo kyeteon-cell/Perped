@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   const s = parsed.data;
   await db.insert(schema.pushSubs).values({ userId: auth.privyId, endpoint: s.endpoint, p256dh: s.keys.p256dh, auth: s.keys.auth })
     .onConflictDoUpdate({ target: schema.pushSubs.endpoint, set: { userId: auth.privyId, p256dh: s.keys.p256dh, auth: s.keys.auth } });
-  if (s.test !== false) await pushTo(auth.privyId, { title: "🔔 Alerts are on", body: "You'll hear about fades, battles, nemesis trades and last stands here.", href: "/arena", tag: "welcome" });
+  if (s.test !== false) await pushTo(auth.privyId, { title: "Alerts are on", body: "You'll hear about fades, battles, nemesis trades and last stands here.", href: "/arena", tag: "welcome" });
   return Response.json({ ok: true });
 }
 

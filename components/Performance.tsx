@@ -144,7 +144,7 @@ export function StatsPanels({ handle, stats, rivalries }: { handle: string; stat
         <div className="eyebrow">Hit rates</div>
         <div className="mt-3 grid grid-cols-2 gap-4">
           <Ring pct={stats ? Number(stats.winRate) : null} label="Trades" sub={`${wins} won · ${losses} lost`} />
-          <Ring pct={stats?.callsResolved ? (stats.callsHit / stats.callsResolved) * 100 : null} label="Calls" sub={`${stats?.callsResolved ?? 0} resolved${(stats?.callStreak ?? 0) >= 2 ? ` · 🔥 ${stats!.callStreak}` : ""}`} color="var(--blue)" />
+          <Ring pct={stats?.callsResolved ? (stats.callsHit / stats.callsResolved) * 100 : null} label="Calls" sub={`${stats?.callsResolved ?? 0} resolved${(stats?.callStreak ?? 0) >= 2 ? ` · ${stats!.callStreak} in a row` : ""}`} color="var(--blue)" />
           <Ring pct={stats && Number(stats.judgement) > 0 ? Number(stats.judgement) : null} label="Judgement" sub="votes on the right side" color="var(--violet)" />
           <Ring pct={stats ? (stats.copiedCount + stats.fadedCount ? (stats.copiedCount / (stats.copiedCount + stats.fadedCount)) * 100 : null) : null} label="Trust" sub={`${stats?.copiedCount ?? 0} copied · ${stats?.fadedCount ?? 0} faded`} color="var(--brand)" />
         </div>

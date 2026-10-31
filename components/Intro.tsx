@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "./Glyph";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "@/lib/hooks/useSession";
@@ -20,11 +21,11 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
   },
   {
     k: "fade", eyebrow: "2 · Copy or fade", title: "Back them or take the other side",
-    body: ["Swipe right to copy. Swipe left, or tap ⚡ Quick fade, to bet against them.", "Quick fade only asks for your size. It matches their leverage, flips the side, adds a stop loss and drops you straight into the battle."],
+    body: ["Swipe right to copy. Swipe left, or tap Quick fade, to bet against them.", "Quick fade only asks for your size. It matches their leverage, flips the side, adds a stop loss and drops you straight into the battle."],
     mock: (
       <div className="im-card">
         <div className="im-swipe"><span className="im-sw copy">Copy →</span><span className="im-sw fade">← Fade</span></div>
-        <div className="im-qf"><b>⚡ Quick fade kate</b><span className="muted">She&rsquo;s long ETH 25× · you go short</span><div className="im-amt mono">$100</div><div className="im-chips"><i>25</i><i className="on">100</i><i>250</i><i>500</i></div><div className="im-btn short">Fade · Short ETH 25×</div></div>
+        <div className="im-qf"><b className="gl"><Glyph n="bolt" />Quick fade kate</b><span className="muted">She&rsquo;s long ETH 25× · you go short</span><div className="im-amt mono">$100</div><div className="im-chips"><i>25</i><i className="on">100</i><i>250</i><i>500</i></div><div className="im-btn short">Fade · Short ETH 25×</div></div>
       </div>
     ),
   },
@@ -41,21 +42,21 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
   },
   {
     k: "arena", eyebrow: "4 · The Arena", title: "Watch it, then jump in",
-    body: ["Tabs for ☠ Nemesis matches (your #1 rival), 🔥 High stakes, 👥 Following and 💀 Bloodbath, where someone is getting perped.", "In Bloodbath: 🗡 Finish them backs the winner, 🛟 Save them backs the loser. Got liquidated? 🩸 Revenge fades their next trade."],
+    body: ["Tabs for Nemesis matches (your #1 rival), High stakes, Following and Bloodbath, where someone is getting perped.", "In Bloodbath: Finish them backs the winner, Save them backs the loser. Got liquidated? Revenge fades their next trade."],
     mock: (
       <div className="im-card">
-        <div className="im-tabs"><i>All</i><i className="nem">☠ Nemesis</i><i>🔥 High</i><i className="on">💀 Bloodbath</i></div>
-        <div className="im-pit"><span className="im-tag">🩸 The Pit</span><div className="im-row"><b>degenpriest 👑</b><span className="im-vs">VS</span><b className="crack">wenlambo</b></div><div className="im-acts"><span className="fin">🗡 Finish them</span><span>🛟 Save them</span></div></div>
+        <div className="im-tabs"><i>All</i><i className="nem"><Glyph n="skull" /> Nemesis</i><i><Glyph n="flame" /> High</i><i className="on"><Glyph n="drop" /> Bloodbath</i></div>
+        <div className="im-pit"><span className="im-tag"><Glyph n="drop" /> The Pit</span><div className="im-row"><b className="gl">degenpriest<Glyph n="crown" tone="gold" /></b><span className="im-vs">VS</span><b className="crack">wenlambo</b></div><div className="im-acts"><span className="fin"><Glyph n="dagger" /> Finish them</span><span><Glyph n="buoy" /> Save them</span></div></div>
       </div>
     ),
   },
   {
     k: "rank", eyebrow: "5 · Ranks", title: "Earn XP. Lose it too.",
-    body: ["Wins, calls and battles earn XP and ranks. From Knife Catcher up, losses cost XP, so ranks can be lost.", "Beat someone on a 5+ win streak and you claim their 💰 bounty. Fight the same trader three times and you’re rivals. 🥊 Fight Night is 9pm Bangkok, every night."],
+    body: ["Wins, calls and battles earn XP and ranks. From Knife Catcher up, losses cost XP, so ranks can be lost.", "Beat someone on a 5+ win streak and you claim their bounty. Fight the same trader three times and you’re rivals. Fight Night is 9pm Bangkok, every night."],
     mock: (
       <div className="im-card">
         <div className="im-ranks">{[1, 3, 5, 7, 9].map((l) => <img key={l} src={`/api/share-bg/rank-${l}`} alt="" />)}</div>
-        <div className="im-row small"><span className="im-bounty">💰 Bounty +95 XP</span><span className="im-fn">🥊 Fight Night in 2h 10m</span></div>
+        <div className="im-row small"><span className="im-bounty"><Glyph n="bag" /> Bounty +95 XP</span><span className="im-fn"><Glyph n="glove" /> Fight Night in 2h 10m</span></div>
       </div>
     ),
   },

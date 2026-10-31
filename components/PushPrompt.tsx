@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "./Glyph";
 import { useEffect, useState } from "react";
 import { usePush } from "@/lib/hooks/usePush";
 import { useSession } from "@/lib/hooks/useSession";
@@ -25,7 +26,7 @@ export function PushPrompt({ compact = false }: { compact?: boolean }) {
   const close = () => { setDismissed(true); try { localStorage.setItem("perped:push-dismissed", "1"); } catch {} };
   return (
     <div className="pushcard">
-      <div className="pushcard-ic">🔔</div>
+      <div className="pushcard-ic"><Glyph n="bell" tone="gold" /></div>
       <div className="min-w-0 flex-1">
         <b>Don&rsquo;t miss a fade</b>
         {state === "ios-install"

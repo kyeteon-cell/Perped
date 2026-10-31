@@ -47,7 +47,7 @@ function cardData(item: FeedRow, mid?: number, shareUrl?: string): CardData {
       title: `${ticker(post.coin!, true)} · ${post.side === "long" ? "Long" : "Short"} ${lev}×`,
       headline: fmtPct(roi, 1),
       sub: `${fmtUsd(pnl, { sign: true })}${open ? " unrealised" : " banked"}`,
-      lines: [`${fmtPrice(entry)} → ${fmtPrice(mark)}`, open ? `${item.copyCount} copied · ${item.fadeCount} faded` : `Held ${held}h · ${item.copyCount} copied · ${item.fadeCount} faded`, ...(battle ? [battle.won === true ? `⚡ Perped @${battle.vs} · ${fmtPct(battle.myRoi, 1)} vs ${fmtPct(battle.theirRoi, 1)}` : battle.won === false ? `Perped by @${battle.vs} · ${fmtPct(battle.myRoi, 1)} vs ${fmtPct(battle.theirRoi, 1)}` : `Drew with @${battle.vs}`] : [])],
+      lines: [`${fmtPrice(entry)} → ${fmtPrice(mark)}`, open ? `${item.copyCount} copied · ${item.fadeCount} faded` : `Held ${held}h · ${item.copyCount} copied · ${item.fadeCount} faded`, ...(battle ? [battle.won === true ? `Perped @${battle.vs} · ${fmtPct(battle.myRoi, 1)} vs ${fmtPct(battle.theirRoi, 1)}` : battle.won === false ? `Perped by @${battle.vs} · ${fmtPct(battle.myRoi, 1)} vs ${fmtPct(battle.theirRoi, 1)}` : `Drew with @${battle.vs}`] : [])],
     };
   }
   if (post.kind === "call") {
@@ -56,7 +56,7 @@ function cardData(item: FeedRow, mid?: number, shareUrl?: string): CardData {
       kind: open ? "PRICE CALL" : post.callStatus === "hit" ? "CALL · HIT" : "CALL · MISSED", handle, url, tag, loss: post.callStatus === "missed",
       title: `${ticker(post.coin!, true)} ${post.side === "long" ? "↑" : "↓"}`,
       headline: fmtPrice(post.targetPx), sub: open ? `by ${post.deadline ? new Date(post.deadline).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "deadline"}` : `resolved at ${fmtPrice(post.resolvedPx)}`,
-      lines: [post.body ?? "", `${item.likes} 👍 · ${item.dislikes} 👎 · ${item.commentCount} replies`].filter(Boolean),
+      lines: [post.body ?? "", `${item.likes} agree · ${item.dislikes} disagree · ${item.commentCount} replies`].filter(Boolean),
     };
   }
   if (post.kind === "poll") {
@@ -173,7 +173,7 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
   }, [theme, data]);
 
   const text = challengeable
-    ? (mine ? `I'm ${item.post.side} ${data.title}. Think I'm wrong? Fade me on Perped 👇` : `@${data.handle} is ${item.post.side} ${data.title}. Fade them with me on Perped 👇`)
+    ? (mine ? `I'm ${item.post.side} ${data.title}. Think I'm wrong? Fade me on Perped:` : `@${data.handle} is ${item.post.side} ${data.title}. Fade them with me on Perped:`)
     : `${data.handle} · ${data.kind.toLowerCase()} · ${data.title} ${data.headline} on Perped`;
   const file = async () => { const blob = await (await fetch(img)).blob(); return new File([blob], `perped-${item.post.id}.png`, { type: "image/png" }); };
   const nativeShare = async () => {

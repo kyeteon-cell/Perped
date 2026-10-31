@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "./Glyph";
 import Link from "next/link";
 import { useState } from "react";
 import type { ArenaBattle, ArenaRes } from "@/app/api/arena/route";
@@ -44,8 +45,8 @@ export function FinishSave({ b, winner, loser }: { b: ArenaBattle; winner: Mini;
   return (
     <>
       <div className="bb-acts" style={wOpen && lOpen ? undefined : { gridTemplateColumns: "1fr" }}>
-        {wOpen && <button className="bb-finish" onClick={() => pick(winner, "🗡 Finish them · back")}>🗡 Finish them<small>back {winner.handle}</small></button>}
-        {lOpen && <button className="bb-save" onClick={() => pick(loser, "🛟 Save them · back")}>🛟 Save them<small>back {loser.handle}</small></button>}
+        {wOpen && <button className="bb-finish" onClick={() => pick(winner, "Finish them · back")}><span className="gl"><Glyph n="dagger" />Finish them</span><small>back {winner.handle}</small></button>}
+        {lOpen && <button className="bb-save" onClick={() => pick(loser, "Save them · back")}><span className="gl"><Glyph n="buoy" />Save them</span><small>back {loser.handle}</small></button>}
       </div>
       {open && <QuickTrade item={open.item} mode="copy" lock title={open.title} onClose={() => setOpen(null)} />}
     </>
@@ -53,7 +54,7 @@ export function FinishSave({ b, winner, loser }: { b: ArenaBattle; winner: Mini;
 }
 
 /** Revenge / run it back: quick-fade the opponent's newest open trade; if they have none, make them your nemesis so you get pinged. */
-export function RevengeButton({ handle, label = "🩸 Revenge", className = "bb-revenge" }: { handle: string; label?: string; className?: string }) {
+export function RevengeButton({ handle, label = <span className="gl"><Glyph n="drop" />Revenge</span>, className = "bb-revenge" }: { handle: string; label?: React.ReactNode; className?: string }) {
   const { authenticated, login, authedFetch } = useSession();
   const [item, setItem] = useState<FeedRow | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -86,10 +87,10 @@ export function BloodPit({ b, mid, winner, loser, worst, minLiq }: { b: ArenaBat
   const fw = fighter(winner, wl, roiOf(wl)), fl = fighter(loser, ll, roiOf(ll));
   return (
     <div className="bb-pit">
-      <div className="bb-pit-top"><span className="bb-pit-tag">🩸 The Pit</span><span className="when"><CoinMark coin={b.coin} size="xs" /> {ticker(b.coin)} · {timeAgo(b.createdAt)}</span></div>
+      <div className="bb-pit-top"><span className="bb-pit-tag gl"><Glyph n="drop" />The Pit</span><span className="when"><CoinMark coin={b.coin} size="xs" /> {ticker(b.coin)} · {timeAgo(b.createdAt)}</span></div>
       <Link href={`/battle/${b.faderPostId}`} className="bb-pit-body">
         <div className="bb-f win">
-          <span className="bb-av"><Avatar handle={winner.handle} url={winner.avatarUrl} size={56} link={false} /><em>👑</em></span>
+          <span className="bb-av"><Avatar handle={winner.handle} url={winner.avatarUrl} size={56} link={false} /><em><Glyph n="crown" tone="gold" /></em></span>
           <b className="truncate">{winner.handle}</b>
           <span className={`mono bb-roi ${fw.roi >= 0 ? "green" : "red"}`}>{fmtPct(fw.roi, 1)}</span>
           <span className={`lbl ${wl.side}`}><i />{wl.side === "long" ? "Long" : "Short"} {wl.leverage}×</span>
@@ -119,7 +120,7 @@ export function KillFeed({ kills }: { kills: ArenaBattle[] }) {
         const ll = legOf(b, l);
         return (
           <Link key={b.id} href={`/battle/${b.faderPostId}`} className="bb-kill">
-            <span>💀</span><b>{w.handle}</b><span className="muted">liquidated</span><b>{l.handle}</b>
+            <Glyph n="skull" tone="blood" /><b>{w.handle}</b><span className="muted">liquidated</span><b>{l.handle}</b>
             <span className="mono muted">{ticker(b.coin)} {ll.leverage}×</span>
             <span className="when ml-auto">{timeAgo(b.settledAt ?? b.createdAt)}</span>
           </Link>
@@ -132,7 +133,7 @@ export function KillFeed({ kills }: { kills: ArenaBattle[] }) {
 /** This week's body count. */
 export function BodyCount({ board }: { board: ArenaRes["board"] }) {
   if (!board || (!board.butchers.length && !board.rekt.length)) return null;
-  const col = (title: string, rows: ArenaRes["board"]["butchers"], unit: string) => (
+  const col = (title: React.ReactNode, rows: ArenaRes["board"]["butchers"], unit: string) => (
     <div className="bb-board-col">
       <div className="eyebrow">{title}</div>
       {rows.map((r, i) => (
@@ -144,8 +145,8 @@ export function BodyCount({ board }: { board: ArenaRes["board"] }) {
   );
   return (
     <div className="bb-board">
-      {col("🗡 Butcher · this week", board.butchers, "perped")}
-      {col("🪦 Most rekt", board.rekt, "lost")}
+      {col(<span className="gl"><Glyph n="dagger" />Butcher · this week</span>, board.butchers, "perped")}
+      {col(<span className="gl"><Glyph n="tomb" />Most rekt</span>, board.rekt, "lost")}
     </div>
   );
 }

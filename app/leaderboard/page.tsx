@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "@/components/Glyph";
 import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
@@ -24,7 +25,7 @@ export default function LeaderboardPage() {
       <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/arena)" }}><h1 className="h1" style={{ color: "#fff" }}>Leaders</h1><div className="text-[12px]" style={{ color: "rgba(255,255,255,.8)" }}>{mode === "trades" ? "Realised PnL from Hyperliquid fills" : mode === "calls" ? "Public predictions, scored against the chart" : "XP from battles, duels, calls and trades"}</div></header>
       <div className="px-5 pb-3 pt-4">
         <div className="modes"><button className={mode === "trades" ? "on" : ""} onClick={() => setMode("trades")}>Trades</button><button className={mode === "calls" ? "on" : ""} onClick={() => setMode("calls")}>Calls</button><button className={mode === "ranks" ? "on" : ""} onClick={() => setMode("ranks")}>Ranks</button><button className={mode === "season" ? "on" : ""} onClick={() => setMode("season")}>Season</button></div>
-        {mode === "season" && data?.season && <div className="season-bar mt-3"><b>🏆 {data.season.name} season</b><span>{seasonLeft(data.season.endsAt)} left · XP earned this month only</span></div>}
+        {mode === "season" && data?.season && <div className="season-bar mt-3"><b className="gl"><Glyph n="trophy" tone="gold" />{data.season.name} season</b><span>{seasonLeft(data.season.endsAt)} left · XP earned this month only</span></div>}
         <div className="seg mt-3">
           {mode === "trades" && (["7d", "30d", "all"] as const).map((p) => <button key={p} className={`chip ${p === period ? "on" : ""}`} onClick={() => setPeriod(p)}>{p === "all" ? "All time" : p === "7d" ? "7 days" : "30 days"}</button>)}
           <button className={`chip ${demo ? "on" : ""}`} style={{ marginLeft: "auto" }} onClick={() => setDemo((v) => !v)}>{demo ? "Demo accounts" : "Real accounts"}</button>
@@ -62,7 +63,7 @@ export default function LeaderboardPage() {
           <Avatar handle={r.handle} url={r.avatarUrl} size={44} link={false} />
           <div className="min-w-0 flex-1">
             <div className="name">{r.handle}<RankChip xp={r.xp} compact /></div>
-            <div className="when truncate">{mode === "ranks" || mode === "season" ? `${rankFor(r.xp ?? 0).title} · battles ${r.battlesWon ?? 0}–${r.battlesLost ?? 0} · ${fmtPct(Number(r.winRate), 0)} win` : mode === "trades" ? `${r.closedTrades} trades · ${fmtPct(Number(r.winRate), 0)} win · ${fmtUsd(Number(r.volume30d), { compact: true })} volume` : `${r.callsResolved} calls · ${r.callsHit} hit · avg ${fmtPct(Number(r.callAvgMove), 1)}${r.callStreak > 1 ? ` · 🔥 ${r.callStreak}` : ""} · trades ${fmtPct(Number(r.winRate), 0)} win`}</div>
+            <div className="when truncate">{mode === "ranks" || mode === "season" ? `${rankFor(r.xp ?? 0).title} · battles ${r.battlesWon ?? 0}–${r.battlesLost ?? 0} · ${fmtPct(Number(r.winRate), 0)} win` : mode === "trades" ? `${r.closedTrades} trades · ${fmtPct(Number(r.winRate), 0)} win · ${fmtUsd(Number(r.volume30d), { compact: true })} volume` : `${r.callsResolved} calls · ${r.callsHit} hit · avg ${fmtPct(Number(r.callAvgMove), 1)}${r.callStreak > 1 ? ` · ${r.callStreak} in a row` : ""} · trades ${fmtPct(Number(r.winRate), 0)} win`}</div>
           </div>
           {mode === "ranks" || mode === "season" ? <div className="text-right"><div className="mono text-[17px] font-bold">{(mode === "season" ? r.seasonXp ?? 0 : r.xp ?? 0).toLocaleString()}</div><div className="when">{mode === "season" ? "season XP" : "XP"}</div></div> : mode === "trades" ? <div className={`mono text-[17px] font-bold ${(r.pnl ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div> : <div className="text-right"><div className="mono text-[17px] font-bold">{Math.round(r.hitRate ?? 0)}%</div><div className="when">hit rate</div></div>}
         </Link>

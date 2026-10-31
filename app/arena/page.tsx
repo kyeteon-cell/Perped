@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "@/components/Glyph";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -51,11 +52,11 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
   return (
     <Link href={`/battle/${b.faderPostId}`} className={`arow ${b.nemesis ? "nemesis" : ""}`}>
       {b.nemesis && <NemesisBar b={b} />}
-      {isFightNight(b.createdAt) && b.status === "open" && <span className="fn-badge">🥊 Fight Night · 2× XP</span>}
+      {isFightNight(b.createdAt) && b.status === "open" && <span className="fn-badge gl"><Glyph n="glove" />Fight Night · 2× XP</span>}
       {!settled && (b.faderLeg.status === "closed" || b.targetLeg.status === "closed") && (() => {
         const fBanked = b.faderLeg.status === "closed", banker = fBanked ? b.fader : b.target, chaser = fBanked ? b.target : b.fader;
         const bank = fBanked ? a : t, now = fBanked ? t : a;
-        return <span className={`chase-badge ${now > bank ? "ahead" : ""}`}>🏦 {banker.handle} banked {fmtPct(bank, 1)} · {chaser.handle} {now > bank ? "ahead" : "chasing"}</span>;
+        return <span className={`chase-badge gl ${now > bank ? "ahead" : ""}`}><Glyph n="bank" />{banker.handle} banked {fmtPct(bank, 1)} · {chaser.handle} {now > bank ? "ahead" : "chasing"}</span>;
       })()}
       <div className="flex items-center justify-between gap-2">
         <div className={`aside ${aWin ? "lead" : ""}`}><span className="arank"><Avatar handle={b.fader.handle} url={b.fader.avatarUrl} size={36} link={false} /><img src={`/api/share-bg/rank-${rankFor(b.fader.xp ?? 0).level}`} alt="" /></span><div className="min-w-0"><div className="flex items-center gap-1 text-[13px] font-bold"><span className="truncate">{b.fader.handle}</span><RankChip xp={b.fader.xp} compact size={18} /></div><div className={`mono text-[13px] font-bold ${a >= 0 ? "green" : "red"}`}>{fmtPct(a, 1)}</div></div></div>
@@ -83,7 +84,7 @@ function FightNight() {
     tick(); const id = setInterval(tick, 30_000); return () => clearInterval(id);
   }, []);
   if (!t) return null;
-  return <Link href="/how-it-works#fight-night" className={`fightnight ${t === "live" ? "on" : ""}`}>{t === "live" ? "🥊 Fight Night · LIVE" : `🥊 Fight Night in ${t}`}</Link>;
+  return <Link href="/how-it-works#fight-night" className={`fightnight ${t === "live" ? "on" : ""}`}><span className="gl"><Glyph n="glove" />{t === "live" ? "Fight Night · LIVE" : `Fight Night in ${t}`}</span></Link>;
 }
 
 /** Sworn rivals meeting again: the series so far and which meeting this is. */
@@ -92,7 +93,7 @@ function NemesisBar({ b }: { b: ArenaBattle }) {
   const lead = n.faderWins === n.targetWins ? "series level" : `${n.faderWins > n.targetWins ? b.fader.handle : b.target.handle} leads`;
   return (
     <div className="nem-bar">
-      <span className="nem-tag">☠ Nemesis</span>
+      <span className="nem-tag gl"><Glyph n="skull" />Nemesis</span>
       <span className="nem-txt">Meeting #{n.meeting} · <b className="mono">{n.faderWins}–{n.targetWins}</b> · {lead}</span>
     </div>
   );
@@ -118,7 +119,7 @@ function CallOut({ onPick, onClose, rivals }: { onPick: (h: string) => void; onC
             <button key={u.handle} className="lb" style={{ width: "100%", textAlign: "left", background: "none", border: 0 }} onClick={() => onPick(u.handle)}>
               <Avatar handle={u.handle} url={u.avatarUrl} size={36} link={false} />
               <div className="min-w-0 flex-1"><div className="name">{u.handle}<RankChip xp={u.xp} compact /></div><div className="when">{rankFor(u.xp).title} · {u.xp.toLocaleString()} XP</div></div>
-              <span className="chip on">⚔ Challenge</span>
+              <span className="chip on"><Glyph n="swords" />Challenge</span>
             </button>
           ))}
         </div>
@@ -143,7 +144,7 @@ export default function ArenaPage() {
       <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
         <h1 className="h1" style={{ color: "#fff" }}>Arena</h1>
         <div className="text-[12px]" style={{ color: "rgba(255,255,255,.85)" }}>Fade someone and it&rsquo;s a battle. Call them out and it&rsquo;s a duel. Winner takes the XP.</div>
-        <div className="mt-3 flex flex-wrap items-center gap-2"><button className="arena-cta" onClick={callOut}>⚔ Call someone out</button><FightNight /></div>
+        <div className="mt-3 flex flex-wrap items-center gap-2"><button className="arena-cta" onClick={callOut}><span className="gl"><Glyph n="swords" />Call someone out</span></button><FightNight /></div>
       </header>
 
       {!data && <SkeletonList n={3} card={false} />}
@@ -156,7 +157,7 @@ export default function ArenaPage() {
               <div className="eyebrow">Your record</div>
               <div className="mono text-[24px] font-bold"><span className="green">{me.won}</span><span className="muted"> – </span><span className="red">{me.lost}</span>{me.drawn ? <span className="muted text-[15px]"> · {me.drawn} drawn</span> : null}</div>
             </div>
-            <div className="text-right"><div className="text-[22px] font-extrabold">{me.streak > 0 ? `🔥 ${me.streak}` : "—"}</div><div className="when text-[11px]">streak · best {me.best}</div></div>
+            <div className="text-right"><div className="text-[22px] font-extrabold">{me.streak > 0 ? <span className="gl"><Glyph n="flame" tone="gold" />{me.streak}</span> : "—"}</div><div className="when text-[11px]">streak · best {me.best}</div></div>
           </div>
         </section>
       )}
@@ -197,8 +198,8 @@ export default function ArenaPage() {
               <div key={s.user.id} className="hcard text-center" style={{ width: 120 }}>
                 <div className="flex justify-center"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={44} /></div>
                 <div className="name mt-1.5 truncate text-[13px]">{s.user.handle}</div>
-                <div className="text-[18px] font-extrabold">🔥 {s.streak}</div>
-                {s.streak >= 5 && <div className="bounty">💰 Bounty +{25 + s.streak * 10} XP</div>}
+                <div className="text-[18px] font-extrabold"><span className="gl"><Glyph n="flame" tone="gold" />{s.streak}</span></div>
+                {s.streak >= 5 && <div className="bounty gl"><Glyph n="bag" />Bounty +{25 + s.streak * 10} XP</div>}
                 {profile?.handle !== s.user.handle && <button className="chip mt-1.5 w-full justify-center" style={{ fontSize: 11, padding: "5px 8px" }} onClick={() => (authenticated ? setTarget(s.user.handle) : login())}>Break it</button>}
               </div>
             ))}
@@ -235,14 +236,14 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   const fol = rows.filter((x) => mine(x.b) || followed(x.b)).sort((x, y) => Number(mine(y.b)) - Number(mine(x.b)) || +new Date(y.b.createdAt) - +new Date(x.b.createdAt));
   const blood = rows.filter((x) => x.r.blood).sort((x, y) => y.r.gap - x.r.gap);
   const rekt = (data.rekt ?? []).map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) }));
-  const tabs: { k: Tab; label: string; n: number }[] = [
+  const tabs: { k: Tab; label: ReactNode; n: number }[] = [
     { k: "all", label: "All", n: rows.length },
-    ...(nem.length ? [{ k: "nemesis" as Tab, label: "☠ Nemesis", n: nem.length }] : []),
-    { k: "high", label: "🔥 High stakes", n: high.length },
-    { k: "following", label: "👥 Following", n: fol.length },
-    { k: "blood", label: "💀 Bloodbath", n: blood.length + rekt.length },
+    ...(nem.length ? [{ k: "nemesis" as Tab, label: <span className="gl"><Glyph n="skull" />Nemesis</span>, n: nem.length }] : []),
+    { k: "high", label: <span className="gl"><Glyph n="flame" />High stakes</span>, n: high.length },
+    { k: "following", label: <span className="gl"><Glyph n="people" />Following</span>, n: fol.length },
+    { k: "blood", label: <span className="gl"><Glyph n="drop" />Bloodbath</span>, n: blood.length + rekt.length },
   ];
-  const flames = (n: number) => "🔥".repeat(n);
+  const flames = (n: number) => <span className="flames">{Array.from({ length: n }, (_, i) => <Glyph key={i} n="flame" tone="gold" />)}</span>;
   const tag = (b: ArenaBattle) => mine(b) ? "your battle" : rivals.has(b.fader.handle) ? `your rival ${b.fader.handle}` : rivals.has(b.target.handle) ? `your rival ${b.target.handle}` : follow.has(b.fader.handle) ? `you follow ${b.fader.handle}` : follow.has(b.target.handle) ? `you follow ${b.target.handle}` : "";
   const list = tab === "all" ? rows : tab === "nemesis" ? nem : tab === "high" ? high : tab === "following" ? fol : blood;
   return (
@@ -260,15 +261,15 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
       <div className="mt-3 flex flex-col gap-2">
         {tab === "blood" && rekt.map(({ b, r }) => (
           <div key={`rekt${b.id}`} className="tomb">
-            <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={<><span className="rekt">REKT</span><span>🪦 <b>{r.loser.handle}</b> got liquidated by <b>{r.winner.handle}</b></span></>} />
-            <div className="bb-under"><RevengeButton handle={r.winner.handle} label={`🩸 Revenge on ${r.winner.handle}`} /></div>
+            <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={<><span className="rekt">REKT</span><span className="gl"><Glyph n="tomb" /><b>{r.loser.handle}</b> got liquidated by <b>{r.winner.handle}</b></span></>} />
+            <div className="bb-under"><RevengeButton handle={r.winner.handle} label={<span className="gl"><Glyph n="drop" />Revenge on {r.winner.handle}</span>} /></div>
           </div>
         ))}
         {(tab === "blood" ? list.slice(1) : list).map(({ b, r }) => (
           <div key={b.id}>
           <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={
             tab === "high" ? <><span>{flames(r.heat)}</span><b className="mono">{b.faderLeg.leverage}× vs {b.targetLeg.leverage}×</b>{r.minLiq < 50 && <span className="ab-warn">{r.closer.handle} liq in {r.minLiq.toFixed(1)}%</span>}</>
-            : tab === "blood" ? <><span>💀</span><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted">{r.winner.handle} 👑</span></>
+            : tab === "blood" ? <><Glyph n="skull" tone="blood" /><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted"><span className="gl">{r.winner.handle}<Glyph n="crown" tone="gold" /></span></span></>
             : tab === "following" && tag(b) ? <span className="ab-tag">{tag(b)}</span>
             : undefined
           } />
@@ -281,7 +282,7 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
             <div className="aempty">
               <p className="muted text-sm">Follow traders to fill this tab. Their battles show up here the moment they fade or get faded.</p>
               <div className="mt-2 flex flex-col gap-2">{data.streaks.slice(0, 3).map((s) => (
-                <div key={s.user.id} className="flex items-center gap-2.5"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={30} /><span className="flex-1 truncate text-[14px] font-bold">{s.user.handle}<span className="when ml-1.5">🔥 {s.streak} streak</span></span><FollowButton handle={s.user.handle} compact /></div>
+                <div key={s.user.id} className="flex items-center gap-2.5"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={30} /><span className="flex-1 truncate text-[14px] font-bold">{s.user.handle}<span className="when ml-1.5 gl"><Glyph n="flame" tone="gold" />{s.streak} streak</span></span><FollowButton handle={s.user.handle} compact /></div>
               ))}</div>
             </div>
           ) : <p className="muted text-sm">{tab === "high" ? "No high-stakes battles right now. Nobody's above 20× or near liquidation." : tab === "blood" ? "No bloodbaths right now. Everyone's still standing." : "No battles running. Fade a trade in the feed to start one."}</p>

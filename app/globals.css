@@ -1199,3 +1199,9 @@ body { letter-spacing: -.005em; }
 .battle.photo .chase .eyebrow { color: var(--muted); }
 .chase-badge { display: inline-block; margin: -2px 0 8px; font-size: 11px; font-weight: 800; color: var(--muted); background: color-mix(in srgb, var(--text) 6%, transparent); padding: 2px 9px; border-radius: 999px; }
 .chase-badge.ahead { color: #2a1c00; background: var(--gold-soft); }
+
+/* Perped glyphs (replace emoji) */
+.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex: none; }
+.g + * , * + .g { }
+.g-gold { color: var(--gold); } .g-blood { color: var(--red); } .g-violet { color: #8b5cf6; } .g-muted { color: var(--muted); }
+.gl { display: inline-flex; align-items: center; gap: .35em; }

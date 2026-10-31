@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "@/components/Glyph";
 import { use, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -100,14 +101,14 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
               <button className="muted" onClick={() => { setPeopleDir("following"); setTab("people"); }}><b style={{ color: "var(--text)" }}>{data.following}</b> following</button>
             </div>
             {!isMe && viewer && (vsMe
-              ? <Link href={`/rivalry/${viewer.handle}/${user.handle}`} className={`rival-chip mt-2 ${vsMe.mine > vsMe.theirs ? "lead" : ""}`} style={{ marginLeft: 0, fontSize: 12, padding: "3px 10px" }}>⚔ Your rival · {vsMe.mine > vsMe.theirs ? "you lead" : vsMe.mine < vsMe.theirs ? "they lead" : "all square"} {vsMe.mine}–{vsMe.theirs}</Link>
-              : <button className="rival-chip mt-2" style={{ marginLeft: 0, fontSize: 12, padding: "3px 10px", border: 0 }} onClick={callOutRival}>⚔ Call out as your rival</button>)}
+              ? <Link href={`/rivalry/${viewer.handle}/${user.handle}`} className={`rival-chip mt-2 ${vsMe.mine > vsMe.theirs ? "lead" : ""}`} style={{ marginLeft: 0, fontSize: 12, padding: "3px 10px" }}><Glyph n="swords" /> Your rival · {vsMe.mine > vsMe.theirs ? "you lead" : vsMe.mine < vsMe.theirs ? "they lead" : "all square"} {vsMe.mine}–{vsMe.theirs}</Link>
+              : <button className="rival-chip mt-2" style={{ marginLeft: 0, fontSize: 12, padding: "3px 10px", border: 0 }} onClick={callOutRival}><span className="gl"><Glyph n="swords" />Call out as your rival</span></button>)}
           </div>
         </div>
         {user.bio && <p className="mt-3.5">{user.bio}</p>}
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           {isMe ? <Link href="/compose" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Write a post</Link> : <FollowButton handle={user.handle} />}
-          {isMe ? <Link href="/settings" className="btn" style={{ padding: 12, fontSize: 14 }}>Edit profile</Link> : <button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={() => (authenticated ? setChallenge(true) : login())}>⚔ Challenge</button>}
+          {isMe ? <Link href="/settings" className="btn" style={{ padding: 12, fontSize: 14 }}>Edit profile</Link> : <button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={() => (authenticated ? setChallenge(true) : login())}><span className="gl"><Glyph n="swords" />Challenge</span></button>}
         </div>
       </section>
 
@@ -116,7 +117,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           <div className="flex items-center justify-between">
             <span className="eyebrow">{showingTop ? "Top trades" : "Pinned"}</span>
             <span className="flex items-center gap-2">
-              {(data.battleStreak ?? 0) >= 2 && <span className="pin-streak">🔥 {data.battleStreak}-win streak</span>}
+              {(data.battleStreak ?? 0) >= 2 && <span className="pin-streak gl"><Glyph n="flame" tone="gold" />{data.battleStreak}-win streak</span>}
               {(s?.battlesWon ?? 0) + (s?.battlesLost ?? 0) > 0 && <span className="mono when"><span className="green">{s?.battlesWon ?? 0}W</span>–<span className="red">{s?.battlesLost ?? 0}L</span></span>}
             </span>
           </div>
@@ -138,7 +139,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
               <Link key={r.handle} href={`/rivalry/${user.handle}/${r.handle}`} className="lb">
                 <Avatar handle={r.handle} url={r.avatarUrl} size={40} link={false} />
                 <div className="min-w-0 flex-1"><div className="name">{r.handle}<RankChip xp={r.xp} compact /></div><div className="when">{r.fights} fights{r.runHolderIsMe !== null && r.runLen >= 2 ? ` · ${r.runHolderIsMe ? user.handle : r.handle} on a ${r.runLen}-run` : ""}{r.calledByThem ? " · called them out" : ""}</div></div>
-                <div className="text-right"><div className="mono text-[18px] font-bold"><span className={r.mine >= r.theirs ? "green" : "muted"}>{r.mine}</span><span className="muted">–</span><span className={r.theirs > r.mine ? "red" : "muted"}>{r.theirs}</span></div>{r.mine > r.theirs && <div className="when text-[10px]">👑 leads</div>}</div>
+                <div className="text-right"><div className="mono text-[18px] font-bold"><span className={r.mine >= r.theirs ? "green" : "muted"}>{r.mine}</span><span className="muted">–</span><span className={r.theirs > r.mine ? "red" : "muted"}>{r.theirs}</span></div>{r.mine > r.theirs && <div className="when text-[10px] gl"><Glyph n="crown" tone="gold" />leads</div>}</div>
               </Link>
             ))}
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "./Glyph";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -31,7 +32,7 @@ export function FightNightHome() {
   return (
     <section className={`fnh ${phase.live ? "live" : ""}`}>
       <div className="fnh-top">
-        <span className="fnh-tag">🥊 Fight Night {phase.live ? "· LIVE" : ""}</span>
+        <span className="fnh-tag gl"><Glyph n="glove" />Fight Night {phase.live ? "· LIVE" : ""}</span>
         <span className="fnh-x">2× XP</span>
         <span className="fnh-t">{phase.label}</span>
       </div>
@@ -42,7 +43,7 @@ export function FightNightHome() {
             <Link key={b.id} href={`/battle/${b.faderPostId}`} className="fnh-row">
               <Avatar handle={b.fader.handle} url={b.fader.avatarUrl} size={26} link={false} />
               <b className="truncate">{b.fader.handle}</b>
-              <span className="fnh-vs">{b.nemesis ? "☠" : "vs"}</span>
+              <span className="fnh-vs">{b.nemesis ? <Glyph n="skull" tone="violet" /> : "vs"}</span>
               <b className="truncate">{b.target.handle}</b>
               <Avatar handle={b.target.handle} url={b.target.avatarUrl} size={26} link={false} />
               <span className="ml-auto flex items-center gap-1 when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)} {Math.max(b.faderLeg.leverage, b.targetLeg.leverage)}×</span>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "./Glyph";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import type { FeedRow } from "@/lib/feed";
@@ -27,7 +28,7 @@ export function FirstBattle({ rows }: { rows: FeedRow[] }) {
   const mySide = p.side === "long" ? "short" : "long";
   return (
     <div className="firstb">
-      <div className="firstb-top"><span className="firstb-tag">⚔ Your first battle</span><button className="when" onClick={done}>Not now</button></div>
+      <div className="firstb-top"><span className="firstb-tag gl"><Glyph n="swords" />Your first battle</span><button className="when" onClick={done}>Not now</button></div>
       <div className="firstb-row">
         <Avatar handle={a.handle} url={a.avatarUrl} size={40} link={false} />
         <div className="min-w-0 flex-1">
@@ -36,7 +37,7 @@ export function FirstBattle({ rows }: { rows: FeedRow[] }) {
         </div>
         <CoinMark coin={p.coin!} size="sm" />
       </div>
-      <button className="btn short mt-3" style={{ padding: 12, fontSize: 15 }} onClick={() => setOpen(true)}>⚡ Fade {a.handle}</button>
+      <button className="btn short mt-3" style={{ padding: 12, fontSize: 15 }} onClick={() => setOpen(true)}><span className="gl"><Glyph n="bolt" />Fade {a.handle}</span></button>
       {open && <QuickTrade item={target} mode="fade" onClose={() => { setOpen(false); done(); }} />}
     </div>
   );

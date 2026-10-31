@@ -280,4 +280,8 @@ create table if not exists events (
   created_at timestamptz not null default now()
 );
 create index if not exists events_name_time on events (name, created_at);
+-- No emoji in app text: clean what bots and the system already wrote.
+update comments set body = btrim(regexp_replace(body, '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]\\uFE0F?\\s?', '', 'g')) where body ~ '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]' and user_id in (select id from users where is_bot);
+update posts set body = btrim(regexp_replace(body, '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]\\uFE0F?\\s?', '', 'g')) where body ~ '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]' and (kind = 'system' or user_id in (select id from users where is_bot));
+update notifications set title = btrim(regexp_replace(title, '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]\\uFE0F?\\s?', '', 'g')), body = btrim(regexp_replace(coalesce(body, ''), '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]\\uFE0F?\\s?', '', 'g')) where title ~ '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]' or body ~ '[\\U0001F300-\\U0001FAFF\\u2600-\\u26FF]';
 `;

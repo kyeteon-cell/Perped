@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "./Glyph";
 import { useEffect } from "react";
 import { Sheet } from "./Sheet";
 import { track } from "@/lib/track";
@@ -27,7 +28,7 @@ export function QuickTrade({ item, mode, onClose, lock = false, title }: { item:
         <div className="flex items-center gap-3 px-5 pb-1" data-sheet-handle>
           <Avatar handle={author?.handle ?? "?"} url={author?.avatarUrl} size={36} link={false} />
           <div className="min-w-0 flex-1">
-            <div className="text-[15px] font-extrabold">{title ?? (mode === "copy" ? "Copy" : "⚡ Quick fade")} {author?.handle}</div>
+            <div className="text-[15px] font-extrabold"><span className="gl">{mode === "fade" && !title && <Glyph n="bolt" />}{title ?? (mode === "copy" ? "Copy" : "Quick fade")} {author?.handle}</span></div>
             <div className="when">They&rsquo;re <span className={s === "long" ? "green" : "red"}>{s}</span> {ticker(post.coin!)} {post.leverage}× · you go <b className={side === "long" ? "green" : "red"}>{side}</b></div>
           </div>
           <CoinMark coin={post.coin!} size="sm" />

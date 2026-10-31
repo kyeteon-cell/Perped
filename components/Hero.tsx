@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "./Glyph";
 import Link from "next/link";
 import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
@@ -47,7 +48,7 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
       <div className="mt-2.5 flex gap-4 text-[13px] opacity-95">
         <span>7 days <b className="mono">{fmtUsd(Number(data?.stats?.realizedPnl7d ?? 0), { sign: true })}</b></span>
         <span>Open <b className="mono">{openN}</b></span>
-        {(data?.stats?.callStreak ?? 0) > 0 && <span>Streak <b>🔥 {data!.stats!.callStreak}</b></span>}
+        {(data?.stats?.callStreak ?? 0) > 0 && <span>Streak <b className="gl"><Glyph n="flame" />{data!.stats!.callStreak}</b></span>}
       </div>
       <div className="hero-actions">
         <Link href="/markets" className="solid">Trade</Link>

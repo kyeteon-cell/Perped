@@ -121,7 +121,7 @@ export async function settleBattles(mids: Record<string, string | number>) {
         await awardXp(winnerId, bonus, "streak_bounty", `battle:${b.id}`);
         const wh = winnerId === b.faderId ? fu?.handle : tu?.handle, lh = winnerId === b.faderId ? tu?.handle : fu?.handle;
         await systemPost("bounty", `${wh} broke ${lh}'s ${broke}-win streak on ${b.coin} and claimed the bounty: +${bonus} XP.`, { handle: wh, loser: lh, streak: broke, bonus, battleId: b.id, faderPostId: b.faderPostId }, b.coin);
-        await notify(winnerId, "battle", `💰 Bounty claimed: you broke ${lh}'s ${broke}-win streak`, `+${bonus} XP on top of the win`, `/battle/${b.faderPostId}`);
+        await notify(winnerId, "battle", `Bounty claimed: you broke ${lh}'s ${broke}-win streak`, `+${bonus} XP on top of the win`, `/battle/${b.faderPostId}`);
       }
       await db.update(schema.stats).set({ battlesWon: sql`${schema.stats.battlesWon} + 1` }).where(eq(schema.stats.userId, winnerId));
       await db.update(schema.stats).set({ battlesLost: sql`${schema.stats.battlesLost} + 1` }).where(eq(schema.stats.userId, loserId));
@@ -129,7 +129,7 @@ export async function settleBattles(mids: Record<string, string | number>) {
 
     const href = `/battle/${b.faderPostId}`;
     const fmt = (r: number) => `${r >= 0 ? "+" : "−"}${Math.abs(r).toFixed(1)}%`;
-    const line = `${fu?.handle} ${fmt(fr.roi)} vs ${tu?.handle} ${fmt(tr.roi)}${fn ? " · 🥊 Fight Night 2× XP" : ""}`;
+    const line = `${fu?.handle} ${fmt(fr.roi)} vs ${tu?.handle} ${fmt(tr.roi)}${fn ? " · Fight Night 2× XP" : ""}`;
     if (!winnerId) {
       for (const id of [b.faderId, b.targetId]) await notify(id, "battle", `Battle drawn on ${b.coin}`, `${line} · +${XP.battleDraw} XP`, href);
     } else {

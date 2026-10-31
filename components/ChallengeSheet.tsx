@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "./Glyph";
 import { Sheet } from "./Sheet";
 
 import { useState } from "react";
@@ -34,7 +35,7 @@ export function ChallengeSheet({ handle, onClose }: { handle: string; onClose: (
   return (
     <Sheet label="Challenge to a duel" onClose={onClose}>
         <div className="px-5 pb-6">
-          <div className="flex items-center justify-between"><b className="text-lg">⚔ Challenge {handle}</b><span className="when">{hours}h · ${stake} each</span></div>
+          <div className="flex items-center justify-between"><b className="text-lg gl"><Glyph n="swords" />Challenge {handle}</b><span className="when">{hours}h · ${stake} each</span></div>
           <p className="muted mt-1 text-sm">You take one side, they take the other. Whoever is further ahead when the clock runs out wins. Stakes are your own positions; nothing is pooled.</p>
           <div className="eyebrow mt-4 mb-2">Market</div>
           <div className="seg">{top.map((c) => <button key={c} className={`chip ${c === coin ? "on" : ""}`} onClick={() => setCoin(c)}><CoinMark coin={c} size="xs" />{ticker(c)}</button>)}</div>

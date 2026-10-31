@@ -41,9 +41,9 @@ export async function alertBloodbath(mids: Record<string, string | number>): Pro
       .where(and(eq(schema.notifications.type, "laststand"), eq(schema.notifications.href, h.battleHref), eq(schema.notifications.userId, h.userId))).limit(1);
     if (done) continue;
     await db.insert(schema.notifications).values({ userId: h.userId, type: "laststand", href: h.battleHref,
-      title: `🩸 You're getting perped by ${H.get(h.oppId) ?? "your opponent"}`,
+      title: `You're getting perped by ${H.get(h.oppId) ?? "your opponent"}`,
       body: `${h.roi.toFixed(0)}% on ${h.coin}. Last stand: cut it, or double down.` });
-    await pushTo(h.userId, { title: `🩸 You're getting perped by ${H.get(h.oppId) ?? "your opponent"}`, body: `${h.roi.toFixed(0)}% on ${h.coin}. Last stand: cut it, or double down.`, href: h.battleHref, tag: "laststand" });
+    await pushTo(h.userId, { title: `You're getting perped by ${H.get(h.oppId) ?? "your opponent"}`, body: `${h.roi.toFixed(0)}% on ${h.coin}. Last stand: cut it, or double down.`, href: h.battleHref, tag: "laststand" });
     sent++;
   }
   for (const h of hurting) {
@@ -57,10 +57,10 @@ export async function alertBloodbath(mids: Record<string, string | number>): Pro
     const who = H.get(h.userId) ?? "Someone", opp = H.get(h.oppId) ?? "their opponent";
     await db.insert(schema.notifications).values(todo.map((userId) => ({
       userId, type: "bloodbath", href: h.battleHref,
-      title: `💀 ${who} is getting perped`,
+      title: `${who} is getting perped`,
       body: `${who} is ${h.roi.toFixed(0)}% on ${h.coin} against ${opp}. Watch it live.`,
     })));
-    await pushTo(todo, { title: `💀 ${who} is getting perped`, body: `${who} is ${h.roi.toFixed(0)}% on ${h.coin} against ${opp}. Watch it live.`, href: h.battleHref, tag: "bloodbath" });
+    await pushTo(todo, { title: `${who} is getting perped`, body: `${who} is ${h.roi.toFixed(0)}% on ${h.coin} against ${opp}. Watch it live.`, href: h.battleHref, tag: "bloodbath" });
     sent += todo.length;
   }
   return sent;

@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "@/components/Glyph";
 import { use, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -40,7 +41,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const [sideWith, setSide] = useState<null | { p: Post; u: U }>(null);
   const [shared, setShared] = useState<string | null>(null);
   const shareWin = async (opp: string) => {
-    const url = window.location.href, text = `I just perped @${opp} on Perped ⚔`;
+    const url = window.location.href, text = `I just perped @${opp} on Perped`;
     try {
       if (navigator.share) { await navigator.share({ title: "Perped", text, url }); return; }
       await navigator.clipboard.writeText(`${text} ${url}`); setShared("Link copied ✓");
@@ -102,10 +103,10 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   return (
     <div className="fade-in pb-8" data-tint="violet">
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Nemesis match" : "Battle"}</div><span className="w-9" /></header>
-      {live && isFightNight(fade.createdAt) && <div className="fn-banner">🥊 Fight Night battle · winner earns 2× XP</div>}
+      {live && isFightNight(fade.createdAt) && <div className="fn-banner"><span className="gl"><Glyph n="glove" />Fight Night battle · winner earns 2× XP</span></div>}
       {nemesis && (
         <div className="nem-banner">
-          <span className="nem-tag">☠ Nemesis</span>
+          <span className="nem-tag gl"><Glyph n="skull" />Nemesis</span>
           <span>Meeting #{nemesis.meeting} · {fader.user.handle} <b>{nemesis.faderWins}–{nemesis.targetWins}</b> {tu.user.handle}{nemesis.draws ? ` · ${nemesis.draws} drawn` : ""}</span>
         </div>
       )}
@@ -122,7 +123,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
           const bank = fBanked ? a.roi : b.roi, now = fBanked ? b.roi : a.roi, ahead = now > bank;
           return (
             <div className={`chase mt-4 ${ahead ? "ahead" : ""}`}>
-              <div className="eyebrow">🏦 Bank and chase</div>
+              <div className="eyebrow gl"><Glyph n="bank" />Bank and chase</div>
               <div className="mt-1 text-[16px] font-extrabold">{banker.handle} banked <span className={`mono ${bank >= 0 ? "green" : "red"}`}>{fmtPct(bank, 1)}</span></div>
               <div className="mt-0.5 text-[13px]">{chaser.handle} needs better than <b className="mono">{fmtPct(bank, 1)}</b> when they close · now <b className={`mono ${now >= 0 ? "green" : "red"}`}>{fmtPct(now, 1)}</b> · {ahead ? "on course to win" : "behind"}</div>
             </div>
@@ -137,19 +138,19 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
           </div>
         )}
         {battle?.status === "settled" && profile && battle.winnerId === profile.id && myPost && (
-          <button className={`pinwin ${pinnedWin ? "on" : ""}`} onClick={pinWin} disabled={pinBusy}>{pinnedWin ? "📌 Pinned" : "📌 Pin this win"}</button>
+          <button className={`pinwin ${pinnedWin ? "on" : ""}`} onClick={pinWin} disabled={pinBusy}><span className="gl"><Glyph n="pin" />{pinnedWin ? "Pinned" : "Pin this win"}</span></button>
         )}
         {battle?.status === "settled" && profile && myPost && (() => {
           const opp = profile.id === fader.user.id ? tu.user.handle : fader.user.handle;
           return (
             <div className="mt-2 grid grid-cols-2 gap-2.5">
-              <RevengeButton handle={opp} label={battle.winnerId === profile.id ? "⚡ Run it back" : "🩸 Revenge"} className="btn short runback" />
-              <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => setRematch(opp)}>⚔ Duel {opp}</button>
+              <RevengeButton handle={opp} label={<span className="gl"><Glyph n={battle.winnerId === profile.id ? "bolt" : "drop"} />{battle.winnerId === profile.id ? "Run it back" : "Revenge"}</span>} className="btn short runback" />
+              <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => setRematch(opp)}><span className="gl"><Glyph n="swords" />Duel {opp}</span></button>
             </div>
           );
         })()}
         {battle?.status === "settled" && profile && battle.winnerId === profile.id && (
-          <button className="btn ghost mt-2" style={{ padding: 10, fontSize: 13 }} onClick={() => shareWin(profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}>{shared ?? "📣 Share: I just perped " + (profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}</button>
+          <button className="btn ghost mt-2" style={{ padding: 10, fontSize: 13 }} onClick={() => shareWin(profile.id === fader.user.id ? tu.user.handle : fader.user.handle)}>{shared ?? <span className="gl"><Glyph n="megaphone" />Share: I just perped {profile.id === fader.user.id ? tu.user.handle : fader.user.handle}</span>}</button>
         )}
         <div className="tug mt-5" style={{ height: 10, background: target.side === "short" ? "var(--red)" : "var(--green)" }}><i style={{ width: `${share}%`, background: fade.side === "short" ? "var(--red)" : "var(--green)" }} /></div>
         <div className="when mt-2 text-center">{live || chasing ? `${faderLeads ? fader.user.handle : tu.user.handle} is ahead by ${fmtPct(Math.abs(a.roi - b.roi), 1)}` : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>

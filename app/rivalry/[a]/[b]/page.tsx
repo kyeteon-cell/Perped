@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "@/components/Glyph";
 import Link from "next/link";
 import { use, useState } from "react";
 import useSWR from "swr";
@@ -43,7 +44,7 @@ export default function RivalryPage({ params }: { params: Promise<{ a: string; b
         <div className="riv-board mt-3">
           {[A, B].map((u, i) => (
             <Link key={u.id} href={`/u/${u.handle}`} className={`riv-side ${lead === u.handle ? "lead" : ""}`}>
-              <div className="relative">{lead === u.handle && <span className="riv-crown">👑</span>}<Avatar handle={u.handle} url={u.avatarUrl} size={68} link={false} /></div>
+              <div className="relative">{lead === u.handle && <span className="riv-crown"><Glyph n="crown" tone="gold" /></span>}<Avatar handle={u.handle} url={u.avatarUrl} size={68} link={false} /></div>
               <div className="mt-2 font-extrabold" style={{ color: "#fff" }}>{u.handle}</div>
               <RankChip xp={u.xp} />
               <div className="mono mt-2 text-[44px] font-bold leading-none" style={{ color: "#fff" }}>{i === 0 ? data.aWins : data.bWins}</div>
@@ -54,7 +55,7 @@ export default function RivalryPage({ params }: { params: Promise<{ a: string; b
         <div className="mt-2 text-center text-[13px]" style={{ color: "rgba(255,255,255,.85)" }}>{lead ? `${lead} leads ${Math.max(data.aWins, data.bWins)}–${Math.min(data.aWins, data.bWins)}` : data.fights ? "All square" : "No fights yet"}{data.draws ? ` · ${data.draws} drawn` : ""}</div>
         {me && them && (
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <button className="btn brand" style={{ padding: 11, fontSize: 13 }} onClick={() => setChallenge(them.handle)}>⚔ Rematch</button>
+            <button className="btn brand" style={{ padding: 11, fontSize: 13 }} onClick={() => setChallenge(them.handle)}><span className="gl"><Glyph n="swords" />Rematch</span></button>
             {data.active
               ? <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => act(data.viewer.muted ? "unmute" : "mute", them.handle)}>{data.viewer.muted ? "Unmute alerts" : "Mute alerts"}</button>
               : <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => act("call", them.handle)}>Call them out</button>}

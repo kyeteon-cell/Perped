@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "./Glyph";
 import Link from "next/link";
 import { useState } from "react";
 import { fmtPct } from "@/lib/format";
@@ -15,7 +16,7 @@ export function battlesOf(meta: unknown): TradeBattle[] {
 }
 
 /**
- * "⚡ Beat mooncat, wickhunter +4": the opponents a trade beat, as many names as fit, with a sheet listing every
+ * "Beat mooncat, wickhunter +4": the opponents a trade beat, as many names as fit, with a sheet listing every
  * battle on the trade. Falls back to "Perped by …" / "Drew with …" when there were no wins.
  */
 export function BattleSummary({ battles, size = "md" }: { battles: TradeBattle[]; size?: "sm" | "md" }) {
@@ -33,7 +34,7 @@ export function BattleSummary({ battles, size = "md" }: { battles: TradeBattle[]
     <span onClick={stop} className="bsum-wrap">
       <button type="button" className={`bsum ${tone} ${size}`} onClick={(e) => { stop(e); setOpen(true); }}>
         <span className="bsum-stack">{shown.slice(0, 3).map((b, i) => <span key={i} className="bsum-av"><Avatar handle={b.vs ?? "?"} size={size === "sm" ? 16 : 20} link={false} /></span>)}</span>
-        <span className="bsum-text">⚡ {verb} {names.slice(0, maxNames).join(", ")}{extra > 0 ? ` +${extra}` : ""}</span>
+        <span className="bsum-text"><Glyph n="bolt" /> {verb} {names.slice(0, maxNames).join(", ")}{extra > 0 ? ` +${extra}` : ""}</span>
         {battles.length > 1 && <span className="bsum-rec">{wins.length}W {losses.length}L{draws.length ? ` ${draws.length}D` : ""}</span>}
       </button>
       {open && (

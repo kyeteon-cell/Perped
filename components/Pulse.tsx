@@ -1,5 +1,6 @@
 "use client";
 
+import { Glyph } from "./Glyph";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
@@ -53,7 +54,7 @@ function DuelCard({ d, mids }: { d: PulseData["duels"][number]; mids: Record<str
   const leader = a.roi >= b.roi ? d.a : d.b;
   return (
     <Link href={`/post/${d.a.postId}`} className="pcard duel-live">
-      <div className="pc-head"><span className="pc-tag gold">⚔ Duel · {ticker(d.coin)}</span><span className="when">{fmtUsd(d.stakeUsd, { compact: true })} · {leftTxt} left</span></div>
+      <div className="pc-head"><span className="pc-tag gold"><Glyph n="swords" /> Duel · {ticker(d.coin)}</span><span className="when">{fmtUsd(d.stakeUsd, { compact: true })} · {leftTxt} left</span></div>
       <div className="duel-body" style={{ marginTop: 12 }}>
         <div className="duelist">
           <div className={`avring ${a.roi >= b.roi ? "lead" : ""}`}><Avatar handle={d.a.handle} url={d.a.avatarUrl} size={44} link={false} /></div>
@@ -133,13 +134,13 @@ function FadeCard({ f, mids }: { f: PulseData["fades"][number]; mids: Record<str
 function StreakCard({ s }: { s: PulseData["streaks"] }) {
   return (
     <div className="pcard streak">
-      <div className="pc-head"><span className="pc-tag brand">🔥 On a streak</span><span className="when">calls in a row</span></div>
+      <div className="pc-head"><span className="pc-tag brand"><Glyph n="flame" /> On a streak</span><span className="when">calls in a row</span></div>
       <div className="mt-3 flex flex-col gap-2">
         {s.map((r, i) => (
           <Link key={r.handle} href={`/u/${r.handle}`} className="brow" style={{ animationDelay: `${i * 80}ms` }}>
             <Avatar handle={r.handle} url={r.avatarUrl} size={26} link={false} />
             <b className="flex-1 truncate text-[13px]">{r.handle}</b>
-            <span className="flames">{"🔥".repeat(Math.min(5, r.streak))}<b className="mono ml-1">{r.streak}</b></span>
+            <span className="flames">{Array.from({ length: Math.min(5, r.streak) }, (_, i) => <Glyph key={i} n="flame" tone="gold" />)}<b className="mono ml-1">{r.streak}</b></span>
           </Link>
         ))}
       </div>
