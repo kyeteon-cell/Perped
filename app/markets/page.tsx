@@ -59,8 +59,8 @@ export default function MarketsPage() {
       </div>
       <div className="hstrip">
         {movers.map((m) => (
-          <Link key={m.name} href={`/markets/${m.name}`} className="hcard" style={{ width: 104, padding: "12px 14px", borderTop: `3px solid ${m.change24h >= 0 ? "var(--green)" : "var(--red)"}` }}>
-            <div className="flex items-center gap-2"><CoinMark coin={m.name} size="sm" /><span className="name">{ticker(m.name)}</span></div>
+          <Link key={m.name} href={`/markets/${m.name}`} className={`hcard mover ${m.change24h >= 0 ? "up" : "down"}`}>
+            <div className="flex min-w-0 items-center gap-2"><CoinMark coin={m.name} size="sm" /><span className="name min-w-0 truncate">{ticker(m.name)}</span></div>
             <div className={`mono text-lg font-bold ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</div>
             <div className="mono when">{fmtPrice(mids[m.name] ?? m.mid)}</div>
           </Link>

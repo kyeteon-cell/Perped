@@ -1178,3 +1178,15 @@ body { letter-spacing: -.005em; }
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 9%, transparent), inset 0 1px 0 rgba(255,255,255,.5) !important; }
 .nav a.on svg { color: var(--text) !important; }
 .nav a.on { font-weight: 800; }
+
+/* Page titles with a tint dot: keep the live-dot rules (.dot) from shrinking the heading into a dot. */
+.h1.dot { width: auto; height: auto; border-radius: 0; background: none; display: block; animation: none; position: static; }
+.h1.dot::after { content: none; }
+
+/* Markets movers: fixed-size cards, names truncate, direction shown by an inset top bar (no curved border cap). */
+.hcard.mover { width: 118px; padding: 12px 12px 11px; overflow: hidden; position: relative; display: flex; flex-direction: column; gap: 2px; }
+.hcard.mover::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; }
+.hcard.mover.up::before { background: linear-gradient(90deg, #4af3b7, #05e091); } .hcard.mover.down::before { background: linear-gradient(90deg, #ff9a9d, #fd6267); }
+.hcard.mover .name { font-size: 14px; }
+.hcard.mover .mono.text-lg { font-size: 17px; white-space: nowrap; }
+.hcard.mover .when { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
