@@ -63,6 +63,14 @@ const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 const hours = (h: number) => h * 3_600_000;
 
+/** Add any bots that were added to the roster after the first seed (e.g. the feuding pair). */
+export async function ensureNewBots() {
+  const have = new Set((await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.isBot, true))).map((r) => r.id));
+  if (BOTS.every((b) => have.has(b.id))) return 0;
+  await ensureBots();
+  return BOTS.filter((b) => !have.has(b.id)).length;
+}
+
 export async function ensureBots() {
   for (const b of BOTS) {
     await db.insert(schema.users).values({ id: b.id, address: `0xdemo${b.handle.padEnd(35, "0").slice(0, 35)}`, handle: b.handle, bio: b.bio, avatarUrl: BOT_AVATARS.some((x) => x.key === `bot-${b.handle}`) ? `/api/share-bg/bot-${b.handle}` : null, isDemo: true, isBot: true, demoBalance: "10000", verified: false })
