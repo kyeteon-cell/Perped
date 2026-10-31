@@ -250,4 +250,14 @@ create table if not exists referral_payouts (
   created_at timestamptz not null default now()
 );
 create index if not exists referral_payouts_referrer_idx on referral_payouts (referrer_id);
+
+-- Hyperliquid order ids overflow 32-bit ints.
+alter table posts alter column oid type bigint;
+-- Feed copy/fade counts, battle lookups and follower counts.
+create index if not exists posts_copied_from_idx on posts (copied_from_id) where copied_from_id is not null;
+create index if not exists posts_faded_from_idx on posts (faded_from_id) where faded_from_id is not null;
+create index if not exists posts_kind_status_idx on posts (kind, status);
+create index if not exists follows_followee_idx on follows (followee_id);
+create index if not exists battles_target_post_idx on battles (target_post_id);
+create index if not exists battles_status_idx on battles (status);
 `;

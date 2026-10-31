@@ -38,7 +38,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const [camps] = await db.select({
     copied: sql<number>`count(*) filter (where copied_from_id = ${target.id})`.mapWith(Number),
     faded: sql<number>`count(*) filter (where faded_from_id = ${target.id})`.mapWith(Number),
-  }).from(schema.posts);
+  }).from(schema.posts).where(sql`copied_from_id = ${target.id} or faded_from_id = ${target.id}`);
 
   const [battle] = await db.select().from(schema.battles).where(eq(schema.battles.faderPostId, fade.id)).limit(1);
   return Response.json({ fade, target, fader: f, targetUser: t, history: hist, record, camps, battle: battle ?? null });

@@ -40,8 +40,11 @@ async function privyCheck(origin: string) {
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  // Clear any lock pile-up before touching tables; report what was cleared.
-  const unjammed = await unjam().catch((e) => `unjam failed: ${e instanceof Error ? e.message : String(e)}`);
+  // Maintenance (clearing stuck queries, seeding bots) only runs with the cron key, or when no key is set yet.
+  const secret = process.env.CRON_SECRET;
+  const u = new URL(req.url);
+  const admin = !secret || u.searchParams.get("key") === secret || req.headers.get("authorization") === `Bearer ${secret}`;
+  const unjammed = admin ? await unjam().catch((e) => `unjam failed: ${e instanceof Error ? e.message : String(e)}`) : "skipped (no key)";
   await ensureSchema();
   const origin = new URL(req.url).origin;
   const privy = await privyCheck(origin);
@@ -52,7 +55,7 @@ export async function GET(req: Request) {
     const missing = required.filter((t) => !tables.includes(t));
     // Demo traders: seed on first visit so the feed is never empty (same as the bots cron does).
     let bots: unknown = "present";
-    if (!missing.length && process.env.BOTS_PAUSED !== "1") {
+    if (admin && !missing.length && process.env.BOTS_PAUSED !== "1") {
       const [any] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.isBot, true)).limit(1);
       if (!any) { await ensureBots(); bots = { seeded: true, posts: await seedHistory() }; }
       await syncBotAvatars().catch(() => null);

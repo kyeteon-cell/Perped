@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getAuth, unauthorized } from "@/lib/auth";
 
@@ -30,7 +30,12 @@ export async function PATCH(req: Request) {
     if (!auth.hasExternalWallet) return Response.json({ error: "connect a wallet first to trade real money" }, { status: 400 });
     if (auth.address) set.address = auth.address; // their connected wallet becomes the Hyperliquid account
   }
-  if (resetDemo) set.demoBalance = "10000";
+  if (resetDemo) {
+    const [open] = await db.select({ id: schema.posts.id }).from(schema.posts)
+      .where(and(eq(schema.posts.userId, auth.privyId), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), eq(schema.posts.paper, true))).limit(1);
+    if (open) return Response.json({ error: "close your open demo trades before resetting the balance" }, { status: 409 });
+    set.demoBalance = "10000";
+  }
   const [row] = await db.update(schema.users).set(set).where(eq(schema.users.id, auth.privyId)).returning();
   return Response.json({ profile: row });
 }

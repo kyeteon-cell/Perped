@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, numeric, boolean, index, uniqueIndex, serial, jsonb, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, bigint, numeric, boolean, index, uniqueIndex, serial, jsonb, primaryKey } from "drizzle-orm/pg-core";
 
 /** One row per Privy user. `address` is their Hyperliquid (EVM) wallet. */
 export const users = pgTable(
@@ -58,7 +58,7 @@ export const posts = pgTable(
     notionalUsd: numeric("notional_usd"),
     leverage: integer("leverage"),
     entryPx: numeric("entry_px"),
-    oid: integer("oid"),
+    oid: bigint("oid", { mode: "number" }),
     status: text("status", { enum: ["open", "closed"] }).default("open").notNull(),
     exitPx: numeric("exit_px"),
     realizedPnl: numeric("realized_pnl"),

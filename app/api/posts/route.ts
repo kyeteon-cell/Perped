@@ -42,7 +42,7 @@ export async function GET(req: Request) {
   await ensureSchema();
   const url = new URL(req.url);
   const q = Object.fromEntries(url.searchParams);
-  const limit = Math.min(50, Number(q.limit ?? 30));
+  const limit = Math.min(50, Math.max(1, Math.floor(Number(q.limit) || 30)));
   // Cursor is the createdAt (ms) of the last row seen, so paging follows the chronological order.
   const cursor = Number(q.cursor ?? 0);
   const auth = await getAuth(req).catch(() => null);
@@ -142,7 +142,7 @@ export async function POST(req: Request) {
 
   if (b.kind === "trade") {
     if (b.fadedFromId) {
-      const why = await fadeBlockReason(profile.id, b.fadedFromId);
+      const why = await fadeBlockReason(profile.id, b.fadedFromId, { coin: b.coin, side: b.side });
       if (why) return Response.json({ error: why }, { status: 409 });
     }
     // Leverage cap = Hyperliquid's own max for this market.
@@ -151,6 +151,15 @@ export async function POST(req: Request) {
     if (b.leverage > cap) return Response.json({ error: `Hyperliquid allows up to ${cap}× on ${b.coin.toUpperCase()}` }, { status: 400 });
   }
 
+  if (b.kind === "trade" && (b.fadedFromId || b.copiedFromId)) {
+    const srcId = (b.fadedFromId ?? b.copiedFromId)!;
+    const [src] = await db.select({ userId: schema.posts.userId }).from(schema.posts).where(eq(schema.posts.id, srcId)).limit(1);
+    if (src?.userId) {
+      const [owner] = await db.select({ allowFade: schema.users.allowFade, allowCopy: schema.users.allowCopy }).from(schema.users).where(eq(schema.users.id, src.userId)).limit(1);
+      if (owner && b.fadedFromId && !owner.allowFade) return Response.json({ error: "this trader has turned fading off" }, { status: 403 });
+      if (owner && b.copiedFromId && !owner.allowCopy) return Response.json({ error: "this trader has turned copying off" }, { status: 403 });
+    }
+  }
   const values: typeof schema.posts.$inferInsert = { userId: profile.id, kind: b.kind, body: "body" in b ? b.body : undefined };
   if (b.kind === "trade" && (b.paper || profile.isDemo)) {
     if (!DEMO_ENABLED && !profile.isBot) return Response.json({ error: "demo mode is off; switch to live trading in Settings" }, { status: 403 });
@@ -163,7 +172,10 @@ export async function POST(req: Request) {
     b.entryPx = mid;
     b.size = b.notionalUsd / mid;
     values.paper = true;
-    await db.update(schema.users).set({ demoBalance: (Number(profile.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, profile.id));
+    // Deduct atomically: fails if a parallel request already spent the balance.
+    const [paid] = await db.update(schema.users).set({ demoBalance: sql`${schema.users.demoBalance} - ${margin.toFixed(2)}` })
+      .where(and(eq(schema.users.id, profile.id), sql`${schema.users.demoBalance} >= ${margin.toFixed(2)}`)).returning({ id: schema.users.id });
+    if (!paid) return Response.json({ error: "not enough demo balance" }, { status: 400 });
   }
   if (b.kind === "trade") {
     Object.assign(values, {
@@ -177,18 +189,13 @@ export async function POST(req: Request) {
   } else {
     Object.assign(values, { coin: b.coin?.toUpperCase(), status: "closed" });
   }
-  if (b.kind === "trade" && (b.fadedFromId || b.copiedFromId)) {
-    const srcId = (b.fadedFromId ?? b.copiedFromId)!;
-    const [src] = await db.select({ userId: schema.posts.userId }).from(schema.posts).where(eq(schema.posts.id, srcId)).limit(1);
-    if (src?.userId) {
-      const [owner] = await db.select({ allowFade: schema.users.allowFade, allowCopy: schema.users.allowCopy }).from(schema.users).where(eq(schema.users.id, src.userId)).limit(1);
-      if (owner && b.fadedFromId && !owner.allowFade) return Response.json({ error: "this trader has turned fading off" }, { status: 403 });
-      if (owner && b.copiedFromId && !owner.allowCopy) return Response.json({ error: "this trader has turned copying off" }, { status: 403 });
-    }
-  }
   if (b.kind === "call") {
     // Remember the price when the call was made, for the progress bar and the "+12% from here" line.
     const fromPx = await getMids().then((m) => Number(m[b.coin.toUpperCase()] ?? 0)).catch(() => 0);
+    if (!fromPx) return Response.json({ error: "no live price for that market" }, { status: 400 });
+    if (b.side === "long" ? b.targetPx <= fromPx : b.targetPx >= fromPx) return Response.json({ error: `target has to be ${b.side === "long" ? "above" : "below"} the current price (${fromPx})` }, { status: 400 });
+    if (b.invalidPx && (b.side === "long" ? b.invalidPx >= fromPx : b.invalidPx <= fromPx)) return Response.json({ error: `invalidation has to be ${b.side === "long" ? "below" : "above"} the current price` }, { status: 400 });
+    if (new Date(b.deadline).getTime() <= Date.now()) return Response.json({ error: "deadline has to be in the future" }, { status: 400 });
     values.meta = { fromPx };
   }
   const [post] = await db.insert(schema.posts).values(values).returning();

@@ -196,7 +196,8 @@ export async function botTick() {
       const liq = roi <= -90;
       await db.update(schema.posts).set({ status: "closed", exitPx: String(mid), realizedPnl: pnl.toFixed(4), closedAt: new Date(), meta: { ...(t.meta ?? {}), closeReason: liq ? "liquidation" : stopHit ? "sl" : "manual" } }).where(eq(schema.posts.id, t.id));
       const margin = Number(t.notionalUsd) / (t.leverage ?? 1);
-      await db.update(schema.users).set({ demoBalance: Math.max(0, Number(me.demoBalance) + margin + pnl).toFixed(2) }).where(eq(schema.users.id, b.id));
+      me.demoBalance = Math.max(0, Number(me.demoBalance) + margin + pnl).toFixed(2);
+      await db.update(schema.users).set({ demoBalance: me.demoBalance }).where(eq(schema.users.id, b.id));
       if (Math.random() < b.chatty) await db.insert(schema.comments).values({ postId: t.id, userId: b.id, body: pnl >= 0 ? pick(NOTES_CLOSE_WIN) : pick(NOTES_CLOSE_LOSS) });
       if (liq) await systemPost("liquidation", `${b.handle} got perped. −$${Math.abs(pnl).toFixed(0)} on ${t.coin} ${t.leverage}× ${t.side}, liquidated at ${mid}.`, { handle: b.handle, pnl, coin: t.coin, postId: t.id }, t.coin ?? undefined);
       if (roi >= 100) await systemPost("milestone", `${b.handle} just hit ${(roi / 100 + 1).toFixed(1)}× on ${t.coin} ${t.side} and banked it.`, { handle: b.handle, roi, coin: t.coin, postId: t.id }, t.coin ?? undefined);
@@ -273,7 +274,8 @@ export async function botTick() {
       const lev = b.style === "degen" || b.style === "high" ? pickLev(b, t.coin!, maxMap) : Math.min(t.leverage ?? 2, Math.max(2, maxMap[t.coin!] ?? 20));
       const margin = pick([25, 50, 75]);
       await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin: t.coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, copiedFromId: copy ? t.id : undefined, fadedFromId: fade ? t.id : undefined, body: feud ? pick(FEUD_LINES) : fade ? pick(["Fading this. Sorry not sorry.", "Other side of this one.", "Respectfully, no."]) : pick(["Copied. Let's ride.", "In with you.", "Copied at market."]), slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
-      await db.update(schema.users).set({ demoBalance: (Number(me.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, b.id));
+      me.demoBalance = (Number(me.demoBalance) - margin).toFixed(2);
+      await db.update(schema.users).set({ demoBalance: me.demoBalance }).where(eq(schema.users.id, b.id));
       await notify(t.userId!, fade ? "faded" : "copied", `${b.handle} ${fade ? "faded" : "copied"} your ${t.coin} trade`, `$${margin * lev} at ${mid}`, `/post/${t.id}`);
       if (feud || Math.random() < 0.5) await db.insert(schema.comments).values({ postId: t.id, userId: b.id, body: feud ? pick(FEUD_LINES) : fade ? pick(["fading this 🫡", "see you on the other side", "nope"]) : pick(["copied at your entry", "in", "same read"]) });
       log.push(`${b.handle} ${fade ? "faded" : "copied"} ${other.handle} ${t.coin}`);
@@ -372,7 +374,7 @@ export async function purgeBots() {
 export async function seedRanks() {
   const rows = await db.select({ id: schema.users.id, xp: schema.users.xp, isBot: schema.users.isBot })
     .from(schema.users)
-    .where(sql`${schema.users.xp} = 0 and not exists (select 1 from xp_log x where x.user_id = ${schema.users.id})`);
+    .where(sql`${schema.users.isBot} and ${schema.users.xp} = 0 and not exists (select 1 from xp_log x where x.user_id = ${schema.users.id})`);
   let n = 0;
   for (const u of rows) {
     // Skewed: most people low-mid, a few high. Bots get the full spread so the top of the ladder isn't empty.

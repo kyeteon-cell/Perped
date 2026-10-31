@@ -13,6 +13,7 @@ import { BUILDER_CONFIGURED } from "@/lib/config";
  * Fees come from the `builderFee` field on each fill, so only fills routed through Perped count.
  */
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function GET(req: Request) {
   await ensureSchema();

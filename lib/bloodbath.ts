@@ -13,13 +13,13 @@ export async function alertBloodbath(mids: Record<string, string | number>): Pro
   const open = await db.select().from(schema.battles).where(eq(schema.battles.status, "open")).limit(300);
   if (!open.length) return 0;
   const postIds = [...new Set(open.flatMap((b) => [b.faderPostId, b.targetPostId]))];
-  const posts = await db.select({ id: schema.posts.id, side: schema.posts.side, entryPx: schema.posts.entryPx, size: schema.posts.size, leverage: schema.posts.leverage, status: schema.posts.status }).from(schema.posts).where(inArray(schema.posts.id, postIds));
+  const posts = await db.select({ id: schema.posts.id, coin: schema.posts.coin, side: schema.posts.side, entryPx: schema.posts.entryPx, size: schema.posts.size, leverage: schema.posts.leverage, status: schema.posts.status }).from(schema.posts).where(inArray(schema.posts.id, postIds));
   const P = new Map(posts.map((p) => [p.id, p]));
   const hurting: { userId: string; oppId: string; battleHref: string; roi: number; coin: string }[] = [];
   for (const b of open) {
-    const mid = Number(mids[b.coin] ?? 0); if (!mid) continue;
     for (const [postId, userId, oppId] of [[b.faderPostId, b.faderId, b.targetId], [b.targetPostId, b.targetId, b.faderId]] as const) {
       const p = P.get(postId); if (!p || p.status !== "open") continue;
+      const mid = Number(mids[p.coin ?? b.coin] ?? 0); if (!mid) continue;
       const roi = pnlForPosition(p.side as "long" | "short", Number(p.entryPx), mid, Number(p.size)).pct * (p.leverage ?? 1);
       if (roi <= BLOODBATH_ROI) hurting.push({ userId, oppId, battleHref: `/battle/${b.faderPostId}`, roi, coin: b.coin });
     }

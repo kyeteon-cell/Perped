@@ -7,6 +7,7 @@ import { getUserFillsByTime, summariseFills } from "@/lib/hl-info";
  * call stats, judgement, copied/faded counts and verification status from our tables.
  */
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function GET(req: Request) {
   await ensureSchema();
@@ -70,7 +71,7 @@ export async function GET(req: Request) {
       await db.insert(schema.stats).values(row).onConflictDoUpdate({ target: schema.stats.userId, set: row });
       await db.update(schema.users).set({ verified }).where(eq(schema.users.id, u.id));
       updated++;
-      await new Promise((r) => setTimeout(r, 120));
+      if (!u.isDemo) await new Promise((r) => setTimeout(r, 120)); // only pace the Hyperliquid calls
     } catch {
       /* skip this user this run */
     }

@@ -16,13 +16,14 @@ import { demoLiqPx } from "@/lib/format";
  * Protected by CRON_SECRET like the stats cron.
  */
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function GET(req: Request) {
-  await unjam().catch(() => 0);
-  await ensureSchema();
   const secret = process.env.CRON_SECRET;
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const mids = await getMids();
+  await unjam().catch(() => 0);
+  await ensureSchema();
+  const mids = await getMids().catch(() => ({} as Record<string, string>));
   const now = new Date();
   const px = (coin: string | null) => (coin ? Number(mids[coin] ?? 0) : 0);
   let hit = 0, missed = 0, polls = 0, duelsSettled = 0, demoClosed = 0;
@@ -39,7 +40,7 @@ export async function GET(req: Request) {
     else if (t.slPx && (up ? mid <= Number(t.slPx) : mid >= Number(t.slPx))) reason = "sl";
     else if (t.tpPx && (up ? mid >= Number(t.tpPx) : mid <= Number(t.tpPx))) reason = "tp";
     if (!reason) continue;
-    await closeTradePost(t.id, t.userId, { exitPx: reason === "liquidation" ? liq : reason === "sl" ? Number(t.slPx) : Number(t.tpPx), reason });
+    await closeTradePost(t.id, t.userId, { exitPx: reason === "liquidation" ? liq : reason === "sl" ? Number(t.slPx) : Number(t.tpPx), reason, trusted: true });
     demoClosed++;
   }
 
@@ -60,7 +61,9 @@ export async function GET(req: Request) {
     else if (invalid && (up ? p <= invalid : p >= invalid)) outcome = "missed";
     else if (c.deadline && c.deadline.getTime() <= now.getTime()) outcome = "missed";
     if (!outcome) continue;
-    await db.update(schema.posts).set({ callStatus: outcome, resolvedAt: now, resolvedPx: String(p), status: "closed" }).where(eq(schema.posts.id, c.id));
+    const [claimed] = await db.update(schema.posts).set({ callStatus: outcome, resolvedAt: now, resolvedPx: String(p), status: "closed" })
+      .where(and(eq(schema.posts.id, c.id), eq(schema.posts.callStatus, "open"))).returning({ id: schema.posts.id });
+    if (!claimed) continue; // another run already resolved it
     if (c.userId) {
       const [u] = await db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, c.userId)).limit(1);
       await notify(c.userId, outcome === "hit" ? "call_hit" : "call_missed", `Your ${c.coin} call ${outcome === "hit" ? "hit" : "missed"}`, `${target} · now ${p}`, `/post/${c.id}`);
@@ -79,6 +82,7 @@ export async function GET(req: Request) {
     let settle = poll.settle ?? null;
     if (settle) {
       const p = px(settle.coin);
+      if (!p) continue; // no price right now: try again next run instead of settling "No"
       const yes = settle.op === "gte" ? p >= settle.px : p <= settle.px;
       settle = { ...settle, winner: yes ? 0 : 1 };
     }
@@ -93,7 +97,9 @@ export async function GET(req: Request) {
     if (!p || !start) continue;
     const challengerWins = d.challengerSide === "long" ? p > start : p < start;
     const winnerId = challengerWins ? d.challengerId : d.opponentId;
-    await db.update(schema.duels).set({ status: "settled", winnerId, endPx: String(p) }).where(eq(schema.duels.id, d.id));
+    const [claimed] = await db.update(schema.duels).set({ status: "settled", winnerId, endPx: String(p) })
+      .where(and(eq(schema.duels.id, d.id), eq(schema.duels.status, "live"))).returning({ id: schema.duels.id });
+    if (!claimed) continue;
     const [w, l] = await Promise.all([
       db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, winnerId)).limit(1),
       db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, challengerWins ? d.opponentId : d.challengerId)).limit(1),
@@ -111,8 +117,8 @@ export async function GET(req: Request) {
     duelsSettled++;
   }
 
-  // Clean up any burst of battle cards (backfill settled many at once): keep the 3 newest, drop the rest.
-  await db.execute(sql`delete from posts where kind = 'system' and system_type = 'battle_settled' and id not in (select id from posts where kind = 'system' and system_type = 'battle_settled' order by created_at desc limit 3) and created_at > now() - interval '12 hours'`).catch(() => null);
+  // Clean up bursts of battle cards (a backfill settling many in the same minute): keep 3 per minute, drop the rest.
+  await db.execute(sql`delete from posts where id in (select id from (select id, row_number() over (partition by date_trunc('minute', created_at) order by created_at desc) as rn from posts where kind = 'system' and system_type = 'battle_settled' and created_at > now() - interval '12 hours') x where rn > 3)`).catch(() => null);
   await rebuildRivalries().catch(() => 0);
   // Battles (fades): make sure every fade has one, then settle the decided ones.
   await backfillBattles().catch(() => 0);

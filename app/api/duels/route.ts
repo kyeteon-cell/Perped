@@ -1,5 +1,6 @@
+import { getMids } from "@/lib/hl-info";
 import { z } from "zod";
-import { desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { notify } from "@/lib/feed";
@@ -60,11 +61,20 @@ export async function PATCH(req: Request) {
     return Response.json({ duel: u });
   }
   if (d.opponentId !== auth.privyId || d.status !== "pending") return Response.json({ error: "not found" }, { status: 404 });
+  let startPx: string | undefined;
+  if (parsed.data.action === "accept") {
+    if (d.settlesAt && new Date(d.settlesAt).getTime() <= Date.now()) return Response.json({ error: "this challenge has expired" }, { status: 409 });
+    // The start price is the live mid on the server, never one the client sends.
+    const mid = await getMids().then((m) => Number(m[d.coin] ?? 0)).catch(() => 0);
+    if (!mid) return Response.json({ error: "no live price right now, try again in a moment" }, { status: 503 });
+    startPx = String(mid);
+  }
   const [updated] = await db
     .update(schema.duels)
-    .set(parsed.data.action === "accept" ? { status: "live", opponentPostId: parsed.data.postId, startPx: parsed.data.startPx ? String(parsed.data.startPx) : undefined } : { status: "declined" })
-    .where(eq(schema.duels.id, d.id))
+    .set(parsed.data.action === "accept" ? { status: "live", opponentPostId: parsed.data.postId, startPx } : { status: "declined" })
+    .where(and(eq(schema.duels.id, d.id), eq(schema.duels.status, "pending")))
     .returning();
+  if (!updated) return Response.json({ error: "already answered" }, { status: 409 });
   await notify(d.challengerId, "duel", parsed.data.action === "accept" ? "Duel accepted" : "Duel declined", `${d.coin} · $${d.stakeUsd}`, `/duels/${d.id}`);
   return Response.json({ duel: updated });
 }

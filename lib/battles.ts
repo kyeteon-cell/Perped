@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { notify, systemPost } from "./feed";
 import { pnlForPosition } from "./format";
@@ -24,7 +24,7 @@ export async function ensureBattle(faderPostId: number) {
 export async function backfillBattles(limit = 200) {
   const missing = await db.select({ id: schema.posts.id }).from(schema.posts)
     .leftJoin(schema.battles, eq(schema.battles.faderPostId, schema.posts.id))
-    .where(and(eq(schema.posts.kind, "trade"), sql`${schema.posts.fadedFromId} is not null`, isNull(schema.battles.id))).limit(limit);
+    .where(and(eq(schema.posts.kind, "trade"), sql`${schema.posts.fadedFromId} is not null`, isNull(schema.battles.id))).orderBy(desc(schema.posts.id)).limit(limit);
   for (const m of missing) await ensureBattle(m.id);
   return missing.length;
 }
@@ -46,19 +46,23 @@ function roiOf(p: P, mid: number) {
  * A gap under 0.5% ROI is a draw.
  */
 export async function settleBattles(mids: Record<string, string | number>) {
-  const open = await db.select().from(schema.battles).where(eq(schema.battles.status, "open"));
+  const open = await db.select().from(schema.battles).where(eq(schema.battles.status, "open")).orderBy(schema.battles.id).limit(300);
+  if (!open.length) return 0;
+  const ids = [...new Set(open.flatMap((b) => [b.faderPostId, b.targetPostId]))];
+  const P = new Map((await db.select().from(schema.posts).where(inArray(schema.posts.id, ids))).map((p) => [p.id, p]));
   let settled = 0;
   for (const b of open) {
-    const [[f], [t]] = await Promise.all([
-      db.select().from(schema.posts).where(eq(schema.posts.id, b.faderPostId)).limit(1),
-      db.select().from(schema.posts).where(eq(schema.posts.id, b.targetPostId)).limit(1),
-    ]);
+    const f = P.get(b.faderPostId), t = P.get(b.targetPostId);
     if (!f || !t) continue;
-    const mid = Number(mids[b.coin] ?? 0);
-    const fr = roiOf(f, mid), tr = roiOf(t, mid);
+    // Each leg is marked at its own coin's price.
+    const fMid = Number(mids[f.coin ?? b.coin] ?? 0), tMid = Number(mids[t.coin ?? b.coin] ?? 0);
+    const mid = Math.min(fMid, tMid);
+    const fr = roiOf(f, fMid), tr = roiOf(t, tMid);
     const bothClosed = f.status === "closed" && t.status === "closed";
     const firstClose = [f.closedAt, t.closedAt].filter(Boolean).map((d) => new Date(d as Date).getTime()).sort()[0];
-    const timedOut = !bothClosed && !!firstClose && Date.now() - firstClose > DAY && mid > 0;
+    // Closed on one side for a day, or nobody closed for a week: mark at the live price.
+    const stale = Date.now() - new Date(b.createdAt as unknown as string).getTime() > 7 * DAY;
+    const timedOut = !bothClosed && mid > 0 && ((!!firstClose && Date.now() - firstClose > DAY) || stale);
     const liquidated = fr.liq || tr.liq;
     if (!bothClosed && !timedOut && !liquidated) continue;
     const reason = liquidated ? "liquidation" : bothClosed ? "both_closed" : "timeout";
@@ -88,7 +92,9 @@ export async function settleBattles(mids: Record<string, string | number>) {
     };
     const xpF = xpFor(b.faderId), xpT = xpFor(b.targetId);
 
-    await db.update(schema.battles).set({ status: "settled", winnerId, faderRoi: fr.roi.toFixed(2), targetRoi: tr.roi.toFixed(2), reason, xpFader: xpF, xpTarget: xpT, settledAt: new Date() }).where(eq(schema.battles.id, b.id));
+    const [claimed] = await db.update(schema.battles).set({ status: "settled", winnerId, faderRoi: fr.roi.toFixed(2), targetRoi: tr.roi.toFixed(2), reason, xpFader: xpF, xpTarget: xpT, settledAt: new Date() })
+      .where(and(eq(schema.battles.id, b.id), eq(schema.battles.status, "open"))).returning({ id: schema.battles.id });
+    if (!claimed) continue; // another cron run got here first
     await restampPosts([b.faderPostId, b.targetPostId]);
     await recordFight(b.faderId, b.targetId, winnerId, new Date(), { coin: b.coin, href: `/battle/${b.faderPostId}` }).catch(() => null);
     await awardXp(b.faderId, xpF, winnerId ? (winnerId === b.faderId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
