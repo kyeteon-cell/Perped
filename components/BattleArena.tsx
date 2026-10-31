@@ -101,7 +101,6 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
   const n = Math.max(candles.length, 1), cw = (W - RIGHT) / n, bw = Math.max(1.5, cw * 0.66);
   const ms = IVS[iv], t0 = candles[0]?.t ?? Date.now();
   const xOf = (t: number) => Math.max(0, Math.min(n - 1, Math.floor((t - t0) / ms))) * cw + cw / 2;
-  const pctX = (x: number) => `${(x / W) * 100}%`;
 
   // Territory: the long side profits above its entry, the short side below its entry.
   const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
@@ -144,31 +143,27 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
         </svg>
       ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 16 }} />}
 
-      {candles.length > 0 && turf && <span className="ar-turf top" style={{ color: "var(--green)" }}>{turf.L.handle}&apos;s turf</span>}
-      {candles.length > 0 && turf && <span className="ar-turf bot" style={{ color: "var(--red)" }}>{turf.S.handle}&apos;s turf</span>}
       {candles.length > 0 && (
         <div className="ar-ov">
           {inLv.map((l) => (
-            <span key={l.key} className={`ar-lv ${l.kind === "LIQ" ? "liq" : l.f.side}`} style={{ top: pctY(l.p), left: l.f === a ? "6px" : "auto", right: l.f === a ? "auto" : "4px" }}>
+            <span key={l.key} className={`ar-lv ${l.kind === "LIQ" ? "liq" : l.f.side}`} style={{ top: pctY(l.p) }}>
               <Avatar handle={l.f.handle} url={l.f.avatarUrl} size={13} link={false} />{l.kind} {fmtPrice(l.p)}
             </span>
           ))}
           {[a, b].map((f, i) => (
-            <span key={i} className={`ar-act ${f.side}`} style={{ left: pctX(xOf(ts(f.openedAt))), top: pctY(f.entry) }}>
+            <span key={i} className={`ar-act ${f.side}`} style={{ left: i === 1 && Math.abs(y(a.entry) - y(b.entry)) < 16 ? "78px" : "4px", top: pctY(f.entry) }}>
               <Avatar handle={f.handle} url={f.avatarUrl} size={16} link={false} />{f.side === "long" ? "▲ BUY" : "▼ SELL"}
             </span>
           ))}
           <span className="ar-axis now" style={{ top: pctY(px) }}>{fmtPrice(px)}</span>
-          {[a, b].map((f, i) => <span key={i} className={`ar-axis ${f.side}`} style={{ top: pctY(f.entry) }}>{fmtPrice(f.entry)}</span>)}
           <i className="ar-dot" style={{ top: pctY(px) }} />
         </div>
       )}
-      {offLv.filter((l) => l.p > top).length > 0 && <span className="ar-edges up">{offLv.filter((l) => l.p > top).map((l) => <b key={l.key} className={l.kind === "LIQ" ? "liq" : l.f.side}>{l.kind} {l.f.handle} ↑ {fmtPrice(l.p)}</b>)}</span>}
-      {offLv.filter((l) => l.p < bot).length > 0 && <span className="ar-edges down">{offLv.filter((l) => l.p < bot).map((l) => <b key={l.key} className={l.kind === "LIQ" ? "liq" : l.f.side}>{l.kind} {l.f.handle} ↓ {fmtPrice(l.p)}</b>)}</span>}
+      {offLv.filter((l) => l.p > top).length > 0 && <span className="ar-edges up">{offLv.filter((l) => l.p > top).map((l) => <b key={l.key} className={l.kind === "LIQ" ? "liq" : l.f.side}><Avatar handle={l.f.handle} url={l.f.avatarUrl} size={12} link={false} />{l.kind} ↑</b>)}</span>}
+      {offLv.filter((l) => l.p < bot).length > 0 && <span className="ar-edges down">{offLv.filter((l) => l.p < bot).map((l) => <b key={l.key} className={l.kind === "LIQ" ? "liq" : l.f.side}><Avatar handle={l.f.handle} url={l.f.avatarUrl} size={12} link={false} />{l.kind} ↓</b>)}</span>}
       <span className="tc-ivs ar-ivs" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
         {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === iv ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
       </span>
-      <div className="ar-legend"><span><i className="solid" />Entry</span><span><i className="dash" />TP</span><span><i className="dot" />SL</span><span><i className="liqd" />Liq</span></div>
     </div>
   );
 }
@@ -212,7 +207,7 @@ function RaceChart({ coin, live, a, b }: { coin: string; live: number; a: Fighte
         <span className="tc-ivs ar-ivs" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
           {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === iv ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
         </span>
-        <span className="ar-turf top" style={{ color: "var(--muted)" }}>ROI since the fade</span>
+        <span className="ar-cap">ROI since the fade</span>
       </div>
       <div className="ar-lead">
         <div className="ar-leadhead"><span>Time in the lead</span><span>{changes} lead change{changes === 1 ? "" : "s"}</span></div>
