@@ -4,6 +4,7 @@ import { chromium, devices } from "playwright";
 import { mkdirSync } from "node:fs";
 
 const BASE = process.env.BASE_URL ?? "https://perped-final.vercel.app";
+try {
 mkdirSync("smoke-out", { recursive: true });
 
 const pages = [
@@ -15,6 +16,8 @@ const pages = [
   { path: "/leaderboard", wait: "main, body", name: "leaderboard" },
 ];
 
+process.on("uncaughtException", (e) => { console.log(`::error title=SMOKE CRASH::${String(e && e.stack || e).replace(/\n/g, " | ")}`); process.exit(1); });
+process.on("unhandledRejection", (e) => { console.log(`::error title=SMOKE CRASH::${String(e && e.stack || e).replace(/\n/g, " | ")}`); process.exit(1); });
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ ...devices["iPhone 13"] });
 // Don't let the first-visit intro overlay cover every page.
@@ -69,3 +72,8 @@ try {
 await browser.close();
 if (failed) { console.log(`\n${failed} check(s) failed`); process.exit(1); }
 console.log("\nAll smoke checks passed");
+
+} catch (e) {
+  console.log(`::error title=SMOKE CRASH::${String((e && e.stack) || e).replace(/\n/g, " | ")}`);
+  process.exit(1);
+}
