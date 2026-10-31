@@ -3,7 +3,7 @@ import { db, schema } from "./db";
 import { pnlForPosition } from "./format";
 
 /** ROI (%) at which a fighter counts as "getting perped" — the Bloodbath tab threshold. */
-export const BLOODBATH_ROI = -30;
+export const BLOODBATH_ROI = -20;
 
 /**
  * "Someone you follow is getting perped": for every live battle where a fighter is at or below the Bloodbath line,

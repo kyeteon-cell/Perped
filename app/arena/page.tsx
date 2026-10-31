@@ -31,7 +31,8 @@ function readBattle(b: ArenaBattle, mid: number) {
   const worst = Math.min(a, t), loser = a <= t ? b.fader : b.target, winner = a <= t ? b.target : b.fader, gap = Math.abs(a - t);
   const high = maxLev >= 20 || notional >= 5000 || minLiq <= 10;
   const heat = Math.min(5, 1 + (maxLev >= 10 ? 1 : 0) + (maxLev >= 20 ? 1 : 0) + (maxLev >= 40 ? 1 : 0) + (minLiq < 5 ? 1 : 0));
-  const blood = worst <= -30 || hpMin <= 0.3 || gap >= 40;
+  // Loosened while volume builds: anyone clearly losing or a lopsided battle.
+  const blood = worst <= -10 || hpMin <= 0.6 || gap >= 15;
   const risk = (maxLev * Math.max(1, notional / 100)) / (minLiq + 0.5);
   return { a, t, maxLev, minLiq, closer, worst, loser, winner, gap, high, heat, blood, risk };
 }

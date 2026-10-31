@@ -39,7 +39,7 @@ export async function GET(req: Request) {
   const settled = rows.filter((b) => b.status === "settled").sort((a, b) => (b.settledAt?.getTime() ?? 0) - (a.settledAt?.getTime() ?? 0));
   const recent = settled.slice(0, 12).map(shape).filter((x): x is ArenaBattle => !!x);
   // Liquidations in the last hour stay in Bloodbath as REKT cards.
-  const rekt = settled.filter((b) => b.reason === "liquidation" && b.settledAt && Date.now() - b.settledAt.getTime() < 3_600_000).slice(0, 10).map(shape).filter((x): x is ArenaBattle => !!x);
+  const rekt = settled.filter((b) => b.reason === "liquidation" && b.settledAt && Date.now() - b.settledAt.getTime() < 6 * 3_600_000).slice(0, 10).map(shape).filter((x): x is ArenaBattle => !!x);
 
   // Current win streak per user: consecutive wins counting back from their latest settled battle.
   const byUser = new Map<string, boolean[]>(); // newest first; true = win, false = loss (draws break nothing)

@@ -1,3 +1,4 @@
+import { BOT_AVATARS } from "./share-backgrounds";
 import { and, desc, eq, gte, inArray, isNull, ne, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { fadeBlockReason } from "./fades";
@@ -12,6 +13,8 @@ export const BOTS = [
   { id: "bot:fundingfarmer", handle: "fundingfarmer", bio: "I trade the funding rate, not the chart. Calls > trades.", coins: ["BTC", "ETH", "HYPE", "XRP"], lev: [2, 5], style: "low" as const, bias: 0.5, winSkew: 0.58, chatty: 0.4, calls: 0.6, holdH: [12, 72] },
   { id: "bot:wickhunter", handle: "wickhunter", bio: "Liquidity grabs and failed breakouts. Stops always on.", coins: ["SOL", "ETH", "SUI", "LINK"], lev: [10, 25], style: "high" as const, bias: 0.45, winSkew: 0.6, chatty: 0.5, calls: 0.3, holdH: [2, 24] },
   { id: "bot:contrarian_kate", handle: "contrarian_kate", bio: "If everyone's long, I'm short. Fading is a lifestyle.", coins: ["BTC", "SOL", "DOGE"], lev: [5, 20], style: "mid" as const, bias: 0.3, winSkew: 0.52, chatty: 0.7, calls: 0.2, holdH: [4, 36], fader: true },
+  { id: "bot:bull_barry", handle: "bull_barry", bio: "Permabull. Every dip is a gift. bear_bianca has been wrong since 2017.", coins: ["BTC", "ETH", "SOL", "HYPE"], lev: [10, 30], style: "high" as const, bias: 0.85, winSkew: 0.5, chatty: 0.85, calls: 0.25, holdH: [2, 20], nemesis: "bot:bear_bianca" },
+  { id: "bot:bear_bianca", handle: "bear_bianca", bio: "Permabear. Gravity always wins. Fading bull_barry is my cardio.", coins: ["BTC", "ETH", "SOL", "HYPE"], lev: [10, 30], style: "high" as const, bias: 0.15, winSkew: 0.5, chatty: 0.85, calls: 0.25, holdH: [2, 20], nemesis: "bot:bull_barry" },
   { id: "bot:mooncat", handle: "mooncat", bio: "New here. Learning in public. Be nice.", coins: ["DOGE", "WIF", "SOL"], lev: [10, 50], style: "degen" as const, bias: 0.7, winSkew: 0.4, chatty: 0.8, calls: 0.05, holdH: [1, 12] },
 ];
 
@@ -21,6 +24,7 @@ const NOTES_CLOSE_LOSS = ["Got perped. Stop did its job.", "Wrong. Small loss, m
 const COMMENTS = ["Same setup I'm watching.", "Stop's too tight imo", "copied at your entry, pray for me", "This aged well", "fading this 🫡", "size?", "Funding says otherwise", "Nice one", "Why 5×", "respect for posting the loss", "calling it now: this reverses at the daily open", "👀"];
 
 const REPLIES_OWN = ["Still holding. Thesis unchanged.", "Fair point, but I'm sticking with it.", "Moved my stop to entry.", "If it loses the level I'm out.", "Size is small, relax.", "Told you 😌", "Yeah that one hurt.", "Reply in receipts, not comments."];
+const FEUD_LINES = ["Fading you again. You never learn.", "See you at liquidation.", "Wrong as always. Other side.", "This one's personal.", "Respectfully: you're exit liquidity.", "Your chart has crayons on it.", "I'll screenshot this one for later.", "Same mistake, different day."];
 const DUEL_LINES = ["Let's settle this on the chart.", "Put your size where your mouth is.", "You've faded me twice. Duel.", "Opposite sides, same coin, 48 hours."];
 const POLLS = [["Does BTC close the week green?", ["Yes", "No"], "BTC", "gte"], ["ETH above {px} in 3 days?", ["Yes", "No"], "ETH", "gte"], ["SOL back below {px} by Friday?", ["Yes", "No"], "SOL", "lte"]] as const;
 
@@ -61,7 +65,7 @@ const hours = (h: number) => h * 3_600_000;
 
 export async function ensureBots() {
   for (const b of BOTS) {
-    await db.insert(schema.users).values({ id: b.id, address: `0xdemo${b.handle.padEnd(35, "0").slice(0, 35)}`, handle: b.handle, bio: b.bio, avatarUrl: `/api/share-bg/bot-${b.handle}`, isDemo: true, isBot: true, demoBalance: "10000", verified: false })
+    await db.insert(schema.users).values({ id: b.id, address: `0xdemo${b.handle.padEnd(35, "0").slice(0, 35)}`, handle: b.handle, bio: b.bio, avatarUrl: BOT_AVATARS.some((x) => x.key === `bot-${b.handle}`) ? `/api/share-bg/bot-${b.handle}` : null, isDemo: true, isBot: true, demoBalance: "10000", verified: false })
       .onConflictDoNothing();
     await db.insert(schema.stats).values({ userId: b.id }).onConflictDoNothing();
   }
@@ -244,6 +248,12 @@ export async function botTick() {
       .from(schema.posts).innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
       .where(and(eq(schema.users.isBot, true), ne(schema.posts.userId, b.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), gte(schema.posts.createdAt, new Date(now - hours(3)))))
       .orderBy(sql`random()`).limit(2);
+    const nemesis = (b as { nemesis?: string }).nemesis;
+    if (nemesis) {
+      const theirs = await db.select({ id: schema.posts.id, userId: schema.posts.userId, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage })
+        .from(schema.posts).where(and(eq(schema.posts.userId, nemesis), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), gte(schema.posts.createdAt, new Date(now - hours(8))))).orderBy(desc(schema.posts.id)).limit(2);
+      botLive.unshift(...theirs.filter((t) => !botLive.some((x) => x.id === t.id)));
+    }
     for (const t of botLive) {
       const other = BOTS.find((x) => x.id === t.userId);
       if (!other || !t.coin || !t.side) continue;
@@ -251,8 +261,10 @@ export async function botTick() {
       if (!mid || Number(me.demoBalance) < 60) continue;
       const alike = similarity(b, other);
       // Mostly trades and fades: fades are common, copies rare.
-      const fade = b.fader ? Math.random() < 0.7 : Math.random() < 0.35;
-      const copy = !fade && Math.random() < alike * 0.05;
+      // Mostly trades and fades, some copies. Feuding bots fade each other on sight.
+      const feud = !!nemesis && t.userId === nemesis;
+      const fade = feud ? Math.random() < 0.9 : b.fader ? Math.random() < 0.7 : Math.random() < 0.35;
+      const copy = !feud && !fade && Math.random() < 0.12 + alike * 0.15;
       if (!fade && !copy) continue;
       const [dup] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), sql`(${schema.posts.copiedFromId} = ${t.id} or ${schema.posts.fadedFromId} = ${t.id})`)).limit(1);
       if (dup) continue;
@@ -260,10 +272,10 @@ export async function botTick() {
       const side = fade ? (t.side === "long" ? "short" : "long") : t.side;
       const lev = b.style === "degen" || b.style === "high" ? pickLev(b, t.coin!, maxMap) : Math.min(t.leverage ?? 2, Math.max(2, maxMap[t.coin!] ?? 20));
       const margin = pick([25, 50, 75]);
-      await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin: t.coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, copiedFromId: copy ? t.id : undefined, fadedFromId: fade ? t.id : undefined, body: fade ? pick(["Fading this. Sorry not sorry.", "Other side of this one.", "Respectfully, no."]) : pick(["Copied. Let's ride.", "In with you.", "Copied at market."]), slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
+      await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin: t.coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, copiedFromId: copy ? t.id : undefined, fadedFromId: fade ? t.id : undefined, body: feud ? pick(FEUD_LINES) : fade ? pick(["Fading this. Sorry not sorry.", "Other side of this one.", "Respectfully, no."]) : pick(["Copied. Let's ride.", "In with you.", "Copied at market."]), slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
       await db.update(schema.users).set({ demoBalance: (Number(me.demoBalance) - margin).toFixed(2) }).where(eq(schema.users.id, b.id));
       await notify(t.userId!, fade ? "faded" : "copied", `${b.handle} ${fade ? "faded" : "copied"} your ${t.coin} trade`, `$${margin * lev} at ${mid}`, `/post/${t.id}`);
-      if (Math.random() < 0.5) await db.insert(schema.comments).values({ postId: t.id, userId: b.id, body: fade ? pick(["fading this 🫡", "see you on the other side", "nope"]) : pick(["copied at your entry", "in", "same read"]) });
+      if (feud || Math.random() < 0.5) await db.insert(schema.comments).values({ postId: t.id, userId: b.id, body: feud ? pick(FEUD_LINES) : fade ? pick(["fading this 🫡", "see you on the other side", "nope"]) : pick(["copied at your entry", "in", "same read"]) });
       log.push(`${b.handle} ${fade ? "faded" : "copied"} ${other.handle} ${t.coin}`);
     }
 
