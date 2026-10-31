@@ -2,6 +2,7 @@
 
 import { PushPrompt } from "@/components/PushPrompt";
 import { FirstBattle } from "@/components/FirstBattle";
+import { FightNightHome } from "@/components/FightNightHome";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -87,6 +88,7 @@ export default function HomePage() {
       </div>
 
       {tab === "foryou" && <Hero onDeposit={() => setDeposit(true)} />}
+      {tab === "foryou" && <FightNightHome />}
       {tab === "foryou" && <FirstBattle rows={allPosts} />}
       {tab === "foryou" && <PushPrompt />}
       {tab === "foryou" && <QuickCall mids={mids} />}

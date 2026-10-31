@@ -5,6 +5,7 @@ import { pnlForPosition } from "./format";
 import { lossPenalty, rankFor, XP } from "./rank";
 import { awardXp } from "./xp";
 import { recordFight } from "./rivalries";
+import { FN_XP_MULT, isFightNight } from "./fightnight";
 
 const DAY = 24 * 60 * 60 * 1000;
 /** A win streak this long carries a bounty for whoever breaks it. */
@@ -95,7 +96,10 @@ export async function settleBattles(mids: Record<string, string | number>) {
       const pen = lossPenalty(lvl, myRoi.liq ? "liquidation" : "battle");
       return pen < 0 ? pen : myRoi.liq ? XP.battleLiquidatedLoss : XP.battleLoss;
     };
-    const xpF = xpFor(b.faderId), xpT = xpFor(b.targetId);
+    // Fight Night: battles that started in the hour pay double (gains only; losses cost the usual amount).
+    const fn = isFightNight(b.createdAt);
+    const boost = (x: number) => (fn && x > 0 ? x * FN_XP_MULT : x);
+    const xpF = boost(xpFor(b.faderId)), xpT = boost(xpFor(b.targetId));
 
     const [claimed] = await db.update(schema.battles).set({ status: "settled", winnerId, faderRoi: fr.roi.toFixed(2), targetRoi: tr.roi.toFixed(2), reason, xpFader: xpF, xpTarget: xpT, settledAt: new Date() })
       .where(and(eq(schema.battles.id, b.id), eq(schema.battles.status, "open"))).returning({ id: schema.battles.id });
@@ -123,7 +127,7 @@ export async function settleBattles(mids: Record<string, string | number>) {
 
     const href = `/battle/${b.faderPostId}`;
     const fmt = (r: number) => `${r >= 0 ? "+" : "−"}${Math.abs(r).toFixed(1)}%`;
-    const line = `${fu?.handle} ${fmt(fr.roi)} vs ${tu?.handle} ${fmt(tr.roi)}`;
+    const line = `${fu?.handle} ${fmt(fr.roi)} vs ${tu?.handle} ${fmt(tr.roi)}${fn ? " · 🥊 Fight Night 2× XP" : ""}`;
     if (!winnerId) {
       for (const id of [b.faderId, b.targetId]) await notify(id, "battle", `Battle drawn on ${b.coin}`, `${line} · +${XP.battleDraw} XP`, href);
     } else {

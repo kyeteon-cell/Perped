@@ -1149,3 +1149,21 @@ body { letter-spacing: -.005em; }
 .fightnight { text-decoration: none; display: inline-flex; align-items: center; }
 #fight-night { scroll-margin-top: 80px; }
 #fight-night:target { background: var(--gold-soft); border-radius: 12px; padding: 8px 10px; transition: background 1s; }
+
+/* Fight Night */
+.fnh { margin: 12px 14px 0; padding: 14px; border-radius: 22px; color: #fff; position: relative; overflow: hidden; isolation: isolate; background: radial-gradient(80% 120% at 100% 0%, rgba(242,182,58,.35), transparent 60%), linear-gradient(160deg, #1b1d22, #0b0c0e 70%); box-shadow: 0 0 0 1px rgba(242,182,58,.35), 0 18px 40px -24px rgba(242,182,58,.6); }
+.fnh.live { box-shadow: 0 0 0 1.5px #f2b63a, 0 18px 44px -20px rgba(242,182,58,.85); }
+.fnh-top { display: flex; align-items: center; gap: 8px; }
+.fnh-tag { font-size: 12px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.fnh.live .fnh-tag { color: #f2b63a; }
+.fnh-x { font-size: 11px; font-weight: 900; color: #2a1c00; background: linear-gradient(180deg, #ffd98a, #f2b63a 55%, #c98a05); padding: 2px 8px; border-radius: 999px; animation: nempulse 2s ease-in-out infinite; }
+.fnh-t { margin-left: auto; font-size: 12px; font-weight: 800; color: rgba(255,255,255,.75); font-family: var(--font-mono), "Barlow", sans-serif; }
+.fnh-p { font-size: 13px; color: rgba(255,255,255,.8); margin-top: 8px; }
+.fnh-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.fnh-row { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 14px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); color: #fff; text-decoration: none; font-size: 13px; min-width: 0; }
+.fnh-row b { max-width: 26%; } .fnh-row .when { color: rgba(255,255,255,.7); }
+.fnh-vs { font-weight: 900; font-style: italic; color: rgba(255,255,255,.55); font-size: 12px; }
+.fnh-cta { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 900; color: #f2b63a; text-decoration: none; }
+.fn-badge { display: inline-block; margin: -2px 0 8px; font-size: 10.5px; font-weight: 900; color: #2a1c00; background: linear-gradient(180deg, #ffd98a, #f2b63a 55%, #c98a05); padding: 2px 9px; border-radius: 999px; }
+.fn-banner { margin: 10px 14px 0; padding: 10px 14px; border-radius: 16px; text-align: center; font-size: 13px; font-weight: 900; color: #2a1c00; background: linear-gradient(180deg, #ffd98a, #f2b63a 55%, #c98a05); box-shadow: 0 10px 24px -14px rgba(242,182,58,.9); }
+@media (prefers-reduced-motion: reduce) { .fnh-x { animation: none; } }

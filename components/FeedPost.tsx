@@ -523,9 +523,9 @@ function SystemPost({ item, onChanged }: Props) {
   }
 
   const isLiq = t === "liquidation";
-  const tint = isLiq ? "tint-red" : t === "settled" ? "tint-green" : t === "milestone" || t === "bounty" ? "tint-gold" : "tint-brand";
+  const tint = isLiq ? "tint-red" : t === "settled" ? "tint-green" : t === "milestone" || t === "bounty" || t === "fightnight" ? "tint-gold" : "tint-brand";
   const icon = isLiq ? I.bolt : t === "milestone" || t === "bounty" ? I.trophy : t === "settled" ? I.list : I.markets;
-  const title = isLiq ? "Liquidation" : t === "bounty" ? "💰 Bounty claimed" : t === "milestone" ? "Milestone" : t === "settled" ? "Settled" : t === "rank" ? "Leaderboard" : "Perped";
+  const title = isLiq ? "Liquidation" : t === "fightnight" ? "🥊 Fight Night" : t === "bounty" ? "💰 Bounty claimed" : t === "milestone" ? "Milestone" : t === "settled" ? "Settled" : t === "rank" ? "Leaderboard" : "Perped";
   return (
     <article className={`post alert ${tint}`}>
       <div className="flex items-center gap-3">

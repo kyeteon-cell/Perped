@@ -176,7 +176,7 @@ export default function HowItWorks() {
           <li><b>REKT and Revenge:</b> liquidations stay in Bloodbath for six hours as tombstones. <b>🩸 Revenge</b> quick-fades the winner&rsquo;s newest open trade; if they have none, they become your nemesis and you&rsquo;re pinged when they next trade. The <b>kill feed</b> lists the last day&rsquo;s liquidations.</li>
           <li><b>Body count:</b> this week&rsquo;s 🗡 Butcher (most people perped) and 🪦 Most rekt.</li>
           <li><b>Last stand:</b> if you&rsquo;re 20% down in a battle you get one alert: cut it, or double down. Your followers get one too.</li>
-          <li id="fight-night"><b>🥊 Fight Night:</b> every night from 9 to 10pm Bangkok time (14:00–15:00 UTC), the hour everyone piles into the Arena at once. Bring your trades, fade the loudest calls, call out your nemesis. The countdown in the Arena header turns gold and reads LIVE for the hour.</li>
+          <li id="fight-night"><b>🥊 Fight Night:</b> every night from 9 to 10pm Bangkok time (14:00–15:00 UTC), the hour everyone piles into the Arena at once. <b>Every battle that starts inside the hour pays double XP</b> to whoever earns XP from it (losses still cost the usual amount). When it opens you get an alert (and a phone push if alerts are on), Home shows the three biggest live battles with nemesis matches first, and the countdown in the Arena header turns gold and reads LIVE. An hour before, Home shows a countdown so you can line up your fades.</li>
           <li><b>Side with / Run it back:</b> on a live battle you&rsquo;re watching, Side with copies either fighter in one tap. On a battle you just finished, Run it back (or Revenge) quick-fades your opponent&rsquo;s next trade.</li>
         </ul>
       </section>

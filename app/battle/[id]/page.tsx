@@ -12,6 +12,7 @@ import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip, RankEmblem }
 import { rankFor } from "@/lib/rank";
 import { BattleArena, type Fighter } from "@/components/BattleArena";
 import { RevengeButton } from "@/components/Bloodbath";
+import { isFightNight } from "@/lib/fightnight";
 import { QuickTrade, legItem } from "@/components/QuickTrade";
 import type { Post, Stats } from "@/lib/schema";
 
@@ -98,6 +99,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   return (
     <div className="fade-in pb-8" data-tint="violet">
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Nemesis match" : "Battle"}</div><span className="w-9" /></header>
+      {live && isFightNight(fade.createdAt) && <div className="fn-banner">🥊 Fight Night battle · winner earns 2× XP</div>}
       {nemesis && (
         <div className="nem-banner">
           <span className="nem-tag">☠ Nemesis</span>

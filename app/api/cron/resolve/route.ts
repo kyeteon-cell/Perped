@@ -6,6 +6,7 @@ import { closeTradePost } from "@/lib/trades";
 import { backfillBattles, backfillBattleStamps, settleBattles } from "@/lib/battles";
 import { alertBloodbath } from "@/lib/bloodbath";
 import { syncRealPositions } from "@/lib/realsync";
+import { fightNightKickoff } from "@/lib/fightnight-server";
 import { awardXp } from "@/lib/xp";
 import { rebuildRivalries, recordFight } from "@/lib/rivalries";
 import { lossPenalty, rankFor, XP } from "@/lib/rank";
@@ -128,8 +129,9 @@ export async function GET(req: Request) {
   const battles = await settleBattles(mids).catch(() => 0);
   await backfillBattleStamps().catch(() => 0);
   const bloodbath = await alertBloodbath(mids).catch(() => 0);
+  const fightNight = await fightNightKickoff().catch(() => 0);
 
-  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, realSynced, battles, bloodbath, at: now.toISOString() });
+  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, realSynced, battles, bloodbath, fightNight, at: now.toISOString() });
 }
 
 // keep isNull imported for future invalidation-by-candle checks
