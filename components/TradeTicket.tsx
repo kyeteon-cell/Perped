@@ -69,9 +69,9 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     if (isDemo || !address || !BUILDER_CONFIGURED) return setApproved(true);
     getMaxBuilderFee(address, BUILDER_ADDRESS).then((f) => setApproved(f >= fee.tenthsBps));
   }, [address, fee.tenthsBps]);
-  // Fades default to an automatic 5% stop.
+  // Fades default to an automatic stop at −10% on the margin (price move of 10% ÷ leverage).
   const slSeeded = useRef(false);
-  useEffect(() => { if (isFade && mid && !sl && !slSeeded.current) { slSeeded.current = true; setSl((side === "long" ? mid * 0.95 : mid * 1.05).toFixed(market?.szDecimals ? 6 - market.szDecimals : 2)); } }, [isFade, mid, side, sl, market]);
+  useEffect(() => { if (isFade && mid && !sl && !slSeeded.current) { slSeeded.current = true; setSl((side === "long" ? mid * (1 - 0.1 / Math.max(1, lev)) : mid * (1 + 0.1 / Math.max(1, lev))).toFixed(market?.szDecimals ? 6 - market.szDecimals : 2)); } }, [isFade, mid, side, sl, market, lev]);
 
   const refPx = orderType === "limit" && Number(limitPx) > 0 ? Number(limitPx) : mid;
   const notional = usd * lev;

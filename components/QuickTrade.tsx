@@ -29,7 +29,7 @@ export function QuickTrade({ item, mode, onClose }: { item: FeedRow; mode: "copy
           <CoinMark coin={post.coin!} size="sm" />
         </div>
         <TradeTicket key={mode} seed={seed} compact quick onDone={onClose} />
-        <p className="faint px-5 pb-2 text-center text-[11px]">{mode === "fade" ? `Same ${post.leverage}× leverage, opposite side, 5% stop. You land straight in the battle. ` : "Want limit orders, TP/SL or a note? "}<a href={`/trade?${mode}=${post.id}`} className="underline">Open the full ticket</a></p>
+        <p className="faint px-5 pb-2 text-center text-[11px]">{mode === "fade" ? `Same ${post.leverage}× leverage, opposite side, stop loss at −10%. You land straight in the battle. ` : "Want limit orders, TP/SL or a note? "}<a href={`/trade?${mode}=${post.id}`} className="underline">Open the full ticket</a></p>
     </Sheet>
   );
 }
