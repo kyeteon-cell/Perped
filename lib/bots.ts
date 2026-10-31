@@ -164,7 +164,7 @@ export async function botTick() {
       if (Math.random() < b.chatty * 0.3) await db.insert(schema.comments).values({ postId: hp.id, userId: b.id, body: pick(COMMENTS) });
       if (hp.kind === "trade" && hp.status === "open" && hp.coin && hp.side && Math.random() < 0.25) {
         const mid = Number(mids[hp.coin] ?? 0);
-        const wantFade = b.fader ? Math.random() < 0.7 : Math.random() < 0.25;
+        const wantFade = b.fader ? Math.random() < 0.85 : Math.random() < 0.6;
         const fade = wantFade && !(await fadeBlockReason(b.id, hp.id));
         const [dupHuman] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), sql`(${schema.posts.copiedFromId} = ${hp.id} or ${schema.posts.fadedFromId} = ${hp.id})`)).limit(1);
         if (mid && !dupHuman && (fade || !wantFade)) {
@@ -243,15 +243,16 @@ export async function botTick() {
     const botLive = await db.select({ id: schema.posts.id, userId: schema.posts.userId, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage })
       .from(schema.posts).innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
       .where(and(eq(schema.users.isBot, true), ne(schema.posts.userId, b.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), gte(schema.posts.createdAt, new Date(now - hours(3)))))
-      .orderBy(sql`random()`).limit(1);
+      .orderBy(sql`random()`).limit(2);
     for (const t of botLive) {
       const other = BOTS.find((x) => x.id === t.userId);
       if (!other || !t.coin || !t.side) continue;
       const mid = Number(mids[t.coin] ?? 0);
       if (!mid || Number(me.demoBalance) < 60) continue;
       const alike = similarity(b, other);
-      const fade = b.fader ? Math.random() < 0.45 : Math.random() < 0.08;
-      const copy = !fade && Math.random() < alike * 0.2;
+      // Mostly trades and fades: fades are common, copies rare.
+      const fade = b.fader ? Math.random() < 0.7 : Math.random() < 0.35;
+      const copy = !fade && Math.random() < alike * 0.05;
       if (!fade && !copy) continue;
       const [dup] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, b.id), sql`(${schema.posts.copiedFromId} = ${t.id} or ${schema.posts.fadedFromId} = ${t.id})`)).limit(1);
       if (dup) continue;
