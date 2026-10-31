@@ -723,3 +723,7 @@ body { letter-spacing: -.005em; }
 /* Headings */
 .h1 { letter-spacing: -.03em; }
 .eyebrow { letter-spacing: .08em; }
+
+/* Feed cards: keep Copy / Fade coloured (".acts button" was clearing their background) */
+.acts .copy { background: linear-gradient(180deg, #2ff0a8 0%, #05e091 45%, #03c47e 100%); color: #04130d; }
+.acts .fade { background: linear-gradient(180deg, #ff8a8e 0%, #fd6267 45%, #e5484d 100%); color: #fff; }
