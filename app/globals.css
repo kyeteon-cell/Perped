@@ -1167,3 +1167,6 @@ body { letter-spacing: -.005em; }
 .fn-badge { display: inline-block; margin: -2px 0 8px; font-size: 10.5px; font-weight: 900; color: #2a1c00; background: linear-gradient(180deg, #ffd98a, #f2b63a 55%, #c98a05); padding: 2px 9px; border-radius: 999px; }
 .fn-banner { margin: 10px 14px 0; padding: 10px 14px; border-radius: 16px; text-align: center; font-size: 13px; font-weight: 900; color: #2a1c00; background: linear-gradient(180deg, #ffd98a, #f2b63a 55%, #c98a05); box-shadow: 0 10px 24px -14px rgba(242,182,58,.9); }
 @media (prefers-reduced-motion: reduce) { .fnh-x { animation: none; } }
+
+/* Nav: near-solid frosted glass so the content behind (green/red buttons) doesn't tint it. */
+.nav { background: color-mix(in srgb, var(--surface) 94%, transparent) !important; backdrop-filter: blur(24px) saturate(100%) !important; -webkit-backdrop-filter: blur(24px) saturate(100%) !important; box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 12px 32px -14px rgba(15,16,18,.35), 0 0 0 1px var(--line) !important; border-color: transparent !important; }
