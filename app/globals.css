@@ -452,8 +452,8 @@ html { scroll-behavior: smooth; }
 /* ---------- Ranks ---------- */
 .rank-chip { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; padding: 2px 8px 2px 2px; border-radius: 999px; font-size: 11px; font-weight: 800; vertical-align: middle; background: var(--surface); color: var(--text); border: 1px solid var(--line); }
 .rank-chip.compact { padding: 0; margin-left: 5px; border: 0; background: none; }
-.rank-em { border-radius: 50%; object-fit: cover; display: block; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
-.rank-big { border-radius: 50%; object-fit: cover; display: block; box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 2px var(--line); }
+.rank-em { border-radius: 50%; overflow: hidden; flex-shrink: 0; object-fit: cover; display: block; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.rank-big { border-radius: 50%; overflow: hidden; flex-shrink: 0; object-fit: cover; display: block; box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 2px var(--line); }
 .rank-big.lv7, .rank-big.lv8 { box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 2px var(--gold), 0 0 18px rgba(242,182,58,.35); }
 .rank-big.lv6 { box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 2px var(--red); }
 .rank-big.lv5 { box-shadow: 0 8px 24px -8px rgba(0,0,0,.8), 0 0 0 2px var(--green); }
@@ -1114,7 +1114,7 @@ body { letter-spacing: -.005em; }
 .im-pit .crack { opacity: .6; text-decoration: line-through; text-decoration-color: var(--red); }
 .im-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .im-acts span { text-align: center; font-size: 12.5px; font-weight: 900; padding: 8px; border-radius: 12px; border: 1px solid var(--line); }
 .im-acts .fin { color: #fff; border-color: transparent; background: linear-gradient(180deg, #ff8a8e, #fd6267 45%, #c9353a); }
-.im-ranks { display: flex; justify-content: space-between; } .im-ranks img { width: 46px; height: 46px; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(0,0,0,.3)); }
+.im-ranks { display: flex; justify-content: space-between; } .im-ranks img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; box-shadow: 0 3px 8px rgba(0,0,0,.3), 0 0 0 2px var(--line); }
 .im-bounty { font-size: 11px; font-weight: 900; color: #2a1c00; background: linear-gradient(180deg, #ffd98a, #f2b63a 55%, #c98a05); padding: 3px 9px; border-radius: 999px; }
 .im-fn { font-size: 11px; font-weight: 800; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .intro-slide, .intro-overlay, .im-hp span i.r, .im-hp span.bleed::after { animation: none; } }
