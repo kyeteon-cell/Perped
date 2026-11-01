@@ -21,7 +21,7 @@ import type { ReactNode } from "react";
 type Leg = ArenaBattle["faderLeg"];
 const liqPx = (l: Leg) => (l.leverage > 1 ? (l.side === "long" ? l.entryPx * (1 - 1 / l.leverage) : l.entryPx * (1 + 1 / l.leverage)) : null);
 const liqDist = (l: Leg, mid: number) => { const q = liqPx(l); return q && mid ? Math.abs((mid - q) / mid) * 100 : 100; };
-type Tab = "all" | "nemesis" | "high" | "following" | "blood";
+type Tab = "all" | "nemesis" | "high" | "following" | "glad" | "blood";
 /** Everything the tabs need about one battle, at the live price. */
 function readBattle(b: ArenaBattle, mid: number) {
   const settled = b.status === "settled";
@@ -253,7 +253,7 @@ export default function ArenaPage() {
   );
 }
 
-/** Live battles split four ways: All · High stakes · Following · Bloodbath. */
+/** Live battles by tab: All · Following · Vendettas · High stakes · Gladiators · Bloodbath. */
 function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, number>; me: string | null }) {
   const [tab, setTab] = useState<Tab>("all");
   const { set: follow } = useFollowing();
@@ -265,18 +265,23 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   const followed = (b: ArenaBattle) => follow.has(b.fader.handle) || follow.has(b.target.handle) || rivals.has(b.fader.handle) || rivals.has(b.target.handle);
   const high = rows.filter((x) => x.r.high).sort((x, y) => y.r.risk - x.r.risk);
   const fol = rows.filter((x) => mine(x.b) || followed(x.b)).sort((x, y) => Number(mine(y.b)) - Number(mine(x.b)) || +new Date(y.b.createdAt) - +new Date(x.b.createdAt));
-  const blood = rows.filter((x) => x.r.blood).sort((x, y) => y.r.gap - x.r.gap);
+  // Gladiators: one side is already out (stopped, liquidated or banked) and the other is still in the trade.
+  // They get their own tab so the Bloodbath stays about fights that are still two-sided.
+  const solo = (b: ArenaBattle) => (b.faderLeg.status === "open") !== (b.targetLeg.status === "open");
+  const glad = rows.filter((x) => solo(x.b)).sort((x, y) => +new Date(y.b.createdAt) - +new Date(x.b.createdAt));
+  const blood = rows.filter((x) => x.r.blood && !solo(x.b)).sort((x, y) => y.r.gap - x.r.gap);
   const rekt = (data.rekt ?? []).map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) }));
   const tabs: { k: Tab; icon: ReactNode; short: string; n: number }[] = [
     { k: "all", icon: <Glyph n="bolt" />, short: "All", n: rows.length },
     { k: "following", icon: <Glyph n="people" />, short: "Following", n: fol.length },
     { k: "nemesis", icon: <Glyph n="skull" />, short: "Vendettas", n: nem.length },
     { k: "high", icon: <Glyph n="flame" />, short: "High stakes", n: high.length },
+    { k: "glad", icon: <Glyph n="swords" />, short: "Gladiators", n: glad.length },
     { k: "blood", icon: <Glyph n="drop" />, short: "Bloodbath", n: blood.length + rekt.length },
   ];
   const flames = (n: number) => <span className="flames">{Array.from({ length: n }, (_, i) => <Glyph key={i} n="flame" tone="gold" />)}</span>;
   const tag = (b: ArenaBattle) => mine(b) ? "your fade" : rivals.has(b.fader.handle) ? `your rival ${b.fader.handle}` : rivals.has(b.target.handle) ? `your rival ${b.target.handle}` : follow.has(b.fader.handle) ? `you follow ${b.fader.handle}` : follow.has(b.target.handle) ? `you follow ${b.target.handle}` : "";
-  const list = tab === "all" ? rows : tab === "nemesis" ? nem : tab === "high" ? high : tab === "following" ? fol : blood;
+  const list = tab === "all" ? rows : tab === "nemesis" ? nem : tab === "high" ? high : tab === "following" ? fol : tab === "glad" ? glad : blood;
   return (
     <section className="block">
       <div className="flex items-center justify-between"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Live fades</span><span className="when">{rows.length} live</span></div>
@@ -302,10 +307,14 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
           <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={
             tab === "high" ? <><span>{flames(r.heat)}</span><b className="mono">{b.faderLeg.leverage}× vs {b.targetLeg.leverage}×</b>{r.minLiq < 50 && <span className="ab-warn">{r.closer.handle} liq in {r.minLiq.toFixed(1)}%</span>}</>
             : tab === "blood" ? <><Glyph n="skull" tone="blood" /><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted"><span className="gl">{r.winner.handle}<Glyph n="crown" tone="gold" /></span></span></>
+            : tab === "glad" ? (() => {
+                const fIn = b.faderLeg.status === "open", s = fIn ? b.fader : b.target, o = fIn ? b.target : b.fader, sr = fIn ? r.a : r.t, or = fIn ? r.t : r.a;
+                return <><Glyph n="swords" /><b>{s.handle}</b><span>still in</span><b className={`mono ${sr >= 0 ? "green" : "red"}`}>{fmtPct(sr, 1)}</b><span className="ml-auto muted">{o.handle} out at <b className={`mono ${or >= 0 ? "green" : "red"}`}>{fmtPct(or, 1)}</b></span></>;
+              })()
             : tab === "following" && tag(b) ? <span className="ab-tag">{tag(b)}</span>
             : undefined
           } />
-          {tab === "blood" && <div className="bb-under"><FinishSave b={b} winner={r.winner} loser={r.loser} /></div>}
+          {(tab === "blood" || tab === "glad") && <div className="bb-under"><FinishSave b={b} winner={r.winner} loser={r.loser} /></div>}
           </div>
         ))}
         {tab === "blood" && <BodyCount board={data.board} />}
@@ -317,7 +326,7 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
                 <div key={s.user.id} className="flex items-center gap-2.5"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={30} /><span className="flex-1 truncate text-[14px] font-bold">{s.user.handle}<span className="when ml-1.5 gl"><Glyph n="flame" tone="gold" />{s.streak} streak</span></span><FollowButton handle={s.user.handle} compact /></div>
               ))}</div>
             </div>
-          ) : <p className="muted text-sm">{tab === "high" ? "No high-stakes fades right now. Nobody's above 20× or near liquidation." : tab === "blood" ? "No bloodbaths right now. Everyone's still standing." : tab === "nemesis" ? "No vendettas running right now. A vendetta is a feud between two traders who have fought each other more than anyone else, or where one called the other out." : "No fades running. Fade a trade in the feed to start one."}</p>
+          ) : <p className="muted text-sm">{tab === "high" ? "No high-stakes fades right now. Nobody's above 20× or near liquidation." : tab === "blood" ? "No bloodbaths right now. Everyone's still standing." : tab === "glad" ? "No gladiators right now. When one side of a fade gets stopped out and the other is still in the trade, it shows up here." : tab === "nemesis" ? "No vendettas running right now. A vendetta is a feud between two traders who have fought each other more than anyone else, or where one called the other out." : "No fades running. Fade a trade in the feed to start one."}</p>
         )}
       </div>
     </section>

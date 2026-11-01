@@ -1516,3 +1516,9 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 :root { --chrome: #8d97a3; --chrome-hi: #e9edf2; --chrome-lo: #9aa4b0; --chrome-fg: #1b2129; }
 :root[data-theme="dark"], :root:not([data-theme="light"]).dark-system { --chrome: #b9c1cb; --chrome-hi: #f1f4f7; --chrome-lo: #8e98a4; --chrome-fg: #12161b; }
 .tc-tag.now.chrome, .ar-axis.now { background: linear-gradient(180deg, var(--chrome-hi), var(--chrome-lo)); color: var(--chrome-fg); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 2px rgba(0,0,0,.18); }
+
+/* Six arena tabs in one bar. Gladiators wears the chrome. */
+.alevels { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; }
+.alv-l { font-size: 9.5px; letter-spacing: -.01em; }
+.alv.lv-glad.on { color: var(--chrome-fg); background: linear-gradient(180deg, var(--chrome-hi), var(--chrome-lo)); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 8px 18px -10px rgba(0,0,0,.5); }
+.alv.lv-glad:not(.on) .alv-ic { color: var(--chrome); }
