@@ -5,7 +5,7 @@ import { getAuth } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 type Mini = { id: string; handle: string; avatarUrl: string | null; xp: number };
-type Leg = { postId: number; side: "long" | "short"; entryPx: number; size: number; leverage: number; status: string; exitPx: number | null };
+type Leg = { postId: number; side: "long" | "short"; entryPx: number; size: number; leverage: number; status: string; exitPx: number | null; slPx: number | null; tpPx: number | null; openedAt: string | null };
 export type ArenaBattle = { id: number; faderPostId: number; coin: string; status: "open" | "settled"; winnerId: string | null; fader: Mini; target: Mini; faderLeg: Leg; targetLeg: Leg; faderRoi: number | null; targetRoi: number | null; settledAt: string | null; createdAt: string; reason: string | null; nemesis?: Nemesis | null };
 /** Set when the two fighters are sworn rivals (an active rivalry): the series so far, from the fader's side. */
 export type Nemesis = { fights: number; faderWins: number; targetWins: number; draws: number; meeting: number };
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
   const postIds = [...new Set(rows.flatMap((b) => [b.faderPostId, b.targetPostId]))];
   const [users, posts] = await Promise.all([
     userIds.length ? db.select({ id: schema.users.id, handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, xp: schema.users.xp }).from(schema.users).where(inArray(schema.users.id, userIds)) : Promise.resolve([] as Mini[]),
-    postIds.length ? db.select({ id: schema.posts.id, side: schema.posts.side, entryPx: schema.posts.entryPx, size: schema.posts.size, leverage: schema.posts.leverage, status: schema.posts.status, exitPx: schema.posts.exitPx }).from(schema.posts).where(inArray(schema.posts.id, postIds)) : Promise.resolve([]),
+    postIds.length ? db.select({ id: schema.posts.id, side: schema.posts.side, entryPx: schema.posts.entryPx, size: schema.posts.size, leverage: schema.posts.leverage, status: schema.posts.status, exitPx: schema.posts.exitPx, slPx: schema.posts.slPx, tpPx: schema.posts.tpPx, createdAt: schema.posts.createdAt }).from(schema.posts).where(inArray(schema.posts.id, postIds)) : Promise.resolve([]),
   ]);
   const U = new Map(users.map((u) => [u.id, u as Mini]));
   // Active rivalries among these fighters: those battles are nemesis matches.
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
     return { fights: r.fights, faderWins: fIsA ? r.aWins : r.bWins, targetWins: fIsA ? r.bWins : r.aWins, draws: r.draws, meeting: r.fights + 1 };
   };
   const P = new Map(posts.map((p) => [p.id, p]));
-  const leg = (id: number): Leg => { const p = P.get(id); return { postId: id, side: (p?.side ?? "long") as "long" | "short", entryPx: Number(p?.entryPx ?? 0), size: Number(p?.size ?? 0), leverage: p?.leverage ?? 1, status: p?.status ?? "closed", exitPx: p?.exitPx ? Number(p.exitPx) : null }; };
+  const leg = (id: number): Leg => { const p = P.get(id); return { postId: id, side: (p?.side ?? "long") as "long" | "short", entryPx: Number(p?.entryPx ?? 0), size: Number(p?.size ?? 0), leverage: p?.leverage ?? 1, status: p?.status ?? "closed", exitPx: p?.exitPx ? Number(p.exitPx) : null, slPx: p?.slPx ? Number(p.slPx) : null, tpPx: p?.tpPx ? Number(p.tpPx) : null, openedAt: p?.createdAt ? new Date(p.createdAt).toISOString() : null }; };
   const shape = (b: typeof rows[number]): ArenaBattle | null => {
     const f = U.get(b.faderId), t = U.get(b.targetId);
     if (!f || !t) return null;
