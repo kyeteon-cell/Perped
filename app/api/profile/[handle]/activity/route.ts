@@ -13,6 +13,12 @@ export type ActivityItem = {
   roi?: number | null;
   won?: boolean | null;
   who?: string | null; // the other person, when there is one
+  whoAvatar?: string | null;
+  lev?: number | null;
+  reason?: string | null; // close: tp | sl | liquidation | manual
+  mine?: number | null; theirs?: number | null; // battle ROIs
+  status?: string | null; // call: open | hit | missed
+  body?: string | null; // post / poll / comment text
 };
 
 /** GET /api/profile/:handle/activity → one chronological stream of everything this trader did. */
@@ -34,21 +40,21 @@ export async function GET(_req: Request, ctx: { params: Promise<{ handle: string
       const lev = p.leverage ?? 1, entry = Number(p.entryPx);
       const who = authorOf(p.copiedFromId ?? p.fadedFromId);
       const verb = p.fadedFromId ? "fade" : p.copiedFromId ? "copy" : "open";
-      items.push({ type: verb, at: p.createdAt.toISOString(), coin: p.coin, side: p.side as "long" | "short", who, href,
+      items.push({ type: verb, at: p.createdAt.toISOString(), coin: p.coin, side: p.side as "long" | "short", who, href, lev,
         text: verb === "fade" ? `Faded ${who ?? "a trade"} · ${p.side} ${p.coin} ${lev}×` : verb === "copy" ? `Copied ${who ?? "a trade"} · ${p.side} ${p.coin} ${lev}×` : `Opened ${p.side} ${p.coin} ${lev}×` });
       if (p.status === "closed" && p.closedAt) {
         const exit = Number(p.exitPx ?? entry);
         const roi = ((exit - entry) / entry) * 100 * (p.side === "long" ? 1 : -1) * lev;
         const reason = (p.meta as { closeReason?: string } | null)?.closeReason;
-        items.push({ type: "close", at: p.closedAt.toISOString(), coin: p.coin, side: p.side as "long" | "short", roi, href,
+        items.push({ type: "close", at: p.closedAt.toISOString(), coin: p.coin, side: p.side as "long" | "short", roi, href, lev, reason: reason ?? "manual",
           text: `${reason === "liquidation" ? "Liquidated on" : reason === "tp" ? "Take profit on" : reason === "sl" ? "Stopped out of" : "Closed"} ${p.side} ${p.coin} ${lev}× · ${roi >= 0 ? "+" : ""}${roi.toFixed(1)}%` });
       }
     } else if (p.kind === "call") {
-      items.push({ type: "call", at: p.createdAt.toISOString(), coin: p.coin, side: p.side as "long" | "short", href, text: `Called ${p.coin} ${p.side === "long" ? "higher" : "lower"}${p.callStatus && p.callStatus !== "open" ? ` · ${p.callStatus}` : ""}` });
+      items.push({ type: "call", at: p.createdAt.toISOString(), coin: p.coin, side: p.side as "long" | "short", href, status: p.callStatus ?? "open", text: `Called ${p.coin} ${p.side === "long" ? "higher" : "lower"}${p.callStatus && p.callStatus !== "open" ? ` · ${p.callStatus}` : ""}` });
     } else if (p.kind === "poll") {
-      items.push({ type: "poll", at: p.createdAt.toISOString(), href, text: `Asked: ${p.body ?? ""}` });
+      items.push({ type: "poll", at: p.createdAt.toISOString(), href, body: p.body, text: `Asked: ${p.body ?? ""}` });
     } else if (p.kind === "text") {
-      items.push({ type: "post", at: p.createdAt.toISOString(), coin: p.coin, href, text: p.body ?? "" });
+      items.push({ type: "post", at: p.createdAt.toISOString(), coin: p.coin, href, body: p.body, text: p.body ?? "" });
     }
   }
 
@@ -62,7 +68,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ handle: string
     if (b.status === "settled" && b.settledAt) {
       const won = b.winnerId ? b.winnerId === u.id : null;
       const my = Number(b.faderId === u.id ? b.faderRoi : b.targetRoi), their = Number(b.faderId === u.id ? b.targetRoi : b.faderRoi);
-      items.push({ type: "battle", at: b.settledAt.toISOString(), coin: b.coin, won, who: opp, href, text: won === true ? `Perped ${opp} on ${b.coin} · ${my >= 0 ? "+" : ""}${my.toFixed(1)}% vs ${their >= 0 ? "+" : ""}${their.toFixed(1)}%` : won === false ? `Perped by ${opp} on ${b.coin} · ${my >= 0 ? "+" : ""}${my.toFixed(1)}% vs ${their >= 0 ? "+" : ""}${their.toFixed(1)}%` : `Drew with ${opp} on ${b.coin}` });
+      items.push({ type: "battle", at: b.settledAt.toISOString(), coin: b.coin, won, who: opp, href, mine: my, theirs: their, text: won === true ? `Perped ${opp} on ${b.coin} · ${my >= 0 ? "+" : ""}${my.toFixed(1)}% vs ${their >= 0 ? "+" : ""}${their.toFixed(1)}%` : won === false ? `Perped by ${opp} on ${b.coin} · ${my >= 0 ? "+" : ""}${my.toFixed(1)}% vs ${their >= 0 ? "+" : ""}${their.toFixed(1)}%` : `Drew with ${opp} on ${b.coin}` });
     } else {
       items.push({ type: "battle", at: b.createdAt.toISOString(), coin: b.coin, won: null, who: opp, href, text: `Fade live vs ${opp} on ${b.coin}` });
     }
@@ -72,12 +78,20 @@ export async function GET(_req: Request, ctx: { params: Promise<{ handle: string
   const comments = await db.select({ id: schema.comments.id, postId: schema.comments.postId, body: schema.comments.body, createdAt: schema.comments.createdAt, onHandle: schema.users.handle })
     .from(schema.comments).leftJoin(schema.posts, eq(schema.posts.id, schema.comments.postId)).leftJoin(schema.users, eq(schema.users.id, schema.posts.userId))
     .where(eq(schema.comments.userId, u.id)).orderBy(desc(schema.comments.createdAt)).limit(60);
-  for (const c of comments) items.push({ type: "comment", at: c.createdAt.toISOString(), who: c.onHandle, href: `/post/${c.postId}`, text: `Commented on ${c.onHandle ?? "a post"}: “${c.body.slice(0, 90)}${c.body.length > 90 ? "…" : ""}”` });
+  for (const c of comments) items.push({ type: "comment", at: c.createdAt.toISOString(), who: c.onHandle, href: `/post/${c.postId}`, body: c.body, text: `Commented on ${c.onHandle ?? "a post"}: “${c.body.slice(0, 90)}${c.body.length > 90 ? "…" : ""}”` });
   const votes = await db.select({ postId: schema.votes.postId, value: schema.votes.value, createdAt: schema.votes.createdAt, onHandle: schema.users.handle, coin: schema.posts.coin, kind: schema.posts.kind })
     .from(schema.votes).leftJoin(schema.posts, eq(schema.posts.id, schema.votes.postId)).leftJoin(schema.users, eq(schema.users.id, schema.posts.userId))
     .where(eq(schema.votes.userId, u.id)).orderBy(desc(schema.votes.createdAt)).limit(60);
   for (const v of votes) items.push({ type: v.value > 0 ? "like" : "dislike", at: v.createdAt.toISOString(), who: v.onHandle, coin: v.coin, href: `/post/${v.postId}`, text: `${v.value > 0 ? "Liked" : "Disliked"} ${v.onHandle ?? "a post"}'s ${v.kind === "trade" ? `${v.coin} trade` : v.kind ?? "post"}` });
 
   items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
-  return Response.json({ items: items.slice(0, 120) });
+  const out = items.slice(0, 120);
+  // Faces for the other people in the stream (copied, faded, fought, commented on, liked).
+  const whoHandles = [...new Set(out.map((i) => i.who).filter((h): h is string => !!h))];
+  if (whoHandles.length) {
+    const faces = await db.select({ handle: schema.users.handle, avatarUrl: schema.users.avatarUrl }).from(schema.users).where(sql`${schema.users.handle} in ${whoHandles}`);
+    const F = new Map(faces.map((f) => [f.handle, f.avatarUrl]));
+    for (const i of out) if (i.who) i.whoAvatar = F.get(i.who) ?? null;
+  }
+  return Response.json({ items: out });
 }

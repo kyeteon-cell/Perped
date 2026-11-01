@@ -25,6 +25,8 @@ import type { User, Stats } from "@/lib/schema";
 import type { AssetPosition } from "@/lib/hl-info";
 import type { FeedRow } from "@/lib/feed";
 import { useLive } from "@/lib/hooks/useLive";
+import dynamic from "next/dynamic";
+const ProfileShare = dynamic(() => import("@/components/ProfileShare").then((m) => m.ProfileShare), { ssr: false });
 
 type ProfileRes = { form?: { r: "W" | "L" | "D"; href: string }[]; vendetta?: null | { handle: string; avatarUrl: string | null; mine: number; theirs: number; draws: number; fights: number }; battleStreak?: number; bestStreak?: number; user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
 type Tab = "me" | "fades" | "trades" | "stats" | "people";
@@ -38,6 +40,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const { mids } = useMids();
   const { markets } = useMarkets();
   const [tab, setTab] = useState<Tab>("me");
+  const [sharing, setSharing] = useState(false);
   const [people, setPeopleDir] = useState<People>("followers");
   const [tradeTab, setTradeTab] = useState<"open" | "closed">("open");
   const [sheet, setSheet] = useState<"deposit" | "withdraw" | null>(null);
@@ -92,7 +95,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   return (
     <div className="fade-in profile">
       <header className="flex items-center justify-between px-4 py-3">
-        <h1 className="text-xl font-bold">{user.handle}</h1>
+        <div className="flex items-center gap-2"><h1 className="text-xl font-bold">{user.handle}</h1><button className="iconbtn" aria-label="Share profile" onClick={() => setSharing(true)}><Icon d={I.share} /></button></div>
         {isMe ? (
           <div className="flex items-center gap-2">
             <button className="pf-bal" onClick={() => setBal(true)} aria-label="Your balance">
@@ -139,7 +142,14 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         ))}
       </div></div>
 
-      {tab === "me" && <ActivityFeed handle={handle} />}
+      {sharing && <ProfileShare onClose={() => setSharing(false)} data={{
+        handle: user.handle, avatarUrl: user.avatarUrl ?? null, verified: !!user.verified, demo: !!user.isDemo, xp: user.xp ?? 0,
+        won: s?.battlesWon ?? 0, lost: s?.battlesLost ?? 0, streak: data.battleStreak ?? 0, bestStreak: data.bestStreak ?? 0, form: (data.form ?? []).map((f) => f.r),
+        winRate: s ? Number(s.winRate) : null, closedTrades: s?.closedTrades ?? 0, pnl30d: s ? Number(s.realizedPnl30d) : null,
+        callsHit: s?.callsHit ?? 0, callsResolved: s?.callsResolved ?? 0, copied: s?.copiedCount ?? 0, faded: s?.fadedCount ?? 0, followers: data.followers,
+        url: `${typeof window !== "undefined" ? window.location.origin : "https://perped.pro"}/u/${user.handle}`,
+      }} />}
+      {tab === "me" && <ActivityFeed handle={handle} me={{ handle: user.handle, avatarUrl: user.avatarUrl ?? null }} />}
 
       {tab === "fades" && (
         <>
