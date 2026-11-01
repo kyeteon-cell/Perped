@@ -814,7 +814,7 @@ body { letter-spacing: -.005em; }
 
 
 /* BUY/SELL pill pinned to the left edge at the entry price; level labels move to the right edge */
-.tc-act { left: 4px !important; transform: translateY(-50%) !important; }
+.tc-act { transform: translate(-50%, -50%); }
 .tc-lv { left: auto !important; right: 4px; }
 
 /* =====================================================================
@@ -1450,3 +1450,45 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .mhp i { display: block; height: 100%; border-radius: 999px; background: var(--green); transition: width .5s var(--ease, ease); }
 .mhp i.short { background: var(--red); }
 .mhp.low i { background: var(--red); animation: tcblink 1s ease-in-out infinite; }
+.tc-zl { position: absolute; right: 6px; font-size: 9.5px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; opacity: .75; pointer-events: none; }
+.tc-zl.up { top: 30px; } .tc-zl.down { bottom: 5px; }
+.tc-zl.g { color: var(--green); } .tc-zl.r { color: var(--red); }
+.tc-dot { margin-left: -4px; }
+/* ---- Fade card: one neutral fight card ---- */
+.fcard { padding: 14px 16px 10px; }
+.fc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fc-tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+.fc-watch { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.fc-hp { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.fc-hp > span { font-size: 9.5px; font-weight: 900; letter-spacing: .08em; color: var(--muted); }
+.mhp.big { flex: 1; width: auto; height: 9px; margin-top: 0; }
+.fc-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.fc-f { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.fc-f.r { flex-direction: row-reverse; text-align: right; }
+.fc-f.r .fc-name { flex-direction: row-reverse; }
+.fc-av { border-radius: 50%; padding: 2px; line-height: 0; box-shadow: 0 0 0 2px var(--green); flex: none; }
+.fc-av.short { box-shadow: 0 0 0 2px var(--red); }
+.fc-f.lead .fc-av { box-shadow: 0 0 0 2px var(--green), 0 0 0 5px color-mix(in srgb, var(--gold) 55%, transparent); }
+.fc-f.lead .fc-av.short { box-shadow: 0 0 0 2px var(--red), 0 0 0 5px color-mix(in srgb, var(--gold) 55%, transparent); }
+.fc-name { display: flex; align-items: center; gap: 4px; font-size: 13.5px; font-weight: 800; color: var(--text); min-width: 0; }
+.fc-pos { font-size: 11px; font-weight: 800; } .fc-pos.long { color: var(--green); } .fc-pos.short { color: var(--red); }
+.fc-roi { font-size: 18px; font-weight: 700; line-height: 1.1; }
+.fc-vs { font-size: 13px; font-weight: 900; font-style: italic; color: var(--muted); flex: none; }
+.fc-quote { margin-top: 10px; font-size: 14px; display: flex; gap: 5px; align-items: baseline; }
+.fc-quote > b { flex: none; }
+.fc-back { border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.fc-back:active { transform: scale(.97); }
+/* fade card chart: neutral leader pill and zone labels */
+.bcc { height: 128px; }
+.bcc-lead { background: var(--surface) !important; color: var(--text) !important; box-shadow: 0 0 0 1px var(--line) !important; }
+.bcc-dot { right: auto; margin-left: -4px; }
+.bcc-zone { position: absolute; font-size: 9.5px; font-weight: 900; letter-spacing: .03em; white-space: nowrap; pointer-events: none; max-width: 24%; overflow: hidden; text-overflow: ellipsis; }
+.bcc-zone.up { top: 30px; color: var(--green); } .bcc-zone.down { bottom: 6px; color: var(--red); }
+/* "Now" marker: a steady dot with a soft ring that ripples out (the dot itself no longer blinks or grows) */
+.tc-dot, .bcc-dot { animation: none !important; width: 9px; height: 9px; margin-top: -4.5px; margin-left: -4.5px; box-shadow: 0 0 0 2px var(--surface); z-index: 2; }
+.tc-dot::after, .bcc-dot::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid currentColor; opacity: 0; animation: nowping 2.2s ease-out infinite; }
+.tc-dot.g { color: var(--green); } .tc-dot.r { color: var(--red); } .bcc-dot { color: var(--text); }
+@keyframes nowping { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(2.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tc-dot::after, .bcc-dot::after { animation: none; } }
+/* Now marker: ringed in the card colour so it stands apart from candles */
+.tc-dot, .bcc-dot { box-shadow: 0 0 0 2.5px var(--surface), 0 0 0 3.5px color-mix(in srgb, currentColor 40%, transparent); }

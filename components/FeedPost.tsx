@@ -281,6 +281,10 @@ function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
     );
   }
 
+  // A live fade is one neutral fight card: both traders as equals, no "your trade" box.
+  const fx = post.fadedFromId ? fightersOf(item, mark, roi) : null;
+  if (fx) return <FadeCard item={item} a={fx[0]} b={fx[1]} mark={mark} mid={mid} onChanged={onChanged} quick={quick} setQuick={setQuick} canAct={canAct} canFade={canFade} canCopy={canCopy} />;
+
   return (
     <article className={`post swipe tcard ${post.fadedFromId ? "battlecard" : ""} ${swipe.armed ?? ""} ${isDemoPost(item) ? "demo" : ""}`} {...(canAct ? swipe.handlers : {})}>
       <div className="swipe-bg" aria-hidden>
@@ -306,9 +310,7 @@ function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
           <div className={`mono text-[13px] ${pos ? "green" : "red"}`}>{labels[1]}</div>
         </div>
       </div>
-      {(() => { const fx = post.fadedFromId ? fightersOf(item, mark, roi) : null; return fx
-        ? <BattleCardChart coin={post.coin!} live={mark} a={fx[0]} b={fx[1]} />
-        : <TradeChart coin={post.coin!} entry={entry} mark={mark} side={post.side as "long" | "short"} lev={lev} openedAt={post.createdAt} tp={post.tpPx ? Number(post.tpPx) : null} sl={post.slPx ? Number(post.slPx) : null} />; })()}
+      <TradeChart coin={post.coin!} entry={entry} mark={mark} side={post.side as "long" | "short"} lev={lev} openedAt={post.createdAt} tp={post.tpPx ? Number(post.tpPx) : null} sl={post.slPx ? Number(post.slPx) : null} />
       <div className="tfoot">
         {isDemoPost(item)
           ? <Link href="/how-it-works#demo" className="verify">Demo · live prices</Link>
@@ -326,6 +328,51 @@ function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
         )}
       </Acts>
       </div>
+    </article>
+  );
+}
+
+/* ---------- fade card (live fades) ---------- */
+
+/** One fight card for a live fade: health bars, the two traders face to face, the chart, and a way to back either side.
+ *  Deliberately neutral: neither side is styled as "the post". */
+function FadeCard({ item, a, b, mark, mid, onChanged, quick, setQuick, canAct, canFade, canCopy }: {
+  item: FeedRow; a: Fighter; b: Fighter; mark: number; mid?: number; onChanged?: () => void;
+  quick: "copy" | "fade" | null; setQuick: (q: "copy" | "fade" | null) => void; canAct: boolean; canFade: boolean; canCopy: boolean;
+}) {
+  const { post, author, src } = item;
+  const { profile } = useSession();
+  const mine = !!author && author.id === profile?.id;
+  const lead = Math.abs(a.roi - b.roi) < 0.05 ? null : a.roi > b.roi ? a : b;
+  const side = (f: Fighter, right?: boolean, xp?: number | null) => (
+    <div className={`fc-f ${right ? "r" : ""} ${lead === f ? "lead" : ""}`}>
+      <span className={`fc-av ${f.side}`}><Avatar handle={f.handle} url={f.avatarUrl} size={36} link={false} /></span>
+      <div className="min-w-0">
+        <Link href={`/u/${f.handle}`} className="fc-name" onClick={(e) => e.stopPropagation()}><span className="truncate">{f.handle}</span><RankChip xp={xp ?? 0} compact size={15} /></Link>
+        <div className={`fc-pos ${f.side}`}>{f.side === "long" ? "Long" : "Short"} {f.lev}×</div>
+        <div className={`mono fc-roi ${f.roi >= 0 ? "green" : "red"}`}>{fmtPct(f.roi, 1)}</div>
+      </div>
+    </div>
+  );
+  return (
+    <article className={`post fcard ${isDemoPost(item) ? "demo" : ""}`}>
+      {quick && <QuickTrade item={item} mode={quick} onClose={() => setQuick(null)} />}
+      <div className="fc-top">
+        <span className="fc-tag"><Icon d={I.bolt} size={12} />Fade · {ticker(post.coin!)}{src?.nemesis && <span className="bh-nem gl"><Glyph n="skull" />Vendetta</span>}</span>
+        <Link href={`/battle/${post.id}`} className="fc-watch" onClick={(e) => e.stopPropagation()}>{timeAgo(post.createdAt)} in · watch →</Link>
+      </div>
+      <div className="fc-hp"><MiniHp f={a} live={mark} big /><span>HP</span><MiniHp f={b} live={mark} big right /></div>
+      <div className="fc-row">{side(a, false, src?.xp)}<span className="fc-vs">vs</span>{side(b, true, author?.xp)}</div>
+      <BattleCardChart coin={post.coin!} live={mark} a={a} b={b} />
+      {post.body && <div className="fc-quote"><b>{b.handle}:</b> <RichText text={post.body} /></div>}
+      <Acts item={item} onChanged={onChanged} mid={mid} manage={mine}>
+        {canAct && (
+          <>
+            {canFade && <button className="fc-back ml-auto" onClick={() => setQuick("fade")}>Back {a.handle}</button>}
+            {canCopy && <button className={`fc-back ${canFade ? "" : "ml-auto"}`} onClick={() => setQuick("copy")}>Back {b.handle}</button>}
+          </>
+        )}
+      </Acts>
     </article>
   );
 }
