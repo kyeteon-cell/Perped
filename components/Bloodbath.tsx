@@ -14,7 +14,8 @@ import { Avatar, CoinMark, ticker } from "./ui";
 type Mini = ArenaBattle["fader"];
 type Leg = ArenaBattle["faderLeg"];
 const legOf = (b: ArenaBattle, u: Mini): Leg => (u.id === b.fader.id ? b.faderLeg : b.targetLeg);
-const fighter = (u: Mini, l: Leg, roi: number): Fighter => ({ handle: u.handle, avatarUrl: u.avatarUrl, side: l.side, lev: l.leverage, entry: l.entryPx, roi });
+// Same inputs as the battle page (stop loss included), so the Pit and the battle show the same health.
+const fighter = (u: Mini, l: Leg, roi: number): Fighter => ({ handle: u.handle, avatarUrl: u.avatarUrl, side: l.side, lev: l.leverage, entry: l.entryPx, sl: l.slPx, tp: l.tpPx, openedAt: l.openedAt, roi });
 
 /** A health bar for the Pit: same chrome bar as the battle page, bleeding under 40%. */
 function Bar({ f, live, right }: { f: Fighter; live: number; right?: boolean }) {
