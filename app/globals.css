@@ -1492,3 +1492,19 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 @media (prefers-reduced-motion: reduce) { .tc-dot::after, .bcc-dot::after { animation: none; } }
 /* Now marker: ringed in the card colour so it stands apart from candles */
 .tc-dot, .bcc-dot { box-shadow: 0 0 0 2.5px var(--surface), 0 0 0 3.5px color-mix(in srgb, currentColor 40%, transparent); }
+/* ---- Trade card chart v2: full width, prices tagged on the right edge ---- */
+.tchart-plot.v2 { position: relative; height: 150px; margin-top: 2px; border-radius: 14px; overflow: hidden; }
+.tcard .tchart-plot.v2, .tchart-plot.v2 { height: 150px; }
+.tchart-plot.v2 svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tc-tag { position: absolute; right: 3px; width: calc(21% - 4px); transform: translateY(-50%); text-align: center; font-family: var(--font-mono), "Barlow", sans-serif; font-size: 10.5px; font-weight: 800; line-height: 1; padding: 4px 2px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: color-mix(in srgb, var(--text) 10%, var(--surface)); color: var(--text); z-index: 3; }
+.tc-tag.now.g { background: var(--green); color: #04130d; } .tc-tag.now.r { background: var(--red); color: #fff; }
+.tc-tag.sl { background: color-mix(in srgb, var(--red) 22%, var(--surface)); color: var(--red); }
+.tc-tag.tp { background: color-mix(in srgb, var(--green) 22%, var(--surface)); color: var(--green); }
+.tc-tag.liq { background: var(--text); color: var(--bg); }
+.tchart-plot.v2 .tc-act { font-size: 9.5px; padding: 3px 6px; }
+
+.tc-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 12px; }
+.tc-foot b { color: var(--text); font-weight: 700; }
+.tc-ivs.v2 { position: static; flex: none; }
+/* P&L on trade cards: plain coloured numbers, no box */
+.pnlpill, .pnlpill.g, .pnlpill.r { background: transparent !important; box-shadow: none !important; padding: 0 !important; }

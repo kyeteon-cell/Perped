@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { Candle } from "@/lib/hl-info";
 import { useMarkets } from "@/lib/hooks/useMarkets";
-import { fmtPct, fmtPrice, fmtUsd } from "@/lib/format";
+import { fmtPct, fmtPrice } from "@/lib/format";
 
 type Iv = "1m" | "5m" | "15m" | "1h";
 const IVS: Record<Iv, number> = { "1m": 60_000, "5m": 300_000, "15m": 900_000, "1h": 3_600_000 };
@@ -46,12 +46,10 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const live = mark || m?.mid || candles[candles.length - 1]?.c || entry;
 
   // Price colour (the "Price now" number) follows the market; the chart zones and live dot follow YOUR P&L.
-  const priceUp = live >= entry;
-  const move = entry ? ((live - entry) / entry) * 100 : 0;
   const liq = lev > 1 ? (side === "long" ? entry * (1 - 1 / lev) : entry * (1 + 1 / lev)) : null;
   const liqDist = liq ? Math.abs((live - liq) / live) * 100 : null;
 
-  const W = 200, H = 80, PAD = 6, RIGHT = 8;
+  const W = 200, H = 100, PAD = 7, AXIS = 42, PLOT = W - AXIS, RIGHT = AXIS + 4;
   const hi = candles.length ? Math.max(...candles.map((c) => c.h)) : live;
   const lo = candles.length ? Math.min(...candles.map((c) => c.l)) : live;
   // Frame on candles + entry + live so the candles fill the box; TP / SL / liq only stretch it a little,
@@ -75,7 +73,9 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const histW = histN ? Math.min(W * 0.3, (room * histN) / n) : 0, liveW = room - histW;
   const xOf = (i: number) => (i < histN ? (i + 0.5) * (histW / histN) : histW + (i - histN + 0.5) * (liveW / liveN));
   const bwOf = (i: number) => Math.max(1.2, (i < histN ? histW / histN : liveW / liveN) * 0.66);
-  const ex = histW, nowX = histW + liveW, DOT_GAP = 10;
+  const ex = histW, nowX = histW + liveW;
+  // Price tags on the right edge (like an exchange): now, entry, and stop / take profit / liquidation when they're on screen.
+  type Tag = { key: string; p: number; label: string; cls: string; color: string };
   const pctX = (x: number) => `${Math.max(6, Math.min(94, (x / W) * 100))}%`;
   const ey = y(entry), ly = y(live);
   // P&L colour (yours): green when the trade is winning, red when it's losing.
@@ -93,63 +93,62 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   ];
   const off = lvls.filter((l) => !near(l.p));
   const offUp = off.filter((l) => l.p > top), offDn = off.filter((l) => l.p < bot);
+  const tags: Tag[] = [
+    { key: "now", p: live, label: fmtPrice(live), cls: winning ? "now g" : "now r", color: pc },
+    { key: "entry", p: entry, label: fmtPrice(entry), cls: "entry", color: "var(--muted)" },
+    ...lvls.filter((l) => near(l.p)).map((l) => ({ key: l.key, p: l.p, label: `${l.label} ${fmtPrice(l.p)}`, cls: l.cls, color: l.cls === "tp" ? "var(--green)" : l.cls === "sl" ? "var(--red)" : "var(--text)" })),
+  ];
+  // Keep tags from overlapping: walk them top to bottom and push each one down past the last.
+  const GAP = 17; // percent of the chart height per tag
+  const placed = tags.map((t) => ({ ...t, top: (y(t.p) / H) * 100 })).sort((a, b) => a.top - b.top);
+  for (let i = 0; i < placed.length; i++) placed[i].top = Math.max(placed[i].top, i ? placed[i - 1].top + GAP : 8);
+  for (let i = placed.length - 1; i >= 0; i--) placed[i].top = Math.min(placed[i].top, i < placed.length - 1 ? placed[i + 1].top - GAP : 92);
 
   return (
     <div ref={box} role="link" tabIndex={0} className="tchart" aria-label={`${coin} chart`}
       onClick={(e) => { e.stopPropagation(); router.push(`/markets/${coin}`); }}
       onKeyDown={(e) => { if (e.key === "Enter") router.push(`/markets/${coin}`); }}>
-      <div className="tc-grid">
-        <div className="tchart-plot">
-          {candles.length ? (
-            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
-              {candles.map((c, i) => {
-                const up = c.c >= c.o, x = xOf(i), bw = bwOf(i), col = i < ei ? "var(--muted)" : up ? "var(--green)" : "var(--red)";
-                return (
-                  <g key={c.t} opacity={i < ei ? 0.4 : 1}>
-                    <line x1={x} x2={x} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                    <rect x={x - bw / 2} y={y(Math.max(c.o, c.c))} width={bw} height={Math.max(1.2, Math.abs(y(c.o) - y(c.c)))} fill={col} />
-                  </g>
-                );
-              })}
-              {/* Win / lose zones from the entry on: your winning side faint green, losing side faint red,
-                  the gap between entry and now strong in your P&L colour, and stop-loss → liquidation as a danger band. */}
-              <rect x={ex} y="0" width={W - ex} height={ey} fill={side === "long" ? "var(--green)" : "var(--red)"} opacity=".07" />
-              <rect x={ex} y={ey} width={W - ex} height={Math.max(0, H - ey)} fill={side === "long" ? "var(--red)" : "var(--green)"} opacity=".07" />
-              {danger && <rect x={ex} y={Math.min(danger[0], danger[1])} width={W - ex} height={Math.abs(danger[0] - danger[1])} fill="var(--red)" opacity=".18" />}
-              <rect x={ex} y={Math.min(ey, ly)} width={Math.max(0, nowX - ex)} height={Math.max(1, Math.abs(ey - ly))} fill={pc} opacity=".3" />
-              <line x1={nowX} x2={nowX} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".18" />
-              {/* The live price sits just right of the last candle, in the open space, joined by a short tick, so a long wick can't hide it. */}
-              <line x1={nowX - 2} x2={nowX + DOT_GAP} y1={ly} y2={ly} stroke={pc} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-            </svg>
-          ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 12 }} />}
-          {candles.length > 0 && (
-            <>
-              {lvls.filter((l) => near(l.p)).map((l) => <span key={l.key} className={`tc-lv ${l.cls}`} style={{ top: pct(l.p) }}>{l.label}</span>)}
-              <span className={`tc-act ${side}`} style={{ top: pct(entry), left: pctX(ex) }}>{side === "long" ? "▲ BUY" : "▼ SELL"}</span>
-              <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: `clamp(9px, ${pct(live)}, calc(100% - 9px))`, left: `${((nowX + DOT_GAP) / W) * 100}%`, right: "auto" }} />
-              <span className={`tc-zl up ${side === "long" ? "g" : "r"}`}>{side === "long" ? "profit" : "loss"}</span>
-              <span className={`tc-zl down ${side === "long" ? "r" : "g"}`}>{side === "long" ? "loss" : "profit"}</span>
-            </>
-          )}
-          {offUp.length > 0 && <span className="tc-edges up">{offUp.map((l) => <b key={l.key} className={l.cls}>{l.label} ↑</b>)}</span>}
-          {offDn.length > 0 && <span className="tc-edges down">{offDn.map((l) => <b key={l.key} className={l.cls}>{l.label} ↓</b>)}</span>}
-          <span className="tc-ivs" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-            {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === iv ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
-          </span>
-        </div>
-        <div className="tc-box">
-          <div className="now"><small>Price now</small><b className={`mono ${priceUp ? "green" : "red"}`}>{fmtPrice(live)} <em>{move >= 0 ? "▲ +" : "▼ "}{move.toFixed(2)}%</em></b></div>
-          <div><small className={side === "long" ? "green" : "red"}>{side === "long" ? "Bought at" : "Sold at"}</small><b className="mono">{fmtPrice(entry)}</b></div>
-          {liq && <div><small>Liq ≈ <span className="faint">{liqDist!.toFixed(0)}% away</span></small><b className="mono">{fmtPrice(liq)}</b></div>}
-          {tp ? <div><small className="green">Take profit</small><b className="mono">{fmtPrice(tp)}</b></div> : null}
-          {sl ? <div><small className="red">Stop loss</small><b className="mono">{fmtPrice(sl)}</b></div> : null}
-        </div>
+      <div className="tchart-plot v2">
+        {candles.length ? (
+          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
+            {/* Win / lose zones from the entry on: your winning side faint green, losing side faint red,
+                the gap between entry and now strong in your P&L colour, and stop-loss → liquidation as a danger band. */}
+            <rect x={ex} y="0" width={PLOT - ex} height={ey} fill={side === "long" ? "var(--green)" : "var(--red)"} opacity=".08" />
+            <rect x={ex} y={ey} width={PLOT - ex} height={Math.max(0, H - ey)} fill={side === "long" ? "var(--red)" : "var(--green)"} opacity=".08" />
+            {danger && <rect x={ex} y={Math.min(danger[0], danger[1])} width={PLOT - ex} height={Math.abs(danger[0] - danger[1])} fill="var(--red)" opacity=".16" />}
+            <rect x={ex} y={Math.min(ey, ly)} width={Math.max(0, nowX - ex)} height={Math.max(1, Math.abs(ey - ly))} fill={pc} opacity=".28" />
+            {candles.map((c, i) => {
+              const up = c.c >= c.o, x = xOf(i), bw = bwOf(i), col = i < ei ? "var(--muted)" : up ? "var(--green)" : "var(--red)";
+              return (
+                <g key={c.t} opacity={i < ei ? 0.45 : 1}>
+                  <line x1={x} x2={x} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  <rect x={x - bw / 2} y={y(Math.max(c.o, c.c))} width={bw} height={Math.max(1.2, Math.abs(y(c.o) - y(c.c)))} fill={col} rx="0.4" />
+                </g>
+              );
+            })}
+            {/* Thin guides from the chart to each price tag on the right edge. */}
+            {tags.map((t) => <line key={t.key} x1={t.key === "now" ? nowX : ex} x2={PLOT} y1={y(t.p)} y2={y(t.p)} stroke={t.color} strokeWidth="1" strokeDasharray={t.key === "now" ? "" : "2 3"} vectorEffect="non-scaling-stroke" opacity={t.key === "now" ? 0.9 : 0.5} />)}
+            <line x1={PLOT} x2={PLOT} y1="0" y2={H} stroke="var(--line)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          </svg>
+        ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 12 }} />}
+        {candles.length > 0 && (
+          <>
+            <span className={`tc-act ${side}`} style={{ top: pct(entry), left: pctX(ex) }}>{side === "long" ? "BUY" : "SELL"}</span>
+            <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: `clamp(9px, ${pct(live)}, calc(100% - 9px))`, left: `${(nowX / W) * 100}%`, right: "auto" }} />
+            {placed.map((t) => <span key={t.key} className={`tc-tag ${t.cls}`} style={{ top: `${t.top}%` }}>{t.label}</span>)}
+          </>
+        )}
+        {offUp.length > 0 && <span className="tc-edges up">{offUp.map((l) => <b key={l.key} className={l.cls}>{l.label} ↑</b>)}</span>}
+        {offDn.length > 0 && <span className="tc-edges down">{offDn.map((l) => <b key={l.key} className={l.cls}>{l.label} ↓</b>)}</span>}
       </div>
-      <div className="tstats">
-        <div><small>24h</small><b className={`mono ${(m?.change24h ?? 0) >= 0 ? "green" : "red"}`}>{m ? fmtPct(m.change24h, 2) : "—"}</b></div>
-        <div><small>Range</small><b className="mono">{candles.length ? `${fmtPrice(Math.max(hi, live))} / ${fmtPrice(Math.min(lo, live))}` : "—"}</b></div>
-        <div><small>Volume</small><b className="mono">{m ? fmtUsd(m.volume24h, { compact: true }) : "—"}</b></div>
-        <div><small>Funding</small><b className={`mono ${(m?.funding8h ?? 0) >= 0 ? "" : "red"}`}>{m ? `${m.funding8h >= 0 ? "+" : ""}${m.funding8h.toFixed(4)}%` : "—"}</b></div>
+      <div className="tc-foot">
+        <span className="when truncate">
+          {liq ? <>Liq <b className="mono">{fmtPrice(liq)}</b> · {liqDist!.toFixed(0)}% away</> : "No liquidation at 1×"}
+          {m ? <> · 24h <b className={`mono ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</b></> : null}
+        </span>
+        <span className="tc-ivs v2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+          {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === iv ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
+        </span>
       </div>
     </div>
   );
