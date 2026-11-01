@@ -1490,12 +1490,5 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .tc-dot.g { color: var(--green); } .tc-dot.r { color: var(--red); } .bcc-dot { color: var(--text); }
 @keyframes nowping { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(2.6); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .tc-dot::after, .bcc-dot::after { animation: none; } }
-/* Coin logos: some Hyperliquid icons are a white mark on a transparent background, which vanished on our white backing.
-   A mid-grey backing keeps both white and dark marks visible. */
-/* Logos show exactly as the coin designs them: no backing, no gloss. The coloured disc and letters only appear
-   when a coin has no logo. Light/dark theme shows through any transparent parts, like it does on exchanges. */
-.cm img { background: transparent !important; }
-.cm:has(> b[hidden]) { background: transparent; }
-.cm:has(> b[hidden])::after { display: none; }
 /* Now marker: ringed in the card colour so it stands apart from candles */
 .tc-dot, .bcc-dot { box-shadow: 0 0 0 2.5px var(--surface), 0 0 0 3.5px color-mix(in srgb, currentColor 40%, transparent); }
