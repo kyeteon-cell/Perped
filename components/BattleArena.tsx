@@ -348,7 +348,6 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
               <Avatar handle={f.handle} url={f.avatarUrl} size={20} link={false} />
             </span>
           ))}
-          <i className="bcc-dot" style={{ left: pctX(nowX + 14), top: `clamp(9px, ${pctY(px)}, calc(100% - 9px))` }} />
           <span className="bcc-lead">{leader ? `${leader.handle} leads by ${Math.abs(a.roi - b.roi).toFixed(1)}%` : "Dead level"}</span>
         </>
       )}
