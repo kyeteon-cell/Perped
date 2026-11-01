@@ -320,13 +320,13 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
       <div className="mt-3 flex flex-col gap-2">
         {tab === "blood" && rekt.map(({ b, r }) => (
           <div key={`rekt${b.id}`} className="tomb">
-            <BattleRow b={b} mid={mids[b.coin] ?? 0} noChase={tab === "glad"} badge={<><span className="rekt">REKT</span><span className="gl"><Glyph n="tomb" /><b>{r.loser.handle}</b> got liquidated by <b>{r.winner.handle}</b></span></>} />
+            <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={<><span className="rekt">REKT</span><span className="gl"><Glyph n="tomb" /><b>{r.loser.handle}</b> got liquidated by <b>{r.winner.handle}</b></span></>} />
             <div className="bb-under"><RevengeButton handle={r.winner.handle} label={<span className="gl"><Glyph n="drop" />Revenge on {r.winner.handle}</span>} /></div>
           </div>
         ))}
         {(tab === "blood" ? list.slice(1) : list).map(({ b, r }) => (
           <div key={b.id}>
-          <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={
+          <BattleRow b={b} mid={mids[b.coin] ?? 0} noChase={tab === "glad"} badge={
             tab === "high" ? <><span>{flames(r.heat)}</span><b className="mono">{b.faderLeg.leverage}× vs {b.targetLeg.leverage}×</b>{r.minLiq < 50 && <span className="ab-warn">{r.closer.handle} liq in {r.minLiq.toFixed(1)}%</span>}</>
             : tab === "blood" ? <><Glyph n="skull" tone="blood" /><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted"><span className="gl">{r.winner.handle}<Glyph n="crown" tone="gold" /></span></span></>
             : tab === "glad" ? <GladBadge b={b} r={r} />
