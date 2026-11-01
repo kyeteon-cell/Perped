@@ -55,9 +55,13 @@ function useSessionState() {
   const logout = useCallback(async () => {
     // Guests: keep a copy of the key on this device so "Continue as …" can bring them straight back.
     try { const t = localStorage.getItem("perped:guest"); if (t) localStorage.setItem("perped:guest-prev", t); localStorage.removeItem("perped:guest"); localStorage.removeItem("perped:me"); } catch {}
-    setGuestToken(null);
+    // Clear the guest cookie BEFORE dropping the token: otherwise the cookie check re-signs you in straight away
+    // and the button looks like it did nothing.
     await fetch("/api/guest", { method: "DELETE" }).catch(() => null);
-    if (privyAuthed) await privyLogout();
+    if (privyAuthed) await privyLogout().catch(() => null);
+    setGuestToken(null);
+    // Fresh page so no cached profile is left on screen.
+    if (typeof window !== "undefined") window.location.assign("/");
   }, [privyAuthed, privyLogout]);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [linkXState, setLinkXState] = useState<{ busy: boolean; error: string | null; done: string | null }>({ busy: false, error: null, done: null });
