@@ -326,6 +326,7 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
             </>
           )}
           <line x1={nowX} x2={nowX} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".18" />
+          <line x1={nowX - 2} x2={nowX + 14} y1={y(px)} y2={y(px)} stroke="var(--text)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity=".8" />
           {candles.map((c, i) => {
             const x = xOf(i), bw = bwOf(i), before = i < first;
             const col = before ? "var(--muted)" : c.c >= c.o ? GREEN : RED;
@@ -347,7 +348,7 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
               <Avatar handle={f.handle} url={f.avatarUrl} size={20} link={false} />
             </span>
           ))}
-          <i className="bcc-dot" style={{ left: pctX(nowX), top: `clamp(9px, ${pctY(px)}, calc(100% - 9px))` }} />
+          <i className="bcc-dot" style={{ left: pctX(nowX + 14), top: `clamp(9px, ${pctY(px)}, calc(100% - 9px))` }} />
           <span className="bcc-lead">{leader ? `${leader.handle} leads by ${Math.abs(a.roi - b.roi).toFixed(1)}%` : "Dead level"}</span>
         </>
       )}

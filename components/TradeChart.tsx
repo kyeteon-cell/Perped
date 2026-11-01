@@ -75,7 +75,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const histW = histN ? Math.min(W * 0.3, (room * histN) / n) : 0, liveW = room - histW;
   const xOf = (i: number) => (i < histN ? (i + 0.5) * (histW / histN) : histW + (i - histN + 0.5) * (liveW / liveN));
   const bwOf = (i: number) => Math.max(1.2, (i < histN ? histW / histN : liveW / liveN) * 0.66);
-  const ex = histW, nowX = histW + liveW;
+  const ex = histW, nowX = histW + liveW, DOT_GAP = 10;
   const pctX = (x: number) => `${Math.max(6, Math.min(94, (x / W) * 100))}%`;
   const ey = y(entry), ly = y(live);
   // P&L colour (yours): green when the trade is winning, red when it's losing.
@@ -118,13 +118,15 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
               {danger && <rect x={ex} y={Math.min(danger[0], danger[1])} width={W - ex} height={Math.abs(danger[0] - danger[1])} fill="var(--red)" opacity=".18" />}
               <rect x={ex} y={Math.min(ey, ly)} width={Math.max(0, nowX - ex)} height={Math.max(1, Math.abs(ey - ly))} fill={pc} opacity=".3" />
               <line x1={nowX} x2={nowX} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".18" />
+              {/* The live price sits just right of the last candle, in the open space, joined by a short tick, so a long wick can't hide it. */}
+              <line x1={nowX - 2} x2={nowX + DOT_GAP} y1={ly} y2={ly} stroke={pc} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
             </svg>
           ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 12 }} />}
           {candles.length > 0 && (
             <>
               {lvls.filter((l) => near(l.p)).map((l) => <span key={l.key} className={`tc-lv ${l.cls}`} style={{ top: pct(l.p) }}>{l.label}</span>)}
               <span className={`tc-act ${side}`} style={{ top: pct(entry), left: pctX(ex) }}>{side === "long" ? "▲ BUY" : "▼ SELL"}</span>
-              <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: `clamp(9px, ${pct(live)}, calc(100% - 9px))`, left: `${(nowX / W) * 100}%`, right: "auto" }} />
+              <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: `clamp(9px, ${pct(live)}, calc(100% - 9px))`, left: `${((nowX + DOT_GAP) / W) * 100}%`, right: "auto" }} />
               <span className={`tc-zl up ${side === "long" ? "g" : "r"}`}>{side === "long" ? "profit" : "loss"}</span>
               <span className={`tc-zl down ${side === "long" ? "r" : "g"}`}>{side === "long" ? "loss" : "profit"}</span>
             </>
