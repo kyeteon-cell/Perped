@@ -17,6 +17,7 @@ import { RichText } from "./RichText";
 import { BattleSummary, battlesOf } from "./BattleSummary";
 import { BattleCardChart, MiniHp, type Fighter } from "./BattleArena";
 import { HL_NETWORK } from "@/lib/config";
+import { TrophyPost } from "./Trophies";
 
 // Sheets only open after a tap: load their code (and the Hyperliquid trading SDK behind them) on demand, not with the feed.
 const ShareSheet = dynamic(() => import("./ShareSheet").then((m) => m.ShareSheet), { ssr: false });
@@ -522,6 +523,15 @@ function SystemPost({ item, onChanged }: Props) {
   const { post } = item;
   const t = post.systemType ?? "";
   const meta = (post.meta ?? {}) as Record<string, unknown>;
+
+  if (t === "achievement") {
+    return (
+      <article className="post trophy-card">
+        <TrophyPost handle={String(meta.handle ?? "")} keys={(meta.keys as string[]) ?? []} demo={!!meta.demo} at={String(post.createdAt)} />
+        <Acts item={item} onChanged={onChanged} />
+      </article>
+    );
+  }
 
   if (t === "duel_settled") {
     const winner = String(meta.winner ?? "?"), loser = String(meta.loser ?? "?");

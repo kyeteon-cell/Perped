@@ -183,6 +183,8 @@ export const battles = pgTable(
     xpFader: integer("xp_fader"),
     xpTarget: integer("xp_target"),
     settledAt: timestamp("settled_at", { withTimezone: true }),
+    faderLow: numeric("fader_low"),
+    targetLow: numeric("target_low"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("battles_status_idx").on(t.status), index("battles_fader_idx").on(t.faderId), index("battles_target_idx").on(t.targetId)],

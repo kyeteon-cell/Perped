@@ -1,7 +1,7 @@
 "use client";
 
 import { Glyph } from "@/components/Glyph";
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
@@ -14,6 +14,7 @@ import { RankCard, RecordLine } from "@/components/RankCard";
 import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
 import { FollowButton } from "@/components/FollowButton";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { TrophyCase } from "@/components/Trophies";
 import { PinCard } from "@/components/PinCard";
 import type { RivalRow } from "@/app/api/rivalries/route";
 import { useMids } from "@/lib/hooks/useMids";
@@ -41,6 +42,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const { markets } = useMarkets();
   const [tab, setTab] = useState<Tab>("me");
   const [sharing, setSharing] = useState(false);
+  useEffect(() => { try { if (new URLSearchParams(window.location.search).get("trophy")) setTab("stats"); } catch {} }, []);
   const [people, setPeopleDir] = useState<People>("followers");
   const [tradeTab, setTradeTab] = useState<"open" | "closed">("open");
   const [sheet, setSheet] = useState<"deposit" | "withdraw" | null>(null);
@@ -189,6 +191,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
       {tab === "stats" && (
         <>
+<TrophyCase handle={handle} />
           <PerformanceCard handle={handle} stats={s} />
           <RankCard key={ladder ? "open" : "shut"} ladder={ladder} xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} recent={data.xpRecent ?? []} />
         </>

@@ -36,7 +36,7 @@ function MoneyPath() {
 
 /** /how-it-works — the trust page, written for someone who has never traded a perp. */
 export default function HowItWorks() {
-  const nav: [string, string][] = [["start", "Start here"], ["money", "Where your money is"], ["demo-path", "Demo, step by step"], ["real-path", "Real money, step by step"], ["permissions", "What we can do"], ["verify", "Check it yourself"], ["fees", "Fees"], ["earn", "Invites & earning"], ["battles", "Fades & ranks"], ["arena", "The Arena"], ["risk", "Risks"], ["promise", "Our commitments"]];
+  const nav: [string, string][] = [["start", "Start here"], ["money", "Where your money is"], ["demo-path", "Demo, step by step"], ["real-path", "Real money, step by step"], ["permissions", "What we can do"], ["verify", "Check it yourself"], ["fees", "Fees"], ["earn", "Invites & earning"], ["battles", "Fades & ranks"], ["arena", "The Arena"], ["trophies", "Trophies"], ["risk", "Risks"], ["promise", "Our commitments"]];
   return (
     <main className="hw-page px-5 pb-14 pt-6">
       <Link href="/" className="when">← Back</Link>
@@ -195,6 +195,20 @@ export default function HowItWorks() {
           <li><b>Last stand:</b> if you&rsquo;re 20% down in a fade you get one alert: cut it, or double down. Your followers get one too.</li>
           <li id="fight-night"><b><Glyph n="glove" tone="gold" /> Fight Night:</b> every night from 9 to 10pm Bangkok time (14:00–15:00 UTC), the hour everyone piles into the Arena at once. <b>Every fade that starts inside the hour pays double XP</b> to whoever earns XP from it (losses still cost the usual amount). When it opens you get an alert (and a phone push if alerts are on), Home shows the three biggest live fades with vendettas first, and the countdown in the Arena header turns gold and reads LIVE. An hour before, Home shows a countdown so you can line up your fades.</li>
           <li><b>Side with / Run it back:</b> on a live fade you&rsquo;re watching, Side with copies either fighter in one tap. On a fade you just finished, Run it back (or Revenge) quick-fades your opponent&rsquo;s next trade.</li>
+        </ul>
+      </section>
+
+      <section id="trophies" className="hw mt-7">
+        <h2 className="text-lg font-bold">Trophies</h2>
+        <p className="mt-2">29 trophies for what you do on Perped, in four tiers: <b>bronze</b> (round), <b>silver</b> (hexagon), <b>gold</b> (sunburst) and <b>obsidian</b> (purple shield). Your trophy case is on the Stats tab of your profile: unlocked ones carry a gold tick, locked ones are grey with a lock and a progress bar.</p>
+        <ul className="hw-list mt-3">
+          <li><b>Bronze, the first steps:</b> First Blood (first trade), Contrarian (first fade), Copycat (first copy), Safety First (a trade with a stop loss), Called It (first call that hits), Survivor (hold a trade 24 hours without liquidation), Sniper (close at +100% ROI).</li>
+          <li><b>Silver:</b> Hat Trick (3 fade wins in a row), Executioner (your opponent gets liquidated), Last Standing (win as the one still in after the other side closed), Double Up (+250% ROI), Clean Sheet (10 trades in a row at 5×+ without liquidation), Influencer (copied 10 times), Oracle (10 calls hit), Recruiter (5 people you invited trade).</li>
+          <li><b>Gold:</b> Rampage (5 in a row), Giant Slayer (beat someone two ranks above you), Bounty Hunter (break a 5+ streak), Comeback Kid (win a fade after being 50%+ down), Fight Night Champion (3 wins started in one Fight Night), Moonshot (+500% ROI), Diamond Hands (hold a winner 7 days), Idol (copied 100 times), Most Wanted (faded 25 times), Prophet (70%+ of at least 20 calls), Kingmaker (25 invitees who trade).</li>
+          <li><b>Obsidian:</b> Untouchable (10 in a row), Blood Feud (lead a rivalry by 5), Ten Bagger (+1,000% ROI) and <b>Season 0</b>: traded before real money opened. It can&rsquo;t be earned after that.</li>
+          <li><b>When you unlock one</b> you get a notification and it goes in the feed (several within an hour share one post). Gold and obsidian also tell your followers. Each trophy shows how many players have it.</li>
+          <li><b>Share it:</b> open any unlocked trophy for a share card with your invite code on it. Your best three also appear on your profile card.</li>
+          <li>Demo trades count during Season 0; those trophies are marked <b>Demo</b>. Bot accounts can&rsquo;t earn trophies.</li>
         </ul>
       </section>
 

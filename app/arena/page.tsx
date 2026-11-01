@@ -431,6 +431,7 @@ function ArenaHow({ onClose }: { onClose: () => void }) {
             <li><b>Duel win +75</b>, loss +10. From Knife Catcher up, losses cost XP, so ranks can be lost.</li>
             <li><b>Streak bounties:</b> anyone on 5+ wins carries one. Break it for 25 XP plus 10 per win in their streak.</li>
             <li><b>Fight Night:</b> 9 to 10pm Bangkok time every night. Fades started in that hour pay double XP.</li>
+            <li><b>Trophies:</b> fights earn them too: Hat Trick, Giant Slayer, Executioner, Comeback Kid and more. They&rsquo;re on your profile&rsquo;s Stats tab.</li>
           </ul>
         </S>
 

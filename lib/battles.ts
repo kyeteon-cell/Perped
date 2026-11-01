@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { checkSoon } from "./achievements";
 import { db, schema } from "./db";
 import { notify, systemPost } from "./feed";
 import { pnlForPosition } from "./format";
@@ -50,6 +51,7 @@ function roiOf(p: P, mid: number) {
  * A gap under 0.5% ROI is a draw.
  */
 export async function settleBattles(mids: Record<string, string | number>) {
+  const trophyQueue: string[] = [];
   const open = await db.select().from(schema.battles).where(eq(schema.battles.status, "open")).orderBy(schema.battles.id).limit(300);
   if (!open.length) return 0;
   const ids = [...new Set(open.flatMap((b) => [b.faderPostId, b.targetPostId]))];
@@ -110,6 +112,7 @@ export async function settleBattles(mids: Record<string, string | number>) {
     await recordFight(b.faderId, b.targetId, winnerId, new Date(), { coin: b.coin, href: `/battle/${b.faderPostId}` }).catch(() => null);
     await awardXp(b.faderId, xpF, winnerId ? (winnerId === b.faderId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
     await awardXp(b.targetId, xpT, winnerId ? (winnerId === b.targetId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
+    trophyQueue.push(b.faderId, b.targetId);
     if (winnerId && loserId) {
       // Streak bounty: breaking someone's 5+ win streak pays a bonus and makes the feed.
       const prev = await db.select({ w: schema.battles.winnerId }).from(schema.battles)
@@ -143,6 +146,7 @@ export async function settleBattles(mids: Record<string, string | number>) {
     }
     settled++;
   }
+  await checkSoon(...trophyQueue);
   return settled;
 }
 

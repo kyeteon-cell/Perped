@@ -17,13 +17,20 @@ export async function alertBloodbath(mids: Record<string, string | number>): Pro
   const posts = await db.select({ id: schema.posts.id, coin: schema.posts.coin, side: schema.posts.side, entryPx: schema.posts.entryPx, size: schema.posts.size, leverage: schema.posts.leverage, status: schema.posts.status }).from(schema.posts).where(inArray(schema.posts.id, postIds));
   const P = new Map(posts.map((p) => [p.id, p]));
   const hurting: { userId: string; oppId: string; battleHref: string; roi: number; coin: string }[] = [];
+  const lows: { id: number; fader: boolean; roi: number }[] = [];
   for (const b of open) {
     for (const [postId, userId, oppId] of [[b.faderPostId, b.faderId, b.targetId], [b.targetPostId, b.targetId, b.faderId]] as const) {
       const p = P.get(postId); if (!p || p.status !== "open") continue;
       const mid = Number(mids[p.coin ?? b.coin] ?? 0); if (!mid) continue;
       const roi = pnlForPosition(p.side as "long" | "short", Number(p.entryPx), mid, Number(p.size)).pct * (p.leverage ?? 1);
+      // Remember each fighter's lowest point in the fade (Comeback Kid trophy).
+      const meFader = userId === b.faderId, low = meFader ? b.faderLow : b.targetLow;
+      if (low == null || roi < Number(low)) lows.push({ id: b.id, fader: meFader, roi });
       if (roi <= BLOODBATH_ROI) hurting.push({ userId, oppId, battleHref: `/battle/${b.faderPostId}`, roi, coin: b.coin });
     }
+  }
+  for (const l of lows) {
+    await (l.fader ? db.update(schema.battles).set({ faderLow: l.roi.toFixed(2) }) : db.update(schema.battles).set({ targetLow: l.roi.toFixed(2) })).where(eq(schema.battles.id, l.id)).catch(() => null);
   }
   if (!hurting.length) return 0;
   const userIds = [...new Set(hurting.flatMap((h) => [h.userId, h.oppId]))];

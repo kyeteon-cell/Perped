@@ -6,6 +6,7 @@ import { HERO_BACKGROUNDS, SHARE_BACKGROUNDS } from "@/lib/share-backgrounds";
 import { rankFor } from "@/lib/rank";
 import { referralLink } from "@/lib/fees";
 import { useSession } from "@/lib/hooks/useSession";
+import { TROPHY, TIER_RANK, emblemUrl } from "@/lib/trophies";
 
 /** What the profile card shows. Numbers are taken when the sheet opens. */
 export type ProfileShareData = { handle: string; avatarUrl: string | null; verified: boolean; demo: boolean; xp: number; url: string };
@@ -32,7 +33,7 @@ function rr(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: num
 const money = (n: number) => `${n < 0 ? "-" : "+"}$${Math.abs(n) >= 1e6 ? (Math.abs(n) / 1e6).toFixed(1) + "M" : Math.abs(n) >= 1e3 ? (Math.abs(n) / 1e3).toFixed(1) + "K" : Math.abs(n).toFixed(0)}`;
 
 /** The trader card: 1080×1350 (4:5), on the chosen background. */
-async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey: string) {
+async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey: string, best: string[] = []) {
   const W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
   await document.fonts?.ready;
@@ -65,9 +66,14 @@ async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey:
   g.font = `800 34px ${sans}`; g.fillStyle = GOLD;
   const sub = `${rank.title.toUpperCase()} · ${d.xp.toLocaleString("en-US")} XP${d.demo ? " · DEMO" : ""}`; g.fillText(sub, cx - g.measureText(sub).width / 2, 528);
 
+  // Their best three trophies, under the rank line.
+  if (best.length) {
+    const s = 56, gap = 18, tw = best.length * s + (best.length - 1) * gap; let tx = W / 2 - tw / 2;
+    for (const k of best) { const t = TROPHY[k]; if (!t) continue; const em = await img(emblemUrl(t)); if (em) g.drawImage(em, tx, 542, s, s); tx += s + gap; }
+  }
   // Fade record, big
   const fights = st.won + st.lost, wr = fights ? Math.round((st.won / fights) * 100) : null;
-  g.font = `900 140px ${mono}`;
+  g.font = `900 ${best.length ? 118 : 140}px ${mono}`;
   const wS = String(st.won), lS = String(st.lost), dash = " – ";
   const ww = g.measureText(wS).width, dw = g.measureText(dash).width, lw = g.measureText(lS).width;
   let x = cx - (ww + dw + lw) / 2;
@@ -133,14 +139,21 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
     return () => { off = true; };
   }, [range, frozen.handle, stats, authedFetch]);
   const st = stats[range];
+  // Best three trophies for the card (highest tier first).
+  const [top, setTop] = useState<string[]>([]);
+  useEffect(() => {
+    fetch(`/api/achievements/${frozen.handle}`).then((r) => r.json()).then((j: { trophies?: { key: string; unlocked: boolean }[] }) => {
+      setTop((j.trophies ?? []).filter((x) => x.unlocked && TROPHY[x.key]).sort((a, b) => TIER_RANK[TROPHY[b.key].tier] - TIER_RANK[TROPHY[a.key].tier]).slice(0, 3).map((x) => x.key));
+    }).catch(() => null);
+  }, [frozen.handle]);
   useEffect(() => {
     if (!st) { setPng(null); return; }
     let off = false;
     setPng(null);
-    draw(frozen, st, range, bg).then((c) => { if (!off) setPng(c.toDataURL("image/png")); }).catch(() => setMsg("Couldn't draw the card"));
+    draw(frozen, st, range, bg, top).then((c) => { if (!off) setPng(c.toDataURL("image/png")); }).catch(() => setMsg("Couldn't draw the card"));
     try { localStorage.setItem("perped:profile-bg", bg); localStorage.setItem("perped:profile-range", range); } catch {}
     return () => { off = true; };
-  }, [frozen, st, range, bg]);
+  }, [frozen, st, range, bg, top]);
 
   const share = async () => {
     if (!png) return;
