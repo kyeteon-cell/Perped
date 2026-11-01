@@ -12,7 +12,7 @@ import type { MarketTrader } from "@/app/api/markets/[coin]/traders/route";
 export type Lens = "following" | "top" | "all";
 
 export function useMarketTraders(coin: string) {
-  const { data } = useSWR<{ traders: MarketTrader[]; followingAny: boolean }>(`/api/markets/${coin}/traders`, { refreshInterval: 20_000 });
+  const { data } = useSWR<{ traders: MarketTrader[]; followingAny: boolean }>(`/api/markets/${coin}/traders`, { refreshInterval: 30_000 });
   return { traders: data?.traders ?? [], followingAny: !!data?.followingAny, loaded: !!data };
 }
 

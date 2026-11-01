@@ -23,19 +23,26 @@ export async function GET() {
     handle: u.handle, avatarUrl: u.avatarUrl, isDemo: u.isDemo || p.paper, coin: p.coin ?? "", side: p.side as Side, entryPx: Number(p.entryPx), size: Number(p.size), leverage: p.leverage ?? 1, postId: p.id,
   });
 
-  // Open trades (newest 60) with authors.
-  const openRows = await db
+  // Open trades (newest 60), live duels and call streaks: three independent reads, run together.
+  const [openRows, duelRows, streakRows] = await Promise.all([db
     .select({ p: schema.posts, u: { handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, isDemo: schema.users.isDemo } })
     .from(schema.posts)
     .innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
     .where(and(eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), isNotNull(schema.posts.side)))
     .orderBy(desc(schema.posts.id))
-    .limit(60);
+    .limit(60),
+  db.select().from(schema.duels).where(and(eq(schema.duels.status, "live"), isNotNull(schema.duels.challengerPostId), isNotNull(schema.duels.opponentPostId))).orderBy(desc(schema.duels.id)).limit(8),
+  db
+    .select({ handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, isDemo: schema.users.isDemo, streak: schema.stats.callStreak })
+    .from(schema.stats)
+    .innerJoin(schema.users, eq(schema.users.id, schema.stats.userId))
+    .where(gte(schema.stats.callStreak, 3))
+    .orderBy(desc(schema.stats.callStreak))
+    .limit(5)]);
   const open = openRows.map((r) => trader(r.p, r.u));
   const byId = new Map(openRows.map((r) => [r.p.id, r] as const));
 
   // Live duels where both legs are still open.
-  const duelRows = await db.select().from(schema.duels).where(and(eq(schema.duels.status, "live"), isNotNull(schema.duels.challengerPostId), isNotNull(schema.duels.opponentPostId))).orderBy(desc(schema.duels.id)).limit(8);
   const duels: PulseDuel[] = [];
   for (const d of duelRows) {
     const a = byId.get(d.challengerPostId!), b = byId.get(d.opponentPostId!);
@@ -50,13 +57,6 @@ export async function GET() {
     fades.push({ coin: r.p.coin!, fader: trader(r.p, r.u), target: trader(t.p, t.u), createdAt: r.p.createdAt.toISOString() });
   }
 
-  // Streaks: call streaks of 3+.
-  const streakRows = await db
-    .select({ handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, isDemo: schema.users.isDemo, streak: schema.stats.callStreak })
-    .from(schema.stats)
-    .innerJoin(schema.users, eq(schema.users.id, schema.stats.userId))
-    .where(gte(schema.stats.callStreak, 3))
-    .orderBy(desc(schema.stats.callStreak))
-    .limit(5);
-  return Response.json({ duels, open, fades, streaks: streakRows, at: Date.now() } satisfies Pulse);
+  // Same for everyone: let the CDN share one database hit across all viewers for a few seconds.
+  return Response.json({ duels, open, fades, streaks: streakRows, at: Date.now() } satisfies Pulse, { headers: { "cache-control": "public, s-maxage=5, stale-while-revalidate=30" } });
 }

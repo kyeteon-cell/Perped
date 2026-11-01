@@ -86,7 +86,7 @@ export async function GET(req: Request) {
   }
   try {
     const forYou = q.tab === "foryou" || (!q.tab && !q.handle && !q.coin && !q.status);
-    let posts = await queryFeed({ where: and(...conds.filter(Boolean)), limit: forYou ? limit * 3 : limit, viewerId: auth?.privyId, pinnedFirst: !!q.handle });
+    let posts = await queryFeed({ where: and(...conds.filter(Boolean)), limit: forYou ? limit * 2 : limit, viewerId: auth?.privyId, pinnedFirst: !!q.handle });
     if (forYou) posts = diversify(posts, limit);
     // Real people first: on the top page, live posts by humans from the last 3 hours float above the bots.
     if (forYou && !q.cursor) {

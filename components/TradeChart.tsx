@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { Candle } from "@/lib/hl-info";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { fmtPct, fmtPrice, fmtUsd } from "@/lib/format";
@@ -25,7 +25,17 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   useEffect(() => { try { const v = localStorage.getItem("perped:tc-iv") as Iv | null; if (v && IVS[v]) setIv(v); } catch {} }, []);
   const pick = (e: MouseEvent, v: Iv) => { e.preventDefault(); e.stopPropagation(); setIv(v); try { localStorage.setItem("perped:tc-iv", v); } catch {} };
   const ms = IVS[iv], limit = 40;
-  const { data } = useSWR<{ candles: Candle[] }>(`/api/markets/${coin}/candles?interval=${iv}&limit=${limit}`, { refreshInterval: 60_000, dedupingInterval: 30_000, revalidateOnFocus: false });
+  // Only fetch candles once the card scrolls near the screen: a long feed doesn't fire a request per trade up front.
+  const box = useRef<HTMLDivElement>(null);
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    const el = box.current; if (!el) return;
+    if (typeof IntersectionObserver === "undefined") { setVis(true); return; }
+    const io = new IntersectionObserver(([e]) => { if (e?.isIntersecting) { setVis(true); io.disconnect(); } }, { rootMargin: "300px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const { data } = useSWR<{ candles: Candle[] }>(vis ? `/api/markets/${coin}/candles?interval=${iv}&limit=${limit}` : null, { refreshInterval: 60_000, dedupingInterval: 30_000, revalidateOnFocus: false });
   const { markets } = useMarkets();
   const m = markets.find((x) => x.name === coin);
   const candles = (data?.candles ?? []).slice(-limit);
@@ -71,7 +81,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const offUp = off.filter((l) => l.p > top), offDn = off.filter((l) => l.p < bot);
 
   return (
-    <div role="link" tabIndex={0} className="tchart" aria-label={`${coin} chart`}
+    <div ref={box} role="link" tabIndex={0} className="tchart" aria-label={`${coin} chart`}
       onClick={(e) => { e.stopPropagation(); router.push(`/markets/${coin}`); }}
       onKeyDown={(e) => { if (e.key === "Enter") router.push(`/markets/${coin}`); }}>
       <div className="tc-grid">

@@ -21,11 +21,14 @@ export type QuickState = {
 };
 
 async function state(coin: string, userId: string | null): Promise<QuickState> {
-  const mids = await getMids().catch(() => ({} as Record<string, number>));
   const now = new Date();
-  const open = await db.select({ side: schema.posts.side, userId: schema.posts.userId, id: schema.posts.id, meta: schema.posts.meta, deadline: schema.posts.deadline })
-    .from(schema.posts)
-    .where(and(eq(schema.posts.kind, "call"), eq(schema.posts.coin, coin), eq(schema.posts.callStatus, "open"), sql`(${schema.posts.meta}->>'quick') = 'true'`, gt(schema.posts.deadline, now)));
+  // Price and open calls don't depend on each other: fetch both at once.
+  const [mids, open] = await Promise.all([
+    getMids().catch(() => ({} as Record<string, number>)),
+    db.select({ side: schema.posts.side, userId: schema.posts.userId, id: schema.posts.id, meta: schema.posts.meta, deadline: schema.posts.deadline })
+      .from(schema.posts)
+      .where(and(eq(schema.posts.kind, "call"), eq(schema.posts.coin, coin), eq(schema.posts.callStatus, "open"), sql`(${schema.posts.meta}->>'quick') = 'true'`, gt(schema.posts.deadline, now))),
+  ]);
   const mine = open.find((o) => userId && o.userId === userId);
   return {
     coin, mid: Number(mids[coin] ?? 0),

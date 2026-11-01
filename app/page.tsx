@@ -15,13 +15,14 @@ import { QuickPost } from "@/components/QuickPost";
 import { FollowButton } from "@/components/FollowButton";
 import { FeedFilters, EMPTY_FILTER, activeCount, filterQuery, filterSummary, type FeedFilter } from "@/components/FeedFilters";
 import { Banked } from "@/components/Banked";
-import { DepositSheet } from "@/components/DepositSheet";
+import dynamic from "next/dynamic";
 import { Avatar, Icon, I, SkeletonList } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
 import { fmtUsd, fmtPct } from "@/lib/format";
 import { useLive } from "@/lib/hooks/useLive";
+const DepositSheet = dynamic(() => import("@/components/DepositSheet").then((m) => m.DepositSheet), { ssr: false });
 
 type Tab = "foryou" | "following" | "live";
 
@@ -55,10 +56,10 @@ export default function HomePage() {
     try { const ref = new URLSearchParams(window.location.search).get("ref"); if (ref) localStorage.setItem("perped:ref", ref.toLowerCase()); } catch {}
   }, []);
   const key = `/api/posts?tab=${tab}${filterQuery(filter)}`;
-  const { data, mutate, isLoading } = useSWR<{ posts: FeedRow[] }>(key, async () => (await authedFetch(key)).json(), { refreshInterval: 15_000 });
+  const { data, mutate, isLoading } = useSWR<{ posts: FeedRow[] }>(key, async () => (await authedFetch(key)).json(), { refreshInterval: 30_000, revalidateOnFocus: true });
   const allPosts = data?.posts ?? [];
   const posts = realness === "all" ? allPosts : allPosts.filter((p) => p.post.kind !== "trade" || (realness === "demo") === isDemoPost(p));
-  const { data: board } = useSWR<{ rows: { handle: string; pnl: number; winRate: string }[] }>("/api/leaderboard?period=7d");
+  const { data: board } = useSWR<{ rows: { handle: string; pnl: number; winRate: string; avatarUrl?: string | null }[] }>("/api/leaderboard?period=7d");
   const suggested = (board?.rows ?? []).filter((r) => r.handle !== profile?.handle).slice(0, 5);
 
   return (
@@ -148,14 +149,14 @@ function groupFeed(rows: FeedRow[]): Array<{ kind: "one"; item: FeedRow } | { ki
   return out;
 }
 
-function Suggested({ rows }: { rows: { handle: string; pnl: number; winRate: string }[] }) {
+function Suggested({ rows }: { rows: { handle: string; pnl: number; winRate: string; avatarUrl?: string | null }[] }) {
   return (
     <div className="hairline py-4" data-tint="violet">
       <div className="flex items-center justify-between px-5"><span className="eyebrow">Traders like you</span><span className="when">doing well this week</span></div>
       <div className="hstrip mt-3">
         {rows.map((r) => (
           <div key={r.handle} className="hcard violet text-center" style={{ width: 140 }}>
-            <div className="flex justify-center"><Avatar handle={r.handle} size={48} /></div>
+            <div className="flex justify-center"><Avatar handle={r.handle} url={r.avatarUrl ?? null} size={48} /></div>
             <Link href={`/u/${r.handle}`} className="name mt-2 block">{r.handle}</Link>
             <div className="when">{fmtUsd(r.pnl, { sign: true, compact: true })} · {fmtPct(Number(r.winRate), 0)} win</div>
             <div className="mt-2.5"><FollowButton handle={r.handle} compact className="!ml-0 w-full" /></div>

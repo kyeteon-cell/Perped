@@ -157,7 +157,7 @@ function StreakCard({ s }: { s: PulseData["streaks"] }) {
  * the rail auto-advances every few seconds and pauses while you're touching it.
  */
 export function Pulse({ mids }: { mids: Record<string, number> }) {
-  const { data } = useSWR<PulseData>("/api/pulse", { refreshInterval: 20_000 });
+  const { data } = useSWR<PulseData>("/api/pulse", { refreshInterval: 30_000 });
   const rail = useRef<HTMLDivElement>(null);
   const paused = useRef(false);
   const [idx, setIdx] = useState(0);

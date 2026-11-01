@@ -6,6 +6,8 @@ import { db, schema, ensureSchema } from "@/lib/db";
  * trades: top 50 by realised PnL + bottom 5 of those who opted in. calls: hit rate, min 5 resolved.
  */
 export const dynamic = "force-dynamic";
+/** The board is the same for everyone: cache it at the edge for 30s, serve stale up to 2 min while refreshing. */
+const CACHE = { "cache-control": "public, s-maxage=30, stale-while-revalidate=120" };
 
 export async function GET(req: Request) {
   try {
@@ -13,9 +15,9 @@ export async function GET(req: Request) {
     // Nothing real on the board yet → show demo accounts so the page is never empty, and say so.
     if (first.rows.length === 0 && !first.demo) {
       const alt = await board(req, true);
-      return Response.json({ ...alt, fellBack: true });
+      return Response.json({ ...alt, fellBack: true }, { headers: CACHE });
     }
-    return Response.json(first);
+    return Response.json(first, { headers: CACHE });
   } catch (e) {
     return Response.json({ rows: [], error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }

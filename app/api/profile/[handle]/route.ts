@@ -44,7 +44,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ handle: string 
   let positions: unknown[] = [];
   let accountValue: number | null = null;
   let withdrawable: number | null = null;
-  try {
+  // Demo accounts, bots and guests have nothing on Hyperliquid: skip the round trip.
+  if (!row.user.isDemo && !row.user.isBot && /^0x[0-9a-f]{40}$/i.test(row.user.address ?? "")) try {
     const state = await getClearinghouseState(row.user.address);
     positions = state.assetPositions.map((p) => p.position).filter((p) => Number(p.szi) !== 0);
     accountValue = Number(state.marginSummary.accountValue);

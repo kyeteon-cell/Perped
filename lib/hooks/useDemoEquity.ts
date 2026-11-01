@@ -9,7 +9,7 @@ import { pnlForPosition } from "@/lib/format";
  * current mid, and equity = cash + margin + unrealised. Refreshes with every price tick via `mids`.
  */
 export function useDemoEquity(handle: string | null | undefined, cash: number, mids: Record<string, number>) {
-  const { data, mutate } = useSWR<{ posts: FeedRow[] }>(handle ? `/api/posts?handle=${handle}&kind=trade&status=open&limit=50` : null, { refreshInterval: 15_000 });
+  const { data, mutate } = useSWR<{ posts: FeedRow[] }>(handle ? `/api/posts?handle=${handle}&kind=trade&status=open&limit=50` : null, { refreshInterval: 30_000 });
   const open = data?.posts ?? [];
   let margin = 0, upnl = 0;
   for (const { post } of open) {

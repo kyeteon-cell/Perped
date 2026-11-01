@@ -11,14 +11,17 @@ import { useSession } from "@/lib/hooks/useSession";
 import { Avatar, Badges, CoinMark, Icon, I, ticker, RankChip } from "./ui";
 import { Sparkline } from "./Sparkline";
 import { TradeChart } from "./TradeChart";
-import { ShareSheet } from "./ShareSheet";
-import { ManageTrade } from "./ManageTrade";
-import { QuickTrade } from "./QuickTrade";
+import dynamic from "next/dynamic";
 import { FollowButton } from "./FollowButton";
 import { RichText } from "./RichText";
-import { InlineComments } from "./InlineComments";
 import { BattleSummary, battlesOf } from "./BattleSummary";
 import { HL_NETWORK } from "@/lib/config";
+
+// Sheets only open after a tap: load their code (and the Hyperliquid trading SDK behind them) on demand, not with the feed.
+const ShareSheet = dynamic(() => import("./ShareSheet").then((m) => m.ShareSheet), { ssr: false });
+const ManageTrade = dynamic(() => import("./ManageTrade").then((m) => m.ManageTrade), { ssr: false });
+const QuickTrade = dynamic(() => import("./QuickTrade").then((m) => m.QuickTrade), { ssr: false });
+const InlineComments = dynamic(() => import("./InlineComments").then((m) => m.InlineComments), { ssr: false });
 
 /** Hyperliquid's own explorer page for an account: every fill, visible to anyone. */
 export function explorerUrl(address?: string | null) {

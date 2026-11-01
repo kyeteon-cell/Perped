@@ -6,7 +6,7 @@ import { Nav } from "@/components/Nav";
 import { Ticker } from "@/components/Ticker";
 import { APP_NAME, APP_URL } from "@/lib/config";
 
-const sans = Nunito({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-sans", display: "swap" });
+const sans = Nunito({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 const mono = Barlow({ subsets: ["latin"], weight: ["500", "600", "700", "800"], style: ["normal", "italic"], variable: "--font-mono", display: "swap" });
 
 export const metadata: Metadata = {

@@ -10,7 +10,15 @@ export type LiveSettings = { open: boolean; openedAt?: string };
 /** Default when nothing is stored: closed (demo only). NEXT_PUBLIC_LIVE_OPEN=1 opens it without the database. */
 const ENV_OPEN = process.env.NEXT_PUBLIC_LIVE_OPEN === "1";
 
-export async function getLiveSettings(): Promise<LiveSettings> {
+/** Read on almost every request, changed rarely: keep it in memory for 20s per server instance. */
+let liveCache: { at: number; v: Promise<LiveSettings> } | null = null;
+export function getLiveSettings(): Promise<LiveSettings> {
+  if (liveCache && Date.now() - liveCache.at < 20_000) return liveCache.v;
+  const v = readLiveSettings();
+  liveCache = { at: Date.now(), v };
+  return v;
+}
+async function readLiveSettings(): Promise<LiveSettings> {
   try {
     const [r] = await db.select().from(schema.appSettings).where(eq(schema.appSettings.key, "live")).limit(1);
     return { open: ENV_OPEN, ...((r?.value ?? {}) as Partial<LiveSettings>) };
@@ -22,6 +30,7 @@ export async function getLiveSettings(): Promise<LiveSettings> {
 export async function setLiveOpen(open: boolean) {
   const value: LiveSettings = { open, ...(open ? { openedAt: new Date().toISOString() } : {}) };
   await db.insert(schema.appSettings).values({ key: "live", value }).onConflictDoUpdate({ target: schema.appSettings.key, set: { value, updatedAt: new Date() } });
+  liveCache = null;
   return value;
 }
 

@@ -48,15 +48,17 @@ export async function queryFeed(opts: { where?: SQL | undefined; limit: number; 
 
   if (opts.viewerId && rows.length) {
     const ids = rows.map((r) => r.post.id);
-    const [mine, polls] = await Promise.all([
+    const srcIds = rows.map((r) => r.post.fadedFromId).filter((x): x is number => !!x);
+    // All of the viewer's lookups at once: one round trip instead of six in a row.
+    const [mine, polls, myFades, mySrc, rivals, meRows] = await Promise.all([
       db.select().from(schema.votes).where(and(eq(schema.votes.userId, opts.viewerId), inArray(schema.votes.postId, ids))),
       db.select().from(schema.pollVotes).where(and(eq(schema.pollVotes.userId, opts.viewerId), inArray(schema.pollVotes.postId, ids))),
+      db.select({ src: schema.posts.fadedFromId }).from(schema.posts).where(and(eq(schema.posts.userId, opts.viewerId), inArray(schema.posts.fadedFromId, ids))),
+      srcIds.length ? db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, opts.viewerId), inArray(schema.posts.id, srcIds))) : Promise.resolve([] as { id: number }[]),
+      db.select().from(schema.rivalries).where(and(eq(schema.rivalries.active, true), or(eq(schema.rivalries.userA, opts.viewerId), eq(schema.rivalries.userB, opts.viewerId)))),
+      db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, opts.viewerId)).limit(1),
     ]);
-    const myFades = await db.select({ src: schema.posts.fadedFromId }).from(schema.posts).where(and(eq(schema.posts.userId, opts.viewerId), inArray(schema.posts.fadedFromId, ids)));
-    const srcIds = rows.map((r) => r.post.fadedFromId).filter((x): x is number => !!x);
-    const mySrc = srcIds.length ? await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, opts.viewerId), inArray(schema.posts.id, srcIds))) : [];
-    const rivals = await db.select().from(schema.rivalries).where(and(eq(schema.rivalries.active, true), or(eq(schema.rivalries.userA, opts.viewerId), eq(schema.rivalries.userB, opts.viewerId))));
-    const [meRow] = rivals.length ? await db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, opts.viewerId)).limit(1) : [];
+    const meRow = meRows[0];
     for (const r of rows) {
       const rv = r.author ? rivals.find((x) => (x.userA === opts.viewerId && x.userB === r.author!.id) || (x.userB === opts.viewerId && x.userA === r.author!.id)) : undefined;
       r.rival = rv && meRow ? { mine: rv.userA === opts.viewerId ? rv.aWins : rv.bWins, theirs: rv.userA === opts.viewerId ? rv.bWins : rv.aWins, me: meRow.handle } : null;

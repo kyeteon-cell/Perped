@@ -13,15 +13,19 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const auth = await getAuth(req);
   if (!auth) return unauthorized();
-  const live = await getLiveSettings();
-  let profile = await getProfile(auth.privyId);
-  if (profile) profile = await enforceDemo(profile, live.open);
+  const [live, found] = await Promise.all([getLiveSettings(), getProfile(auth.privyId)]);
+  let profile = found;
   let unread = 0;
   let fee: FeeInfo = resolveFeeTier({});
   if (profile) {
-    const [r] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(schema.notifications).where(and(eq(schema.notifications.userId, profile.id), eq(schema.notifications.read, false)));
-    unread = r?.n ?? 0;
-    fee = await getFeeInfo(profile.id, profile.referredBy);
+    const [p2, unreadRows, f] = await Promise.all([
+      enforceDemo(profile, live.open),
+      db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(schema.notifications).where(and(eq(schema.notifications.userId, profile.id), eq(schema.notifications.read, false))),
+      getFeeInfo(profile.id, profile.referredBy),
+    ]);
+    profile = p2;
+    unread = unreadRows[0]?.n ?? 0;
+    fee = f;
   }
   return Response.json({ profile, address: auth.address, unread, fee, guest: !!auth.guest, live: { open: live.open, allowed: liveAllowed(live.open, profile) } });
 }

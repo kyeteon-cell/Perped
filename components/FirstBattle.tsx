@@ -6,8 +6,9 @@ import useSWR from "swr";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 import { track } from "@/lib/track";
-import { QuickTrade } from "./QuickTrade";
+import dynamic from "next/dynamic";
 import { Avatar, CoinMark, ticker } from "./ui";
+const QuickTrade = dynamic(() => import("./QuickTrade").then((m) => m.QuickTrade), { ssr: false });
 
 /**
  * New here and no trades yet? One card: a live trade to fade, one tap into the quick fade sheet,

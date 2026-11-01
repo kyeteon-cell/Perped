@@ -29,7 +29,7 @@ export function QuickCall({ mids }: { mids: Record<string, number> }) {
   const [busy, setBusy] = useState<"long" | "short" | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const key = `/api/quick?coin=${coin}`;
-  const { data, mutate } = useSWR<QuickState>(key, async () => (await authedFetch(key)).json(), { refreshInterval: 20_000 });
+  const { data, mutate } = useSWR<QuickState>(key, async () => (await authedFetch(key)).json(), { refreshInterval: 30_000 });
   const mid = mids[coin] ?? data?.mid ?? 0;
 
   const pick = async (side: "long" | "short") => {
