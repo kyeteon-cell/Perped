@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { Candle } from "@/lib/hl-info";
+import { withLive } from "@/lib/candles-live";
 import { fmtPct, fmtPrice, fmtUsd } from "@/lib/format";
 import { Avatar } from "./ui";
 
@@ -125,6 +126,8 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
   const xOf = (t: number) => idxOf(t) * cw + cw / 2;
   const entryIdx = [idxOf(ts(a.openedAt)), idxOf(ts(b.openedAt))];
   const start = Math.max(ts(a.openedAt), ts(b.openedAt));
+  // Zones run from the moment the fight started (the later entry) through the candles and the open space ahead.
+  const zx = Math.max(0, xOf(start) - cw / 2);
 
   // Who wins where: the long side wins above its entry, the short side below its entry.
   const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
@@ -137,18 +140,17 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
           {/* the future: open space after the last candle, coloured by who wins if price goes there */}
           {zones ? (
             <>
-              <rect x={CA} y="0" width={W - CA} height={y(zones.upper)} fill="var(--green)" opacity=".13" />
-              <rect x={CA} y={y(zones.upper)} width={W - CA} height={Math.max(0, y(zones.lower) - y(zones.upper))} fill={zones.bothWin ? "var(--gold)" : "var(--text)"} opacity={zones.bothWin ? 0.1 : 0.05} />
-              <rect x={CA} y={y(zones.lower)} width={W - CA} height={Math.max(0, H - y(zones.lower))} fill="var(--red)" opacity=".13" />
+              <rect x={zx} y="0" width={W - zx} height={y(zones.upper)} fill="var(--green)" opacity=".13" />
+              <rect x={zx} y={y(zones.upper)} width={W - zx} height={Math.max(0, y(zones.lower) - y(zones.upper))} fill={zones.bothWin ? "var(--gold)" : "var(--text)"} opacity={zones.bothWin ? 0.1 : 0.05} />
+              <rect x={zx} y={y(zones.lower)} width={W - zx} height={Math.max(0, H - y(zones.lower))} fill="var(--red)" opacity=".13" />
             </>
-          ) : <rect x={CA} y="0" width={W - CA} height={H} fill="var(--text)" opacity=".03" />}
+          ) : <rect x={zx} y="0" width={W - zx} height={H} fill="var(--text)" opacity=".03" />}
           <line x1={CA} x2={CA} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".35" />
           {candles.map((c, i) => {
             const up = c.c >= c.o, x = i * cw + cw / 2, col = up ? GREEN : RED;
             const isEntry = entryIdx.includes(i);
             return (
               <g key={c.t} opacity={c.t + ms < start && !isEntry ? 0.4 : 1}>
-                {isEntry && <rect x={x - cw / 2} y="0" width={cw} height={H} fill={entryIdx[0] === i ? sideCol(a) : sideCol(b)} opacity=".16" />}
                 <line x1={x} x2={x} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth="1" vectorEffect="non-scaling-stroke" />
                 <rect x={x - bw / 2} y={y(Math.max(c.o, c.c))} width={bw} height={Math.max(1.4, Math.abs(y(c.o) - y(c.c)))} fill={col} />
               </g>
@@ -160,7 +162,7 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
           {[a, b].map((f, i) => (
             <line key={i} x1={xOf(ts(f.openedAt))} x2={W} y1={y(f.entry)} y2={y(f.entry)} stroke={sideCol(f)} strokeWidth="2" vectorEffect="non-scaling-stroke" />
           ))}
-          <line x1="0" x2={W} y1={y(px)} y2={y(px)} stroke="var(--text)" strokeDasharray="3 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".6" />
+          <line x1="0" x2={W} y1={y(px)} y2={y(px)} stroke="var(--chrome)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
         </svg>
       ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 16 }} />}
 
@@ -180,7 +182,6 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
               <em>{f.side === "long" ? "▲" : "▼"}</em>
             </span>
           ))}
-          <i className="ar-dot" style={{ left: pctX(CA), top: pctY(px) }} />
           <span className="ar-axis now" style={{ top: pctY(px) }}>{fmtPrice(px)}</span>
           <span className="ar-nowlbl" style={{ left: pctX(CA) }}>now</span>
         </div>
@@ -277,7 +278,7 @@ function Tape({ a, b }: { a: Fighter; b: Fighter }) {
    Card chart: the fade card in the feed. Same battle, simpler picture:
    each trader's avatar marks their entry, the leader's gap to the live price is shaded, no lines.
    ====================================================================== */
-export function BattleCardChart({ coin, live, a, b }: { coin: string; live: number; a: Fighter; b: Fighter }) {
+export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: string; live: number; a: Fighter; b: Fighter; tick?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const [vis, setVis] = useState(false);
   useEffect(() => {
@@ -287,11 +288,20 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
     io.observe(el);
     return () => io.disconnect();
   }, []);
-  const { data } = useSWR<{ candles: Candle[] }>(vis ? `/api/markets/${coin}/candles?interval=5m&limit=50` : null, { refreshInterval: 60_000, dedupingInterval: 30_000, revalidateOnFocus: false });
+  // Timeframe follows the fight: 1-minute candles while it's young, then 5m, then 15m, so the fade always spans most of the chart.
+  const fightStart = Math.max(ts(a.openedAt), ts(b.openedAt));
+  const age = Date.now() - fightStart;
+  const auto: Iv = age < 45 * 60_000 ? "1m" : age < 4 * 3_600_000 ? "5m" : "15m";
+  // Same switch as the trade cards (shared, remembered); until you pick one it follows the fight's age.
+  const [picked, setPicked] = useState<Iv | null>(null);
+  useEffect(() => { try { const v = localStorage.getItem("perped:tc-iv2") as Iv | null; if (v && IVS[v]) setPicked(v); } catch {} }, []);
+  const civ: Iv = picked ?? auto;
+  const pick = (e: MouseEvent, v: Iv) => { e.preventDefault(); e.stopPropagation(); setPicked(v); try { localStorage.setItem("perped:tc-iv2", v); } catch {} };
+  const { data } = useSWR<{ candles: Candle[] }>(vis ? `/api/markets/${coin}/candles?interval=${civ}&limit=60` : null, { refreshInterval: civ === "1m" ? 30_000 : 60_000, dedupingInterval: 20_000, revalidateOnFocus: false });
   // Zoom on the fight: a short run of history before the first entry (4–8 candles), then everything since.
-  const all = (data?.candles ?? []).slice(-36);
-  const firstT = Math.min(ts(a.openedAt), ts(b.openedAt));
-  const allFirst = Math.max(0, all.findIndex((c) => c.t + IVS["5m"] > firstT));
+  const all = (tick ? withLive(data?.candles ?? [], live, IVS[civ]) : data?.candles ?? []).slice(-60);
+  const firstT = fightStart; // the fight starts when the fade opens; the original trade may be much older
+  const allFirst = Math.max(0, all.findIndex((c) => c.t + IVS[civ] > firstT));
   const candles = all.slice(Math.max(0, allFirst - Math.max(4, Math.min(8, all.length - allFirst))));
   const px = live || candles[candles.length - 1]?.c || a.entry;
   const W = 300, H = 130, PAD = 8;
@@ -301,21 +311,21 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
   const y = (p: number) => PAD + (1 - (p - bot) / (top - bot)) * (H - PAD * 2);
   const pctY = (p: number) => `${(y(p) / H) * 100}%`;
   const pctX = (x: number) => `${(x / W) * 100}%`;
-  // Layout: grey history before the first entry takes at most 30%, the fight fills the middle in colour,
-  // and the last 26% is open space ahead of "now", split into who wins where.
-  const n = Math.max(candles.length, 1), t0 = candles[0]?.t ?? Date.now(), ms = IVS["5m"];
+  // Layout: same slim slot for every candle (never stretched), at least 44 slots across, so a young fight leaves
+  // open space ahead instead of fat candles; the last 26%+ is open space split into who wins where.
+  const n = Math.max(candles.length, 1), t0 = candles[0]?.t ?? Date.now(), ms = IVS[civ];
   const idx = (t: number) => Math.max(0, Math.min(n - 1, Math.floor((t - t0) / ms)));
-  const first = Math.min(idx(ts(a.openedAt)), idx(ts(b.openedAt)));
-  const FUT = W * 0.26, room = W - FUT;
-  const histW = first ? Math.min(W * 0.25, (room * first) / n) : 0, liveW = room - histW, liveN = Math.max(1, n - first);
-  const xOf = (i: number) => (i < first ? (i + 0.5) * (histW / first) : histW + (i - first + 0.5) * (liveW / liveN));
-  const bwOf = (i: number) => Math.max(1.6, (i < first ? histW / first : liveW / liveN) * 0.62);
-  const nowX = histW + liveW;
+  const first = idx(fightStart);
+  const SLOTS = Math.max(44, Math.ceil(n / 0.74)), slotW = W / SLOTS, histW = first * slotW;
+  const xOf = (i: number) => (i + 0.5) * slotW;
+  const bwOf = (_i: number) => Math.max(1, slotW * 0.56);
+  const nowX = n * slotW;
   // Who wins where: the long side wins above its entry, the short side below its entry.
   const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
   const zones = L && S && L !== S ? { up: L, upP: Math.max(L.entry, S.entry), down: S, downP: Math.min(L.entry, S.entry) } : null;
   const leader = Math.abs(a.roi - b.roi) < 0.05 ? null : a.roi > b.roi ? a : b;
   return (
+    <>
     <div ref={box} className="bcc">
       {candles.length ? (
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
@@ -326,7 +336,7 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
             </>
           )}
           <line x1={nowX} x2={nowX} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".18" />
-          <line x1={nowX - 2} x2={nowX + 14} y1={y(px)} y2={y(px)} stroke="var(--text)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity=".8" />
+          <line x1="0" x2={W} y1={y(px)} y2={y(px)} stroke="var(--chrome)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
           {candles.map((c, i) => {
             const x = xOf(i), bw = bwOf(i), before = i < first;
             const col = before ? "var(--muted)" : c.c >= c.o ? GREEN : RED;
@@ -344,7 +354,7 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
           {zones && <span className="bcc-zone up" style={{ left: pctX(nowX + 6) }}>{zones.up.handle} wins</span>}
           {zones && <span className="bcc-zone down" style={{ left: pctX(nowX + 6) }}>{zones.down.handle} wins</span>}
           {[a, b].map((f, i) => (
-            <span key={i} className={`bcc-pin ${f.side}`} style={{ left: pctX(xOf(idx(ts(f.openedAt)))), top: pctY(f.entry) }} title={`${f.handle} ${f.side === "long" ? "bought" : "sold"} at ${fmtPrice(f.entry)}`}>
+            <span key={i} className={`bcc-pin ${f.side}`} style={{ left: `clamp(14px, ${pctX(xOf(idx(ts(f.openedAt))))}, calc(100% - 14px))`, top: `clamp(14px, ${pctY(f.entry)}, calc(100% - 14px))` }} title={`${f.handle} ${f.side === "long" ? "bought" : "sold"} at ${fmtPrice(f.entry)}`}>
               <Avatar handle={f.handle} url={f.avatarUrl} size={20} link={false} />
             </span>
           ))}
@@ -352,6 +362,13 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
         </>
       )}
     </div>
+    <div className="tc-foot">
+      <span className="when truncate">{civ} candles · fight started {Math.max(1, Math.round(age / 60_000)) < 60 ? `${Math.max(1, Math.round(age / 60_000))}m` : `${Math.round(age / 3_600_000)}h`} ago</span>
+      <span className="tc-ivs v2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+        {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === civ ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
+      </span>
+    </div>
+    </>
   );
 }
 
