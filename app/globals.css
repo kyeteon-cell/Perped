@@ -1694,3 +1694,32 @@ a.inv-erow { color: inherit; }
 .ps-range button.on { background: var(--ink); color: var(--ink-fg); }
 .ps-inv { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px; border-radius: 14px; border: 1px dashed var(--line); font-size: 12.5px; color: var(--muted); }
 .ps-inv b { color: var(--gold); font-weight: 900; }
+
+/* Welcome: level picker, explainer demos and the guided first trade / fade */
+.wl-levels { display: grid; gap: 10px; margin-top: 18px; }
+.wl-level { display: flex; align-items: center; gap: 12px; text-align: left; padding: 16px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; box-shadow: var(--shadow); }
+.wl-level:active { transform: scale(.98); }
+.wl-level b { display: block; font-size: 16px; font-weight: 900; }
+.wl-level span span, .wl-level .flex-1 > span { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.wl-ic { flex: none; width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; color: var(--chrome-fg); background: linear-gradient(180deg, var(--chrome-hi), var(--chrome-lo)); }
+.wl-ic .g { width: 22px; height: 22px; }
+.wl-demo { display: grid; gap: 8px; padding: 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); }
+.wl-demo.row { grid-template-columns: 1fr 1fr; }
+.wl-tick { display: flex; align-items: center; gap: 8px; font-size: 14px; } .wl-tick .mono:first-of-type { margin-left: auto; }
+.wl-dir { text-align: center; padding: 14px 8px; border-radius: 14px; font-weight: 900; font-size: 14px; }
+.wl-dir.long { color: var(--green); background: var(--green-soft); } .wl-dir.short { color: var(--red); background: var(--red-soft); }
+.wl-lev { display: flex; justify-content: space-between; font-size: 14px; } .wl-lev span { color: var(--muted); font-weight: 700; } .wl-lev b { font-size: 16px; }
+.wl-step { display: flex; align-items: center; gap: 8px; margin: 18px 0 8px; font-size: 14px; font-weight: 900; }
+.wl-step b { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--ink); color: var(--ink-fg); }
+.wl-coins { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.wl-coins button { display: grid; justify-items: center; gap: 4px; padding: 10px 4px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-weight: 800; font-size: 13px; cursor: pointer; }
+.wl-coins button.on { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+.wl-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.wl-sides button { display: grid; gap: 2px; padding: 14px 10px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); font: inherit; cursor: pointer; text-align: center; }
+.wl-sides button b { font-size: 16px; font-weight: 900; } .wl-sides button span { font-size: 12px; color: var(--muted); font-weight: 700; }
+.wl-sides .long b { color: var(--green); } .wl-sides .short b { color: var(--red); }
+.wl-sides .long.on { background: var(--green-soft); border-color: var(--green); } .wl-sides .short.on { background: var(--red-soft); border-color: var(--red); }
+.wl-ticket { margin: 6px -20px 0; }
+.wl-them { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); }
+.wl-vs { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--text) 5%, transparent); font-size: 14px; }
+.wl-next { margin: 14px 0 0; padding-left: 18px; display: grid; gap: 10px; font-size: 15px; line-height: 1.45; color: var(--muted); }

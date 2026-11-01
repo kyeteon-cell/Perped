@@ -8,7 +8,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
-import { IntroOnce } from "@/components/Intro";
+import { WelcomeOnce } from "@/components/Welcome";
 import { Pulse } from "@/components/Pulse";
 import { QuickCall } from "@/components/QuickCall";
 import { QuickPost } from "@/components/QuickPost";
@@ -69,7 +69,7 @@ export default function HomePage() {
 
   return (
     <div data-tint="brand" className="fade-in">
-      <IntroOnce />
+      <WelcomeOnce />
       <header className="home-banner">
         <img src="/api/share-bg/banner-mercury" alt="" className="home-banner-img" />
         <div className="home-banner-shade" />

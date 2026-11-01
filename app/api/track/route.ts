@@ -3,7 +3,7 @@ import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-const Body = z.object({ e: z.enum(["visit", "intro_done", "push_on", "quick_fade_open", "first_battle_card"]), anon: z.string().max(64).optional() });
+const Body = z.object({ e: z.enum(["visit", "intro_done", "push_on", "quick_fade_open", "first_battle_card", "welcome_new", "welcome_crypto", "welcome_perps", "first_trade_done", "first_trade_skip", "first_fade_done", "first_fade_skip"]), anon: z.string().max(64).optional() });
 
 /** POST /api/track {e, anon} → record one product event. Fire-and-forget from the client. */
 export async function POST(req: Request) {
