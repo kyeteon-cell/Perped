@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Sheet } from "./Sheet";
 import { HERO_BACKGROUNDS, SHARE_BACKGROUNDS } from "@/lib/share-backgrounds";
 import { rankFor } from "@/lib/rank";
+import { referralLink } from "@/lib/fees";
 
 /** What the profile card shows. Numbers are taken when the sheet opens. */
 export type ProfileShareData = { handle: string; avatarUrl: string | null; verified: boolean; demo: boolean; xp: number; url: string };
@@ -101,7 +102,15 @@ async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey:
   // Footer
   const logo = await img("/api/share-bg/logo-wordmark");
   if (logo) { const lh = 60, lw2 = (logo.width / logo.height) * lh; g.drawImage(logo, 56, H - 56 - lh, lw2, lh); }
-  g.font = `800 30px ${sans}`; g.fillStyle = "#fff"; const ft = d.url.replace(/^https?:\/\//, ""); g.fillText(ft, W - 56 - g.measureText(ft).width, H - 72);
+  // Their invite: code + link, so the card brings people in on their code.
+  const inv = referralLink(new URL(d.url).origin, d.handle).replace(/^https?:\/\//, "");
+  g.font = `800 26px ${sans}`; g.fillStyle = "rgba(255,255,255,.65)"; const cl = "JOIN WITH CODE"; const cw = g.measureText(cl).width;
+  g.font = `900 34px ${mono}`; const code = d.handle.toUpperCase(); const kw = g.measureText(code).width;
+  const bx = W - 56 - (cw + 16 + kw + 32);
+  g.font = `800 26px ${sans}`; g.fillText(cl, bx, H - 118);
+  g.fillStyle = GOLD; rr(g, bx + cw + 16, H - 152, kw + 32, 50, 14); g.fill();
+  g.font = `900 34px ${mono}`; g.fillStyle = "#1a1300"; g.fillText(code, bx + cw + 32, H - 115);
+  g.font = `800 30px ${sans}`; g.fillStyle = "#fff"; g.fillText(inv, W - 56 - g.measureText(inv).width, H - 66);
   return c;
 }
 
@@ -111,6 +120,7 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [frozen] = useState(data);
+  const invite = referralLink(new URL(data.url).origin, data.handle);
   const [range, setRange] = useState<CardRange>(() => { try { return (localStorage.getItem("perped:profile-range") as CardRange) || "all"; } catch { return "all"; } });
   // Stats for the chosen period, fetched once per period and kept while the sheet is open.
   const [stats, setStats] = useState<Partial<Record<CardRange, CardStats>>>({});
@@ -136,20 +146,21 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
     try {
       const blob = await (await fetch(png)).blob();
       const file = new File([blob], `perped-${frozen.handle}.png`, { type: "image/png" });
-      const text = st ? `${frozen.handle} on Perped, ${RANGE_LABEL[range][1].toLowerCase()}: ${st.won}–${st.lost} in fades. Fade me if you dare ${frozen.url}` : frozen.url;
+      const text = st ? `${frozen.handle} on Perped, ${RANGE_LABEL[range][1].toLowerCase()}: ${st.won}–${st.lost} in fades. Join with my code ${frozen.handle} and pay lower fees forever: ${invite}` : invite;
       if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text });
-      else if (navigator.share) await navigator.share({ text, url: frozen.url });
+      else if (navigator.share) await navigator.share({ text, url: invite });
       else { const a = document.createElement("a"); a.href = png; a.download = file.name; a.click(); setMsg("Image saved"); }
     } catch { /* cancelled */ }
     setBusy(false);
   };
-  const copy = async () => { try { await navigator.clipboard.writeText(frozen.url); setMsg("Link copied"); } catch {} };
+  const copy = async () => { try { await navigator.clipboard.writeText(invite); setMsg("Invite link copied"); } catch {} };
 
   return (
     <Sheet label="Share profile" onClose={onClose}>
       <div className="px-5 pb-6">
         <div className="text-lg font-extrabold" data-sheet-handle>Share {frozen.handle}</div>
         <div className="bshare-prev mt-3">{png ? <img src={png} alt={`${frozen.handle}'s trader card`} /> : <div className="skel" style={{ aspectRatio: "4 / 5", borderRadius: 18 }} />}</div>
+        <div className="ps-inv mt-3"><span>Invite code <b className="mono">{frozen.handle}</b></span><span className="mono truncate">{invite.replace(/^https?:\/\//, "")}</span></div>
         <div className="eyebrow mt-4">Period</div>
         <div className="ps-range mt-2" role="tablist">{(Object.keys(RANGE_LABEL) as CardRange[]).map((k) => <button key={k} role="tab" aria-selected={range === k} className={range === k ? "on" : ""} onClick={() => setRange(k)}>{RANGE_LABEL[k][0]}</button>)}</div>
         <div className="eyebrow mt-4">Background</div>
@@ -159,7 +170,7 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
         {msg && <p className="when mt-2 text-center">{msg}</p>}
         <div className="mt-4 grid grid-cols-[2fr_1fr] gap-2.5">
           <button className="btn ink" onClick={share} disabled={!png || busy}>{busy ? "Opening…" : "Share image"}</button>
-          <button className="btn" onClick={copy}>Copy link</button>
+          <button className="btn" onClick={copy}>Copy invite</button>
         </div>
       </div>
     </Sheet>
