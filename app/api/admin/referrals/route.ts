@@ -21,14 +21,14 @@ export async function GET(req: Request) {
       userId: schema.users.id,
       handle: schema.users.handle,
       address: schema.users.address,
-      referees: sql<number>`(select count(*) from users r where r.referred_by = ${schema.users.id})`.mapWith(Number),
-      earnedUsd: sql<number>`coalesce((select sum(share_usd) from referral_earnings e where e.referrer_id = ${schema.users.id}), 0)`.mapWith(Number),
-      paidUsd: sql<number>`coalesce((select sum(amount_usd) from referral_payouts p where p.referrer_id = ${schema.users.id}), 0)`.mapWith(Number),
-      builderFeeUsd: sql<number>`coalesce((select sum(builder_fee_usd) from referral_earnings e where e.referrer_id = ${schema.users.id} and e.kind = 'invite'), 0)`.mapWith(Number),
+      referees: sql<number>`(select count(*) from users r where r.referred_by = "users"."id")`.mapWith(Number),
+      earnedUsd: sql<number>`coalesce((select sum(share_usd) from referral_earnings e where e.referrer_id = "users"."id"), 0)`.mapWith(Number),
+      paidUsd: sql<number>`coalesce((select sum(amount_usd) from referral_payouts p where p.referrer_id = "users"."id"), 0)`.mapWith(Number),
+      builderFeeUsd: sql<number>`coalesce((select sum(builder_fee_usd) from referral_earnings e where e.referrer_id = "users"."id" and e.kind = 'invite'), 0)`.mapWith(Number),
     })
     .from(schema.users)
-    .where(sql`exists (select 1 from users r where r.referred_by = ${schema.users.id}) or exists (select 1 from referral_earnings e where e.referrer_id = ${schema.users.id})`)
-    .orderBy(desc(sql`coalesce((select sum(share_usd) from referral_earnings e where e.referrer_id = ${schema.users.id}), 0)`));
+    .where(sql`exists (select 1 from users r where r.referred_by = "users"."id") or exists (select 1 from referral_earnings e where e.referrer_id = "users"."id")`)
+    .orderBy(desc(sql`coalesce((select sum(share_usd) from referral_earnings e where e.referrer_id = "users"."id"), 0)`));
   const out = rows.map((r) => ({ ...r, owedUsd: Number(Math.max(0, r.earnedUsd - r.paidUsd).toFixed(4)) }));
   const [tot] = await db.select({ fee: sql<number>`coalesce(sum(builder_fee_usd),0)`.mapWith(Number), share: sql<number>`coalesce(sum(share_usd),0)`.mapWith(Number) }).from(schema.referralEarnings);
   return Response.json({ referrers: out, totals: { referredBuilderFeeUsd: tot?.fee ?? 0, referrerShareUsd: tot?.share ?? 0, totalOwedUsd: Number(out.reduce((a, r) => a + r.owedUsd, 0).toFixed(4)) } });

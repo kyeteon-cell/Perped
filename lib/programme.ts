@@ -95,7 +95,7 @@ export async function expireIdleFounders() {
   const cutoff = new Date(Date.now() - FOUNDER_GRACE_DAYS * 86_400_000);
   const idle = await db.select({ id: schema.users.id, handle: schema.users.handle, seat: schema.users.founderSeat }).from(schema.users)
     .where(and(isNotNull(schema.users.founderSeat), eq(schema.users.founderStatus, "active"), sql`${schema.users.founderSince} < ${cutoff}`,
-      sql`not exists (select 1 from referral_earnings e where e.referrer_id = ${schema.users.id} and e.kind = 'invite' and e.fills > 0)`));
+      sql`not exists (select 1 from referral_earnings e where e.referrer_id = "users"."id" and e.kind = 'invite' and e.fills > 0)`));
   for (const f of idle) {
     await db.update(schema.users).set({ founderStatus: "expired", founderSeat: null }).where(eq(schema.users.id, f.id));
     await notify(f.id, "founder", "Your founder seat has gone back to the pool", `Nobody you invited traded real money in ${FOUNDER_GRACE_DAYS} days. You keep regular invite rates.`, "/invite").catch(() => null);

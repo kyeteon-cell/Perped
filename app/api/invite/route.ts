@@ -25,10 +25,10 @@ export async function GET(req: Request) {
     db.execute(sql`select coalesce(sum(amount_usd),0)::float as paid from referral_payouts where referrer_id = ${me.id}`),
     db.select({
       handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, isDemo: schema.users.isDemo,
-      invited: sql<number>`(select count(*) from users r where r.referred_by = ${schema.users.id})`.mapWith(Number),
-      volume: sql<number>`coalesce((select sum(volume_usd) from referral_earnings e where e.referee_id = ${schema.users.id} and e.referrer_id = ${me.id} and e.kind = 'invite'), 0)`.mapWith(Number),
-      earned: sql<number>`coalesce((select sum(share_usd) from referral_earnings e where e.referee_id = ${schema.users.id} and e.referrer_id = ${me.id} and e.kind = 'invite'), 0)`.mapWith(Number),
-    }).from(schema.users).where(eq(schema.users.referredBy, me.id)).orderBy(desc(sql`coalesce((select sum(share_usd) from referral_earnings e where e.referee_id = ${schema.users.id} and e.referrer_id = ${me.id}), 0)`)).limit(60),
+      invited: sql<number>`(select count(*) from users r where r.referred_by = "users"."id")`.mapWith(Number),
+      volume: sql<number>`coalesce((select sum(volume_usd) from referral_earnings e where e.referee_id = "users"."id" and e.referrer_id = ${me.id} and e.kind = 'invite'), 0)`.mapWith(Number),
+      earned: sql<number>`coalesce((select sum(share_usd) from referral_earnings e where e.referee_id = "users"."id" and e.referrer_id = ${me.id} and e.kind = 'invite'), 0)`.mapWith(Number),
+    }).from(schema.users).where(eq(schema.users.referredBy, me.id)).orderBy(desc(sql`coalesce((select sum(share_usd) from referral_earnings e where e.referee_id = "users"."id" and e.referrer_id = ${me.id}), 0)`)).limit(60),
     founder ? db.execute(sql`select r.handle, r.avatar_url as "avatarUrl", m.handle as via,
         coalesce((select sum(volume_usd) from referral_earnings e where e.referee_id = r.id and e.kind = 'invite2' and e.referrer_id = ${me.id}), 0)::float as volume,
         coalesce((select sum(share_usd) from referral_earnings e where e.referee_id = r.id and e.kind = 'invite2' and e.referrer_id = ${me.id}), 0)::float as earned
