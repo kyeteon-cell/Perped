@@ -6,6 +6,7 @@ import { getAuth, getProfile, unauthorized, HANDLE_RE } from "@/lib/auth";
 import { normaliseReferralCode, resolveFeeTier, type FeeInfo } from "@/lib/fees";
 import { getFeeInfo } from "@/lib/referrals";
 import { enforceDemo, getLiveSettings, liveAllowed } from "@/lib/live";
+import { tokenForGuestId } from "@/lib/guest";
 
 /** GET /api/me → profile (null until a handle is chosen), wallet address, unread count, fee tier. */
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
     unread = unreadRows[0]?.n ?? 0;
     fee = f;
   }
-  return Response.json({ profile, address: auth.address, unread, fee, guest: !!auth.guest, live: { open: live.open, allowed: liveAllowed(live.open, profile) } });
+  return Response.json({ profile, address: auth.address, unread, fee, guest: !!auth.guest, ...(auth.guest && !req.headers.get("authorization") ? { guestKey: tokenForGuestId(auth.privyId) } : {}), live: { open: live.open, allowed: liveAllowed(live.open, profile) } });
 }
 
 const Body = z.object({

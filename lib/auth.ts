@@ -34,6 +34,8 @@ export function linkedUserId(privyId: string): Promise<string | null> {
   const to = db.select({ userId: schema.accountLinks.userId }).from(schema.accountLinks).where(eq(schema.accountLinks.privyId, privyId)).limit(1)
     .then((r) => r[0]?.userId ?? null).catch(() => null);
   linkCache.set(privyId, { at: now, to });
+  // Only remember "linked". A "not linked" answer is re-checked every time, so a fresh link works on every server at once.
+  to.then((v) => { if (!v) linkCache.delete(privyId); });
   return to;
 }
 export function forgetLink(privyId: string) { linkCache.delete(privyId); }

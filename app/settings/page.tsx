@@ -13,7 +13,7 @@ import { fmtUsd } from "@/lib/format";
 import { tenthsBpsToLabel, type FeeInfo } from "@/lib/fees";
 import type { ReferralSummary } from "@/lib/referrals";
 import type { User } from "@/lib/schema";
-import { useLive } from "@/lib/hooks/useLive";
+import { useLive, openComingSoon } from "@/lib/hooks/useLive";
 
 type Key = "showLiquidations" | "showSizes" | "allowCopy" | "allowFade" | "showBottomBoard" | "acceptDuels";
 
@@ -97,7 +97,7 @@ export default function SettingsPage() {
         DEMO_ENABLED && <div className="srow"><span className="muted text-sm">Back to practice money? Your real positions stay on Hyperliquid.</span><button className="chip" onClick={() => save({ isDemo: true })}>Switch to demo</button></div>
       )}
       {!hasExternalWallet && !isGuest && !local.isDemo && <div className="srow"><span className="muted text-sm">No wallet connected.</span><button className="chip" onClick={linkWallet}>Connect wallet</button></div>}
-      {saveErr === "live_closed" ? null : saveErr === "invite_required" ? (
+      {saveErr === "live_closed" ? <div className="px-5 pb-1"><button className="chip" onClick={() => openComingSoon()}>Real money opens soon: see early access</button></div> : saveErr === "invite_required" ? (
         <div className="inv-card mx-4"><b>Real trading is invite only for now</b><p className="when mt-1">You&rsquo;re on the waitlist. Add someone&rsquo;s invite code to go live straight away, and your fees drop to the invite rate forever.</p><Link href="/invite" className="btn brand mt-3 w-full" style={{ padding: 12, fontSize: 14 }}>Add an invite code</Link></div>
       ) : (saveErr || linkError) && <p className="red px-5 pb-1 text-sm">{saveErr ?? linkError}</p>}
       <div className="srow"><span>Default leverage</span><Seg value={String(local.defaultLeverage ?? 3)} options={levOptions} onChange={(v) => save({ defaultLeverage: Number(v) })} /></div>
@@ -134,7 +134,7 @@ export default function SettingsPage() {
       {ref && ref.payouts.length > 0 && ref.payouts.slice(0, 5).map((p) => <div key={p.id} className="srow"><span>Payout<span className="when ml-1.5">{new Date(p.createdAt).toLocaleDateString()}</span></span><span className="mono">{fmtUsd(Number(p.amountUsd))}</span></div>)}
 
       <div className="eyebrow px-5 pb-1.5 pt-4">Account</div>
-      <div className="srow"><span>Linked X account</span><input className="field mono !w-40 !py-2 text-right text-sm" placeholder="@handle" value={local.xHandle ?? ""} onChange={(e) => setLocal((l) => ({ ...l, xHandle: e.target.value }))} onBlur={() => save({ xHandle: local.xHandle?.replace(/^@/, "") || null })} /></div>
+      <div className="srow"><span>Linked X account</span>{local.xHandle ? <span className="mono text-sm">@{local.xHandle}</span> : isGuest ? <button className="chip" onClick={linkX}>Link X</button> : <span className="when">sign in with X to link</span>}</div>
       <div className="srow"><span>Wallet{hasExternalWallet ? "" : <span className="when ml-1.5">{isGuest ? "guest · demo only" : "built-in · not connected"}</span>}</span><span className="mono muted text-[13px]">{address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "—"}</span></div>
       <div className="srow"><span>Verified status</span><span className="when">{profile.verified ? "Verified ✓" : "10+ closed trades and a linked X account"}</span></div>
       <button className="srow w-full text-left" onClick={logout}><span style={{ color: "var(--red)" }}>Log out</span><span /></button>

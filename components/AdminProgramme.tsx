@@ -42,7 +42,7 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
   const [msg, setMsg] = useState<string | null>(null);
   const [gk, setGk] = useState(""), [gkRes, setGkRes] = useState<{ handle: string; key: string } | null>(null);
   const [f, setF] = useState(""), [wl, setWl] = useState(""), [ad, setAd] = useState(""), [rf, setRf] = useState(""), [rt, setRt] = useState(""), [batch, setBatch] = useState("");
-  const [pay, setPay] = useState<{ referrers: { handle: string; address: string; owedUsd: number; earnedUsd: number; paidUsd: number }[]; totals: { totalOwedUsd: number } } | null>(null);
+  const [pay, setPay] = useState<{ referrers: { handle: string; address: string; payable?: boolean; owedUsd: number; earnedUsd: number; paidUsd: number }[]; totals: { totalOwedUsd: number } } | null>(null);
   const loadPay = useCallback(() => call("/api/admin/referrals").then((r) => (r.ok ? r.json() : null)).then((j) => j && !j.error && setPay(j)).catch(() => null), [call]);
   useEffect(() => { loadPay(); }, [loadPay]);
   const load = useCallback(() => call("/api/admin/programme").then((r) => r.json()).then((j: P) => (j.error ? setMsg(j.error) : setP(j))).catch(() => null), [call]);
@@ -188,15 +188,15 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
               <p className="when mt-1">Each Monday: copy a wallet, send the USDC on Hyperliquid, then tap Paid to record it. They get an alert.</p>
               {(pay?.referrers ?? []).filter((x) => x.owedUsd >= 0.01).length ? (pay!.referrers.filter((x) => x.owedUsd >= 0.01).map((x) => (
                 <div key={x.handle} className="adm-row">
-                  <div className="min-w-0 flex-1"><b className="block truncate text-[14px]">@{x.handle}</b><button className="when mono underline" onClick={() => navigator.clipboard?.writeText(x.address).then(() => setMsg(`Copied @${x.handle}'s wallet`))}>{x.address.slice(0, 6)}…{x.address.slice(-4)} · copy</button></div>
+                  <div className="min-w-0 flex-1"><b className="block truncate text-[14px]">@{x.handle}</b>{x.payable === false ? <span className="when red">no wallet yet: ask them to connect one</span> : <button className="when mono underline" onClick={() => navigator.clipboard?.writeText(x.address).then(() => setMsg(`Copied @${x.handle}'s wallet`))}>{x.address.slice(0, 6)}…{x.address.slice(-4)} · copy</button>}</div>
                   <b className="mono green">{usd(x.owedUsd)}</b>
-                  <button className="adm-paid" onClick={async () => {
+                  {x.payable !== false && <button className="adm-paid" onClick={async () => {
                     const tx = prompt(`Sent ${usd(x.owedUsd)} to @${x.handle}? Paste the transaction hash (optional):`, "");
                     if (tx === null) return;
                     setMsg("Recording…");
                     const j = await call("/api/admin/referrals", { method: "POST", body: JSON.stringify({ handle: x.handle, amountUsd: Number(x.owedUsd.toFixed(2)), txHash: tx || undefined }) }).then((r) => r.json()).catch(() => ({ error: "network" }));
                     setMsg(j.error ? String(j.error) : `Recorded ${usd(x.owedUsd)} to @${x.handle}`); loadPay();
-                  }}>Paid</button>
+                  }}>Paid</button>}
                 </div>
               ))) : <p className="when mt-2">Nobody is owed anything yet. Earnings start once the builder address is set and invited people trade real money.</p>}
             </section>

@@ -3,6 +3,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 
 import { staffFrom } from "@/lib/staff";
+import { guestAddress, isGuestId } from "@/lib/guest";
 async function authed(req: Request) {
   const s = await staffFrom(req);
   return s?.role === "owner";
@@ -29,7 +30,8 @@ export async function GET(req: Request) {
     .from(schema.users)
     .where(sql`exists (select 1 from users r where r.referred_by = "users"."id") or exists (select 1 from referral_earnings e where e.referrer_id = "users"."id")`)
     .orderBy(desc(sql`coalesce((select sum(share_usd) from referral_earnings e where e.referrer_id = "users"."id"), 0)`));
-  const out = rows.map((r) => ({ ...r, owedUsd: Number(Math.max(0, r.earnedUsd - r.paidUsd).toFixed(4)) }));
+  // Guest accounts only have a placeholder address that nobody holds the key to: never offer it for payment.
+  const out = rows.map((r) => ({ ...r, userId: undefined, payable: !isGuestId(r.userId) && !!r.address && r.address !== guestAddress(r.userId) && /^0x[0-9a-f]{40}$/i.test(r.address), owedUsd: Number(Math.max(0, r.earnedUsd - r.paidUsd).toFixed(4)) }));
   const [tot] = await db.select({ fee: sql<number>`coalesce(sum(builder_fee_usd),0)`.mapWith(Number), share: sql<number>`coalesce(sum(share_usd),0)`.mapWith(Number) }).from(schema.referralEarnings);
   return Response.json({ referrers: out, totals: { referredBuilderFeeUsd: tot?.fee ?? 0, referrerShareUsd: tot?.share ?? 0, totalOwedUsd: Number(out.reduce((a, r) => a + r.owedUsd, 0).toFixed(4)) } });
 }

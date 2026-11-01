@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getUserFillsByTime, summariseFills } from "@/lib/hl-info";
+import { getLiveSettings } from "@/lib/live";
 
 /**
  * GET /api/cron/stats → every 15 min: refresh verified trade stats from Hyperliquid fills, plus
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(req: Request) {
+  const liveOpen = (await getLiveSettings()).open;
   await ensureSchema();
   const secret = process.env.CRON_SECRET;
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) return Response.json({ error: "unauthorized" }, { status: 401 });
@@ -60,7 +62,8 @@ export async function GET(req: Request) {
         faded: sql<number>`(select count(*) from posts c join posts s on c.faded_from_id = s.id where s.user_id = ${u.id})`.mapWith(Number),
       }).from(sql`(select 1) t`);
 
-      const verified = !u.isDemo && all.closed >= 10 && !!u.xHandle;
+      // While real money is closed (Season 0) demo records count, so people can still get verified and run polls.
+      const verified = (!u.isDemo || !liveOpen) && all.closed >= 10 && !!u.xHandle;
       const row = {
         userId: u.id,
         realizedPnl7d: d7.realized.toFixed(4), realizedPnl30d: d30.realized.toFixed(4), realizedPnlAll: all.realized.toFixed(4),

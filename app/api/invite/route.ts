@@ -41,7 +41,8 @@ export async function GET(req: Request) {
       where e.referrer_id = ${me.id} and e.kind = 'creator' order by e.day desc, e.share_usd desc limit 20`),
     countActiveReferees(me.id),
     me.referredBy ? db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, me.referredBy)).limit(1) : Promise.resolve([]),
-    db.execute(sql`select count(*)::int as joined, count(*) filter (where not is_demo)::int as live from users where referred_by = ${me.id}`),
+    db.execute(sql`select count(*)::int as joined, count(*) filter (where not is_demo)::int as live,
+      exists (select 1 from referral_earnings e where e.referrer_id = ${me.id} and e.kind = 'invite' and e.fills > 0) as secured from users where referred_by = ${me.id}`),
   ]);
   const rows = (x: unknown) => ((x as { rows?: unknown[] }).rows ?? (x as unknown[])) as Record<string, number & string>[];
   const src = Object.fromEntries(rows(bySource).map((r) => [r.kind, { total: Number(r.total), week: Number(r.week) }])) as Record<string, { total: number; week: number }>;
@@ -64,7 +65,7 @@ export async function GET(req: Request) {
       seat: me.founderSeat, wave: FOUNDER_WAVE, seats: FOUNDER_SEATS, since: me.founderSince, l1Pct: founderL1Pct(me.founderSince), l1LaterPct: FOUNDER_L1_LATER_PCT, l1TopPct: FOUNDER_L1_PCT,
       l1Ends: me.founderSince ? founderL1Ends(me.founderSince).toISOString() : null, l2Pct: FOUNDER_L2_PCT, graceDays: FOUNDER_GRACE_DAYS,
       graceLeft: Math.max(0, FOUNDER_GRACE_DAYS - Math.floor((Date.now() - graceStart) / 86_400_000)), gracePaused: !live.open,
-      secured: Number(c.live) > 0,
+      secured: !!(c as Record<string, unknown>).secured,
     } : null,
     rates: {
       invitePct: founder ? founderL1Pct(me.founderSince) : (active >= REFERRAL_TOP_THRESHOLD ? REFERRAL_TOP_SHARE_PCT : REFERRAL_SHARE_PCT),

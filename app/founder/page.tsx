@@ -42,6 +42,7 @@ export default function FounderDashboard() {
   const go = (h: string | null) => { setHandle(h); try { const u = new URL(window.location.href); if (h) u.searchParams.set("handle", h); else u.searchParams.delete("handle"); window.history.replaceState(null, "", u); } catch {} };
 
   if (!authenticated) return <main className="adm-page px-4 pt-6"><h1 className="text-xl font-extrabold">Founder dashboard</h1><p className="muted mt-2 text-sm">Sign in to see your network.</p><button className="btn ink mt-3" onClick={login}>Sign in</button></main>;
+  if (!profile) return <main className="adm-page px-4 pt-6"><h1 className="text-xl font-extrabold">Founder dashboard</h1><p className="muted mt-2 text-sm">Finish setting up your profile first.</p><Link href="/onboarding" className="btn brand mt-3" style={{ padding: 13, fontSize: 15 }}>Finish setup</Link></main>;
   if (!data) return <main className="adm-page px-4 pt-6"><p className="muted">Loading…</p></main>;
   if (data.error === "not_founder") return (
     <main className="adm-page px-4 pt-6">
@@ -117,7 +118,7 @@ export default function FounderDashboard() {
             <div key={d.day} title={`${d.day}: ${d.trades} trades, ${d.joined} joined`}>
               <i className="t" style={{ height: `${(d.trades / maxDay) * 100}%` }} />
               <i className="j" style={{ height: `${(d.joined / maxJoin) * 40}%` }} />
-              <span>{new Date(d.day).getDate()}</span>
+              <span>{Number(d.day.slice(8))}</span>
             </div>
           ))}
         </div>

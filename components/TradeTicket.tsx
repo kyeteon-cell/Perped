@@ -70,8 +70,9 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
   useEffect(() => { if (lev > maxLev) setLev(maxLev); }, [maxLev, lev]);
   useEffect(() => {
     if (isDemo || !address || !BUILDER_CONFIGURED) return setApproved(true);
-    getMaxBuilderFee(address, BUILDER_ADDRESS).then((f) => setApproved(f >= fee.tenthsBps));
-  }, [address, fee.tenthsBps]);
+    setApproved(null);
+    getMaxBuilderFee(address, BUILDER_ADDRESS).then((f) => setApproved(f >= fee.tenthsBps)).catch(() => setApproved(false));
+  }, [address, fee.tenthsBps, isDemo]);
   // Fades default to an automatic stop (see autoStopDist): −10% of margin, never tighter than a 1% move.
   const slSeeded = useRef(false);
   useEffect(() => { if (isFade && mid && !sl && !slSeeded.current) { slSeeded.current = true; setSl((side === "long" ? mid * (1 - autoStopDist(lev)) : mid * (1 + autoStopDist(lev))).toFixed(market?.szDecimals ? 6 - market.szDecimals : 2)); } }, [isFade, mid, side, sl, market, lev]);

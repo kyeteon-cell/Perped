@@ -48,7 +48,8 @@ export async function GET(req: Request) {
         (select count(*) from posts p join users r on r.id = p.user_id where r.referred_by = ${id} and p.kind = 'trade' and p.created_at > now() - interval '7 days')::int as trades7,
         (select coalesce(sum(p.notional_usd),0) from posts p join users r on r.id = p.user_id where r.referred_by = ${id} and p.kind = 'trade' and p.created_at > now() - interval '7 days')::float as volume7,
         (select coalesce(sum(p.notional_usd),0) from posts p join users r on r.id = p.user_id where r.referred_by = ${id} and p.kind = 'trade' and not p.paper and p.created_at > now() - interval '7 days')::float as real_volume7,
-        (select count(*) from users where referred_by = ${id} and created_at > now() - interval '7 days')::int as joined7`),
+        (select count(*) from users where referred_by = ${id} and created_at > now() - interval '7 days')::int as joined7,
+        exists (select 1 from referral_earnings e where e.referrer_id = ${id} and e.kind = 'invite' and e.fills > 0) as secured`),
     db.execute(sql`select d::date::text as day,
         (select count(*) from users r where r.referred_by = ${id} and r.created_at::date = d::date)::int as joined,
         (select count(*) from posts p join users r on r.id = p.user_id where r.referred_by = ${id} and p.kind = 'trade' and p.created_at::date = d::date)::int as trades
@@ -72,7 +73,8 @@ export async function GET(req: Request) {
 
   // Grace clock: runs from the later of the seat date and the day real money opened; paused while closed.
   const graceStart = Math.max(u.founderSince ? new Date(u.founderSince).getTime() : Date.now(), live.open && live.openedAt ? new Date(live.openedAt).getTime() : Date.now());
-  const secured = n(c.l1_live) > 0;
+  // Same test as the hourly seat expiry: someone they invited has actually traded real money.
+  const secured = !!c.secured;
   const base = /localhost/.test(APP_URL) ? new URL(req.url).origin : APP_URL;
   const rank = rankFor(u.xp ?? 0);
 

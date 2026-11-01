@@ -56,6 +56,11 @@ export async function PATCH(req: Request) {
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const [d] = await db.select().from(schema.duels).where(eq(schema.duels.id, parsed.data.id)).limit(1);
   if (!d) return Response.json({ error: "not found" }, { status: 404 });
+  // A position attached to a duel must be the caller's own open trade on the duel's coin.
+  if (parsed.data.postId) {
+    const [p] = await db.select({ userId: schema.posts.userId, kind: schema.posts.kind, coin: schema.posts.coin }).from(schema.posts).where(eq(schema.posts.id, parsed.data.postId)).limit(1);
+    if (!p || p.userId !== auth.privyId || p.kind !== "trade" || p.coin !== d.coin) return Response.json({ error: "that position can't be used for this duel" }, { status: 400 });
+  }
   if (parsed.data.action === "post") {
     if (d.challengerId !== auth.privyId || !parsed.data.postId) return Response.json({ error: "not found" }, { status: 404 });
     const [u] = await db.update(schema.duels).set({ challengerPostId: parsed.data.postId, startPx: d.startPx ?? (parsed.data.startPx ? String(parsed.data.startPx) : undefined) }).where(eq(schema.duels.id, d.id)).returning();

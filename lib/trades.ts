@@ -33,8 +33,12 @@ export async function closeTradePost(postId: number, userId: string, opts: { exi
   if (!post.paper && !opts.trusted) {
     // Real trades: the exit is what Hyperliquid actually filled, not what the client says.
     const [u] = await db.select({ address: schema.users.address }).from(schema.users).where(eq(schema.users.id, userId)).limit(1);
-    const ex = u?.address ? await closingFills(u.address, post.coin!, new Date(post.createdAt).getTime()).catch(() => null) : null;
+    const look = () => (u?.address ? closingFills(u.address, post.coin!, new Date(post.createdAt).getTime()).catch(() => null) : Promise.resolve(null));
+    let ex = await look();
+    if (!ex && u?.address) { await new Promise((r) => setTimeout(r, 1500)); ex = await look(); } // fills can lag the order by a moment
     if (ex) { exitPx = ex.px; if (ex.liquidated) reason = "liquidation"; }
+    // No close on Hyperliquid yet: never book a real result from a price the client sent.
+    else return { error: "We don't see this close on Hyperliquid yet. Give it a few seconds and try again.", status: 409 } as const;
   }
   const size = Number(post.size), notional = Number(post.notionalUsd), lev = post.leverage ?? 1;
   const sliceSize = size * fraction, sliceNotional = notional * fraction, sliceMargin = sliceNotional / lev;
@@ -72,7 +76,9 @@ export async function closeTradePost(postId: number, userId: string, opts: { exi
   }
   if (post.paper) await db.update(schema.users).set({ demoBalance: sql`greatest(0, ${schema.users.demoBalance} + ${(fullMargin + fullPnl).toFixed(2)})` }).where(eq(schema.users.id, userId));
 
-  {
+  // Trade XP only for a real attempt: held 2+ minutes with $10+ margin, so tiny open-close loops can't farm it.
+  const heldS = (Date.now() - new Date(post.createdAt).getTime()) / 1000;
+  if (reason === "liquidation" || (heldS >= 120 && fullMargin >= 10)) {
     const [ux] = await db.select({ xp: schema.users.xp }).from(schema.users).where(eq(schema.users.id, userId)).limit(1);
     const liqPen = reason === "liquidation" ? lossPenalty(rankFor(ux?.xp ?? 0).level, "liquidation") : 0;
     await awardXp(userId, reason === "liquidation" ? (liqPen < 0 ? liqPen : XP.liquidation) : total > 0 ? XP.tradeWin : XP.tradeLoss, reason === "liquidation" ? "liquidation" : total > 0 ? "trade_win" : "trade_loss", `post:${post.id}`);

@@ -18,7 +18,7 @@ export function ComingSoonSheet() {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const { authenticated, isGuest, profile, authedFetch, login } = useSession();
+  const { authenticated, isGuest, profile, authedFetch, login, linkX } = useSession();
   const { status, refresh } = useLive();
   const path = usePathname();
 
@@ -31,7 +31,9 @@ export function ComingSoonSheet() {
   if (!show) return null;
 
   const join = async () => {
-    if (!authenticated || isGuest) { setShow(false); login(); return; }
+    // Guests attach X to the account they already have, so their Season 0 record comes with them.
+    if (isGuest) { setShow(false); linkX(); return; }
+    if (!authenticated) { setShow(false); login(); return; }
     setBusy(true); setErr(null);
     try {
       const j = await authedFetch("/api/live", { method: "POST" }).then((r) => r.json());

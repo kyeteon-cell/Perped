@@ -205,7 +205,8 @@ export async function POST(req: Request) {
       if (!resting) return Response.json({ error: "we couldn't find that order on Hyperliquid" }, { status: 400 });
       values.meta = { ...(values.meta ?? {}), pendingFill: true };
     } else {
-      values.meta = { ...(values.meta ?? {}), unverified: true }; // Hyperliquid didn't answer; checked again by the sync cron
+      // Hyperliquid didn't answer, so the trade can't be verified: don't post unverified numbers. The order itself is on Hyperliquid.
+      return Response.json({ error: "Your order went through on Hyperliquid, but we couldn't confirm the fill yet. It will show on your profile in a moment; post it again if you want it in the feed." }, { status: 503 });
     }
   }
   if (b.kind === "trade") {

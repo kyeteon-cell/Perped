@@ -28,7 +28,9 @@ async function readLiveSettings(): Promise<LiveSettings> {
 }
 
 export async function setLiveOpen(open: boolean) {
-  const value: LiveSettings = { open, ...(open ? { openedAt: new Date().toISOString() } : {}) };
+  // Keep the first opening date: closing and reopening mustn't restart anyone's founder clock.
+  const prev = await readLiveSettings();
+  const value: LiveSettings = { open, ...(prev.openedAt ? { openedAt: prev.openedAt } : open ? { openedAt: new Date().toISOString() } : {}) };
   await db.insert(schema.appSettings).values({ key: "live", value }).onConflictDoUpdate({ target: schema.appSettings.key, set: { value, updatedAt: new Date() } });
   liveCache = null;
   return value;
@@ -42,6 +44,10 @@ export function liveAllowed(open: boolean, u: Pick<User, "role" | "isBot"> | nul
 /** While closed, anyone left in live mode who isn't staff goes back to demo. Returns the profile as it now stands. */
 export async function enforceDemo<T extends Pick<User, "id" | "isDemo" | "role" | "isBot">>(u: T, open: boolean): Promise<T> {
   if (u.isDemo || liveAllowed(open, u)) return u;
+  // Someone still holding a real position stays live so they can see and close it; new trades are demo anyway.
+  const [real] = await db.select({ id: schema.posts.id }).from(schema.posts)
+    .where(and(eq(schema.posts.userId, u.id), eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), eq(schema.posts.paper, false))).limit(1);
+  if (real) return u;
   await db.update(schema.users).set({ isDemo: true }).where(eq(schema.users.id, u.id));
   return { ...u, isDemo: true };
 }

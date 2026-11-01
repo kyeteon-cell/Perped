@@ -19,12 +19,18 @@ function useSessionState() {
   const [guestReady, setGuestReady] = useState(false);
   useEffect(() => { try { setGuestToken(localStorage.getItem("perped:guest")); } catch {} setGuestReady(true); }, []);
   // A guest is signed in if the browser still has the token, or if the server recognises the guest cookie.
-  const { data: cookieMe } = useSWR<{ profile: User | null; guest?: boolean; address?: string | null }>(
+  const { data: cookieMe } = useSWR<{ profile: User | null; guest?: boolean; address?: string | null; guestKey?: string }>(
     guestReady && privyReady && !privyAuthed && !guestToken ? "/api/me?via=cookie" : null,
     async () => (await fetch("/api/me")).json(),
     { revalidateOnFocus: false, dedupingInterval: 60_000 },
   );
   const cookieGuest = !!cookieMe?.guest && !!cookieMe?.profile;
+  // Signed in by cookie only (the browser lost its saved key): take the key back, so Settings can show it and Link X works.
+  useEffect(() => {
+    if (!cookieMe?.guestKey || guestToken) return;
+    try { localStorage.setItem("perped:guest", cookieMe.guestKey); localStorage.setItem("perped:guest-prev", cookieMe.guestKey); } catch {}
+    setGuestToken(cookieMe.guestKey);
+  }, [cookieMe?.guestKey, guestToken]);
   const isGuest = !privyAuthed && (!!guestToken || cookieGuest);
   const authenticated = privyAuthed || isGuest;
   const ready = privyReady && guestReady;
@@ -79,7 +85,10 @@ function useSessionState() {
   }, [privyLogin]);
   // Attach an X login to the guest account: remember the guest key, sign in with X, then link the two server-side.
   const linkX = useCallback(() => {
-    try { const t = localStorage.getItem("perped:guest"); if (!t) return; sessionStorage.setItem("perped:link-x", t); } catch { return; }
+    let t: string | null = null;
+    try { t = localStorage.getItem("perped:guest"); } catch {}
+    if (!t) { setLinkXState({ busy: false, error: "We couldn't find this account's guest key on this device. Open Settings and copy your key first.", done: null }); return; }
+    try { sessionStorage.setItem("perped:link-x", t); } catch {}
     setLinkXState({ busy: true, error: null, done: null });
     privyLogin({ loginMethods: ["twitter"] } as Parameters<typeof privyLogin>[0]);
   }, [privyLogin]);

@@ -1434,3 +1434,5 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .ubadge.admin svg { color: #05e091; }
 .ubadge.founder { color: #2a1c00; background: linear-gradient(180deg, #ffe3a3, #f2b63a 55%, #c98a05); box-shadow: 0 4px 10px -6px rgba(242,182,58,.9); }
 .ubadge.founder svg { width: 11px; height: 11px; }
+.realness { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.realness::-webkit-scrollbar { display: none; }

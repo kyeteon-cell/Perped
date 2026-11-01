@@ -89,7 +89,7 @@ const MONEY_SOON: (typeof SLIDES)[number] = {
 /** First visit: the intro as a full-screen overlay, shown once per device. */
 export function IntroOnce() {
   const [show, setShow] = useState(false);
-  const { authenticated, startGuest } = useSession();
+  const { ready, authenticated, startGuest } = useSession();
   useEffect(() => { try { if (!localStorage.getItem("perped:intro-seen")) setShow(true); } catch {} }, []);
   if (!show) return null;
   const done = () => {
@@ -97,7 +97,7 @@ export function IntroOnce() {
     track("intro_done");
     setShow(false);
     // Straight into a free demo account so the first trade is one tap away.
-    if (!authenticated) startGuest().catch(() => null);
+    if (ready && !authenticated) startGuest().catch(() => null);
   };
   return <div className="intro-overlay" role="dialog" aria-label="Welcome to Perped"><Intro onDone={done} doneLabel={authenticated ? "Start trading" : "Try it free"} /></div>;
 }

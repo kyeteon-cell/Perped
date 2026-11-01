@@ -44,7 +44,7 @@ export default function HomePage() {
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     try {
-      const r = localStorage.getItem("perped:realness") as "all" | "real" | "demo" | null; if (r && r !== "real") setRealness(r);
+      const r = localStorage.getItem("perped:realness") as "all" | "real" | "demo" | null; if (r) setRealness(r);
       setFilter({ ...EMPTY_FILTER, ...JSON.parse(localStorage.getItem("perped:filter") || "{}") });
     } catch {}
     setLoaded(true);
@@ -58,7 +58,8 @@ export default function HomePage() {
   const key = `/api/posts?tab=${tab}${filterQuery(filter)}`;
   const { data, mutate, isLoading } = useSWR<{ posts: FeedRow[] }>(key, async () => (await authedFetch(key)).json(), { refreshInterval: 30_000, revalidateOnFocus: true });
   const allPosts = data?.posts ?? [];
-  const posts = realness === "all" ? allPosts : allPosts.filter((p) => p.post.kind !== "trade" || (realness === "demo") === isDemoPost(p));
+  const shown = realness === "real" && !liveOk ? "all" : realness;
+  const posts = shown === "all" ? allPosts : allPosts.filter((p) => p.post.kind !== "trade" || (shown === "demo") === isDemoPost(p));
   const { data: board } = useSWR<{ rows: { handle: string; pnl: number; winRate: string; avatarUrl?: string | null }[] }>("/api/leaderboard?period=7d");
   const suggested = (board?.rows ?? []).filter((r) => r.handle !== profile?.handle).slice(0, 5);
 
@@ -102,7 +103,7 @@ export default function HomePage() {
       <div className="realness">
         {(["all", "real", "demo"] as const).map((v) => v === "real" && !liveOk
           ? <button key={v} className="chip live-off" onClick={gate(() => null)}>Real money<span className="soon-pill">Soon</span></button>
-          : <button key={v} className={`chip ${realness === v ? (v === "demo" ? "on demo-on" : v === "real" ? "on real-on" : "on") : ""}`} onClick={() => setRealnessP(v)}>{v === "all" ? "All trades" : v === "real" ? "Real money" : "Demo"}</button>)}
+          : <button key={v} className={`chip ${shown === v ? (v === "demo" ? "on demo-on" : v === "real" ? "on real-on" : "on") : ""}`} onClick={() => setRealnessP(v)}>{v === "all" ? "All trades" : v === "real" ? "Real money" : "Demo"}</button>)}
         <button className={`chip ml-auto ${nFilters ? "on" : ""}`} onClick={() => setFiltering(true)}><Icon d={I.list} size={14} />Filter{nFilters ? ` · ${nFilters}` : ""}</button>
       </div>
       {nFilters > 0 && <div className="flex items-center gap-2 px-5 pb-1"><span className="when truncate">{filterSummary(filter)}</span><button className="when ml-auto underline" onClick={() => setFilter(EMPTY_FILTER)}>clear</button></div>}

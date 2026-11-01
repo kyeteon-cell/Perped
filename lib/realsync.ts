@@ -18,7 +18,8 @@ export async function syncRealPositions(maxUsers = 25) {
   const users = await db.select({ id: schema.users.id, address: schema.users.address, isDemo: schema.users.isDemo }).from(schema.users).where(inArray(schema.users.id, userIds));
   let closed = 0;
   for (const u of users) {
-    if (!u.address || u.isDemo || !/^0x[0-9a-f]{40}$/i.test(u.address)) continue;
+    // Demo or not, anyone with an open real post still has a real position to keep in sync.
+    if (!u.address || !/^0x[0-9a-f]{40}$/i.test(u.address)) continue;
     const state = await getClearinghouseState(u.address).catch(() => null);
     if (!state) continue;
     const pos = new Map(state.assetPositions.map((a) => [a.position.coin, Number(a.position.szi)]));
