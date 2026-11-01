@@ -4,7 +4,7 @@ import { createContext, createElement, useCallback, useContext, useEffect, useMe
 import { useLinkAccount, useLogin, usePrivy, useWallets } from "@privy-io/react-auth";
 import { createWalletClient, custom, type WalletClient } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
-import useSWR from "swr";
+import useSWR, { mutate as mutateGlobal } from "swr";
 import { HL_NETWORK } from "@/lib/config";
 import type { User } from "@/lib/schema";
 import { resolveFeeTier, type FeeInfo } from "@/lib/fees";
@@ -54,10 +54,13 @@ function useSessionState() {
     if (privyAuthed) await privyLogout();
   }, [privyAuthed, privyLogout]);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [linkXState, setLinkXState] = useState<{ busy: boolean; error: string | null; done: string | null }>({ busy: false, error: null, done: null });
   const { login: privyLogin } = useLogin({
     onComplete: () => setLoginError(null),
     onError: (err) => {
       const code = String(err);
+      setLinkXState((x) => (x.busy ? { ...x, busy: false } : x));
+      try { sessionStorage.removeItem("perped:link-x"); } catch {}
       if (code === "exited_auth_flow") return; // user closed the modal
       const host = typeof window !== "undefined" ? window.location.origin : "";
       setLoginError(
@@ -74,6 +77,33 @@ function useSessionState() {
     if (!o) { if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("perped:login")); return; }
     return privyLogin(o as Parameters<typeof privyLogin>[0]);
   }, [privyLogin]);
+  // Attach an X login to the guest account: remember the guest key, sign in with X, then link the two server-side.
+  const linkX = useCallback(() => {
+    try { const t = localStorage.getItem("perped:guest"); if (!t) return; sessionStorage.setItem("perped:link-x", t); } catch { return; }
+    setLinkXState({ busy: true, error: null, done: null });
+    privyLogin({ loginMethods: ["twitter"] } as Parameters<typeof privyLogin>[0]);
+  }, [privyLogin]);
+  useEffect(() => {
+    if (!privyAuthed) return;
+    let t: string | null = null;
+    try { t = sessionStorage.getItem("perped:link-x"); } catch {}
+    if (!t) return;
+    setLinkXState({ busy: true, error: null, done: null });
+    (async () => {
+      const token = await getAccessToken().catch(() => null);
+      const r = await fetch("/api/me/link-x", { method: "POST", headers: { authorization: `Bearer ${token ?? ""}`, "x-guest-token": t! } }).catch(() => null);
+      const j = r ? await r.json().catch(() => ({})) : { error: "network error" };
+      try { sessionStorage.removeItem("perped:link-x"); } catch {}
+      if (!r?.ok) {
+        setLinkXState({ busy: false, error: j.error ?? "Couldn't link X", done: null });
+        await privyLogout().catch(() => null); // back to the guest account
+        return;
+      }
+      setLinkXState({ busy: false, error: null, done: `@${j.x} now signs you in as @${j.handle}${j.replaced ? `. The separate @${j.replaced} profile that X login made is no longer used.` : "."}` });
+      await mutateGlobal((k) => (Array.isArray(k) ? k[0] === "/api/me" : k === "/api/me"));
+    })();
+  }, [privyAuthed, getAccessToken, privyLogout]);
+
   const { wallets } = useWallets();
   const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
 
@@ -149,6 +179,9 @@ function useSessionState() {
     loginError,
     /** True once the user has connected their own wallet (required for real-money trading). */
     hasExternalWallet,
+    /** Guests: attach an X login so this account can be signed into with X anywhere. */
+    linkX,
+    linkXState,
     /** Open Privy's connect-wallet flow to add an external wallet to this account. */
     linkWallet,
     linkError,

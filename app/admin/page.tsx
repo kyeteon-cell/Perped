@@ -37,7 +37,7 @@ export default function Admin() {
   if (err) return <main className="p-5"><p className="red">{err === "unauthorized" ? `Not authorised. Signed in as @${profile?.handle ?? "nobody"}${profile?.role ? ` (${profile.role})` : ""}. Sign out and back in, then try again.` : err}</p></main>;
   if (!m) return <main className="p-5"><p className="muted">Loading…</p></main>;
   return (
-    <main className="px-4 pb-16 pt-5">
+    <main className="adm-page px-4 pb-28 pt-5">
       <div className="flex items-center justify-between">
         <div><h1 className="text-xl font-extrabold">Perped control</h1><p className="when">Live · updated {new Date(m.at).toLocaleTimeString()}</p></div>
         <span className="adm-role">{profile?.role === "admin" ? "ADMIN" : "OWNER"}</span>

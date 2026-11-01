@@ -328,6 +328,13 @@ export const handleRedirects = pgTable("handle_redirects", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+/** A Privy login (e.g. an X account) attached to an existing Perped account, such as a guest account that added X. */
+export const accountLinks = pgTable("account_links", {
+  privyId: text("privy_id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const appSettings = pgTable("app_settings", {
   key: text("key").primaryKey(),
   value: jsonb("value").notNull(),

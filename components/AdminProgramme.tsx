@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Avatar } from "./ui";
 
 type Founder = { handle: string; avatarUrl: string | null; seat: number | null; since: string | null; status: string | null; invited: number; invited2: number; realTraders: number; feesIn: number; earned: number; daysIn: number };
@@ -77,10 +78,11 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
       </div>
 
       <section className={`inv-card mt-3 live-switch ${p.live?.open ? "is-open" : ""}`}>
-        <div className="flex items-center justify-between gap-3">
-          <div><span className="eyebrow">Real-money trading</span><p className="mt-1 text-[14px]"><b>{p.live?.open ? "Open" : "Closed · demo only"}</b><span className="when ml-1.5">{p.live?.open ? "everyone with access can go live" : "staff can still test real trades"}</span></p></div>
-          {owner && <button className={`btn ${p.live?.open ? "" : "brand"}`} style={{ padding: "10px 14px", fontSize: 13, flex: "none" }} onClick={() => confirm(p.live?.open ? "Close real-money trading? Everyone goes back to demo." : "Open real-money trading for everyone with access?") && act({ action: "live", open: !p.live?.open }, (j) => ((j.live as { open: boolean }).open ? "Real money is open" : "Real money is closed, demo only"))}>{p.live?.open ? "Close" : "Open"}</button>}
-        </div>
+        <div className="flex items-center justify-between gap-2"><span className="eyebrow">Real-money trading</span><span className={`adm-st ${p.live?.open ? "ok" : "warn"}`}>{p.live?.open ? "OPEN" : "DEMO ONLY"}</span></div>
+        <p className="when mt-1.5">{p.live?.open ? "Anyone with access can trade real money. Closing it moves everyone except staff back to demo." : "Everyone trades demo. Real-money buttons show Coming soon. You and admins can still test real trades."}</p>
+        {owner
+          ? <button className={`btn mt-3 ${p.live?.open ? "" : "brand"}`} style={{ padding: 12, fontSize: 14 }} onClick={() => confirm(p.live?.open ? "Close real-money trading? Everyone goes back to demo." : "Open real-money trading for everyone with access?") && act({ action: "live", open: !p.live?.open }, (j) => ((j.live as { open: boolean }).open ? "Real money is open" : "Real money is closed, demo only"))}>{p.live?.open ? "Close real money" : "Open real money"}</button>
+          : <p className="when mt-2">Only the owner can open or close it.</p>}
       </section>
 
       <div className="adm-tabs" role="tablist">{tabs.map(([k, label, badge]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => { setTab(k); setMsg(null); }}>{label}{badge && <small>{badge}</small>}</button>)}</div>
@@ -146,7 +148,8 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
                   <Avatar handle={x.handle} url={x.avatarUrl} size={30} link={false} />
                   <div className="min-w-0 flex-1"><b className="block truncate text-[14px]">{x.handle}</b><span className="when">{x.invited} invited · {x.invited2} by them · {x.realTraders} trading real · {usd(x.feesIn)} fees · earned {usd(x.earned)}</span></div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className={`adm-st ${expired ? "bad" : secured ? "ok" : left <= 14 ? "warn" : "ok"}`}>{expired ? "EXPIRED" : secured ? "ACTIVE" : `${Math.max(0, left)}D LEFT`}</span>
+                    <span className={`adm-st ${expired ? "bad" : secured || !p.live?.open ? "ok" : left <= 14 ? "warn" : "ok"}`}>{expired ? "EXPIRED" : secured ? "ACTIVE" : !p.live?.open ? "CLOCK PAUSED" : `${Math.max(0, left)}D LEFT`}</span>
+                    <Link className="when underline" href={`/founder?handle=${x.handle}`}>dashboard</Link>
                     {!expired && <button className="when underline" onClick={() => confirm(`Remove @${x.handle} as a founder?`) && act({ action: "removeFounder", handle: x.handle }, () => `@${x.handle} removed`)}>remove</button>}
                   </div>
                 </div>
@@ -179,14 +182,6 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
 
       {tab === "payouts" && owner && (
         <>
-          {owner && (
-            <section className="inv-card">
-              <div className="flex items-center justify-between"><span className="eyebrow">Recover a guest key</span></div>
-              <p className="when mt-1">For someone who lost their guest key. Only give it to the account&rsquo;s owner: the key is the login.</p>
-              <div className="inv-input"><input value={gk} onChange={(e) => setGk(e.target.value)} placeholder="@guest handle" autoCapitalize="none" /><button disabled={!gk.trim()} onClick={async () => { const j = await act({ action: "guestKey", handle: gk }, (r) => `Key for @${r.handle}`); setGkRes(j.key ? { handle: String(j.handle), key: String(j.key) } : null); }}>Get key</button></div>
-              {gkRes && <div className="mt-2"><div className="mono break-all text-[12px]">{gkRes.key}</div><button className="chip mt-2" onClick={async () => { try { await navigator.clipboard.writeText(gkRes.key); setMsg(`Copied @${gkRes.handle}'s key`); } catch {} }}>Copy key</button></div>}
-            </section>
-          )}
           {owner && (
             <section className="inv-card">
               <div className="flex items-center justify-between"><span className="eyebrow">Payouts</span><span className="when">owed in total <b style={{ color: "var(--text)" }}>{usd(pay?.totals.totalOwedUsd ?? 0)}</b></span></div>
@@ -241,9 +236,17 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
               </div>
             </section>
           )}
+          {owner && (
+            <section className="inv-card">
+              <div className="flex items-center justify-between"><span className="eyebrow">Recover a guest key</span></div>
+              <p className="when mt-1">For someone who lost their guest key. Only give it to the account&rsquo;s owner: the key is the login.</p>
+              <div className="inv-input"><input value={gk} onChange={(e) => setGk(e.target.value)} placeholder="@guest handle" autoCapitalize="none" /><button disabled={!gk.trim()} onClick={async () => { const j = await act({ action: "guestKey", handle: gk }, (r) => `Key for @${r.handle}`); setGkRes(j.key ? { handle: String(j.handle), key: String(j.key) } : null); }}>Get key</button></div>
+              {gkRes && <div className="mt-2"><div className="mono break-all text-[12px]">{gkRes.key}</div><button className="chip mt-2" onClick={async () => { try { await navigator.clipboard.writeText(gkRes.key); setMsg(`Copied @${gkRes.handle}'s key`); } catch {} }}>Copy key</button></div>}
+            </section>
+          )}
           <section className="inv-card">
             <span className="eyebrow">Maintenance</span>
-            <p className="when mt-1">Founder seats with no real-money trader after {p.seats.graceDays} days are freed automatically every hour. Run it now if you want.</p>
+            <p className="when mt-1">{p.live?.open ? <>Founder seats with no real-money trader after {p.seats.graceDays} days are freed automatically every hour. Run it now if you want.</> : <>Paused while real money is closed: nobody can bring in a real trader yet, so no seat expires. The {p.seats.graceDays}-day clock starts when you open trading.</>}</p>
             <button className="btn mt-2 w-full" onClick={() => act({ action: "expireFounders" }, (j) => `${j.expired} idle seat(s) freed`)}>Free idle founder seats now</button>
           </section>
         </>

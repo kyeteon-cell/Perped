@@ -5,7 +5,13 @@ import { GUEST_COOKIE, guestAddress, verifyGuestToken } from "./guest";
 
 const privy = new PrivyClient(process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cmvuadbdq07k40fl8a3hq3c3z", process.env.PRIVY_APP_SECRET ?? "");
 
-export type AuthedUser = { privyId: string; address: string | null; hasExternalWallet: boolean; guest?: boolean; xHandle?: string | null };
+export type AuthedUser = {
+  /** The Perped account id (users.id). For a linked login this is the account it was attached to. */
+  privyId: string;
+  address: string | null; hasExternalWallet: boolean; guest?: boolean; xHandle?: string | null;
+  /** The raw Privy user id, when it differs from privyId because of a link. */
+  loginId?: string;
+};
 
 /** Privy user lookups are a network round trip; cache them per user for 2 minutes. */
 type PrivyUser = Awaited<ReturnType<typeof privy.getUser>>;
@@ -19,6 +25,18 @@ function privyUser(id: string): Promise<PrivyUser> {
   if (userCache.size > 2000) for (const [k, e] of userCache) if (now - e.at > 120_000) userCache.delete(k);
   return u;
 }
+
+/** Privy logins attached to another Perped account (a guest that added X). Cached 2 minutes. */
+const linkCache = new Map<string, { at: number; to: Promise<string | null> }>();
+export function linkedUserId(privyId: string): Promise<string | null> {
+  const hit = linkCache.get(privyId), now = Date.now();
+  if (hit && now - hit.at < 120_000) return hit.to;
+  const to = db.select({ userId: schema.accountLinks.userId }).from(schema.accountLinks).where(eq(schema.accountLinks.privyId, privyId)).limit(1)
+    .then((r) => r[0]?.userId ?? null).catch(() => null);
+  linkCache.set(privyId, { at: now, to });
+  return to;
+}
+export function forgetLink(privyId: string) { linkCache.delete(privyId); }
 
 /** Verify `Authorization: Bearer <privy token>` or `Authorization: Guest <guest token>` (demo-only accounts). */
 export async function getAuth(req: Request): Promise<AuthedUser | null> {
@@ -54,7 +72,9 @@ export async function getAuth(req: Request): Promise<AuthedUser | null> {
       if (owns) address = claimedAddress.toLowerCase();
     }
     const x = user.linkedAccounts.find((a) => a.type === "twitter_oauth") as { username?: string | null } | undefined;
-    return { privyId: claims.userId, address, hasExternalWallet, xHandle: x?.username ?? null };
+    // A linked login acts as the account it was attached to.
+    const linked = await linkedUserId(claims.userId);
+    return { privyId: linked ?? claims.userId, address, hasExternalWallet, xHandle: x?.username ?? null, ...(linked ? { loginId: claims.userId } : {}) };
   } catch {
     return null;
   }

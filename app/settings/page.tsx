@@ -18,7 +18,7 @@ import { useLive } from "@/lib/hooks/useLive";
 type Key = "showLiquidations" | "showSizes" | "allowCopy" | "allowFade" | "showBottomBoard" | "acceptDuels";
 
 export default function SettingsPage() {
-  const { profile, authedFetch, refreshMe, logout, address, fee, hasExternalWallet, linkWallet, linkError, isGuest, login, guestToken } = useSession();
+  const { profile, authedFetch, refreshMe, logout, address, fee, hasExternalWallet, linkWallet, linkError, isGuest, login, guestToken, linkX, linkXState } = useSession();
   const { allowed: liveOk, gate } = useLive();
   const [keyCopied, setKeyCopied] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -65,10 +65,15 @@ export default function SettingsPage() {
             <div className="font-bold">Your guest key</div>
             <p className="muted mt-1 text-sm">This device stays signed in automatically. Save the key to get back into <b>{profile.handle}</b> from another phone or browser, or if you clear your data. Anyone with the key can use this demo account.</p>
             <div className="mt-2 flex gap-2"><input className="field mono" style={{ padding: "8px 12px", fontSize: 11 }} readOnly value={guestToken} onFocus={(e) => e.currentTarget.select()} /><button className="chip on" onClick={async () => { try { await navigator.clipboard.writeText(guestToken); setKeyCopied(true); setTimeout(() => setKeyCopied(false), 1500); } catch {} }}>{keyCopied ? "Copied" : "Copy"}</button></div>
-            <p className="faint mt-2 text-[11px]">Want it tied to something you can&rsquo;t lose? Sign in with X, Google or email instead and your record carries over.</p>
+          </div>
+          <div className="card mt-2.5 p-4">
+            <div className="font-bold">Sign in with X instead of a key</div>
+            <p className="muted mt-1 text-sm">Attach your X account to <b>{profile.handle}</b>. After that, signing in with X opens this account on any device, and you won&rsquo;t need the key.</p>
+            <button className="btn brand mt-3 w-full" style={{ padding: 12, fontSize: 14 }} disabled={linkXState.busy} onClick={linkX}><Icon d={I.x} size={16} />{linkXState.busy ? "Linking…" : "Link my X account"}</button>
           </div>
         </div>
       )}
+      {(linkXState.done || linkXState.error) && <div className="px-5 pb-2 pt-3"><div className={`card p-3.5 text-sm ${linkXState.error ? "red" : ""}`} style={linkXState.done ? { color: "var(--green)", background: "var(--green-soft)" } : {}}>{linkXState.done ?? linkXState.error}</div></div>}
 
       <div className="eyebrow px-5 pb-1.5 pt-4">Appearance</div>
       <div className="srow"><span>Theme</span><Seg value={theme} options={[["light", "Day"], ["dark", "Night"], ["auto", "Auto"]]} onChange={(v) => { setTheme(v); setThemeState(v); }} /></div>
@@ -85,7 +90,7 @@ export default function SettingsPage() {
       <div className="eyebrow px-5 pb-1.5 pt-4">Trading</div>
       <div className="srow"><span>Mode</span><span className="chip" style={local.isDemo ? {} : { color: "var(--green)", background: "var(--green-soft)" }}>{local.isDemo ? "Demo · practice money" : "Live · real money"}</span></div>
       {!liveOk ? (
-        <div className="srow"><span className="muted text-sm">{isGuest ? "Guest demo, this device only. Sign in with X to keep your record. Real-money trading opens soon." : "Real-money trading opens soon. Your demo record counts toward Season 0."}</span>{isGuest ? <button className="chip" style={{ color: "var(--brand)", background: "var(--brand-soft)" }} onClick={login}>Sign in</button> : <button className="chip live-off" onClick={gate(() => null)}>Go live<span className="soon-pill">Soon</span></button>}</div>
+        <div className="srow"><span className="muted text-sm">{isGuest ? "Guest demo. Link your X account to keep this record on any device. Real-money trading opens soon." : "Real-money trading opens soon. Your demo record counts toward Season 0."}</span>{isGuest ? <button className="chip" style={{ color: "var(--brand)", background: "var(--brand-soft)" }} onClick={linkX}>Link X</button> : <button className="chip live-off" onClick={gate(() => null)}>Go live<span className="soon-pill">Soon</span></button>}</div>
       ) : local.isDemo ? (
         <div className="srow"><span className="muted text-sm">{isGuest ? "Guest demo, this device only. Sign in with X to keep your record, or connect a wallet to trade for real." : hasExternalWallet ? "Your wallet is connected. Switch to live to trade with real money." : "Connect a wallet to trade real money. Your wallet becomes your Hyperliquid account."}</span><button className="chip" style={{ color: "var(--brand)", background: "var(--brand-soft)" }} onClick={goLive}>{isGuest ? "Sign in" : hasExternalWallet ? "Go live" : "Connect wallet"}</button></div>
       ) : (
@@ -111,6 +116,7 @@ export default function SettingsPage() {
         </>
       )}
       <div className="eyebrow px-5 pb-1.5 pt-4">Referrals</div>
+      {(profile.founderSeat != null || profile.role === "admin" || profile.role === "owner") && <Link href="/founder" className="srow" style={{ color: "var(--brand)" }}><span><b>Founder dashboard</b><span className="when ml-1.5">your network, activity and earnings</span></span><span>→</span></Link>}
       <Link href="/invite" className="srow" style={{ color: "var(--brand)" }}><span><b>Invite &amp; earn</b><span className="when ml-1.5">your link, rates, earnings and people</span></span><span>→</span></Link>
       <div className="block mx-4 mt-1 rounded-2xl p-4" style={{ background: "var(--brand-soft)" }}>
         <div className="flex items-center justify-between"><div><div className="eyebrow" style={{ color: "var(--muted)" }}>Your code</div><b className="mono text-lg uppercase">{profile.handle}</b></div><button className="chip" style={{ color: "var(--brand)", background: "var(--bg)" }} onClick={copyLink}>{copied ? "Copied" : "Copy link"}</button></div>

@@ -1412,3 +1412,18 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .cs-x b { font-size: 14px; }
 .cs-note { display: flex; gap: 10px; align-items: flex-start; width: 100%; margin-top: 10px; padding: 12px 14px; border-radius: 14px; text-align: left; font: inherit; font-size: 13px; line-height: 1.45; background: var(--gold-soft); border: 1px solid rgba(201,138,5,.35); color: var(--text); cursor: pointer; }
 .cs-note svg { flex: none; margin-top: 1px; color: var(--gold); }
+
+/* Admin / founder dashboards: nothing may push the page sideways on a phone. */
+.adm-page { overflow-x: clip; max-width: 640px; margin: 0 auto; }
+.adm-page .inv-card, .adm-page .adm-kpis > div { min-width: 0; }
+.adm-page .inv-card .btn { width: 100%; }
+.adm-checks > div { grid-template-columns: 10px auto minmax(0, 1fr); }
+/* Founder dashboard: 14-day activity bars */
+.fd-bars { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px; height: 96px; align-items: end; }
+.fd-bars > div { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px; padding-bottom: 14px; }
+.fd-bars i { display: block; width: 100%; min-height: 2px; border-radius: 4px 4px 2px 2px; }
+.fd-bars i.t { background: linear-gradient(180deg, #2ff0a8, #03c47e); }
+.fd-bars i.j { background: linear-gradient(180deg, #ffd98a, #c98a05); }
+.fd-bars span { position: absolute; bottom: 0; font-size: 9.5px; color: var(--muted); font-weight: 700; }
+.fd-key { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin: 0 4px 0 8px; vertical-align: middle; }
+.fd-key.t { background: #05e091; } .fd-key.j { background: #c98a05; }

@@ -8,6 +8,7 @@ import { byHandle, canGoLive, nextRelease } from "@/lib/programme";
 import { CREATOR_FOUNDER_PCT, CREATOR_PCT, CREATOR_RANKED_LEVEL, CREATOR_RANKED_PCT, FOUNDER_L1_LATER_PCT, FOUNDER_L1_PCT, FOUNDER_L2_PCT, FOUNDER_SEATS, FOUNDER_WAVE, FOUNDER_GRACE_DAYS, founderL1Ends, founderL1Pct, isFounder } from "@/lib/programme-rates";
 import { RANKS, rankFor } from "@/lib/rank";
 import { notify } from "@/lib/feed";
+import { getLiveSettings } from "@/lib/live";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,9 @@ export async function GET(req: Request) {
   if (!me) return Response.json({ error: "no profile" }, { status: 404 });
   const week = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
   const founder = isFounder(me);
+  const live = await getLiveSettings();
+  // Grace clock runs from the later of the seat date and the day real money opened; paused while closed.
+  const graceStart = Math.max(me.founderSince ? new Date(me.founderSince).getTime() : Date.now(), live.open && live.openedAt ? new Date(live.openedAt).getTime() : Date.now());
   const [bySource, paid, people, people2, creator, active, inviter, counts] = await Promise.all([
     db.execute(sql`select kind, coalesce(sum(share_usd),0)::float as total, coalesce(sum(share_usd) filter (where day >= ${week}),0)::float as week from referral_earnings where referrer_id = ${me.id} group by kind`),
     db.execute(sql`select coalesce(sum(amount_usd),0)::float as paid from referral_payouts where referrer_id = ${me.id}`),
@@ -59,7 +63,7 @@ export async function GET(req: Request) {
     founder: founder ? {
       seat: me.founderSeat, wave: FOUNDER_WAVE, seats: FOUNDER_SEATS, since: me.founderSince, l1Pct: founderL1Pct(me.founderSince), l1LaterPct: FOUNDER_L1_LATER_PCT, l1TopPct: FOUNDER_L1_PCT,
       l1Ends: me.founderSince ? founderL1Ends(me.founderSince).toISOString() : null, l2Pct: FOUNDER_L2_PCT, graceDays: FOUNDER_GRACE_DAYS,
-      graceLeft: me.founderSince ? Math.max(0, FOUNDER_GRACE_DAYS - Math.floor((Date.now() - new Date(me.founderSince).getTime()) / 86_400_000)) : FOUNDER_GRACE_DAYS,
+      graceLeft: Math.max(0, FOUNDER_GRACE_DAYS - Math.floor((Date.now() - graceStart) / 86_400_000)), gracePaused: !live.open,
       secured: Number(c.live) > 0,
     } : null,
     rates: {

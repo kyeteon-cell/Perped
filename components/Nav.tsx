@@ -19,6 +19,9 @@ export function Nav() {
   const { authenticated, profile, profileLoading, address, login, loginError } = useSession();
   // A logged-in user with a wallet but no handle yet goes through onboarding.
   useEffect(() => {
+    let linking = false;
+    try { linking = !!sessionStorage.getItem("perped:link-x"); } catch {}
+    if (linking) return; // attaching X to a guest account: the profile appears once the link lands
     if (authenticated && address && !profileLoading && !profile && !path.startsWith("/onboarding")) router.replace("/onboarding");
   }, [authenticated, address, profileLoading, profile, path, router]);
   if (path.startsWith("/onboarding")) return null;

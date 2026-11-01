@@ -11,7 +11,7 @@ import { fmtUsd } from "@/lib/format";
 type Src = { total: number; week: number };
 type InviteRes = {
   handle: string; link: string; canGoLive: boolean; onWaitlist: boolean; nextRelease: string; invitedBy: string | null; canRedeem: boolean;
-  founder: null | { seat: number; wave: number; seats: number; since: string; l1Pct: number; l1LaterPct: number; l1TopPct: number; l1Ends: string | null; l2Pct: number; graceDays: number; graceLeft: number; secured: boolean };
+  founder: null | { seat: number; wave: number; seats: number; since: string; l1Pct: number; l1LaterPct: number; l1TopPct: number; l1Ends: string | null; l2Pct: number; graceDays: number; graceLeft: number; gracePaused?: boolean; secured: boolean };
   rates: { invitePct: number; baseInvitePct: number; topInvitePct: number; topThreshold: number; activeInvites: number; creatorPct: number; creatorBasePct: number; creatorRankedPct: number; creatorRankTitle: string; xpToRanked: number };
   counts: { joined: number; live: number };
   earnings: { owed: number; total: number; paid: number; week: number; invite: Src; invite2: Src; creator: Src };
@@ -94,8 +94,9 @@ export default function InvitePage() {
 
         {f && (
           <section className="inv-card">
-            <div className="flex items-center justify-between"><span className="eyebrow">Your seat</span><span className={`when ${f.secured ? "green" : ""}`}>{f.secured ? "secured" : `${f.graceLeft} days to secure it`}</span></div>
-            <p className="when mt-1">{f.secured ? "Someone you invited trades real money, so the seat is yours." : `Bring in one trader who trades real money within ${f.graceDays} days of getting the seat, or it goes back to the pool and you move to regular rates.`}</p>
+            <div className="flex items-center justify-between"><span className="eyebrow">Your seat</span><span className={`when ${f.secured ? "green" : ""}`}>{f.secured ? "secured" : f.gracePaused ? "clock paused" : `${f.graceLeft} days to secure it`}</span></div>
+            <p className="when mt-1">{f.secured ? "Someone you invited trades real money, so the seat is yours." : f.gracePaused ? `Your ${f.graceDays}-day clock hasn't started: it starts when real-money trading opens. Until then, build your network on demo.` : `Bring in one trader who trades real money within ${f.graceDays} days of getting the seat, or it goes back to the pool and you move to regular rates.`}</p>
+            <Link href="/founder" className="btn brand mt-3 w-full" style={{ padding: 12, fontSize: 14 }}>Open your founder dashboard</Link>
           </section>
         )}
 

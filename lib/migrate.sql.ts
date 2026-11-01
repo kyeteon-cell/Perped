@@ -311,4 +311,9 @@ insert into app_settings (key, value) values ('waitlist', '{"batch":200,"paused"
 alter table referral_earnings add column if not exists kind text not null default 'invite';
 drop index if exists referral_earnings_unique;
 create unique index if not exists referral_earnings_unique2 on referral_earnings (referee_id, day, referrer_id, kind);
+create table if not exists account_links (
+  privy_id text primary key,
+  user_id text not null references users(id),
+  created_at timestamptz not null default now()
+);
 `;
