@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { Candle } from "@/lib/hl-info";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { fmtPct, fmtPrice } from "@/lib/format";
+import { withLive } from "@/lib/candles-live";
 
 type Iv = "1m" | "5m" | "15m" | "1h";
 const IVS: Record<Iv, number> = { "1m": 60_000, "5m": 300_000, "15m": 900_000, "1h": 3_600_000 };
@@ -20,10 +21,14 @@ type Props = { coin: string; entry: number; mark: number; side: "long" | "short"
 export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: Props) {
   const router = useRouter();
   const opened = openedAt ? new Date(openedAt).getTime() : Date.now();
-  // Interval is a quick switch on the card (remembered across cards); 5m by default.
-  const [iv, setIv] = useState<Iv>("5m");
-  useEffect(() => { try { const v = localStorage.getItem("perped:tc-iv") as Iv | null; if (v && IVS[v]) setIv(v); } catch {} }, []);
-  const pick = (e: MouseEvent, v: Iv) => { e.preventDefault(); e.stopPropagation(); setIv(v); try { localStorage.setItem("perped:tc-iv", v); } catch {} };
+  // Interval follows the trade's age (1m while it's young, then 5m, 15m, 1h) unless you pick one on the card,
+  // which is remembered across cards.
+  const age = Date.now() - opened;
+  const auto: Iv = age < 45 * 60_000 ? "1m" : age < 4 * 3_600_000 ? "5m" : age < 12 * 3_600_000 ? "15m" : "1h";
+  const [picked, setPicked] = useState<Iv | null>(null);
+  useEffect(() => { try { const v = localStorage.getItem("perped:tc-iv2") as Iv | null; if (v && IVS[v]) setPicked(v); } catch {} }, []);
+  const iv = picked ?? auto;
+  const pick = (e: MouseEvent, v: Iv) => { e.preventDefault(); e.stopPropagation(); setPicked(v); try { localStorage.setItem("perped:tc-iv2", v); } catch {} };
   const ms = IVS[iv], limit = 40;
   // Only fetch candles once the card scrolls near the screen: a long feed doesn't fire a request per trade up front.
   const box = useRef<HTMLDivElement>(null);
@@ -35,12 +40,13 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
     io.observe(el);
     return () => io.disconnect();
   }, []);
-  const { data } = useSWR<{ candles: Candle[] }>(vis ? `/api/markets/${coin}/candles?interval=${iv}&limit=${limit}` : null, { refreshInterval: 60_000, dedupingInterval: 30_000, revalidateOnFocus: false });
+  const { data } = useSWR<{ candles: Candle[] }>(vis ? `/api/markets/${coin}/candles?interval=${iv}&limit=${limit}` : null, { refreshInterval: iv === "1m" ? 30_000 : 60_000, dedupingInterval: 20_000, revalidateOnFocus: false });
   const { markets } = useMarkets();
   const m = markets.find((x) => x.name === coin);
   // Zoom on the trade: keep only a short run of history before the entry (never more than the trade itself, 4–10 candles),
   // so the price scale is set by the trade, not by an old high or low.
-  const all = (data?.candles ?? []).slice(-limit);
+  // The newest candle forms live from the price feed (every second), between candle refreshes.
+  const all = withLive(data?.candles ?? [], mark || m?.mid || 0, ms).slice(-limit);
   const allEi = Math.max(0, Math.min(Math.max(all.length, 1) - 1, Math.floor((opened - (all[0]?.t ?? opened)) / ms)));
   const candles = all.slice(Math.max(0, allEi - Math.max(4, Math.min(10, all.length - allEi))));
   const live = mark || m?.mid || candles[candles.length - 1]?.c || entry;
@@ -77,7 +83,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   // Price tags on the right edge (like an exchange): now, entry, and stop / take profit / liquidation when they're on screen.
   type Tag = { key: string; p: number; label: string; cls: string; color: string };
   const pctX = (x: number) => `${Math.max(6, Math.min(94, (x / W) * 100))}%`;
-  const ey = y(entry), ly = y(live);
+  const ey = y(entry);
   // P&L colour (yours): green when the trade is winning, red when it's losing.
   const winning = side === "long" ? live >= entry : live <= entry;
   const pc = winning ? "var(--green)" : "var(--red)";
@@ -112,11 +118,10 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
         {candles.length ? (
           <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
             {/* Win / lose zones from the entry on: your winning side faint green, losing side faint red,
-                the gap between entry and now strong in your P&L colour, and stop-loss → liquidation as a danger band. */}
+                and stop-loss → liquidation as a danger band. */}
             <rect x={ex} y="0" width={PLOT - ex} height={ey} fill={side === "long" ? "var(--green)" : "var(--red)"} opacity=".08" />
             <rect x={ex} y={ey} width={PLOT - ex} height={Math.max(0, H - ey)} fill={side === "long" ? "var(--red)" : "var(--green)"} opacity=".08" />
             {danger && <rect x={ex} y={Math.min(danger[0], danger[1])} width={PLOT - ex} height={Math.abs(danger[0] - danger[1])} fill="var(--red)" opacity=".16" />}
-            <rect x={ex} y={Math.min(ey, ly)} width={Math.max(0, nowX - ex)} height={Math.max(1, Math.abs(ey - ly))} fill={pc} opacity=".28" />
             {candles.map((c, i) => {
               const up = c.c >= c.o, x = xOf(i), bw = bwOf(i), col = i < ei ? "var(--muted)" : up ? "var(--green)" : "var(--red)";
               return (

@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { Candle } from "@/lib/hl-info";
+import { withLive } from "@/lib/candles-live";
 import { fmtPct, fmtPrice, fmtUsd } from "@/lib/format";
 import { Avatar } from "./ui";
 
@@ -277,7 +278,7 @@ function Tape({ a, b }: { a: Fighter; b: Fighter }) {
    Card chart: the fade card in the feed. Same battle, simpler picture:
    each trader's avatar marks their entry, the leader's gap to the live price is shaded, no lines.
    ====================================================================== */
-export function BattleCardChart({ coin, live, a, b }: { coin: string; live: number; a: Fighter; b: Fighter }) {
+export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: string; live: number; a: Fighter; b: Fighter; tick?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const [vis, setVis] = useState(false);
   useEffect(() => {
@@ -293,7 +294,7 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
   const civ: Iv = age < 45 * 60_000 ? "1m" : age < 4 * 3_600_000 ? "5m" : "15m";
   const { data } = useSWR<{ candles: Candle[] }>(vis ? `/api/markets/${coin}/candles?interval=${civ}&limit=60` : null, { refreshInterval: civ === "1m" ? 30_000 : 60_000, dedupingInterval: 20_000, revalidateOnFocus: false });
   // Zoom on the fight: a short run of history before the first entry (4–8 candles), then everything since.
-  const all = (data?.candles ?? []).slice(-60);
+  const all = (tick ? withLive(data?.candles ?? [], live, IVS[civ]) : data?.candles ?? []).slice(-60);
   const firstT = fightStart; // the fight starts when the fade opens; the original trade may be much older
   const allFirst = Math.max(0, all.findIndex((c) => c.t + IVS[civ] > firstT));
   const candles = all.slice(Math.max(0, allFirst - Math.max(4, Math.min(8, all.length - allFirst))));

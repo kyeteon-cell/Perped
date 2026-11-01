@@ -363,7 +363,7 @@ function FadeCard({ item, a, b, mark, mid, onChanged, quick, setQuick, canAct, c
       </div>
       <div className="fc-hp"><MiniHp f={a} live={mark} big /><span>HP</span><MiniHp f={b} live={mark} big right /></div>
       <div className="fc-row">{side(a, false, src?.xp)}<span className="fc-vs">vs</span>{side(b, true, author?.xp)}</div>
-      <BattleCardChart coin={post.coin!} live={mark} a={a} b={b} />
+      <BattleCardChart coin={post.coin!} live={mark} a={a} b={b} tick={post.status === "open"} />
       {post.body && <div className="fc-quote"><b>{b.handle}:</b> <RichText text={post.body} /></div>}
       {canAct && (canFade || canCopy) && (
         <div className="fc-backs">
