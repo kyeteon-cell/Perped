@@ -185,10 +185,11 @@ export default function HowItWorks() {
         <p className="mt-2">Every live fade on Perped, sorted so the good ones are easy to find, with a way to jump into each.</p>
         <ul className="hw-list mt-3">
           <li><b><Glyph n="skull" tone="violet" /> Vendettas:</b> fades between two traders locked in a feud, pinned to the top of the live list with the series score and which meeting this is.</li>
-          <li><b><Glyph n="flame" tone="gold" /> High stakes:</b> 20× or more, big positions, or someone close to liquidation.</li>
-          <li><b><Glyph n="people" /> Following:</b> your fades, and fades of people you follow or your rivals.</li>
-          <li><b><Glyph n="drop" tone="blood" /> Bloodbath:</b> fades where the two sides are more than 7 ROI points apart. At the top is <b>The Pit</b>, the most one-sided fight right now, with both health bars live.</li>
-          <li><b><Glyph n="dagger" /> Finish them / <Glyph n="buoy" /> Save them:</b> on every Bloodbath fade. Finish backs the winner, Save backs the loser for a comeback. One tap, size only, at their leverage.</li>
+          <li><b><Glyph n="flame" tone="gold" /> High stakes:</b> 20× or more, a $5k+ position, or someone within 10% of liquidation.</li>
+          <li><b><Glyph n="people" /> Everyone / Following:</b> the switch at the top. Following shows your fades and fades of people you follow or your rivals, and works with every tab.</li>
+          <li><b><Glyph n="bolt" /> All:</b> the Main event (the riskiest fight right now) beside Your fight, then Vendettas and High stakes to swipe, then every fade.</li>
+          <li><b><Glyph n="drop" tone="blood" /> Bloodbath:</b> fades where the two sides are more than 7 ROI points apart. At the top is <b>The Pit</b>, the most one-sided fight right now, beside <b>Last standing</b>: fades where one side is already out (stopped, liquidated or banked) and the other is still in, newest first, each for 24 hours, marked Winning or Chasing against the number the other side finished on.</li>
+          <li><b><Glyph n="dagger" /> Finish them / <Glyph n="buoy" /> Save them:</b> on every Bloodbath fade. Finish backs the winner, Save backs the loser for a comeback. Every other fade has a plain <b>Back</b> for each side. One tap, size only, at their leverage. The two fighters can&rsquo;t back either side of their own fight.</li>
           <li><b>REKT and Revenge:</b> liquidations stay in Bloodbath for six hours as tombstones. <b><Glyph n="drop" tone="blood" /> Revenge</b> quick-fades the winner&rsquo;s newest open trade; if they have none, they become your rival and you&rsquo;re pinged when they next trade. The <b>kill feed</b> lists the last day&rsquo;s liquidations.</li>
           <li><b>Body count:</b> this week&rsquo;s <Glyph n="dagger" /> Butcher (most people perped) and <Glyph n="tomb" /> Most rekt.</li>
           <li><b>Last stand:</b> if you&rsquo;re 20% down in a fade you get one alert: cut it, or double down. Your followers get one too.</li>
