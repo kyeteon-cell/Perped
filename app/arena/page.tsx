@@ -307,10 +307,6 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
           <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={
             tab === "high" ? <><span>{flames(r.heat)}</span><b className="mono">{b.faderLeg.leverage}× vs {b.targetLeg.leverage}×</b>{r.minLiq < 50 && <span className="ab-warn">{r.closer.handle} liq in {r.minLiq.toFixed(1)}%</span>}</>
             : tab === "blood" ? <><Glyph n="skull" tone="blood" /><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted"><span className="gl">{r.winner.handle}<Glyph n="crown" tone="gold" /></span></span></>
-            : tab === "glad" ? (() => {
-                const fIn = b.faderLeg.status === "open", s = fIn ? b.fader : b.target, o = fIn ? b.target : b.fader, sr = fIn ? r.a : r.t, or = fIn ? r.t : r.a;
-                return <><Glyph n="swords" /><b>{s.handle}</b><span>still in</span><b className={`mono ${sr >= 0 ? "green" : "red"}`}>{fmtPct(sr, 1)}</b><span className="ml-auto muted">{o.handle} out at <b className={`mono ${or >= 0 ? "green" : "red"}`}>{fmtPct(or, 1)}</b></span></>;
-              })()
             : tab === "following" && tag(b) ? <span className="ab-tag">{tag(b)}</span>
             : undefined
           } />
