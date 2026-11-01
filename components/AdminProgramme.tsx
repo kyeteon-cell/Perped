@@ -222,6 +222,13 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
       {tab === "tools" && (
         <>
           <section className="inv-card">
+            <div className="flex items-center justify-between"><span className="eyebrow">Preview the earnings page</span><span className="when">staff only</span></div>
+            <p className="when mt-1">See the Invite page exactly as each tier sees it, with your own numbers.</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {([["founder", "Founder"], ["regular", "Regular"], ["demo", "Demo"]] as const).map(([k, l]) => <Link key={k} href={`/invite?as=${k}`} className="btn" style={{ padding: 10, fontSize: 13 }}>{l}</Link>)}
+            </div>
+          </section>
+          <section className="inv-card">
             <div className="flex items-center justify-between"><span className="eyebrow">Look up an account</span></div>
             <div className="inv-input"><input value={who} onChange={(e) => setWho(e.target.value)} placeholder="@handle" autoCapitalize="none" /><button disabled={!who.trim()} onClick={async () => { const j = await act({ action: "whois", handle: who }, (r) => (r.user ? `Found @${(r.user as { handle: string }).handle}` : "No account with that handle")); setWhoRes((j.user as Record<string, unknown>) ?? null); }}>Look up</button></div>
             {whoRes && <div className="adm-kv mt-2">{Object.entries(whoRes).filter(([, v]) => v !== undefined).map(([k, v]) => <div key={k}><span>{k}</span><b className="mono">{String(v)}</b></div>)}</div>}

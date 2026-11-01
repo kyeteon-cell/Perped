@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { Avatar, SkeletonList } from "@/components/ui";
@@ -37,7 +37,9 @@ const nextMonday = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { 
 /** /invite — your link, your rates, what you've earned and from whom. Founders see their seat and the two-level tree. */
 export default function InvitePage() {
   const { authenticated, login, authedFetch } = useSession();
+  // Staff preview from Admin → Tools: /invite?as=founder|regular|demo (the server ignores it for everyone else).
   const [as, setAs] = useState<string | null>(null);
+  useEffect(() => { try { setAs(new URLSearchParams(window.location.search).get("as")); } catch {} }, []);
   const { data, mutate } = useSWR<InviteRes>(authenticated ? `/api/invite${as ? `?as=${as}` : ""}` : null, (u: string) => authedFetch(u).then((r) => r.json()), { refreshInterval: 60_000 });
   const [toast, setToast] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -83,10 +85,8 @@ export default function InvitePage() {
     <main className="pb-12">
       <header className="flex items-center justify-between px-4 py-3"><h1 className="text-xl font-bold">Invite</h1><Link href="/how-it-works#earn" className="when underline">How earning works</Link></header>
       <div className="px-4">
-        {data.staff && (
-          <div className="inv-as" role="tablist" aria-label="Preview the page as">
-            {([[null, "Mine"], ["founder", "Founder"], ["regular", "Regular"], ["demo", "Demo"]] as const).map(([k, l]) => <button key={l} role="tab" aria-selected={as === k} className={as === k ? "on" : ""} onClick={() => setAs(k)}>{l}</button>)}
-          </div>
+        {data.staff && as && (
+          <div className="inv-preview"><span>Previewing as <b>{as}</b></span><Link href="/invite" onClick={() => setAs(null)}>Back to mine</Link></div>
         )}
         <section className={`inv-hero ${f ? "" : "reg"}`}>
           {f ? <span className="fbadge"><Glyph n="crown" />FOUNDER #{f.seat}</span> : <small>Invite friends</small>}
