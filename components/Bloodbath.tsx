@@ -33,8 +33,10 @@ function Bar({ f, live, right }: { f: Fighter; live: number; right?: boolean }) 
 
 /** Finish them (back the winner) / Save them (back the loser): one-tap, size-only, same leverage. */
 export function FinishSave({ b, winner, loser }: { b: ArenaBattle; winner: Mini; loser: Mini }) {
-  const { authenticated, login } = useSession();
+  const { authenticated, login, profile } = useSession();
   const [open, setOpen] = useState<null | { item: FeedRow; title: string }>(null);
+  // The two fighters can't back a side of their own fight.
+  const inFight = !!profile && (profile.id === b.fader.id || profile.id === b.target.id);
   const pick = (u: Mini, title: string) => {
     if (!authenticated) return login();
     const l = legOf(b, u);
@@ -42,7 +44,7 @@ export function FinishSave({ b, winner, loser }: { b: ArenaBattle; winner: Mini;
   };
   // A side that already banked (closed) can't be backed any more.
   const wOpen = legOf(b, winner).status === "open", lOpen = legOf(b, loser).status === "open";
-  if (!wOpen && !lOpen) return null;
+  if (inFight || (!wOpen && !lOpen)) return null;
   return (
     <>
       <div className="bb-acts" style={wOpen && lOpen ? undefined : { gridTemplateColumns: "1fr" }}>
