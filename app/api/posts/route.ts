@@ -10,6 +10,7 @@ import { DEMO_ENABLED } from "@/lib/config";
 import { getLiveSettings, liveAllowed } from "@/lib/live";
 import { getFrontendOpenOrders, getMids, getPerpAssets } from "@/lib/hl-info";
 import { fillsForOrder, vwap } from "@/lib/hlfills";
+import { normCoin } from "@/lib/format";
 
 /**
  * Keep the For-you feed mixed: system cards (battle / duel results, milestones, settlements, market stories)
@@ -51,14 +52,14 @@ export async function GET(req: Request) {
 
   const conds = [
     q.handle ? eq(schema.users.handle, q.handle.toLowerCase()) : undefined,
-    q.coin ? eq(schema.posts.coin, q.coin.toUpperCase()) : undefined,
+    q.coin ? eq(schema.posts.coin, normCoin(q.coin)) : undefined,
     q.kind ? eq(schema.posts.kind, q.kind as "trade") : undefined,
     q.status === "open" || q.status === "closed" ? eq(schema.posts.status, q.status) : undefined,
     cursor ? sql`${schema.posts.createdAt} < ${new Date(cursor).toISOString()}::timestamptz` : undefined,
   ];
   // Home filters. Trade-only filters (side, margin, leverage) let non-trade posts through only when the
   // person hasn't restricted kinds to trades, so a coin filter still shows that coin's calls and polls.
-  const coins = (q.coins ?? "").split(",").map((c) => c.trim().toUpperCase()).filter(Boolean);
+  const coins = (q.coins ?? "").split(",").map((c) => normCoin(c)).filter(Boolean);
   if (coins.length) conds.push(inArray(schema.posts.coin, coins));
   const kinds = (q.kinds ?? "").split(",").map((k) => k.trim()).filter((k) => ["trade", "call", "poll", "text", "system"].includes(k)) as ("trade" | "call" | "poll" | "text" | "system")[];
   if (kinds.length) conds.push(inArray(schema.posts.kind, kinds));
@@ -155,8 +156,8 @@ export async function POST(req: Request) {
     }
     // Leverage cap = Hyperliquid's own max for this market.
     const assets = await getPerpAssets().catch(() => []);
-    const cap = assets.find((a) => a.name === b.coin.toUpperCase())?.maxLeverage ?? 50;
-    if (b.leverage > cap) return Response.json({ error: `Hyperliquid allows up to ${cap}× on ${b.coin.toUpperCase()}` }, { status: 400 });
+    const cap = assets.find((a) => a.name === normCoin(b.coin))?.maxLeverage ?? 50;
+    if (b.leverage > cap) return Response.json({ error: `Hyperliquid allows up to ${cap}× on ${normCoin(b.coin)}` }, { status: 400 });
   }
 
   if (b.kind === "trade" && (b.fadedFromId || b.copiedFromId)) {
@@ -176,7 +177,7 @@ export async function POST(req: Request) {
     if (!DEMO_ENABLED && !profile.isBot) return Response.json({ error: "demo mode is off; switch to live trading in Settings" }, { status: 403 });
     // Demo: fill at the live mid on the server, deduct margin from the virtual balance.
     const mids = await getMids().catch(() => ({} as Record<string, string>));
-    const mid = Number(mids[b.coin.toUpperCase()] ?? 0);
+    const mid = Number(mids[normCoin(b.coin)] ?? 0);
     if (!mid) return Response.json({ error: "no price for that market" }, { status: 400 });
     const margin = b.notionalUsd / b.leverage;
     if (margin > Number(profile.demoBalance)) return Response.json({ error: `demo balance is $${Number(profile.demoBalance).toFixed(2)}` }, { status: 400 });
@@ -192,8 +193,8 @@ export async function POST(req: Request) {
     // Real money: entry and size come from the actual fills on Hyperliquid, looked up by order id.
     if (!auth.address) return Response.json({ error: "connect your wallet to post a live trade" }, { status: 400 });
     if (!b.oid) return Response.json({ error: "missing Hyperliquid order id" }, { status: 400 });
-    let fills = await fillsForOrder(auth.address, b.oid, b.coin.toUpperCase()).catch(() => null);
-    if (fills && !fills.length) { await new Promise((r) => setTimeout(r, 1500)); fills = await fillsForOrder(auth.address, b.oid, b.coin.toUpperCase()).catch(() => null); } // fills can lag the order by a moment
+    let fills = await fillsForOrder(auth.address, b.oid, normCoin(b.coin)).catch(() => null);
+    if (fills && !fills.length) { await new Promise((r) => setTimeout(r, 1500)); fills = await fillsForOrder(auth.address, b.oid, normCoin(b.coin)).catch(() => null); } // fills can lag the order by a moment
     if (fills && fills.length) {
       const v = vwap(fills)!;
       const bought = fills[0].side === "B";
@@ -209,19 +210,19 @@ export async function POST(req: Request) {
   }
   if (b.kind === "trade") {
     Object.assign(values, {
-      coin: b.coin.toUpperCase(), side: b.side, size: String(b.size), notionalUsd: String(b.notionalUsd), leverage: b.leverage, entryPx: String(b.entryPx),
+      coin: normCoin(b.coin), side: b.side, size: String(b.size), notionalUsd: String(b.notionalUsd), leverage: b.leverage, entryPx: String(b.entryPx),
       oid: b.oid, copiedFromId: b.copiedFromId, fadedFromId: b.fadedFromId, tpPx: b.tpPx ? String(b.tpPx) : undefined, slPx: b.slPx ? String(b.slPx) : undefined,
     });
   } else if (b.kind === "call") {
-    Object.assign(values, { coin: b.coin.toUpperCase(), side: b.side, targetPx: String(b.targetPx), invalidPx: b.invalidPx ? String(b.invalidPx) : undefined, deadline: new Date(b.deadline), callStatus: "open", backedPostId: b.backedPostId, status: "open" });
+    Object.assign(values, { coin: normCoin(b.coin), side: b.side, targetPx: String(b.targetPx), invalidPx: b.invalidPx ? String(b.invalidPx) : undefined, deadline: new Date(b.deadline), callStatus: "open", backedPostId: b.backedPostId, status: "open" });
   } else if (b.kind === "poll") {
     Object.assign(values, { options: b.options, closesAt: new Date(b.closesAt), settle: b.settle ?? null, coin: b.settle?.coin, status: "open" });
   } else {
-    Object.assign(values, { coin: b.coin?.toUpperCase(), status: "closed" });
+    Object.assign(values, { coin: b.coin ? normCoin(b.coin) : undefined, status: "closed" });
   }
   if (b.kind === "call") {
     // Remember the price when the call was made, for the progress bar and the "+12% from here" line.
-    const fromPx = await getMids().then((m) => Number(m[b.coin.toUpperCase()] ?? 0)).catch(() => 0);
+    const fromPx = await getMids().then((m) => Number(m[normCoin(b.coin)] ?? 0)).catch(() => 0);
     if (!fromPx) return Response.json({ error: "no live price for that market" }, { status: 400 });
     if (b.side === "long" ? b.targetPx <= fromPx : b.targetPx >= fromPx) return Response.json({ error: `target has to be ${b.side === "long" ? "above" : "below"} the current price (${fromPx})` }, { status: 400 });
     if (b.invalidPx && (b.side === "long" ? b.invalidPx >= fromPx : b.invalidPx <= fromPx)) return Response.json({ error: `invalidation has to be ${b.side === "long" ? "below" : "above"} the current price` }, { status: 400 });

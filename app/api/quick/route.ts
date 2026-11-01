@@ -3,6 +3,7 @@ import { and, eq, gt, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { getMids } from "@/lib/hl-info";
+import { normCoin } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ async function state(coin: string, userId: string | null): Promise<QuickState> {
 /** GET /api/quick?coin=BTC → counts + the viewer's open quick call, if any. */
 export async function GET(req: Request) {
   await ensureSchema();
-  const coin = (new URL(req.url).searchParams.get("coin") ?? "BTC").toUpperCase();
+  const coin = normCoin(new URL(req.url).searchParams.get("coin") ?? "BTC");
   const auth = await getAuth(req).catch(() => null);
   return Response.json(await state(coin, auth?.privyId ?? null));
 }

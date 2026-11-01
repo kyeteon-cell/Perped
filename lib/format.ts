@@ -109,3 +109,9 @@ export function autoStopDist(lev: number) {
   const l = Math.max(1, lev);
   return Math.max(0.1 / l, Math.min(0.01, 0.6 / l));
 }
+
+/** Hyperliquid market names are upper-case, except the 1000x markets which keep a lower-case "k" (kPEPE, kBONK). */
+export function normCoin(c: string) {
+  const t = c.trim();
+  return /^k[A-Za-z0-9]/.test(t) && t.length > 2 && t[1] === t[1].toUpperCase() ? "k" + t.slice(1).toUpperCase() : t.toUpperCase();
+}

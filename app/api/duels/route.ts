@@ -4,6 +4,7 @@ import { and, desc, eq, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { notify } from "@/lib/feed";
+import { normCoin } from "@/lib/format";
 
 const Create = z.object({ opponent: z.string(), coin: z.string().min(1).max(20), side: z.enum(["long", "short"]), stakeUsd: z.number().min(10).max(5000), hours: z.number().int().min(1).max(168) });
 
@@ -21,9 +22,9 @@ export async function POST(req: Request) {
   if (!opp.acceptDuels) return Response.json({ error: `${opp.handle} isn't accepting duels` }, { status: 403 });
   const [duel] = await db
     .insert(schema.duels)
-    .values({ challengerId: me.id, opponentId: opp.id, coin: b.coin.toUpperCase(), challengerSide: b.side, stakeUsd: String(b.stakeUsd), settlesAt: new Date(Date.now() + b.hours * 3600_000) })
+    .values({ challengerId: me.id, opponentId: opp.id, coin: normCoin(b.coin), challengerSide: b.side, stakeUsd: String(b.stakeUsd), settlesAt: new Date(Date.now() + b.hours * 3600_000) })
     .returning();
-  await notify(opp.id, "duel", `${me.handle} challenged you to a duel`, `${b.coin.toUpperCase()} · $${b.stakeUsd} · ${b.hours}h`, `/duels/${duel.id}`);
+  await notify(opp.id, "duel", `${me.handle} challenged you to a duel`, `${normCoin(b.coin)} · $${b.stakeUsd} · ${b.hours}h`, `/duels/${duel.id}`);
   return Response.json({ duel });
 }
 

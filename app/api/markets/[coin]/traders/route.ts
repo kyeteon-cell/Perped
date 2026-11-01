@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, or, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
+import { normCoin } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ coin: string }>
     .from(schema.posts)
     .innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
     .leftJoin(schema.stats, eq(schema.stats.userId, schema.users.id))
-    .where(and(eq(schema.posts.kind, "trade"), eq(schema.posts.coin, coin.toUpperCase()), or(eq(schema.posts.status, "open"), gte(schema.posts.closedAt, since))))
+    .where(and(eq(schema.posts.kind, "trade"), eq(schema.posts.coin, normCoin(coin)), or(eq(schema.posts.status, "open"), gte(schema.posts.closedAt, since))))
     .orderBy(desc(schema.posts.createdAt))
     .limit(80);
 
@@ -59,5 +60,5 @@ export async function GET(req: Request, ctx: { params: Promise<{ coin: string }>
     fadeCount, copyCount, fadedFromId: p.fadedFromId,
     following: followed.has(u.id), top: top.has(u.id), mine: auth?.privyId === u.id,
   }));
-  return Response.json({ coin: coin.toUpperCase(), traders, followingAny: followed.size > 0 });
+  return Response.json({ coin: normCoin(coin), traders, followingAny: followed.size > 0 });
 }

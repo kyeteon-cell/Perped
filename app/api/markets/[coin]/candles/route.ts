@@ -1,4 +1,5 @@
 import { getCandles } from "@/lib/hl-info";
+import { normCoin } from "@/lib/format";
 
 const RANGES: Record<string, { interval: string; ms: number }> = {
   "1h": { interval: "1m", ms: 60 * 60_000 },
@@ -27,6 +28,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ coin: string }>
     const range = RANGES[q.get("range") ?? "1d"] ?? RANGES["1d"];
     iv = range.interval; since = Date.now() - range.ms;
   }
-  const candles = await getCandles(coin.toUpperCase(), iv, since);
-  return Response.json({ coin: coin.toUpperCase(), interval: iv, candles }, { headers: { "cache-control": "public, s-maxage=10, stale-while-revalidate=60" } });
+  // Hyperliquid sometimes 500s or rate-limits: answer with an empty set (briefly cached) instead of an error page.
+  const candles = await getCandles(normCoin(coin), iv, since).catch((e) => { console.warn("[candles]", normCoin(coin), iv, e instanceof Error ? e.message : e); return null; });
+  if (!candles) return Response.json({ coin: normCoin(coin), interval: iv, candles: [], stale: true }, { status: 200, headers: { "cache-control": "public, s-maxage=5" } });
+  return Response.json({ coin: normCoin(coin), interval: iv, candles }, { headers: { "cache-control": "public, s-maxage=10, stale-while-revalidate=60" } });
 }

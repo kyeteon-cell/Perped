@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
+import { normCoin } from "./format";
 
 /**
  * May `userId` fade post `srcPostId`? One fade per person per trade, and no fading back: if the trade you're
@@ -11,7 +12,7 @@ export async function fadeBlockReason(userId: string, srcPostId: number, mine?: 
   if (!src || src.kind !== "trade") return "that trade doesn't exist";
   if (src.status !== "open") return "that trade is already closed";
   if (src.userId === userId) return "you can't fade your own trade";
-  if (mine && mine.coin.toUpperCase() !== src.coin) return `a fade has to be on ${src.coin}`;
+  if (mine && normCoin(mine.coin) !== src.coin) return `a fade has to be on ${src.coin}`;
   if (mine && mine.side === src.side) return "a fade takes the opposite side";
   const [already] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, userId), eq(schema.posts.fadedFromId, srcPostId))).limit(1);
   if (already) return "you've already faded this trade";
