@@ -9,7 +9,7 @@ export async function staffFrom(req: Request): Promise<Staff | null> {
   const key = new URL(req.url).searchParams.get("key") ?? req.headers.get("x-admin-key");
   if (secret && key === secret) return { role: "owner", userId: null, handle: null, viaKey: true };
   const auth = await getAuth(req).catch(() => null);
-  if (!auth || auth.guest) return null;
+  if (!auth) return null; // guest accounts count too: their signed token is a real login, and the role is what matters
   const p = await getProfile(auth.privyId);
   if (!p || !isStaff(p.role)) return null;
   return { role: p.role as "owner" | "admin", userId: p.id, handle: p.handle, viaKey: false };
