@@ -317,4 +317,6 @@ create table if not exists account_links (
   user_id text not null references users(id),
   created_at timestamptz not null default now()
 );
+-- Earnings: trades placed on someone's call.
+create index if not exists posts_backed_idx on posts (backed_post_id) where backed_post_id is not null;
 `;

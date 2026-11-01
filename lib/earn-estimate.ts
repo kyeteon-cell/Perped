@@ -35,7 +35,10 @@ export async function estimateEarnings(userId: string, paper: boolean, rates: { 
         s.id as src, s.coin, s.side, coalesce(s.leverage, 1) as leverage, s.created_at as at, u.handle, u.avatar_url as "avatarUrl"
       from posts f join users u on u.id = f.user_id
       join posts s on s.id = coalesce(f.copied_from_id, f.faded_from_id, f.backed_post_id)
-      where s.user_id = ${userId} and f.user_id <> ${userId} and f.kind = 'trade' and f.paper = ${paper}
+      where (f.copied_from_id in (select id from posts where user_id = ${userId})
+          or f.faded_from_id in (select id from posts where user_id = ${userId})
+          or f.backed_post_id in (select id from posts where user_id = ${userId}))
+        and s.user_id = ${userId} and f.user_id <> ${userId} and f.kind = 'trade' and f.paper = ${paper}
         and f.notional_usd is not null and ${held}
       order by f.created_at desc limit 5000`),
     db.execute(sql`select f.created_at::date::text as day, ${fee} as fee, case when u.referred_by = ${userId} then 1 else 2 end as lvl
