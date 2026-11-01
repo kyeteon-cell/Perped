@@ -162,7 +162,7 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
           {[a, b].map((f, i) => (
             <line key={i} x1={xOf(ts(f.openedAt))} x2={W} y1={y(f.entry)} y2={y(f.entry)} stroke={sideCol(f)} strokeWidth="2" vectorEffect="non-scaling-stroke" />
           ))}
-          <line x1="0" x2={W} y1={y(px)} y2={y(px)} stroke="var(--chrome)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+          <line x1={(n - 1) * cw} x2={W} y1={y(px)} y2={y(px)} stroke="var(--chrome)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
         </svg>
       ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 16 }} />}
 
@@ -336,7 +336,7 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
             </>
           )}
           <line x1={nowX} x2={nowX} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".18" />
-          <line x1="0" x2={W} y1={y(px)} y2={y(px)} stroke="var(--chrome)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+          <line x1={nowX - slotW} x2={W} y1={y(px)} y2={y(px)} stroke="var(--chrome)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
           {candles.map((c, i) => {
             const x = xOf(i), bw = bwOf(i), before = i < first;
             const col = before ? "var(--muted)" : c.c >= c.o ? GREEN : RED;
