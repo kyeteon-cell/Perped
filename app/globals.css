@@ -1524,3 +1524,23 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .alv.lv-glad:not(.on) .alv-ic { color: var(--chrome); }
 .glad-st { flex: none; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 900; letter-spacing: .02em; }
 .glad-st.g { background: var(--green-soft); color: var(--green); } .glad-st.r { background: var(--red-soft); color: var(--red); }
+
+/* Arena filters: a scope switch (Everyone / Following) over four plain heat pills. Only the active pill takes a colour. */
+.ascope { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.ascope button { display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 14px; font-weight: 800; padding: 9px 8px; border-radius: 999px; cursor: pointer; transition: background .2s var(--ease), color .2s; }
+.ascope button small { font-family: var(--font-mono), "Barlow", sans-serif; font-size: 11px; font-weight: 800; opacity: .7; }
+.ascope button.on { background: var(--ink); color: var(--ink-fg); }
+.aheat { display: flex; gap: 6px; }
+.aheat button { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font: inherit; font-size: 12.5px; font-weight: 800; padding: 7px 8px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background .2s var(--ease), color .2s, border-color .2s; }
+.aheat button small { font-size: 10.5px; opacity: .7; }
+.aheat button:active { transform: scale(.96); }
+.aheat button.on { color: var(--ink-fg); background: var(--ink); border-color: transparent; }
+.aheat button.on small { opacity: .9; }
+.aheat .ah-nemesis.on { color: #fff; background: linear-gradient(180deg, #a78bfa, #7c3aed); }
+.aheat .ah-high.on { color: #2a1c00; background: linear-gradient(180deg, #ffd98a, #f2b63a 55%, #c98a05); }
+.aheat .ah-blood.on { color: #fff; background: linear-gradient(180deg, #ff8a8e, #fd6267 50%, #a8232a); }
+.asub { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; }
+.asub .g { width: 16px; height: 16px; color: var(--muted); }
+.asub .when { margin-left: auto; font-size: 11px; }
+.bb-acts.quiet button { display: flex; justify-content: center; padding: 8px; font-size: 13px; font-weight: 700; border-radius: 999px; color: var(--muted); }
+.bb-acts.quiet button b { color: var(--text); font-weight: 900; }
