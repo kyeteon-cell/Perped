@@ -363,11 +363,89 @@ function CallOut({ onPick, onClose, rivals }: { onPick: (h: string) => void; onC
 }
 
 /** /arena — the PvP hub. */
+/** "How it works" for the Arena: the whole thing in one sheet, in the order you meet it. */
+function ArenaHow({ onClose }: { onClose: () => void }) {
+  const S = ({ icon, title, children }: { icon: Parameters<typeof Glyph>[0]["n"]; title: string; children: ReactNode }) => (
+    <section className="ah-sec"><h3 className="gl"><Glyph n={icon} />{title}</h3>{children}</section>
+  );
+  return (
+    <Sheet label="How the Arena works" onClose={onClose}>
+      <div className="ah px-5 pb-6">
+        <h2 className="text-[22px] font-extrabold leading-tight">How the Arena works</h2>
+        <p className="muted mt-1 text-[14px]">Every live fade on Perped in one place. Here&rsquo;s exactly how fights start, how they&rsquo;re won and what everything on this page means.</p>
+
+        <S icon="bolt" title="A fade is a fight">
+          <ul>
+            <li><b>Fading a trade starts it:</b> same coin, the opposite side. Quick fade uses the trader&rsquo;s exact leverage and adds a stop loss for you.</li>
+            <li><b>Higher ROI wins</b> (leverage included). Under 0.5% apart is a draw. Getting liquidated loses on the spot.</li>
+            <li><b>Bank and chase:</b> if one side closes first, their ROI is locked in. The side still in has to beat it when they close, or they lose.</li>
+            <li>It settles when both positions close. After 7 days, anything still open is marked at the live price.</li>
+            <li>You can fade a trade once. Anyone else can pile in, so one trade can have many fights.</li>
+          </ul>
+        </S>
+
+        <S icon="drop" title="Health bars">
+          <ul>
+            <li>100% at your entry, 0% at your stop loss, or at liquidation if you have no stop.</li>
+            <li>Under 40% they bleed. A stop already in profit shows full: that fight can&rsquo;t be lost.</li>
+          </ul>
+        </S>
+
+        <S icon="people" title="Finding fights">
+          <ul>
+            <li><b>Everyone / Following:</b> all fades, or only yours, people you follow and your rivals. It works with every tab below.</li>
+            <li><b>All:</b> the <b>Main event</b> (the riskiest fight right now) next to <b>Your fight</b>, then Vendettas and High stakes to swipe, then every fade.</li>
+            <li><b>Vendettas:</b> two traders in a feud: they&rsquo;ve fought each other more than anyone else, or one called the other out. Shows the series score.</li>
+            <li><b>High stakes:</b> 20× or more, a $5k+ position, or someone within 10% of liquidation.</li>
+          </ul>
+        </S>
+
+        <S icon="skull" title="Bloodbath">
+          <ul>
+            <li>Fights where the two sides are more than 7 ROI points apart.</li>
+            <li><b>The Pit:</b> the most one-sided fight right now.</li>
+            <li><b>Last standing:</b> one side is out (stopped, liquidated or banked) and the other is still in. Newest first; each stays 24 hours. <b>Winning</b> means they&rsquo;re beating the number the other side finished on; <b>Chasing</b> means they&rsquo;re not, yet.</li>
+            <li><b>Getting perped:</b> the rest of the one-sided fights, to swipe through.</li>
+            <li><b>Graveyard and kill feed:</b> recent liquidations. <b>Body count:</b> this week&rsquo;s Butcher (most people perped) and Most rekt.</li>
+          </ul>
+        </S>
+
+        <S icon="dagger" title="Backing a side">
+          <ul>
+            <li><b>Back</b> on any fight copies that fighter&rsquo;s trade. One tap: you pick the size, it uses their leverage.</li>
+            <li>In the Bloodbath it&rsquo;s <b>Finish them</b> (back the winner) or <b>Save them</b> (back the loser for a comeback).</li>
+            <li>The two fighters can&rsquo;t back either side of their own fight.</li>
+          </ul>
+        </S>
+
+        <S icon="swords" title="Call someone out">
+          <ul>
+            <li>A <b>duel</b>: a timed head-to-head they accept by link. The start price is the live price when they accept; whoever is ahead when the clock runs out wins.</li>
+            <li>Fight the same trader three times, or call them out, and you become <b>rivals</b>: you&rsquo;re pinged with a one-tap fade whenever they trade.</li>
+          </ul>
+        </S>
+
+        <S icon="trophy" title="XP and ranks">
+          <ul>
+            <li><b>Fade win +60</b> (+30 for winning by 20%+, +40 for beating someone two ranks above you). Loss +10. Draw +20. Liquidated: nothing.</li>
+            <li><b>Duel win +75</b>, loss +10. From Knife Catcher up, losses cost XP, so ranks can be lost.</li>
+            <li><b>Streak bounties:</b> anyone on 5+ wins carries one. Break it for 25 XP plus 10 per win in their streak.</li>
+            <li><b>Fight Night:</b> 9 to 10pm Bangkok time every night. Fades started in that hour pay double XP.</li>
+          </ul>
+        </S>
+
+        <Link href="/how-it-works#arena" className="btn mt-4 w-full" style={{ padding: 12, fontSize: 14 }} onClick={onClose}>Full rules</Link>
+      </div>
+    </Sheet>
+  );
+}
+
 export default function ArenaPage() {
   const { authenticated, login, profile, authedFetch } = useSession();
   const { mids } = useMids();
   const { data } = useSWR<ArenaRes>("/api/arena", async () => (await authedFetch("/api/arena")).json(), { refreshInterval: 20_000 });
   const [picking, setPicking] = useState(false);
+  const [how, setHow] = useState(false);
   const [target, setTarget] = useState<string | null>(null);
   const me = data?.me;
   const lvl = rankFor(profile?.xp ?? 0);
@@ -385,7 +463,7 @@ export default function ArenaPage() {
         <span className="ml-auto"><FightNight /></span>
       </div>
       <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
-        <h1 className="h1" style={{ color: "#fff" }}>Arena</h1>
+        <div className="flex items-center justify-between gap-2"><h1 className="h1" style={{ color: "#fff" }}>Arena</h1><button className="arena-how" onClick={() => setHow(true)}>How it works</button></div>
         <div className="text-[12px]" style={{ color: "rgba(255,255,255,.85)" }}>Fade someone and it&rsquo;s on. Call them out and it&rsquo;s a duel. Winner takes the XP.</div>
         <div className="mt-3 flex flex-wrap items-center gap-2"><button className="arena-cta" onClick={callOut}><span className="gl"><Glyph n="swords" />Call someone out</span></button><FightNight /></div>
       </header>
@@ -419,6 +497,7 @@ export default function ArenaPage() {
       )}
 
       {data && <LiveTabs data={data} mids={mids} me={profile?.handle ?? null} />}
+      {how && <ArenaHow onClose={() => setHow(false)} />}
 
       {me && me.rivals.length > 0 && (
         <section className="block">
