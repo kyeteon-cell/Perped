@@ -96,7 +96,9 @@ export async function syncAchievements(userId: string, opts: { silent?: boolean 
     const r = rows(await db.execute(sql`insert into achievements (user_id, key, tier, paper) values (${userId}, ${t.key}, ${t.tier}, ${!!u.isDemo}) on conflict (user_id, key) do nothing returning key`));
     if (r.length) inserted.push(t.key);
   }
-  if (!inserted.length || opts.silent) return inserted;
+  // Until the one-time backfill has run, record quietly: old history shouldn't flood feeds and notifications.
+  const [bf] = rows(await db.execute(sql`select 1 from app_settings where key = 'trophies_backfill' limit 1`));
+  if (!inserted.length || opts.silent || !bf) return inserted;
   await announce(u, inserted).catch(() => null);
   return inserted;
 }
