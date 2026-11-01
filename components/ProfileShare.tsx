@@ -6,13 +6,10 @@ import { HERO_BACKGROUNDS, SHARE_BACKGROUNDS } from "@/lib/share-backgrounds";
 import { rankFor } from "@/lib/rank";
 
 /** What the profile card shows. Numbers are taken when the sheet opens. */
-export type ProfileShareData = {
-  handle: string; avatarUrl: string | null; verified: boolean; demo: boolean; xp: number;
-  won: number; lost: number; streak: number; bestStreak: number; form: ("W" | "L" | "D")[];
-  winRate: number | null; closedTrades: number; pnl30d: number | null;
-  callsHit: number; callsResolved: number; copied: number; faded: number; followers: number;
-  url: string;
-};
+export type ProfileShareData = { handle: string; avatarUrl: string | null; verified: boolean; demo: boolean; xp: number; url: string };
+type CardRange = "1d" | "7d" | "28d" | "1y" | "all";
+type CardStats = { won: number; lost: number; drawn: number; form: ("W" | "L" | "D")[]; streak: number; bestStreak: number; closedTrades: number; tradesWon: number; pnl: number; callsHit: number; callsResolved: number; copied: number; faded: number; xp: number };
+const RANGE_LABEL: Record<CardRange, [string, string]> = { "1d": ["1D", "LAST 24 HOURS"], "7d": ["7D", "LAST 7 DAYS"], "28d": ["28D", "LAST 28 DAYS"], "1y": ["1Y", "LAST 12 MONTHS"], all: ["All", "ALL TIME"] };
 
 const BGS: { key: string; name: string }[] = [
   ...HERO_BACKGROUNDS.map((h) => ({ key: h.key, name: h.name })),
@@ -33,7 +30,7 @@ function rr(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: num
 const money = (n: number) => `${n < 0 ? "-" : "+"}$${Math.abs(n) >= 1e6 ? (Math.abs(n) / 1e6).toFixed(1) + "M" : Math.abs(n) >= 1e3 ? (Math.abs(n) / 1e3).toFixed(1) + "K" : Math.abs(n).toFixed(0)}`;
 
 /** The trader card: 1080×1350 (4:5), on the chosen background. */
-async function draw(d: ProfileShareData, bgKey: string) {
+async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey: string) {
   const W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
   await document.fonts?.ready;
@@ -47,6 +44,9 @@ async function draw(d: ProfileShareData, bgKey: string) {
   g.strokeStyle = rim; g.lineWidth = 6; rr(g, 3, 3, W - 6, H - 6, 46); g.stroke();
 
   const rank = rankFor(d.xp);
+  // Period tag, top left
+  g.font = `900 28px ${sans}`; const pt = RANGE_LABEL[range][1].split("").join(String.fromCharCode(8202)); const pw = g.measureText(pt).width + 40;
+  g.fillStyle = "rgba(255,255,255,.12)"; rr(g, 48, 48, pw, 52, 26); g.fill(); g.fillStyle = "#fff"; g.fillText(pt, 68, 84);
   // Avatar + rank emblem
   const cx = W / 2, cy = 250, r = 120;
   g.lineWidth = 10; g.strokeStyle = GOLD; g.beginPath(); g.arc(cx, cy, r + 10, 0, Math.PI * 2); g.stroke();
@@ -64,16 +64,16 @@ async function draw(d: ProfileShareData, bgKey: string) {
   const sub = `${rank.title.toUpperCase()} · ${d.xp.toLocaleString("en-US")} XP${d.demo ? " · DEMO" : ""}`; g.fillText(sub, cx - g.measureText(sub).width / 2, 528);
 
   // Fade record, big
-  const fights = d.won + d.lost, wr = fights ? Math.round((d.won / fights) * 100) : null;
+  const fights = st.won + st.lost, wr = fights ? Math.round((st.won / fights) * 100) : null;
   g.font = `900 140px ${mono}`;
-  const wS = String(d.won), lS = String(d.lost), dash = " – ";
+  const wS = String(st.won), lS = String(st.lost), dash = " – ";
   const ww = g.measureText(wS).width, dw = g.measureText(dash).width, lw = g.measureText(lS).width;
   let x = cx - (ww + dw + lw) / 2;
   g.fillStyle = G; g.fillText(wS, x, 700); x += ww; g.fillStyle = "rgba(255,255,255,.5)"; g.fillText(dash, x, 700); x += dw; g.fillStyle = R; g.fillText(lS, x, 700);
   g.font = `800 32px ${sans}`; g.fillStyle = "rgba(255,255,255,.75)";
   const rec = `FADE RECORD${wr != null ? ` · ${wr}% WON` : ""}`; g.fillText(rec, cx - g.measureText(rec).width / 2, 752);
   // Form: last results
-  const form = d.form.slice(-10);
+  const form = st.form.slice(-10);
   if (form.length) {
     const s = 34, gap = 12, tw = form.length * s + (form.length - 1) * gap; let fx = cx - tw / 2;
     for (const f of form) { g.fillStyle = f === "W" ? G : f === "L" ? R : "rgba(255,255,255,.35)"; rr(g, fx, 782, s, s, 9); g.fill(); g.fillStyle = "#0b0c0e"; g.font = `900 20px ${sans}`; g.fillText(f, fx + s / 2 - g.measureText(f).width / 2, 806); fx += s + gap; }
@@ -81,12 +81,12 @@ async function draw(d: ProfileShareData, bgKey: string) {
 
   // Stat tiles
   const tiles: [string, string, string?][] = [
-    ["STREAK", d.streak > 0 ? `${d.streak}` : "–", `best ${d.bestStreak}`],
-    ["TRADES WON", d.winRate != null && d.closedTrades ? `${Math.round(d.winRate)}%` : "–", `${d.closedTrades} closed`],
-    [d.demo ? "PNL 30D · DEMO" : "PNL 30D", d.pnl30d != null ? money(d.pnl30d) : "–"],
-    ["CALLS HIT", d.callsResolved ? `${Math.round((d.callsHit / d.callsResolved) * 100)}%` : "–", `${d.callsHit}/${d.callsResolved}`],
-    ["COPIED", `${d.copied}`, "times"],
-    ["FADED", `${d.faded}`, "times"],
+    ["STREAK", st.streak > 0 ? `${st.streak}` : "–", `best ${st.bestStreak}`],
+    ["TRADES WON", st.closedTrades ? `${Math.round((st.tradesWon / st.closedTrades) * 100)}%` : "–", `${st.closedTrades} closed`],
+    [d.demo ? "PNL · DEMO" : "PNL", st.closedTrades ? money(st.pnl) : "–", st.xp ? `${st.xp > 0 ? "+" : ""}${st.xp.toLocaleString("en-US")} XP` : undefined],
+    ["CALLS HIT", st.callsResolved ? `${Math.round((st.callsHit / st.callsResolved) * 100)}%` : "–", `${st.callsHit}/${st.callsResolved}`],
+    ["COPIED", `${st.copied}`, "times"],
+    ["FADED", `${st.faded}`, "times"],
   ];
   const cols = 3, tw = 300, th = 150, gx = 30, top = 860, left = (W - (cols * tw + (cols - 1) * gx)) / 2;
   tiles.forEach(([k, v, s2], i) => {
@@ -94,7 +94,7 @@ async function draw(d: ProfileShareData, bgKey: string) {
     g.fillStyle = "rgba(255,255,255,.08)"; rr(g, tx, ty, tw, th, 26); g.fill();
     g.strokeStyle = "rgba(255,255,255,.14)"; g.lineWidth = 2; g.stroke();
     g.font = `800 24px ${sans}`; g.fillStyle = "rgba(255,255,255,.65)"; g.fillText(k, tx + 24, ty + 42);
-    g.font = `900 54px ${mono}`; g.fillStyle = k.startsWith("PNL") && d.pnl30d != null ? (d.pnl30d >= 0 ? G : R) : "#fff"; g.fillText(v, tx + 24, ty + 102);
+    g.font = `900 54px ${mono}`; g.fillStyle = k.startsWith("PNL") && st.closedTrades ? (st.pnl >= 0 ? G : R) : "#fff"; g.fillText(v, tx + 24, ty + 102);
     if (s2) { g.font = `700 22px ${sans}`; g.fillStyle = "rgba(255,255,255,.55)"; g.fillText(s2, tx + 24, ty + 132); }
   });
 
@@ -111,13 +111,24 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [frozen] = useState(data);
+  const [range, setRange] = useState<CardRange>(() => { try { return (localStorage.getItem("perped:profile-range") as CardRange) || "all"; } catch { return "all"; } });
+  // Stats for the chosen period, fetched once per period and kept while the sheet is open.
+  const [stats, setStats] = useState<Partial<Record<CardRange, CardStats>>>({});
   useEffect(() => {
+    if (stats[range]) return;
+    let off = false;
+    fetch(`/api/profile/${frozen.handle}/card?range=${range}`).then((r) => r.json()).then((j: CardStats) => { if (!off) setStats((s) => ({ ...s, [range]: j })); }).catch(() => setMsg("Couldn't load the stats"));
+    return () => { off = true; };
+  }, [range, frozen.handle, stats]);
+  const st = stats[range];
+  useEffect(() => {
+    if (!st) { setPng(null); return; }
     let off = false;
     setPng(null);
-    draw(frozen, bg).then((c) => { if (!off) setPng(c.toDataURL("image/png")); }).catch(() => setMsg("Couldn't draw the card"));
-    try { localStorage.setItem("perped:profile-bg", bg); } catch {}
+    draw(frozen, st, range, bg).then((c) => { if (!off) setPng(c.toDataURL("image/png")); }).catch(() => setMsg("Couldn't draw the card"));
+    try { localStorage.setItem("perped:profile-bg", bg); localStorage.setItem("perped:profile-range", range); } catch {}
     return () => { off = true; };
-  }, [frozen, bg]);
+  }, [frozen, st, range, bg]);
 
   const share = async () => {
     if (!png) return;
@@ -125,7 +136,7 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
     try {
       const blob = await (await fetch(png)).blob();
       const file = new File([blob], `perped-${frozen.handle}.png`, { type: "image/png" });
-      const text = `${frozen.handle} on Perped: ${frozen.won}–${frozen.lost} in fades. Fade me if you dare ${frozen.url}`;
+      const text = st ? `${frozen.handle} on Perped, ${RANGE_LABEL[range][1].toLowerCase()}: ${st.won}–${st.lost} in fades. Fade me if you dare ${frozen.url}` : frozen.url;
       if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text });
       else if (navigator.share) await navigator.share({ text, url: frozen.url });
       else { const a = document.createElement("a"); a.href = png; a.download = file.name; a.click(); setMsg("Image saved"); }
@@ -139,6 +150,8 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
       <div className="px-5 pb-6">
         <div className="text-lg font-extrabold" data-sheet-handle>Share {frozen.handle}</div>
         <div className="bshare-prev mt-3">{png ? <img src={png} alt={`${frozen.handle}'s trader card`} /> : <div className="skel" style={{ aspectRatio: "4 / 5", borderRadius: 18 }} />}</div>
+        <div className="eyebrow mt-4">Period</div>
+        <div className="ps-range mt-2" role="tablist">{(Object.keys(RANGE_LABEL) as CardRange[]).map((k) => <button key={k} role="tab" aria-selected={range === k} className={range === k ? "on" : ""} onClick={() => setRange(k)}>{RANGE_LABEL[k][0]}</button>)}</div>
         <div className="eyebrow mt-4">Background</div>
         <div className="themes mt-2">
           {BGS.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === bg ? "on" : ""}`} onClick={() => setBg(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(/api/share-bg/${t.key})` }} /><span>{t.name}</span></button>)}

@@ -144,9 +144,6 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
       {sharing && <ProfileShare onClose={() => setSharing(false)} data={{
         handle: user.handle, avatarUrl: user.avatarUrl ?? null, verified: !!user.verified, demo: !!user.isDemo, xp: user.xp ?? 0,
-        won: s?.battlesWon ?? 0, lost: s?.battlesLost ?? 0, streak: data.battleStreak ?? 0, bestStreak: data.bestStreak ?? 0, form: (data.form ?? []).map((f) => f.r),
-        winRate: s ? Number(s.winRate) : null, closedTrades: s?.closedTrades ?? 0, pnl30d: s ? Number(s.realizedPnl30d) : null,
-        callsHit: s?.callsHit ?? 0, callsResolved: s?.callsResolved ?? 0, copied: s?.copiedCount ?? 0, faded: s?.fadedCount ?? 0, followers: data.followers,
         url: `${typeof window !== "undefined" ? window.location.origin : "https://perped.pro"}/u/${user.handle}`,
       }} />}
       {tab === "me" && <ActivityFeed handle={handle} me={{ handle: user.handle, avatarUrl: user.avatarUrl ?? null }} />}

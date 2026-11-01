@@ -1689,3 +1689,6 @@ a.inv-erow { color: inherit; }
 .mo-quote { font-size: 14.5px; line-height: 1.4; padding-left: 10px; border-left: 3px solid var(--line); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .mo.react { background: transparent; border-style: dashed; padding: 8px 12px; }
 .mo-stack { flex: none; display: flex; } .mo-stack > * + * { margin-left: -7px; box-shadow: 0 0 0 2px var(--bg); border-radius: 50%; }
+.ps-range { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.ps-range button { border: 0; background: none; font: inherit; font-size: 13px; font-weight: 800; color: var(--muted); padding: 8px 4px; border-radius: 999px; cursor: pointer; }
+.ps-range button.on { background: var(--ink); color: var(--ink-fg); }
