@@ -321,4 +321,18 @@ create table if not exists account_links (
 create index if not exists posts_backed_idx on posts (backed_post_id) where backed_post_id is not null;
 -- Profile activity: a user's own likes/dislikes.
 create index if not exists votes_user_idx on votes (user_id, created_at);
+-- Trophies.
+create table if not exists achievements (
+  id serial primary key,
+  user_id text not null references users(id),
+  key text not null,
+  tier text not null,
+  paper boolean not null default false,
+  unlocked_at timestamptz not null default now(),
+  unique (user_id, key)
+);
+create index if not exists achievements_key_idx on achievements (key);
+-- Lowest ROI each fighter reached during a fade (Comeback Kid).
+alter table battles add column if not exists fader_low numeric;
+alter table battles add column if not exists target_low numeric;
 `;

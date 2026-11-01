@@ -3,6 +3,8 @@ import { ensureBattle } from "@/lib/battles";
 import { fadeBlockReason } from "@/lib/fades";
 import { alertRivals } from "@/lib/rivalries";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { after } from "next/server";
+import { checkSoon } from "@/lib/achievements";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { queryFeed, notify } from "@/lib/feed";
@@ -256,5 +258,7 @@ export async function POST(req: Request) {
       await notify(src.userId, verb, `${profile.handle} ${verb} your ${src.coin} trade`, `$${Math.round(b.notionalUsd)} at ${b.entryPx}`, `/post/${srcId}`);
     }
   }
+  // Trophies (first trade, first fade, …) unlock right after the response goes out.
+  after(() => checkSoon(profile.id));
   return Response.json({ post });
 }

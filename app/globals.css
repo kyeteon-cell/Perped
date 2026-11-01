@@ -1736,3 +1736,29 @@ a.inv-erow { color: inherit; }
 .aheat::-webkit-scrollbar { display: none; }
 .aheat button { flex: 1 0 auto; }
 @media (max-width: 380px) { .aheat button small { display: none; } .aheat button { padding: 7px 10px; } }
+
+/* Trophies */
+.emblem { display: block; filter: drop-shadow(0 6px 12px rgba(0,0,0,.35)); }
+.emblem.locked { filter: grayscale(1) opacity(.45); }
+.trophies { margin: 0 16px 14px; padding: 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); scroll-margin-top: 70px; }
+.tro-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 6px; margin-top: 12px; }
+@media (max-width: 360px) { .tro-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.tro { display: grid; justify-items: center; gap: 3px; border: 0; background: none; padding: 0; font: inherit; color: var(--text); cursor: pointer; min-width: 0; }
+.tro b { font-size: 11px; font-weight: 900; line-height: 1.15; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tro > span { font-size: 9.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.tro.locked b { color: var(--muted); }
+.tro-bar { display: block; width: 70%; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); overflow: hidden; }
+.tro-bar i { display: block; height: 100%; background: var(--chrome); border-radius: 999px; }
+.tro-hero { display: grid; place-items: center; padding: 18px 0 8px; border-radius: 24px; background: radial-gradient(60% 60% at 50% 50%, color-mix(in srgb, var(--tc, var(--chrome)) 30%, transparent), transparent 70%); }
+.tro-hero.bronze { --tc: #c27a3e; } .tro-hero.silver { --tc: #b9c1cb; } .tro-hero.gold { --tc: #f2b63a; } .tro-hero.obsidian { --tc: #8b6cff; } .tro-hero.locked { --tc: transparent; }
+.tro-tier { display: inline-block; font-size: 10.5px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
+.tro-tier.bronze { color: #3a1d06; background: linear-gradient(180deg, #ffd8ad, #c27a3e); }
+.tro-tier.silver { color: #1b2129; background: linear-gradient(180deg, #ffffff, #b9c1cb); }
+.tro-tier.gold { color: #2a1c00; background: linear-gradient(180deg, #fff3c2, #f2b63a); }
+.tro-tier.obsidian { color: #fff; background: linear-gradient(180deg, #8f7cff, #2a2140); }
+.tro-post { display: flex; align-items: center; gap: 14px; padding: 4px 2px 6px; }
+.tro-post-ems { display: flex; flex: none; }
+.tro-post-ems a + a { margin-left: -18px; }
+.tro-post a { color: inherit; }
+.tro-share { margin-top: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+.post.trophy-card { background: linear-gradient(135deg, var(--surface) 60%, color-mix(in srgb, var(--gold) 8%, var(--surface))); }
