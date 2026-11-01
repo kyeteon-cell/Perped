@@ -4,18 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession } from "@/lib/hooks/useSession";
 import { AdminProgramme, type Metrics } from "@/components/AdminProgramme";
 
-  funnel: { cohort: number; traded: number; battled: number; returned: number };
-  trades: { today: number; traders_today: number; week: number; traders_week: number; fades_week: number; copies_week: number };
-  volume: { real_today: number; real_week: number; demo_week: number };
-  events: { visitors_today: number; visitors_week: number; intro_week: number; quickfade_week: number };
-  push: { devices: number; people: number };
-  perTraderPerDay: number;
-  estFees: { today: number; week: number };
-  daily: { day: string; signups: number; trades: number; traders: number }[];
-  error?: string;
-};
-
-
 /** /admin?key=… — the numbers that matter, for the founder's phone. The key is remembered on this device. */
 export default function Admin() {
   const { authenticated, authedFetch, profile, login } = useSession();
