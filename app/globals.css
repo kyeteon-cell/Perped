@@ -1629,7 +1629,7 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .inv-days span { font-size: 9px; color: var(--muted); font-weight: 700; line-height: 1; }
 .inv-srcs { display: grid; gap: 11px; margin-top: 10px; }
 .inv-bar { height: 6px; margin-top: 5px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); overflow: hidden; }
-.inv-bar i { display: block; height: 100%; border-radius: 999px; background: var(--green); }
-.inv-bar i.fade { background: var(--red); } .inv-bar i.call { background: var(--gold); } .inv-bar i.invite, .inv-bar i.invite2 { background: #8b5cf6; }
+.inv-bar i { display: block; height: 100%; border-radius: 999px; background: var(--text); }
+.inv-bar i.fade { background: var(--chrome); } .inv-bar i.call { background: var(--gold); } .inv-bar i.invite, .inv-bar i.invite2 { background: #8b5cf6; }
 .inv-card.would .inv-bar i { opacity: .55; }
 a.inv-erow { color: inherit; }
