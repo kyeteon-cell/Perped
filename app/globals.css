@@ -1723,3 +1723,11 @@ a.inv-erow { color: inherit; }
 .wl-them { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); }
 .wl-vs { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--text) 5%, transparent); font-size: 14px; }
 .wl-next { margin: 14px 0 0; padding-left: 18px; display: grid; gap: 10px; font-size: 15px; line-height: 1.45; color: var(--muted); }
+/* Welcome overlay: buttons follow the content (not pinned to the very bottom, where in-app browser bars cover them). */
+.intro-overlay .intro { min-height: 0; padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
+.intro-overlay .intro-slide { flex: none; }
+.intro-overlay .intro-nav { position: sticky; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); margin-top: 20px; padding: 8px; border-radius: 22px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); align-items: center; }
+.wl-level.on { border-color: var(--text); box-shadow: 0 0 0 1.5px var(--text), var(--shadow); }
+.wl-radio { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); }
+.wl-level.on .wl-radio { border: 7px solid var(--text); }
+.wl-hint { font-size: 12.5px; color: var(--muted); font-weight: 700; text-align: center; }

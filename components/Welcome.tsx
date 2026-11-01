@@ -88,6 +88,7 @@ function FirstTrade({ level, onDone, onSkip }: { level: Level; onDone: () => voi
           </>
         )}
       </div>
+      <div className="intro-nav"><button className="btn ghost" onClick={onSkip}>Skip this</button><span className="wl-hint">{side ? "Place the trade above to continue" : "Pick a coin and a direction"}</span></div>
     </div>
   );
 }
@@ -114,6 +115,7 @@ function FirstFade({ level, onDone, onSkip }: { level: Level; onDone: () => void
         <div className="wl-vs"><span>You go <b className={mine === "long" ? "green" : "red"}>{mine}</b></span><span className="when">{level === "new" ? (mine === "short" ? "you win if the price falls" : "you win if the price rises") : `same ${lev}×, stop loss added`}</span></div>
         <div className="wl-ticket"><TradeTicket seed={{ coin: pick.post.coin!, side: mine, leverage: lev, fadedFromId: pick.post.id, handle: pick.author!.handle, lockLev: true, toBattle: true }} compact quick onDone={onDone} /></div>
       </div>
+      <div className="intro-nav"><button className="btn ghost" onClick={onSkip}>Skip this</button><span className="wl-hint">Place the fade above to start the fight</span></div>
     </div>
   );
 }
@@ -131,6 +133,7 @@ export function Welcome({ onClose }: { onClose: () => void }) {
   const [level, setLevel] = useState<Level | null>(null);
   const [step, setStep] = useState<"ask" | "learn" | "trade" | "fade" | "done">("ask");
   const [busy, setBusy] = useState(false);
+  const [sel, setSel] = useState<Level | null>(null);
   const finish = () => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} track("intro_done"); onClose(); };
   // Before the first trade, make sure there's a free demo account to trade with.
   const toTrade = async () => {
@@ -148,10 +151,11 @@ export function Welcome({ onClose }: { onClose: () => void }) {
             <h2 className="intro-h">How much do you know about crypto?</h2>
             <p className="intro-p">We&rsquo;ll explain Perped at your level, then walk you through a first trade with practice money.</p>
             <div className="wl-levels">{LEVELS.map((l) => (
-              <button key={l.k} className="wl-level" onClick={() => choose(l.k)}><span className="wl-ic"><Glyph n={l.icon} /></span><span className="min-w-0 flex-1"><b>{l.title}</b><span>{l.sub}</span></span><span aria-hidden>→</span></button>
+              <button key={l.k} className={`wl-level ${sel === l.k ? "on" : ""}`} aria-pressed={sel === l.k} onClick={() => setSel(l.k)}><span className="wl-ic"><Glyph n={l.icon} /></span><span className="min-w-0 flex-1"><b>{l.title}</b><span>{l.sub}</span></span><span className="wl-radio" aria-hidden /></button>
             ))}</div>
             <p className="when mt-4">You can change this any time in Settings.</p>
           </div>
+          <div className="intro-nav"><button className="btn ghost" onClick={finish}>Skip</button><button className="btn ink" disabled={!sel} onClick={() => sel && choose(sel)}>Continue</button></div>
         </div>
       )}
       {step === "learn" && level && (level === "perps" ? <Intro onDone={toTrade} doneLabel={busy ? "…" : "Try it"} /> : <Deck slides={SLIDES[level]} onDone={toTrade} />)}
