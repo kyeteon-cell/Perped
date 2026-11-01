@@ -5,10 +5,10 @@ import { useState } from "react";
 import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { timeAgo } from "@/lib/format";
-import { Avatar } from "./ui";
+import { Avatar, Badges } from "./ui";
 import { RichText } from "./RichText";
 
-type C = { comment: { id: number; body: string; parentId: number | null; createdAt: string }; author: { handle: string; avatarUrl: string | null } };
+type C = { comment: { id: number; body: string; parentId: number | null; createdAt: string }; author: { handle: string; avatarUrl: string | null; role?: string | null; founderSeat?: number | null; founderStatus?: string | null } };
 
 /** Comments right under a card: the latest few, a reply box, and a link to the full thread. Posts appear instantly. */
 export function InlineComments({ postId, onCount }: { postId: number; onCount?: (n: number) => void }) {
@@ -40,7 +40,7 @@ export function InlineComments({ postId, onCount }: { postId: number; onCount?: 
       {latest.map((c) => (
         <div key={c.comment.id} className="icm-row" style={{ opacity: c.comment.id < 0 ? 0.6 : 1 }}>
           <Avatar handle={c.author.handle} url={c.author.avatarUrl} size={24} />
-          <div className="min-w-0 flex-1 text-[13px]"><b>{c.author.handle}</b> <span className="when">{timeAgo(c.comment.createdAt)}</span><RichText text={c.comment.body} className="m-0 leading-snug" /></div>
+          <div className="min-w-0 flex-1 text-[13px]"><b>{c.author.handle}</b><Badges u={c.author} /> <span className="when">{timeAgo(c.comment.createdAt)}</span><RichText text={c.comment.body} className="m-0 leading-snug" /></div>
         </div>
       ))}
       {all.length > 3 && <Link href={`/post/${postId}`} className="when block py-1">See all {all.length} comments →</Link>}
