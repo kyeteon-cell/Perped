@@ -8,7 +8,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtPrice, fmtStake, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
 import { useSession } from "@/lib/hooks/useSession";
-import { Avatar, CoinMark, Icon, I, ticker, RankChip } from "./ui";
+import { Avatar, Badges, CoinMark, Icon, I, ticker, RankChip } from "./ui";
 import { Sparkline } from "./Sparkline";
 import { TradeChart } from "./TradeChart";
 import { ShareSheet } from "./ShareSheet";
@@ -65,7 +65,7 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
         <div className="flex items-center gap-3">
           <Link href={`/u/${author.handle}`} onClick={(e) => e.stopPropagation()}><Avatar handle={author.handle} url={author.avatarUrl} link={false} /></Link>
           <div>
-            <Link href={`/u/${author.handle}`} className="name block" onClick={(e) => e.stopPropagation()}>{author.handle}{author.verified && <span className="vbadge">✓</span>}<RankChip xp={author.xp} compact />{item.rival ? <span className={`rival-chip ${item.rival.mine > item.rival.theirs ? "lead" : ""}`}><Glyph n="swords" /> {item.rival.mine}–{item.rival.theirs}</span> : null}{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</Link>
+            <Link href={`/u/${author.handle}`} className="name block" onClick={(e) => e.stopPropagation()}>{author.handle}{author.verified && <span className="vbadge">✓</span>}<Badges u={author} /><RankChip xp={author.xp} compact />{item.rival ? <span className={`rival-chip ${item.rival.mine > item.rival.theirs ? "lead" : ""}`}><Glyph n="swords" /> {item.rival.mine}–{item.rival.theirs}</span> : null}{isDemoPost(item) ? <span className="demo-tag ml-1.5">Demo</span> : post.kind === "trade" ? <span className="real-tag ml-1.5">Real</span> : null}</Link>
             <div className="when">{timeAgo(post.createdAt)} ago{post.kind === "trade" && (
               post.copiedFromId ? <> · copied {item.src ? <Link href={`/u/${item.src.handle}`} className="srcname" onClick={(e) => e.stopPropagation()}>@{item.src.handle}</Link> : "a trade"}</>
               : post.fadedFromId ? <> · faded {item.src ? <Link href={`/u/${item.src.handle}`} className="srcname" onClick={(e) => e.stopPropagation()}>@{item.src.handle}</Link> : "a trade"}</>

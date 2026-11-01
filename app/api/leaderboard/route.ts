@@ -43,6 +43,9 @@ async function board(req: Request, forceDemo = false): Promise<{ mode: string; d
     callStreak: schema.stats.callStreak,
     isDemo: schema.users.isDemo,
     xp: schema.users.xp,
+    role: schema.users.role,
+    founderSeat: schema.users.founderSeat,
+    founderStatus: schema.users.founderStatus,
     battlesWon: schema.stats.battlesWon,
     battlesLost: schema.stats.battlesLost,
   };

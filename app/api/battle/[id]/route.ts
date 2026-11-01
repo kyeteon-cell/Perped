@@ -16,7 +16,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!target) return Response.json({ error: "not found" }, { status: 404 });
 
   const who = (uid: string) =>
-    db.select({ user: { id: schema.users.id, handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified, isDemo: schema.users.isDemo, bio: schema.users.bio, xp: schema.users.xp }, stats: schema.stats })
+    db.select({ user: { id: schema.users.id, handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified, isDemo: schema.users.isDemo, bio: schema.users.bio, xp: schema.users.xp, role: schema.users.role, founderSeat: schema.users.founderSeat, founderStatus: schema.users.founderStatus }, stats: schema.stats })
       .from(schema.users).leftJoin(schema.stats, eq(schema.stats.userId, schema.users.id)).where(eq(schema.users.id, uid)).limit(1);
   const [[f], [t]] = await Promise.all([who(fade.userId!), who(target.userId!)]);
 

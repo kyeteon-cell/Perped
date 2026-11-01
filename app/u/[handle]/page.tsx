@@ -9,7 +9,7 @@ import { DepositSheet } from "@/components/DepositSheet";
 import { Sheet } from "@/components/Sheet";
 import { ChallengeSheet } from "@/components/ChallengeSheet";
 import { PerformanceCard } from "@/components/Performance";
-import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/components/ui";
+import { Avatar, Badges, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/components/ui";
 import { RankCard, RecordLine } from "@/components/RankCard";
 import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
 import { FollowButton } from "@/components/FollowButton";
@@ -112,7 +112,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         <div className="flex items-center gap-4">
           <div className="rounded-full" style={{ border: "4px solid var(--bg)" }}><Avatar handle={user.handle} url={user.avatarUrl} size={84} /></div>
           <div className="min-w-0 flex-1 pt-[46px]">
-            <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1">✓</span>}<RankChip xp={user.xp} compact />{user.founderSeat != null && user.founderStatus !== "expired" && <span className="fbadge ml-2" style={{ padding: "3px 8px", fontSize: 10, verticalAlign: 3 }}><Glyph n="crown" />#{user.founderSeat}</span>}{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
+            <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1">✓</span>}<RankChip xp={user.xp} compact /><Badges u={user} seat />{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
             <div className="mono when text-xs">{user.isDemo ? "practice account · simulated fills" : `${user.address.slice(0, 6)}…${user.address.slice(-4)} · verified on-chain`}</div>
             <div className="mt-2.5 flex gap-4 text-sm">
               <button className="muted" onClick={() => { setPeopleDir("followers"); setTab("people"); }}><b style={{ color: "var(--text)" }}>{data.followers}</b> followers</button>

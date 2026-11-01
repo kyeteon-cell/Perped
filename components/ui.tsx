@@ -3,6 +3,8 @@
 import Link from "next/link";
 import useSWR from "swr";
 import { rankFor } from "@/lib/rank";
+import { BADGES, isAdminBadge, isFounderBadge, type BadgeUser } from "@/lib/badges";
+import { Glyph } from "./Glyph";
 
 /** Small shared pieces: icons, coin monograms, avatars, theme helpers. */
 
@@ -140,4 +142,17 @@ export function RankChip({ xp, compact = false, size }: { xp?: number | null; co
 /** Big emblem for cards and headers. */
 export function RankEmblem({ level, size = 72 }: { level: number; size?: number }) {
   return <img src={`/api/share-bg/rank-${level}`} alt="" className={`rank-big lv${level}`} style={{ width: size, height: size }} />;
+}
+
+/** Admin and founder badges for a name. `seat` adds the founder's seat number (profile header). */
+export function Badges({ u, seat = false }: { u: BadgeUser | null | undefined; seat?: boolean }) {
+  if (!u) return null;
+  const admin = isAdminBadge(u), founder = isFounderBadge(u);
+  if (!admin && !founder) return null;
+  return (
+    <>
+      {admin && <span className="ubadge admin" title={BADGES.admin.title}><Icon d={I.shield} size={10} />{BADGES.admin.label}</span>}
+      {founder && <span className="ubadge founder" title={BADGES.founder.title}><Glyph n="crown" />{BADGES.founder.label}{seat && u.founderSeat != null ? ` #${u.founderSeat}` : ""}</span>}
+    </>
+  );
 }

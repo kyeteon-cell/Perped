@@ -10,7 +10,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   await ensureSchema();
   const { id } = await ctx.params;
   const rows = await db
-    .select({ comment: schema.comments, author: { handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified } })
+    .select({ comment: schema.comments, author: { handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, verified: schema.users.verified, role: schema.users.role, founderSeat: schema.users.founderSeat, founderStatus: schema.users.founderStatus } })
     .from(schema.comments)
     .innerJoin(schema.users, eq(schema.users.id, schema.comments.userId))
     .where(eq(schema.comments.postId, Number(id)))
@@ -32,5 +32,5 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const [comment] = await db.insert(schema.comments).values({ postId: Number(id), userId: profile.id, body: parsed.data.body, parentId: parsed.data.parentId }).returning();
   const [post] = await db.select({ userId: schema.posts.userId }).from(schema.posts).where(eq(schema.posts.id, Number(id))).limit(1);
   if (post?.userId && post.userId !== profile.id) await notify(post.userId, "reply", `${profile.handle} commented on your post`, parsed.data.body.slice(0, 80), `/post/${id}`);
-  return Response.json({ comment: { comment, author: { handle: profile.handle, avatarUrl: profile.avatarUrl, verified: profile.verified } } });
+  return Response.json({ comment: { comment, author: { handle: profile.handle, avatarUrl: profile.avatarUrl, verified: profile.verified, role: profile.role, founderSeat: profile.founderSeat, founderStatus: profile.founderStatus } } });
 }

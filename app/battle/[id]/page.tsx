@@ -9,7 +9,7 @@ import { useSession } from "@/lib/hooks/useSession";
 import { ManageTrade } from "@/components/ManageTrade";
 import { ChallengeSheet } from "@/components/ChallengeSheet";
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
-import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
+import { Avatar, Badges, CoinMark, Icon, I, ticker, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
 import { rankFor } from "@/lib/rank";
 import { BattleArena, type Fighter } from "@/components/BattleArena";
 import { RevengeButton } from "@/components/Bloodbath";
@@ -19,7 +19,7 @@ import { Tug } from "@/components/Tug";
 import { BattleShare } from "@/components/BattleShare";
 import type { Post, Stats } from "@/lib/schema";
 
-type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null; xp?: number };
+type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null; xp?: number; role?: string | null; founderSeat?: number | null; founderStatus?: string | null };
 type Res = {
   fade: Post; target: Post; fader: { user: U; stats: Stats | null }; targetUser: { user: U; stats: Stats | null };
   history: { id: number; userId: string; coin: string; pnl: string | null; closedAt: string | null; side: "long" | "short"; leverage: number | null; entryPx: string; exitPx: string | null }[];
@@ -94,7 +94,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const Side = ({ u, p, r, left }: { u: U; p: Post; r: { pnl: number; roi: number }; left: boolean }) => (
     <div className={`bside ${left ? "l" : "r"}`}>
       <Link href={`/u/${u.handle}`}><div className={`avring ${(left ? faderLeads : !faderLeads) && (live || chasing) ? "lead" : live || chasing ? "losing" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={64} link={false} /></div></Link>
-      <div className="name mt-2 truncate">{u.handle}{u.verified && <span className="vbadge">✓</span>}</div>
+      <div className="name mt-2 truncate">{u.handle}{u.verified && <span className="vbadge">✓</span>}<Badges u={u} /></div>
       <div className="mt-1 flex items-center justify-center gap-1.5"><RankChip xp={u.xp} compact size={20} />{u.isDemo ? <span className="demo-tag">Demo</span> : <span className="real-tag">Real</span>}</div>
       <span className={`lbl ${p.side} mt-2`}><i />{p.side === "long" ? "Long" : "Short"} {p.leverage}×</span>
       <div className={`mono mt-2 text-[30px] font-bold leading-none ${r.roi >= 0 ? "green" : "red"}`}>{fmtPct(r.roi, 1)}</div>

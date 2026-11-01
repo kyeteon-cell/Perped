@@ -4,11 +4,11 @@ import { Glyph } from "@/components/Glyph";
 import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { Avatar, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
+import { Avatar, Badges, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
 import { rankFor } from "@/lib/rank";
 import { fmtUsd, fmtPct } from "@/lib/format";
 
-type Row = { handle: string; avatarUrl: string | null; pnl?: number; winRate: string; closedTrades: number; volume30d: string; liquidations: number; fadedCount: number; callsResolved: number; callsHit: number; callAvgMove: string; callStreak: number; hitRate?: number; xp?: number; seasonXp?: number; battlesWon?: number; battlesLost?: number };
+type Row = { handle: string; avatarUrl: string | null; pnl?: number; winRate: string; closedTrades: number; volume30d: string; liquidations: number; fadedCount: number; callsResolved: number; callsHit: number; callAvgMove: string; callStreak: number; hitRate?: number; xp?: number; seasonXp?: number; battlesWon?: number; battlesLost?: number; role?: string | null; founderSeat?: number | null; founderStatus?: string | null };
 
 const seasonLeft = (iso: string) => { const ms = new Date(iso).getTime() - Date.now(); const d = Math.floor(ms / 86_400_000), h = Math.floor((ms % 86_400_000) / 3_600_000); return d > 0 ? `${d}d ${h}h` : `${Math.max(0, h)}h`; };
 
@@ -62,7 +62,7 @@ export default function LeaderboardPage() {
           <span className="rank">{i + 1}</span>
           <Avatar handle={r.handle} url={r.avatarUrl} size={44} link={false} />
           <div className="min-w-0 flex-1">
-            <div className="name">{r.handle}<RankChip xp={r.xp} compact /></div>
+            <div className="name">{r.handle}<Badges u={r} /><RankChip xp={r.xp} compact /></div>
             <div className="when truncate">{mode === "ranks" || mode === "season" ? `${rankFor(r.xp ?? 0).title} · fades ${r.battlesWon ?? 0}–${r.battlesLost ?? 0} · ${fmtPct(Number(r.winRate), 0)} win` : mode === "trades" ? `${r.closedTrades} trades · ${fmtPct(Number(r.winRate), 0)} win · ${fmtUsd(Number(r.volume30d), { compact: true })} volume` : `${r.callsResolved} calls · ${r.callsHit} hit · avg ${fmtPct(Number(r.callAvgMove), 1)}${r.callStreak > 1 ? ` · ${r.callStreak} in a row` : ""} · trades ${fmtPct(Number(r.winRate), 0)} win`}</div>
           </div>
           {mode === "ranks" || mode === "season" ? <div className="text-right"><div className="mono text-[17px] font-bold">{(mode === "season" ? r.seasonXp ?? 0 : r.xp ?? 0).toLocaleString()}</div><div className="when">{mode === "season" ? "season XP" : "XP"}</div></div> : mode === "trades" ? <div className={`mono text-[17px] font-bold ${(r.pnl ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div> : <div className="text-right"><div className="mono text-[17px] font-bold">{Math.round(r.hitRate ?? 0)}%</div><div className="when">hit rate</div></div>}
@@ -76,7 +76,7 @@ export default function LeaderboardPage() {
             <Link key={r.handle} href={`/u/${r.handle}`} className="lb">
               <span className="rank">↓{i + 1}</span>
               <Avatar handle={r.handle} url={r.avatarUrl} size={44} link={false} />
-              <div className="min-w-0 flex-1"><div className="name">{r.handle}</div><div className="when truncate">{r.closedTrades} trades · {fmtPct(Number(r.winRate), 0)} win{r.liquidations ? ` · ${r.liquidations} liquidation${r.liquidations === 1 ? "" : "s"}` : ""}{r.fadedCount ? ` · faded ${r.fadedCount}×` : ""}</div></div>
+              <div className="min-w-0 flex-1"><div className="name">{r.handle}<Badges u={r} /></div><div className="when truncate">{r.closedTrades} trades · {fmtPct(Number(r.winRate), 0)} win{r.liquidations ? ` · ${r.liquidations} liquidation${r.liquidations === 1 ? "" : "s"}` : ""}{r.fadedCount ? ` · faded ${r.fadedCount}×` : ""}</div></div>
               <div className="mono red text-[17px] font-bold">{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div>
             </Link>
           ))}
