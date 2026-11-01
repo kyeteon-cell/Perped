@@ -52,8 +52,8 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
     ),
   },
   {
-    k: "rank", eyebrow: "5 · Ranks", title: "Earn XP. Lose it too.",
-    body: ["Wins, calls and fades earn XP and ranks. From Knife Catcher up, losses cost XP, so ranks can be lost.", "Beat someone on a 5+ win streak and you claim their bounty. Fight the same trader three times and you’re rivals. Fight Night is 9pm Bangkok, every night."],
+    k: "rank", eyebrow: "5 · Ranks & trophies", title: "Earn XP. Lose it too.",
+    body: ["Wins, calls and fades earn XP and ranks. From Knife Catcher up, losses cost XP, so ranks can be lost. 29 trophies to collect, bronze to obsidian, each with a card to share.", "Beat someone on a 5+ win streak and you claim their bounty. Fight the same trader three times and you’re rivals. Fight Night is 9pm Bangkok, every night."],
     mock: (
       <div className="im-card">
         <div className="im-ranks">{[1, 3, 5, 7, 8].map((l) => <img key={l} src={`/api/share-bg/rank-${l}`} alt="" />)}</div>

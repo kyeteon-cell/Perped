@@ -34,13 +34,26 @@ export function TrophyCase({ handle }: { handle: string }) {
   return (
     <section id="trophies" className="trophies">
       <div className="flex items-center justify-between"><span className="eyebrow">Trophies</span><span className="when"><b style={{ color: "var(--text)" }}>{got.length}</b> of {TROPHIES.length}</span></div>
-      <div className="tro-grid">
-        {got.map((t) => <button key={t.key} className={`tro ${t.tier}`} onClick={() => setOpen(t.key)}><Emblem t={t} size={64} /><b>{t.name}</b><span>{TIER_LABEL[t.tier]}{R.get(t.key)?.paper ? " · Demo" : ""}</span></button>)}
-        {locked.map((t) => {
-          const r = R.get(t.key), pct = Math.min(100, Math.round(((r?.value ?? 0) / t.goal) * 100));
-          return <button key={t.key} className="tro locked" onClick={() => setOpen(t.key)}><Emblem t={t} locked size={64} /><b>{t.name}</b><span className="tro-bar"><i style={{ width: `${pct}%` }} /></span></button>;
-        })}
-      </div>
+      <div className="tro-meter"><i style={{ width: `${(got.length / TROPHIES.length) * 100}%` }} /></div>
+      {got.length > 0 && (
+        <>
+          <div className="tro-sub got"><span className="tro-tick" aria-hidden>✓</span>Unlocked · {got.length}</div>
+          <div className="tro-grid">
+            {got.map((t) => <button key={t.key} className={`tro got ${t.tier}`} onClick={() => setOpen(t.key)}><span className="tro-em"><Emblem t={t} size={64} /><span className="tro-check" aria-label="Unlocked">✓</span></span><b>{t.name}</b><span>{TIER_LABEL[t.tier]}{R.get(t.key)?.paper ? " · Demo" : ""}</span></button>)}
+          </div>
+        </>
+      )}
+      {locked.length > 0 && (
+        <>
+          <div className="tro-sub"><span className="tro-lockic" aria-hidden><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg></span>Locked · {locked.length}</div>
+          <div className="tro-grid">
+            {locked.map((t) => {
+              const r = R.get(t.key), pct = Math.min(100, Math.round(((r?.value ?? 0) / t.goal) * 100));
+              return <button key={t.key} className="tro locked" onClick={() => setOpen(t.key)}><span className="tro-em"><Emblem t={t} locked size={64} /><span className="tro-lock" aria-label="Locked"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg></span></span><b>{t.name}</b><span className="tro-bar"><i style={{ width: `${pct}%` }} /></span></button>;
+            })}
+          </div>
+        </>
+      )}
       {open && row && <TrophySheet t={TROPHY[open]} row={row} handle={handle} onClose={() => setOpen(null)} />}
     </section>
   );
@@ -60,7 +73,7 @@ export function TrophySheet({ t, row, handle, onClose }: { t: Trophy; row: Troph
       <div className="tro-sheet px-5 pb-6">
         <div className={`tro-hero ${row.unlocked ? t.tier : "locked"}`}><Emblem t={t} locked={!row.unlocked} size={150} /></div>
         <div className="text-center">
-          <span className={`tro-tier ${t.tier}`}>{TIER_LABEL[t.tier]}{row.paper ? " · Demo" : ""}</span>
+          <div className="flex items-center justify-center gap-2"><span className={`tro-tier ${t.tier}`}>{TIER_LABEL[t.tier]}{row.paper ? " · Demo" : ""}</span><span className={`tro-status ${row.unlocked ? "got" : ""}`}>{row.unlocked ? "✓ Unlocked" : "Locked"}</span></div>
           <h2 className="mt-2 text-[24px] font-extrabold">{t.name}</h2>
           <p className="muted mt-1 text-[14px]">{t.desc}</p>
           <p className="when mt-2">{row.unlocked ? `Unlocked ${when(row.at)} · ${rareText(row.rarity)}` : `${progressText(t, row.value)} · ${rareText(row.rarity)}`}</p>

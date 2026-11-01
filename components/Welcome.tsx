@@ -128,9 +128,9 @@ function FirstFade({ level, onDone, onSkip }: { level: Level; onDone: () => void
 }
 
 const NEXT: Record<Level, string[]> = {
-  new: ["Watch your trade on the home feed: the number on the right is how it's doing.", "Close it any time from the trade itself. Try a few small ones before going bigger.", "Tap How it works in the Arena whenever you want the rules."],
-  crypto: ["Add a stop loss to every trade from Manage: it's the habit that keeps you in the game.", "Copy someone you rate, fade someone you don't.", "Win fades to climb ranks. Season 0 counts when real money opens."],
-  perps: ["Fades are scored on ROI. Close first and your ROI is banked for them to beat.", "Vendettas, Bloodbath and Fight Night (9 to 10pm Bangkok, double XP) are in the Arena.", "Your invite code earns you a share of your people's fees."],
+  new: ["Watch your trade on the home feed: the number on the right is how it's doing.", "Close it any time from the trade itself. Try a few small ones before going bigger.", "Every first earns a trophy: first trade, first fade, first stop loss. See them on your profile."],
+  crypto: ["Add a stop loss to every trade from Manage: it's the habit that keeps you in the game.", "Copy someone you rate, fade someone you don't.", "Win fades to climb ranks and collect trophies. Season 0 counts when real money opens."],
+  perps: ["Fades are scored on ROI. Close first and your ROI is banked for them to beat.", "Vendettas, Bloodbath and Fight Night (9 to 10pm Bangkok, double XP) are in the Arena.", "29 trophies to collect, from First Blood to Ten Bagger. Season 0 is only available until real money opens."],
 };
 
 /** First open: one question, the explainer for that level, then a guided first trade and first fade (both skippable). */

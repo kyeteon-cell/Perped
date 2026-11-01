@@ -1762,3 +1762,17 @@ a.inv-erow { color: inherit; }
 .tro-post a { color: inherit; }
 .tro-share { margin-top: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
 .post.trophy-card { background: linear-gradient(135deg, var(--surface) 60%, color-mix(in srgb, var(--gold) 8%, var(--surface))); }
+/* Unlocked vs locked: unmistakable */
+.tro-meter { height: 6px; margin-top: 10px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); overflow: hidden; }
+.tro-meter i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #c27a3e, #b9c1cb, #f2b63a, #8b6cff); }
+.tro-sub { display: flex; align-items: center; gap: 6px; margin-top: 16px; font-size: 11.5px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.tro-sub.got { color: var(--gold); }
+.tro-tick { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; color: #2a1c00; background: linear-gradient(180deg, #ffe08a, #f2b63a); }
+.tro-lockic { display: inline-grid; place-items: center; }
+.tro-em { position: relative; display: inline-block; line-height: 0; }
+.tro-check { position: absolute; right: -2px; bottom: 2px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 900; color: #2a1c00; background: linear-gradient(180deg, #ffe08a, #f2b63a); box-shadow: 0 0 0 2px var(--surface); line-height: 1; }
+.tro-lock { position: absolute; right: -2px; bottom: 2px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: var(--surface); box-shadow: 0 0 0 1.5px var(--line); line-height: 0; }
+.tro.got .emblem { filter: drop-shadow(0 6px 14px rgba(0,0,0,.35)) drop-shadow(0 0 10px color-mix(in srgb, var(--gold) 25%, transparent)); }
+.tro.locked .emblem { filter: grayscale(1) opacity(.35); }
+.tro-status { font-size: 10.5px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--text) 8%, transparent); }
+.tro-status.got { color: #2a1c00; background: linear-gradient(180deg, #ffe08a, #f2b63a); }
