@@ -291,7 +291,12 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
   // Timeframe follows the fight: 1-minute candles while it's young, then 5m, then 15m, so the fade always spans most of the chart.
   const fightStart = Math.max(ts(a.openedAt), ts(b.openedAt));
   const age = Date.now() - fightStart;
-  const civ: Iv = age < 45 * 60_000 ? "1m" : age < 4 * 3_600_000 ? "5m" : "15m";
+  const auto: Iv = age < 45 * 60_000 ? "1m" : age < 4 * 3_600_000 ? "5m" : "15m";
+  // Same switch as the trade cards (shared, remembered); until you pick one it follows the fight's age.
+  const [picked, setPicked] = useState<Iv | null>(null);
+  useEffect(() => { try { const v = localStorage.getItem("perped:tc-iv2") as Iv | null; if (v && IVS[v]) setPicked(v); } catch {} }, []);
+  const civ: Iv = picked ?? auto;
+  const pick = (e: MouseEvent, v: Iv) => { e.preventDefault(); e.stopPropagation(); setPicked(v); try { localStorage.setItem("perped:tc-iv2", v); } catch {} };
   const { data } = useSWR<{ candles: Candle[] }>(vis ? `/api/markets/${coin}/candles?interval=${civ}&limit=60` : null, { refreshInterval: civ === "1m" ? 30_000 : 60_000, dedupingInterval: 20_000, revalidateOnFocus: false });
   // Zoom on the fight: a short run of history before the first entry (4–8 candles), then everything since.
   const all = (tick ? withLive(data?.candles ?? [], live, IVS[civ]) : data?.candles ?? []).slice(-60);
@@ -321,6 +326,7 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
   const zones = L && S && L !== S ? { up: L, upP: Math.max(L.entry, S.entry), down: S, downP: Math.min(L.entry, S.entry) } : null;
   const leader = Math.abs(a.roi - b.roi) < 0.05 ? null : a.roi > b.roi ? a : b;
   return (
+    <>
     <div ref={box} className="bcc">
       {candles.length ? (
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
@@ -357,6 +363,13 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
         </>
       )}
     </div>
+    <div className="tc-foot">
+      <span className="when truncate">{civ} candles · fight started {Math.max(1, Math.round(age / 60_000)) < 60 ? `${Math.max(1, Math.round(age / 60_000))}m` : `${Math.round(age / 3_600_000)}h`} ago</span>
+      <span className="tc-ivs v2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+        {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === civ ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
+      </span>
+    </div>
+    </>
   );
 }
 
