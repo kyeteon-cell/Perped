@@ -29,7 +29,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   useEffect(() => { try { const v = localStorage.getItem("perped:tc-iv2") as Iv | null; if (v && IVS[v]) setPicked(v); } catch {} }, []);
   const iv = picked ?? auto;
   const pick = (e: MouseEvent, v: Iv) => { e.preventDefault(); e.stopPropagation(); setPicked(v); try { localStorage.setItem("perped:tc-iv2", v); } catch {} };
-  const ms = IVS[iv], limit = 40;
+  const ms = IVS[iv], limit = 60;
   // Only fetch candles once the card scrolls near the screen: a long feed doesn't fire a request per trade up front.
   const box = useRef<HTMLDivElement>(null);
   const [vis, setVis] = useState(false);
@@ -72,14 +72,13 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const n = Math.max(candles.length, 1);
   const t0 = candles[0]?.t ?? opened;
   const ei = Math.max(0, Math.min(n - 1, Math.floor((opened - t0) / ms)));
-  // Layout: grey history before the entry takes at most 30% of the width, the trade fills the middle in colour,
-  // and the last 24% is open space ahead of "now", split into the profit and loss zones.
-  const FUT = W * 0.24, room = W - RIGHT - FUT;
-  const histN = Math.min(ei, n), liveN = Math.max(1, n - histN);
-  const histW = histN ? Math.min(W * 0.3, (room * histN) / n) : 0, liveW = room - histW;
-  const xOf = (i: number) => (i < histN ? (i + 0.5) * (histW / histN) : histW + (i - histN + 0.5) * (liveW / liveN));
-  const bwOf = (i: number) => Math.max(1.2, (i < histN ? histW / histN : liveW / liveN) * 0.66);
-  const ex = histW, nowX = histW + liveW;
+  // Layout: every candle gets the same slim slot (never stretched to fill the chart). At least 32 slots across,
+  // so a young trade leaves open space ahead instead of fat candles; the last 24%+ is always open space split into
+  // the profit and loss zones. History before the entry is capped at 10 candles (under a third of the width).
+  const SLOTS = Math.max(32, Math.ceil(n / 0.76)), slotW = (W - RIGHT) / SLOTS;
+  const xOf = (i: number) => (i + 0.5) * slotW;
+  const bwOf = (_i: number) => Math.max(1, slotW * 0.56);
+  const ex = ei * slotW, nowX = n * slotW;
   // Price tags on the right edge (like an exchange): now, entry, and stop / take profit / liquidation when they're on screen.
   type Tag = { key: string; p: number; label: string; cls: string; color: string };
   const pctX = (x: number) => `${Math.max(6, Math.min(94, (x / W) * 100))}%`;

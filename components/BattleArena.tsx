@@ -311,16 +311,15 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
   const y = (p: number) => PAD + (1 - (p - bot) / (top - bot)) * (H - PAD * 2);
   const pctY = (p: number) => `${(y(p) / H) * 100}%`;
   const pctX = (x: number) => `${(x / W) * 100}%`;
-  // Layout: grey history before the first entry takes at most 30%, the fight fills the middle in colour,
-  // and the last 26% is open space ahead of "now", split into who wins where.
+  // Layout: same slim slot for every candle (never stretched), at least 44 slots across, so a young fight leaves
+  // open space ahead instead of fat candles; the last 26%+ is open space split into who wins where.
   const n = Math.max(candles.length, 1), t0 = candles[0]?.t ?? Date.now(), ms = IVS[civ];
   const idx = (t: number) => Math.max(0, Math.min(n - 1, Math.floor((t - t0) / ms)));
   const first = idx(fightStart);
-  const FUT = W * 0.26, room = W - FUT;
-  const histW = first ? Math.min(W * 0.25, (room * first) / n) : 0, liveW = room - histW, liveN = Math.max(1, n - first);
-  const xOf = (i: number) => (i < first ? (i + 0.5) * (histW / first) : histW + (i - first + 0.5) * (liveW / liveN));
-  const bwOf = (i: number) => Math.max(1.6, (i < first ? histW / first : liveW / liveN) * 0.62);
-  const nowX = histW + liveW;
+  const SLOTS = Math.max(44, Math.ceil(n / 0.74)), slotW = W / SLOTS, histW = first * slotW;
+  const xOf = (i: number) => (i + 0.5) * slotW;
+  const bwOf = (_i: number) => Math.max(1, slotW * 0.56);
+  const nowX = n * slotW;
   // Who wins where: the long side wins above its entry, the short side below its entry.
   const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
   const zones = L && S && L !== S ? { up: L, upP: Math.max(L.entry, S.entry), down: S, downP: Math.min(L.entry, S.entry) } : null;
