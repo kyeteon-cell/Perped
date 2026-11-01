@@ -113,7 +113,7 @@ async function draw(d: BattleShareData, bgKey: string) {
 }
 
 export function BattleShare({ data, onClose }: { data: BattleShareData; onClose: () => void }) {
-  const [bg, setBg] = useState(() => { try { return localStorage.getItem("perped:battle-bg") || "hero-fightnight"; } catch { return "hero-fightnight"; } });
+  const [bg, setBg] = useState(() => { try { return localStorage.getItem("perped:battle-bg") || "hero-bulls"; } catch { return "hero-bulls"; } });
   const [png, setPng] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);

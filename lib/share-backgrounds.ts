@@ -14,6 +14,8 @@ export const SHARE_BACKGROUNDS: { key: string; name: string; url: string; textCo
 
 /** Hero banner backgrounds (16:9). Served through the same /api/share-bg/:key proxy. */
 export const HERO_BACKGROUNDS = [
+  { key: "hero-bulls", name: "Bulls", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131122_b17468ee-8e1a-4dc5-bbd6-244ca0b1fb1d.png" },
+  { key: "hero-chrome-gold", name: "Chrome & gold", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131432_e2398683-2558-4a7e-b591-332616ae2476.png" },
   { key: "hero-droplets", name: "Chrome droplets", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131432_c1325a0b-3c8b-4d1a-ae12-c3878c09c5aa.png" },
   { key: "hero-fightnight", name: "Fight night", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131121_3bf994e3-0ac8-4fd5-92b3-e218bd132082.png" },
   { key: "hero-chrome", name: "Liquid chrome", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_131121_865ca019-fe8e-4e99-a79d-c6bb2155fb3f.png" },

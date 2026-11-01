@@ -462,7 +462,7 @@ export default function ArenaPage() {
         {me && me.streak > 0 && <span className="gl text-[13px] font-bold"><Glyph n="flame" tone="gold" />{me.streak}</span>}
         <span className="ml-auto"><FightNight /></span>
       </div>
-      <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
+      <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/hero-bulls)" }}>
         <div className="flex items-center justify-between gap-2"><h1 className="h1" style={{ color: "#fff" }}>Arena</h1><button className="arena-how" onClick={() => setHow(true)}>How it works</button></div>
         <div className="text-[12px]" style={{ color: "rgba(255,255,255,.85)" }}>Fade someone and it&rsquo;s on. Call them out and it&rsquo;s a duel. Winner takes the XP.</div>
         <div className="mt-3 flex flex-wrap items-center gap-2"><button className="arena-cta" onClick={callOut}><span className="gl"><Glyph n="swords" />Call someone out</span></button><FightNight /></div>

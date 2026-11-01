@@ -38,7 +38,7 @@ export default function RivalryPage({ params }: { params: Promise<{ a: string; b
 
   return (
     <div className="fade-in pb-10" data-tint="red">
-      <section className="battle photo" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
+      <section className="battle photo" style={{ backgroundImage: "url(/api/share-bg/hero-chrome-gold)" }}>
         <div className="flex items-center justify-between"><Link href="/arena" className="when" style={{ color: "rgba(255,255,255,.8)" }}>← Arena</Link><button className="when" style={{ color: "rgba(255,255,255,.8)" }} onClick={share}>{copied ? "Link copied" : "Share"}</button></div>
         <div className="mt-3 text-center text-[11px] font-extrabold uppercase tracking-[.14em]" style={{ color: "rgba(255,255,255,.75)" }}>{data.active ? "Rivalry" : `${data.fights} fight${data.fights === 1 ? "" : "s"} · rivals at 3`}{data.calledBy ? ` · called out by ${data.calledBy}` : ""}</div>
         <div className="riv-board mt-3">

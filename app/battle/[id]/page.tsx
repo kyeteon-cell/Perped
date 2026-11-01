@@ -131,7 +131,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         </div>
       )}
 
-      <section className="battle photo mx-4 mt-4" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)" }}>
+      <section className="battle photo mx-4 mt-4" style={{ backgroundImage: "url(/api/share-bg/hero-chrome-gold)" }}>
         <div className="flex items-center justify-between"><span className="pc-tag violet">{live ? "● Live fade" : chasing ? "● Chase on" : "Settled fade"} · {timeAgo(fade.createdAt)} ago</span><Link href={`/markets/${coin}`} className="flex items-center gap-1.5 text-sm"><CoinMark coin={coin} size="sm" /><b>{ticker(coin, true)}</b><span className="mono muted">{mid ? fmtPrice(mid) : ""}</span></Link></div>
         <div className="bgrid mt-4">
           {Side({ u: fader.user, p: fade, r: a, left: true })}
