@@ -61,10 +61,18 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const rng = Math.max(top - bot, live * 0.0015);
   const y = (p: number) => PAD + (1 - (p - bot) / rng) * (H - PAD * 2);
   const pct = (p: number) => `${(y(p) / H) * 100}%`;
-  const n = Math.max(candles.length, 1), cw = (W - RIGHT) / n, bw = Math.max(1.4, cw * 0.68);
+  const n = Math.max(candles.length, 1);
   const t0 = candles[0]?.t ?? opened;
   const ei = Math.max(0, Math.min(n - 1, Math.floor((opened - t0) / ms)));
-  const ex = ei * cw + cw / 2;
+  // Layout: grey history before the entry takes at most 45% of the width, the trade fills the middle in colour,
+  // and the last 24% is open space ahead of "now", split into the profit and loss zones.
+  const FUT = W * 0.24, room = W - RIGHT - FUT;
+  const histN = Math.min(ei, n), liveN = Math.max(1, n - histN);
+  const histW = histN ? Math.min(W * 0.45, (room * histN) / n) : 0, liveW = room - histW;
+  const xOf = (i: number) => (i < histN ? (i + 0.5) * (histW / histN) : histW + (i - histN + 0.5) * (liveW / liveN));
+  const bwOf = (i: number) => Math.max(1.2, (i < histN ? histW / histN : liveW / liveN) * 0.66);
+  const ex = histW, nowX = histW + liveW;
+  const pctX = (x: number) => `${Math.max(6, Math.min(94, (x / W) * 100))}%`;
   const ey = y(entry), ly = y(live);
   // P&L colour (yours): green when the trade is winning, red when it's losing.
   const winning = side === "long" ? live >= entry : live <= entry;
@@ -91,7 +99,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
           {candles.length ? (
             <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
               {candles.map((c, i) => {
-                const up = c.c >= c.o, x = i * cw + cw / 2, col = i < ei ? "var(--muted)" : up ? "var(--green)" : "var(--red)";
+                const up = c.c >= c.o, x = xOf(i), bw = bwOf(i), col = i < ei ? "var(--muted)" : up ? "var(--green)" : "var(--red)";
                 return (
                   <g key={c.t} opacity={i < ei ? 0.4 : 1}>
                     <line x1={x} x2={x} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth="1" vectorEffect="non-scaling-stroke" />
@@ -104,14 +112,17 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
               <rect x={ex} y="0" width={W - ex} height={ey} fill={side === "long" ? "var(--green)" : "var(--red)"} opacity=".07" />
               <rect x={ex} y={ey} width={W - ex} height={Math.max(0, H - ey)} fill={side === "long" ? "var(--red)" : "var(--green)"} opacity=".07" />
               {danger && <rect x={ex} y={Math.min(danger[0], danger[1])} width={W - ex} height={Math.abs(danger[0] - danger[1])} fill="var(--red)" opacity=".18" />}
-              <rect x={ex} y={Math.min(ey, ly)} width={Math.max(0, W - RIGHT - ex)} height={Math.max(1, Math.abs(ey - ly))} fill={pc} opacity=".3" />
+              <rect x={ex} y={Math.min(ey, ly)} width={Math.max(0, nowX - ex)} height={Math.max(1, Math.abs(ey - ly))} fill={pc} opacity=".3" />
+              <line x1={nowX} x2={nowX} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".18" />
             </svg>
           ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 12 }} />}
           {candles.length > 0 && (
             <>
               {lvls.filter((l) => near(l.p)).map((l) => <span key={l.key} className={`tc-lv ${l.cls}`} style={{ top: pct(l.p) }}>{l.label}</span>)}
-              <span className={`tc-act ${side}`} style={{ top: pct(entry) }}>{side === "long" ? "▲ BUY" : "▼ SELL"}</span>
-              <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: pct(live) }} />
+              <span className={`tc-act ${side}`} style={{ top: pct(entry), left: pctX(ex) }}>{side === "long" ? "▲ BUY" : "▼ SELL"}</span>
+              <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: pct(live), left: `${(nowX / W) * 100}%`, right: "auto" }} />
+              <span className={`tc-zl up ${side === "long" ? "g" : "r"}`}>{side === "long" ? "profit" : "loss"}</span>
+              <span className={`tc-zl down ${side === "long" ? "r" : "g"}`}>{side === "long" ? "loss" : "profit"}</span>
             </>
           )}
           {offUp.length > 0 && <span className="tc-edges up">{offUp.map((l) => <b key={l.key} className={l.cls}>{l.label} ↑</b>)}</span>}
