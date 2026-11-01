@@ -126,6 +126,8 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
   const xOf = (t: number) => idxOf(t) * cw + cw / 2;
   const entryIdx = [idxOf(ts(a.openedAt)), idxOf(ts(b.openedAt))];
   const start = Math.max(ts(a.openedAt), ts(b.openedAt));
+  // Zones run from the moment the fight started (the later entry) through the candles and the open space ahead.
+  const zx = Math.max(0, xOf(start) - cw / 2);
 
   // Who wins where: the long side wins above its entry, the short side below its entry.
   const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
@@ -138,18 +140,17 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
           {/* the future: open space after the last candle, coloured by who wins if price goes there */}
           {zones ? (
             <>
-              <rect x={CA} y="0" width={W - CA} height={y(zones.upper)} fill="var(--green)" opacity=".13" />
-              <rect x={CA} y={y(zones.upper)} width={W - CA} height={Math.max(0, y(zones.lower) - y(zones.upper))} fill={zones.bothWin ? "var(--gold)" : "var(--text)"} opacity={zones.bothWin ? 0.1 : 0.05} />
-              <rect x={CA} y={y(zones.lower)} width={W - CA} height={Math.max(0, H - y(zones.lower))} fill="var(--red)" opacity=".13" />
+              <rect x={zx} y="0" width={W - zx} height={y(zones.upper)} fill="var(--green)" opacity=".13" />
+              <rect x={zx} y={y(zones.upper)} width={W - zx} height={Math.max(0, y(zones.lower) - y(zones.upper))} fill={zones.bothWin ? "var(--gold)" : "var(--text)"} opacity={zones.bothWin ? 0.1 : 0.05} />
+              <rect x={zx} y={y(zones.lower)} width={W - zx} height={Math.max(0, H - y(zones.lower))} fill="var(--red)" opacity=".13" />
             </>
-          ) : <rect x={CA} y="0" width={W - CA} height={H} fill="var(--text)" opacity=".03" />}
+          ) : <rect x={zx} y="0" width={W - zx} height={H} fill="var(--text)" opacity=".03" />}
           <line x1={CA} x2={CA} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".35" />
           {candles.map((c, i) => {
             const up = c.c >= c.o, x = i * cw + cw / 2, col = up ? GREEN : RED;
             const isEntry = entryIdx.includes(i);
             return (
               <g key={c.t} opacity={c.t + ms < start && !isEntry ? 0.4 : 1}>
-                {isEntry && <rect x={x - cw / 2} y="0" width={cw} height={H} fill={entryIdx[0] === i ? sideCol(a) : sideCol(b)} opacity=".16" />}
                 <line x1={x} x2={x} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth="1" vectorEffect="non-scaling-stroke" />
                 <rect x={x - bw / 2} y={y(Math.max(c.o, c.c))} width={bw} height={Math.max(1.4, Math.abs(y(c.o) - y(c.c)))} fill={col} />
               </g>
@@ -161,7 +162,7 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
           {[a, b].map((f, i) => (
             <line key={i} x1={xOf(ts(f.openedAt))} x2={W} y1={y(f.entry)} y2={y(f.entry)} stroke={sideCol(f)} strokeWidth="2" vectorEffect="non-scaling-stroke" />
           ))}
-          <line x1="0" x2={W} y1={y(px)} y2={y(px)} stroke="var(--text)" strokeDasharray="3 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".6" />
+          <line x1="0" x2={W} y1={y(px)} y2={y(px)} stroke="var(--chrome)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
         </svg>
       ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 16 }} />}
 
@@ -181,7 +182,6 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
               <em>{f.side === "long" ? "▲" : "▼"}</em>
             </span>
           ))}
-          <i className="ar-dot" style={{ left: pctX(CA), top: pctY(px) }} />
           <span className="ar-axis now" style={{ top: pctY(px) }}>{fmtPrice(px)}</span>
           <span className="ar-nowlbl" style={{ left: pctX(CA) }}>now</span>
         </div>
@@ -337,7 +337,7 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
             </>
           )}
           <line x1={nowX} x2={nowX} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".18" />
-          <line x1={nowX - 2} x2={nowX + 14} y1={y(px)} y2={y(px)} stroke="var(--text)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity=".8" />
+          <line x1="0" x2={W} y1={y(px)} y2={y(px)} stroke="var(--chrome)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
           {candles.map((c, i) => {
             const x = xOf(i), bw = bwOf(i), before = i < first;
             const col = before ? "var(--muted)" : c.c >= c.o ? GREEN : RED;

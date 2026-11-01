@@ -100,7 +100,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const off = lvls.filter((l) => !near(l.p));
   const offUp = off.filter((l) => l.p > top), offDn = off.filter((l) => l.p < bot);
   const tags: Tag[] = [
-    { key: "now", p: live, label: fmtPrice(live), cls: winning ? "now g" : "now r", color: pc },
+    { key: "now", p: live, label: fmtPrice(live), cls: "now chrome", color: "var(--chrome)" },
     { key: "entry", p: entry, label: fmtPrice(entry), cls: "entry", color: "var(--muted)" },
     ...lvls.filter((l) => near(l.p)).map((l) => ({ key: l.key, p: l.p, label: `${l.label} ${fmtPrice(l.p)}`, cls: l.cls, color: l.cls === "tp" ? "var(--green)" : l.cls === "sl" ? "var(--red)" : "var(--text)" })),
   ];
