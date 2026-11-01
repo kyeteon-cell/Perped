@@ -26,8 +26,10 @@ export function TrophyCase({ handle }: { handle: string }) {
   }, []);
   if (!data) return <div id="trophies" className="trophies"><div className="skel" style={{ height: 160, borderRadius: 20 }} /></div>;
   const R = new Map(data.trophies.map((r) => [r.key, r]));
-  const got = TROPHIES.filter((t) => R.get(t.key)?.unlocked).sort((a, b) => TIER_RANK[b.tier] - TIER_RANK[a.tier]);
-  const locked = TROPHIES.filter((t) => !R.get(t.key)?.unlocked);
+  // Bronze through to obsidian, unlocked first.
+  const byTier = (a: Trophy, b: Trophy) => TIER_RANK[a.tier] - TIER_RANK[b.tier];
+  const got = TROPHIES.filter((t) => R.get(t.key)?.unlocked).sort(byTier);
+  const locked = TROPHIES.filter((t) => !R.get(t.key)?.unlocked).sort(byTier);
   const row = open ? R.get(open) : null;
   return (
     <section id="trophies" className="trophies">

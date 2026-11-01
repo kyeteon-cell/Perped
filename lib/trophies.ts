@@ -3,7 +3,7 @@
 
 export type Tier = "bronze" | "silver" | "gold" | "obsidian";
 export type Motif = "drop" | "bolt" | "copy" | "shield" | "target" | "hourglass" | "flame" | "dagger" | "bag" | "skull" | "pillar"
-  | "buoy" | "glove" | "swords" | "rocket" | "diamond" | "check" | "megaphone" | "crosshair" | "eye" | "crown" | "people" | "zero";
+  | "buoy" | "glove" | "swords" | "daggers" | "orb" | "rocket" | "diamond" | "check" | "megaphone" | "crosshair" | "eye" | "crown" | "people" | "zero";
 
 export type Trophy = {
   key: string; name: string; tier: Tier; desc: string; motif: Motif;
@@ -30,7 +30,7 @@ export const TROPHIES: Trophy[] = [
   { key: "last_standing", name: "Last Standing", tier: "silver", desc: "Win a fade as the one still in after the other side closed.", motif: "pillar", metric: "lastStandWins", goal: 1, group: "Fights" },
   { key: "comeback_kid", name: "Comeback Kid", tier: "gold", desc: "Win a fade after being 50% or more down.", motif: "buoy", metric: "comebacks", goal: 1, group: "Fights" },
   { key: "fight_night", name: "Fight Night Champion", tier: "gold", desc: "Win 3 fades started in the same Fight Night.", motif: "glove", metric: "fightNightBest", goal: 3, group: "Fights" },
-  { key: "blood_feud", name: "Blood Feud", tier: "obsidian", desc: "Lead a rivalry by 5 wins.", motif: "swords", metric: "rivalLead", goal: 5, group: "Fights" },
+  { key: "blood_feud", name: "Blood Feud", tier: "obsidian", desc: "Lead a rivalry by 5 wins.", motif: "daggers", metric: "rivalLead", goal: 5, group: "Fights" },
 
   { key: "double_up", name: "Double Up", tier: "silver", desc: "Close a trade at +250% ROI or more.", motif: "rocket", metric: "bestRoi", goal: 250, group: "Trading" },
   { key: "moonshot", name: "Moonshot", tier: "gold", desc: "Close a trade at +500% ROI or more.", motif: "rocket", metric: "bestRoi", goal: 500, badge: "5×", group: "Trading" },
@@ -42,7 +42,7 @@ export const TROPHIES: Trophy[] = [
   { key: "idol", name: "Idol", tier: "gold", desc: "Get copied 100 times.", motif: "megaphone", metric: "copied", goal: 100, badge: "100", group: "Social" },
   { key: "most_wanted", name: "Most Wanted", tier: "gold", desc: "Get faded 25 times.", motif: "target", metric: "faded", goal: 25, group: "Social" },
   { key: "oracle", name: "Oracle", tier: "silver", desc: "Land 10 calls.", motif: "eye", metric: "callsHit", goal: 10, group: "Social" },
-  { key: "prophet", name: "Prophet", tier: "gold", desc: "Hit 70% or more of at least 20 calls.", motif: "crown", metric: "prophet", goal: 1, group: "Social" },
+  { key: "prophet", name: "Prophet", tier: "gold", desc: "Hit 70% or more of at least 20 calls.", motif: "orb", metric: "prophet", goal: 1, group: "Social" },
   { key: "recruiter", name: "Recruiter", tier: "silver", desc: "Bring in 5 people who trade.", motif: "people", metric: "recruits", goal: 5, group: "Social" },
   { key: "kingmaker", name: "Kingmaker", tier: "gold", desc: "Bring in 25 people who trade.", motif: "crown", metric: "recruits", goal: 25, badge: "25", group: "Social" },
 
@@ -76,7 +76,9 @@ const M: Record<Motif, string> = {
   eye: `<path d="M2.8 12S6.2 5.5 12 5.5 21.2 12 21.2 12 17.8 18.5 12 18.5 2.8 12 2.8 12z"/><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>`,
   crown: `<path d="M3.5 8.5l4.2 3.6L12 5.5l4.3 6.6 4.2-3.6-1.7 9.5H5.2zM5.6 20.5h12.8" fill="currentColor"/>`,
   people: `<circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.4-3.1 2.6-5 5.5-5s5.1 1.9 5.5 5"/><path d="M15.2 5.6a3 3 0 0 1 0 5.8M17.4 14.7c1.8.5 2.9 2.2 3.1 4.8"/>`,
-  zero: `<ellipse cx="12" cy="12" rx="5.6" ry="8"/><path d="M8.2 17.5 15.8 6.5"/>`,
+  zero: `<ellipse cx="11" cy="12.5" rx="4.6" ry="7" stroke-width="3"/><path d="M18.6 2.6l.7 1.5 1.6.2-1.2 1.1.3 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.2z" fill="currentColor" stroke="none"/>`,
+  daggers: `<path d="M3.5 3.5l3 .6 8 8-2.4 2.4-8-8z" fill="currentColor"/><path d="M11 14.6l-1.6 1.6M8.4 13l3.4 3.4M9.3 17.3l-2.6 2.6"/><path d="M20.5 3.5l-3 .6-8 8 2.4 2.4 8-8z" fill="currentColor"/><path d="M13 14.6l1.6 1.6M15.6 13l-3.4 3.4M14.7 17.3l2.6 2.6"/>`,
+  orb: `<circle cx="12" cy="10.5" r="6.5"/><path d="M7.5 20.5h9M8.8 17.8l-1.3 2.7M15.2 17.8l1.3 2.7M9 9.2a3.4 3.4 0 0 1 3-2.6"/><circle cx="14.2" cy="12" r="1" fill="currentColor" stroke="none"/>`,
 };
 
 const PAL: Record<Tier, { hi: string; mid: string; lo: string; ink: string; glow: string }> = {
