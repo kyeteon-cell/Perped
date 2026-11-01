@@ -1436,3 +1436,17 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .ubadge.founder svg { width: 11px; height: 11px; }
 .realness { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
 .realness::-webkit-scrollbar { display: none; }
+/* Fade card chart: avatars at each entry, the leader's gap shaded, no lines */
+.bcc { position: relative; height: 112px; margin-top: 12px; border-radius: 12px; background: color-mix(in srgb, var(--text) 3%, transparent); border: 1px solid var(--line); overflow: hidden; }
+.bcc svg { position: absolute; inset: 8px 4px; width: calc(100% - 8px); height: calc(100% - 16px); }
+.bcc-pin { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; padding: 2px; background: var(--surface); box-shadow: 0 0 0 2px var(--green), 0 4px 10px -4px rgba(0,0,0,.4); line-height: 0; }
+.bcc-pin.short { box-shadow: 0 0 0 2px var(--red), 0 4px 10px -4px rgba(0,0,0,.4); }
+.bcc-dot { position: absolute; right: 4px; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--text); animation: tcblink 1.6s ease-in-out infinite; }
+.bcc-lead { position: absolute; top: 6px; right: 6px; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 900; background: var(--surface); color: var(--muted); box-shadow: 0 0 0 1px var(--line); }
+.bcc-lead.g { background: var(--green); color: #fff; box-shadow: none; } .bcc-lead.r { background: var(--red); color: #fff; box-shadow: none; }
+/* Mini health bars on fade cards (same rule as the battle page) */
+.mhp { display: block; width: 64px; height: 5px; margin-top: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
+.mhp.r { margin-left: auto; } .mhp.r i { margin-left: auto; }
+.mhp i { display: block; height: 100%; border-radius: 999px; background: var(--green); transition: width .5s var(--ease, ease); }
+.mhp i.short { background: var(--red); }
+.mhp.low i { background: var(--red); animation: tcblink 1s ease-in-out infinite; }

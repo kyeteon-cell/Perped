@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { Candle } from "@/lib/hl-info";
 import { fmtPct, fmtPrice, fmtUsd } from "@/lib/format";
 import { Avatar } from "./ui";
@@ -270,5 +270,78 @@ function Tape({ a, b }: { a: Fighter; b: Fighter }) {
       <div className="ar-taperow head"><b style={{ color: sideCol(a) }}>{a.handle}</b><span>Tale of the tape</span><b style={{ color: sideCol(b) }}>{b.handle}</b></div>
       {rows.map(([k, x, z]) => <div key={k} className="ar-taperow"><b className="mono">{x}</b><span>{k}</span><b className="mono">{z}</b></div>)}
     </div>
+  );
+}
+
+/* ======================================================================
+   Card chart: the fade card in the feed. Same battle, simpler picture:
+   each trader's avatar marks their entry, the leader's gap to the live price is shaded, no lines.
+   ====================================================================== */
+export function BattleCardChart({ coin, live, a, b }: { coin: string; live: number; a: Fighter; b: Fighter }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    const el = box.current; if (!el) return;
+    if (typeof IntersectionObserver === "undefined") { setVis(true); return; }
+    const io = new IntersectionObserver(([e]) => { if (e?.isIntersecting) { setVis(true); io.disconnect(); } }, { rootMargin: "300px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const { data } = useSWR<{ candles: Candle[] }>(vis ? `/api/markets/${coin}/candles?interval=5m&limit=50` : null, { refreshInterval: 60_000, dedupingInterval: 30_000, revalidateOnFocus: false });
+  const candles = (data?.candles ?? []).slice(-36);
+  const px = live || candles[candles.length - 1]?.c || a.entry;
+  const W = 300, H = 120, PAD = 8, RIGHT = 6;
+  const hi = Math.max(px, a.entry, b.entry, ...candles.map((c) => c.h));
+  const lo = Math.min(px, a.entry, b.entry, ...candles.map((c) => c.l));
+  const span = Math.max(hi - lo, px * 0.002), top = hi + span * 0.1, bot = lo - span * 0.1;
+  const y = (p: number) => PAD + (1 - (p - bot) / (top - bot)) * (H - PAD * 2);
+  const pctY = (p: number) => `${(y(p) / H) * 100}%`;
+  const pctX = (x: number) => `${(x / W) * 100}%`;
+  const n = Math.max(candles.length, 1), cw = (W - RIGHT) / n, bw = Math.max(2, cw * 0.62);
+  const t0 = candles[0]?.t ?? Date.now();
+  const xOf = (t: number) => Math.max(0, Math.min(n - 1, Math.floor((t - t0) / IVS["5m"]))) * cw + cw / 2;
+  const start = Math.max(ts(a.openedAt), ts(b.openedAt));
+  const sx = xOf(start);
+  const leader = Math.abs(a.roi - b.roi) < 0.05 ? null : a.roi > b.roi ? a : b;
+  const lc = leader ? (leader.roi >= 0 ? GREEN : RED) : "var(--muted)";
+  return (
+    <div ref={box} className="bcc">
+      {candles.length ? (
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
+          {leader && <rect x={sx} y={Math.min(y(leader.entry), y(px))} width={Math.max(0, W - RIGHT - sx)} height={Math.max(1, Math.abs(y(leader.entry) - y(px)))} fill={lc} opacity=".22" />}
+          {candles.map((c, i) => {
+            const x = i * cw + cw / 2, before = c.t + IVS["5m"] < start;
+            const col = before ? "var(--muted)" : c.c >= c.o ? GREEN : RED;
+            return (
+              <g key={c.t} opacity={before ? 0.4 : 1}>
+                <line x1={x} x2={x} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                <rect x={x - bw / 2} y={y(Math.max(c.o, c.c))} width={bw} height={Math.max(1.4, Math.abs(y(c.o) - y(c.c)))} fill={col} rx="0.6" />
+              </g>
+            );
+          })}
+        </svg>
+      ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 12 }} />}
+      {candles.length > 0 && (
+        <>
+          {[a, b].map((f, i) => (
+            <span key={i} className={`bcc-pin ${f.side}`} style={{ left: pctX(xOf(ts(f.openedAt))), top: pctY(f.entry) }} title={`${f.handle} ${f.side === "long" ? "bought" : "sold"} at ${fmtPrice(f.entry)}`}>
+              <Avatar handle={f.handle} url={f.avatarUrl} size={20} link={false} />
+            </span>
+          ))}
+          <i className="bcc-dot" style={{ top: pctY(px) }} />
+          <span className={`bcc-lead ${leader ? (leader.roi >= 0 ? "g" : "r") : ""}`}>{leader ? `${leader.handle} leads ${fmtPct(leader.roi - (leader === a ? b.roi : a.roi), 1)}` : "Dead level"}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Small health bar for a fighter on a card: same rule as the battle page (100% at entry, 0% at stop loss or liquidation). */
+export function MiniHp({ f, live, right }: { f: Fighter; live: number; right?: boolean }) {
+  const h = healthOf(f, live), low = h < 0.35;
+  return (
+    <span className={`mhp ${right ? "r" : ""} ${low ? "low" : ""}`} title={`${Math.round(h * 100)}% health`}>
+      <i className={f.side} style={{ width: `${Math.max(4, h * 100)}%` }} />
+    </span>
   );
 }

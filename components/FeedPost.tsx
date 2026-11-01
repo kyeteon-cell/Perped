@@ -15,6 +15,7 @@ import dynamic from "next/dynamic";
 import { FollowButton } from "./FollowButton";
 import { RichText } from "./RichText";
 import { BattleSummary, battlesOf } from "./BattleSummary";
+import { BattleCardChart, MiniHp, type Fighter } from "./BattleArena";
 import { HL_NETWORK } from "@/lib/config";
 
 // Sheets only open after a tap: load their code (and the Hyperliquid trading SDK behind them) on demand, not with the feed.
@@ -305,7 +306,9 @@ function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
           <div className={`mono text-[13px] ${pos ? "green" : "red"}`}>{labels[1]}</div>
         </div>
       </div>
-      <TradeChart coin={post.coin!} entry={entry} mark={mark} side={post.side as "long" | "short"} lev={lev} openedAt={post.createdAt} tp={post.tpPx ? Number(post.tpPx) : null} sl={post.slPx ? Number(post.slPx) : null} />
+      {(() => { const fx = post.fadedFromId ? fightersOf(item, mark, roi) : null; return fx
+        ? <BattleCardChart coin={post.coin!} live={mark} a={fx[0]} b={fx[1]} />
+        : <TradeChart coin={post.coin!} entry={entry} mark={mark} side={post.side as "long" | "short"} lev={lev} openedAt={post.createdAt} tp={post.tpPx ? Number(post.tpPx) : null} sl={post.slPx ? Number(post.slPx) : null} />; })()}
       <div className="tfoot">
         {isDemoPost(item)
           ? <Link href="/how-it-works#demo" className="verify">Demo · live prices</Link>
@@ -329,6 +332,19 @@ function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
 
 /* ---------- battle header (fades) ---------- */
 
+/** The two sides of a fade as fighters: the original trade (a) and the fade (b), with live ROI each. */
+function fightersOf(item: FeedRow, mark: number, myRoi: number): [Fighter, Fighter] | null {
+  const { post, author, src } = item;
+  if (!src || !author || !src.side || !post.side) return null;
+  const entry = Number(src.entryPx ?? 0), lev = src.leverage ?? 1;
+  const theirMark = src.status === "open" ? mark : Number(src.exitPx ?? entry);
+  const theirRoi = entry ? pnlForPosition(src.side, entry, theirMark, Number(src.size ?? 0)).pct * lev : 0;
+  return [
+    { handle: src.handle, avatarUrl: src.avatarUrl, side: src.side, lev, entry, sl: src.slPx ? Number(src.slPx) : null, openedAt: src.createdAt ?? null, roi: theirRoi },
+    { handle: author.handle, avatarUrl: author.avatarUrl, side: post.side as "long" | "short", lev: post.leverage ?? 1, entry: Number(post.entryPx), sl: post.slPx ? Number(post.slPx) : null, openedAt: post.createdAt, roi: myRoi },
+  ];
+}
+
 /** Faceoff strip on a fade: the original trader vs the fader, live ROI each, who's ahead, tap to watch. */
 function BattleHead({ item, mark, myRoi }: { item: FeedRow; mark: number; myRoi: number }) {
   const { post, author, src } = item;
@@ -338,17 +354,18 @@ function BattleHead({ item, mark, myRoi }: { item: FeedRow; mark: number; myRoi:
   const theirRoi = entry && src.side ? pnlForPosition(src.side, entry, theirMark, Number(src.size ?? 0)).pct * lev : 0;
   const meAhead = myRoi > theirRoi, even = Math.abs(myRoi - theirRoi) < 0.05;
   const share = Math.max(10, Math.min(90, 50 + ((theirRoi - myRoi) / (Math.abs(theirRoi) + Math.abs(myRoi) || 1)) * 50));
+  const fx = fightersOf(item, mark, myRoi);
   return (
     <Link href={`/battle/${post.id}`} className="bhead" onClick={(e) => e.stopPropagation()}>
       <div className="bh-top"><span className="bh-tag"><Icon d={I.bolt} size={12} />Fade{src.nemesis && <span className="bh-nem gl"><Glyph n="skull" />Vendetta</span>}</span><span className="bh-watch">{even ? "Dead level" : `${meAhead ? author.handle : src.handle} ahead`} · watch →</span></div>
       <div className="bh-row">
         <div className={`bh-f ${!meAhead && !even ? "lead" : ""}`}>
           <span className={`bh-av ${src.side ?? "long"}`}><Avatar handle={src.handle} url={src.avatarUrl} size={30} link={false} /></span>
-          <div className="min-w-0"><div className="bh-name"><span className="truncate">{src.handle}</span><RankChip xp={src.xp} compact size={16} /></div><div className={`mono bh-roi ${theirRoi >= 0 ? "green" : "red"}`}>{fmtPct(theirRoi, 1)}</div></div>
+          <div className="min-w-0"><div className="bh-name"><span className="truncate">{src.handle}</span><RankChip xp={src.xp} compact size={16} /></div><div className={`mono bh-roi ${theirRoi >= 0 ? "green" : "red"}`}>{fmtPct(theirRoi, 1)}</div>{fx && <MiniHp f={fx[0]} live={mark} />}</div>
         </div>
         <span className="bh-vs">VS</span>
         <div className={`bh-f r ${meAhead && !even ? "lead" : ""}`}>
-          <div className="min-w-0 text-right"><div className="bh-name r"><RankChip xp={author.xp} compact size={16} /><span className="truncate">{author.handle}</span></div><div className={`mono bh-roi ${myRoi >= 0 ? "green" : "red"}`}>{fmtPct(myRoi, 1)}</div></div>
+          <div className="min-w-0 text-right"><div className="bh-name r"><RankChip xp={author.xp} compact size={16} /><span className="truncate">{author.handle}</span></div><div className={`mono bh-roi ${myRoi >= 0 ? "green" : "red"}`}>{fmtPct(myRoi, 1)}</div>{fx && <MiniHp f={fx[1]} live={mark} right />}</div>
           <span className={`bh-av ${post.side ?? "short"}`}><Avatar handle={author.handle} url={author.avatarUrl} size={30} link={false} /></span>
         </div>
       </div>

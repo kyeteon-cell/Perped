@@ -41,13 +41,8 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const candles = (data?.candles ?? []).slice(-limit);
   const live = mark || m?.mid || candles[candles.length - 1]?.c || entry;
 
-  // Two different colour meanings, kept apart on purpose:
-  //   market colour = is the PRICE up or down since entry (green up, red down), whatever side you took
-  //   action colour = BUY (long, green) or SELL (short, red) at the entry marker
-  // Your own P&L colour lives only in the pill at the top of the card.
+  // Price colour (the "Price now" number) follows the market; the chart zones and live dot follow YOUR P&L.
   const priceUp = live >= entry;
-  const mkt = priceUp ? "var(--green)" : "var(--red)";
-  const act = side === "long" ? "var(--green)" : "var(--red)";
   const move = entry ? ((live - entry) / entry) * 100 : 0;
   const liq = lev > 1 ? (side === "long" ? entry * (1 - 1 / lev) : entry * (1 + 1 / lev)) : null;
   const liqDist = liq ? Math.abs((live - liq) / live) * 100 : null;
@@ -71,6 +66,13 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const ei = Math.max(0, Math.min(n - 1, Math.floor((opened - t0) / ms)));
   const ex = ei * cw + cw / 2;
   const ey = y(entry), ly = y(live);
+  // P&L colour (yours): green when the trade is winning, red when it's losing.
+  const winning = side === "long" ? live >= entry : live <= entry;
+  const pc = winning ? "var(--green)" : "var(--red)";
+  // Danger band: from your stop loss to liquidation (or past liquidation when there's no stop), on the losing side.
+  const lossSide = (p: number) => (side === "long" ? p < entry : p > entry);
+  const stopP = sl && lossSide(sl) ? sl : null;
+  const danger: [number, number] | null = stopP && liq && near(liq) ? [y(stopP), y(liq)] : stopP && near(stopP) ? [y(stopP), side === "long" ? H : 0] : liq && near(liq) ? [y(liq), side === "long" ? H : 0] : null;
   type Lvl = { key: string; label: string; p: number; cls: string };
   const lvls: Lvl[] = [
     ...(tp ? [{ key: "tp", label: "TP", p: tp, cls: "tp" }] : []),
@@ -89,27 +91,27 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
           {candles.length ? (
             <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
               {candles.map((c, i) => {
-                const up = c.c >= c.o, x = i * cw + cw / 2, col = up ? "var(--green)" : "var(--red)";
+                const up = c.c >= c.o, x = i * cw + cw / 2, col = i < ei ? "var(--muted)" : up ? "var(--green)" : "var(--red)";
                 return (
-                  <g key={c.t} opacity={i < ei ? 0.5 : 1}>
+                  <g key={c.t} opacity={i < ei ? 0.4 : 1}>
                     <line x1={x} x2={x} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth="1" vectorEffect="non-scaling-stroke" />
                     <rect x={x - bw / 2} y={y(Math.max(c.o, c.c))} width={bw} height={Math.max(1.2, Math.abs(y(c.o) - y(c.c)))} fill={col} />
                   </g>
                 );
               })}
-              {lvls.filter((l) => near(l.p)).map((l) => (
-                <line key={l.key} x1="0" x2={W} y1={y(l.p)} y2={y(l.p)} stroke={l.cls === "tp" ? "var(--green)" : l.cls === "sl" ? "var(--red)" : "var(--text)"} strokeDasharray={l.cls === "liq" ? "1 3" : "4 3"} strokeWidth={l.cls === "liq" ? 1.6 : 1.1} vectorEffect="non-scaling-stroke" opacity=".9" />
-              ))}
-              <line x1={ex} x2={ex} y1="0" y2={H} stroke={act} strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".5" />
-              <line x1={ex} x2={W} y1={ey} y2={ey} stroke={act} strokeWidth="1.4" vectorEffect="non-scaling-stroke" />
-              <line x1="0" x2={W} y1={ly} y2={ly} stroke={mkt} strokeDasharray="1 2" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".8" />
+              {/* Win / lose zones from the entry on: your winning side faint green, losing side faint red,
+                  the gap between entry and now strong in your P&L colour, and stop-loss → liquidation as a danger band. */}
+              <rect x={ex} y="0" width={W - ex} height={ey} fill={side === "long" ? "var(--green)" : "var(--red)"} opacity=".07" />
+              <rect x={ex} y={ey} width={W - ex} height={Math.max(0, H - ey)} fill={side === "long" ? "var(--red)" : "var(--green)"} opacity=".07" />
+              {danger && <rect x={ex} y={Math.min(danger[0], danger[1])} width={W - ex} height={Math.abs(danger[0] - danger[1])} fill="var(--red)" opacity=".18" />}
+              <rect x={ex} y={Math.min(ey, ly)} width={Math.max(0, W - RIGHT - ex)} height={Math.max(1, Math.abs(ey - ly))} fill={pc} opacity=".3" />
             </svg>
           ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 12 }} />}
           {candles.length > 0 && (
             <>
               {lvls.filter((l) => near(l.p)).map((l) => <span key={l.key} className={`tc-lv ${l.cls}`} style={{ top: pct(l.p) }}>{l.label}</span>)}
               <span className={`tc-act ${side}`} style={{ top: pct(entry) }}>{side === "long" ? "▲ BUY" : "▼ SELL"}</span>
-              <i className={`tc-dot ${priceUp ? "g" : "r"}`} style={{ top: pct(live) }} />
+              <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: pct(live) }} />
             </>
           )}
           {offUp.length > 0 && <span className="tc-edges up">{offUp.map((l) => <b key={l.key} className={l.cls}>{l.label} ↑</b>)}</span>}
