@@ -15,7 +15,7 @@ import type { ArenaBattle, ArenaRes } from "@/app/api/arena/route";
 import { FollowButton, useFollowing } from "@/components/FollowButton";
 import { isFightNight } from "@/lib/fightnight";
 import { Tug } from "@/components/Tug";
-import { BloodPit, BodyCount, FinishSave, KillFeed, RevengeButton } from "@/components/Bloodbath";
+import { BodyCount, FinishSave, KillFeed } from "@/components/Bloodbath";
 import type { ReactNode } from "react";
 
 type Leg = ArenaBattle["faderLeg"];
@@ -58,22 +58,125 @@ function Fighter({ u, roi, lead, right, side }: { u: ArenaBattle["fader"]; roi: 
 }
 
 /** Last standing: how the first side went out and when, the number the one still in has to beat, winning or chasing. */
-function GladBadge({ b, r }: { b: ArenaBattle; r: ReturnType<typeof readBattle> }) {
+/** A knockout: how the first side went out and when, what the one still in has to beat, and whether they're beating it. */
+function koInfo(b: ArenaBattle, r: ReturnType<typeof readBattle>) {
   const fIn = b.faderLeg.status === "open";
-  const out = fIn ? b.target : b.fader, outLeg = fIn ? b.targetLeg : b.faderLeg, still = fIn ? b.fader : b.target;
+  const out = fIn ? b.target : b.fader, outLeg = fIn ? b.targetLeg : b.faderLeg, still = fIn ? b.fader : b.target, stillLeg = fIn ? b.faderLeg : b.targetLeg;
   const outRoi = fIn ? r.t : r.a, stillRoi = fIn ? r.a : r.t;
   const x = outLeg.exitPx ?? outLeg.entryPx;
   const liq = outLeg.leverage > 1 ? (outLeg.side === "long" ? outLeg.entryPx * (1 - 1 / outLeg.leverage) : outLeg.entryPx * (1 + 1 / outLeg.leverage)) : null;
   const how = liq && (outLeg.side === "long" ? x <= liq * 1.002 : x >= liq * 0.998) ? "liquidated"
     : outLeg.slPx && Math.abs(x - outLeg.slPx) / outLeg.slPx < 0.003 ? "stopped out"
     : outRoi >= 0 ? "banked" : "cut";
-  const winning = stillRoi > outRoi;
+  return { out, outLeg, still, stillLeg, outRoi, stillRoi, how, winning: stillRoi > outRoi };
+}
+
+function GladBadge({ b, r }: { b: ArenaBattle; r: ReturnType<typeof readBattle> }) {
+  const k = koInfo(b, r);
   return (
     <>
       <Glyph n="swords" />
-      <span className="truncate"><b>{out.handle}</b> {how} {fmtPct(outRoi, 1)}{outLeg.closedAt ? ` · ${timeAgo(outLeg.closedAt)} ago` : ""}</span>
-      <span className="ml-auto flex items-center gap-1.5"><span className="muted">{still.handle} needs {fmtPct(outRoi, 1)}</span><span className={`glad-st ${winning ? "g" : "r"}`}>{winning ? "Winning" : "Chasing"}</span></span>
+      <span className="truncate"><b>{k.out.handle}</b> {k.how} {fmtPct(k.outRoi, 1)}{k.outLeg.closedAt ? ` · ${timeAgo(k.outLeg.closedAt)} ago` : ""}</span>
+      <span className="ml-auto flex items-center gap-1.5"><span className="muted">{k.still.handle} needs {fmtPct(k.outRoi, 1)}</span><span className={`glad-st ${k.winning ? "g" : "r"}`}>{k.winning ? "Winning" : "Chasing"}</span></span>
     </>
+  );
+}
+
+type Row = { b: ArenaBattle; r: ReturnType<typeof readBattle> };
+
+/** Hub card: the worst live fight, compact, with one Finish them button. */
+function PitCard({ x }: { x: Row }) {
+  const { b, r } = x, wr = r.winner.id === b.fader.id ? r.a : r.t;
+  return (
+    <div className="hub-card pit">
+      <Link href={`/battle/${b.faderPostId}`} className="hub-body">
+        <div className="hub-head"><span className="hub-tag blood gl"><Glyph n="drop" />The Pit</span><span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span></div>
+        <div className="hub-f"><span className="hub-av win"><Avatar handle={r.winner.handle} url={r.winner.avatarUrl} size={34} link={false} /><em><Glyph n="crown" tone="gold" /></em></span><b className="truncate">{r.winner.handle}</b><span className={`mono ${wr >= 0 ? "green" : "red"}`}>{fmtPct(wr, 1)}</span></div>
+        <div className="hub-vs">vs</div>
+        <div className="hub-f"><span className="hub-av crack"><Avatar handle={r.loser.handle} url={r.loser.avatarUrl} size={34} link={false} /></span><b className="truncate">{r.loser.handle}</b><span className={`mono ${r.worst >= 0 ? "green" : "red"}`}>{fmtPct(r.worst, 1)}</span></div>
+        <div className="hub-foot">{r.minLiq < 50 ? <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span> : <span className="when">{fmtPct(r.gap, 1).replace(/^[+−-]/, "")} gap</span>}</div>
+      </Link>
+      <FinishSave b={b} winner={r.winner} loser={r.loser} compact />
+    </div>
+  );
+}
+
+/** Hub card: the newest knockouts, one at a time (dots to flip), with a Back button for the one still in. */
+function StandingCard({ list }: { list: Row[] }) {
+  const [i, setI] = useState(0);
+  const x = list[Math.min(i, list.length - 1)];
+  if (!x) return (
+    <div className="hub-card stand empty">
+      <div className="hub-head"><span className="hub-tag chrome gl"><Glyph n="swords" />Last standing</span></div>
+      <p className="when mt-2">When one side of a fade gets knocked out and the other is still in, they show up here for 24 hours.</p>
+    </div>
+  );
+  const k = koInfo(x.b, x.r);
+  return (
+    <div className="hub-card stand">
+      <Link href={`/battle/${x.b.faderPostId}`} className="hub-body">
+        <div className="hub-head"><span className="hub-tag chrome gl"><Glyph n="swords" />Last standing</span><span className="when"><CoinMark coin={x.b.coin} size="xs" />{ticker(x.b.coin)}</span></div>
+        <div className="hub-solo">
+          <span className="hub-av big"><Avatar handle={k.still.handle} url={k.still.avatarUrl} size={48} link={false} /></span>
+          <b className="truncate">{k.still.handle}</b>
+          <span className={`mono hub-roi ${k.stillRoi >= 0 ? "green" : "red"}`}>{fmtPct(k.stillRoi, 1)}</span>
+          <span className={`glad-st ${k.winning ? "g" : "r"}`}>{k.winning ? "Winning" : "Chasing"}</span>
+        </div>
+        <div className="hub-foot when truncate"><b>{k.out.handle}</b> {k.how} {fmtPct(k.outRoi, 1)}{k.outLeg.closedAt ? ` · ${timeAgo(k.outLeg.closedAt)}` : ""}</div>
+      </Link>
+      {list.length > 1 && (
+        <div className="hub-dots" role="tablist">
+          {list.slice(0, 6).map((_, j) => <button key={j} aria-label={`Knockout ${j + 1}`} className={j === Math.min(i, list.length - 1) ? "on" : ""} onClick={() => setI(j)} />)}
+        </div>
+      )}
+      <FinishSave b={x.b} winner={x.r.winner} loser={x.r.loser} quiet />
+    </div>
+  );
+}
+
+/** Small swipeable card for the rails. */
+function MiniFight({ x, rekt }: { x: Row; rekt?: boolean }) {
+  const { b, r } = x;
+  return (
+    <Link href={`/battle/${b.faderPostId}`} className={`hub-mini ${rekt ? "rekt" : ""}`}>
+      <div className="hub-head"><span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span>{rekt ? <span className="rekt">REKT</span> : <span className="mono when">{fmtPct(r.gap, 0).replace(/^[+−-]/, "")} gap</span>}</div>
+      <div className="hub-pair"><Avatar handle={r.winner.handle} url={r.winner.avatarUrl} size={30} link={false} /><Avatar handle={r.loser.handle} url={r.loser.avatarUrl} size={30} link={false} /></div>
+      <div className="truncate text-[12.5px] font-bold">{rekt ? <>{r.loser.handle} <span className="muted font-medium">by</span> {r.winner.handle}</> : r.loser.handle}</div>
+      <div className={`mono text-[13px] font-extrabold ${r.worst >= 0 ? "green" : "red"}`}>{fmtPct(r.worst, 1)}</div>
+    </Link>
+  );
+}
+
+/** The Bloodbath as a hub: numbers up top, the Pit beside Last standing, then swipeable rails. */
+function BloodHub({ blood, knocked, rekt, data }: { blood: Row[]; knocked: Row[]; rekt: Row[]; data: ArenaRes }) {
+  const kills24 = (data.kills ?? []).filter((k) => Date.now() - +new Date(k.settledAt ?? k.createdAt) < 86_400_000).length;
+  return (
+    <div className="mt-3 flex flex-col gap-3">
+      <div className="hub-stats">
+        <div><b className="mono">{blood.length}</b><span>bleeding</span></div>
+        <div><b className="mono">{knocked.length}</b><span>knocked out</span></div>
+        <div><b className="mono">{kills24}</b><span>liquidated 24h</span></div>
+        <div><b className="mono">{blood[0] ? fmtPct(blood[0].r.gap, 0).replace(/^[+−-]/, "") : "–"}</b><span>widest gap</span></div>
+      </div>
+      <div className="hub-hero">
+        {blood[0] ? <PitCard x={blood[0]} /> : <div className="hub-card pit empty"><div className="hub-head"><span className="hub-tag blood gl"><Glyph n="drop" />The Pit</span></div><p className="when mt-2">No bloodbaths right now. Everyone&rsquo;s still standing.</p></div>}
+        <StandingCard list={knocked} />
+      </div>
+      {blood.length > 1 && (
+        <section>
+          <div className="asub"><Glyph n="drop" /><b>Bleeding now</b><span className="when">swipe</span></div>
+          <div className="hub-rail">{blood.slice(1).map((x) => <MiniFight key={x.b.id} x={x} />)}</div>
+        </section>
+      )}
+      {rekt.length > 0 && (
+        <section>
+          <div className="asub"><Glyph n="tomb" /><b>Graveyard</b><span className="when">recently liquidated</span></div>
+          <div className="hub-rail">{rekt.map((x) => <MiniFight key={x.b.id} x={x} rekt />)}</div>
+        </section>
+      )}
+      <KillFeed kills={data.kills ?? []} />
+      <BodyCount board={data.board} />
+    </div>
   );
 }
 
@@ -305,7 +408,7 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   ];
   const flames = (n: number) => <span className="flames">{Array.from({ length: n }, (_, i) => <Glyph key={i} n="flame" tone="gold" />)}</span>;
   const tag = (b: ArenaBattle) => mine(b) ? "your fade" : rivals.has(b.fader.handle) ? `your rival ${b.fader.handle}` : rivals.has(b.target.handle) ? `your rival ${b.target.handle}` : follow.has(b.fader.handle) ? `you follow ${b.fader.handle}` : follow.has(b.target.handle) ? `you follow ${b.target.handle}` : "";
-  const list = tab === "all" ? rows : tab === "nemesis" ? nem : tab === "high" ? high : blood.slice(1);
+  const list = tab === "all" ? rows : tab === "nemesis" ? nem : high;
   const row = ({ b, r }: { b: ArenaBattle; r: ReturnType<typeof readBattle> }, kind: Heat | "ko") => (
     <div key={`${kind}${b.id}`}>
       <BattleRow b={b} mid={mids[b.coin] ?? 0} noChase={kind === "ko"} badge={
@@ -338,30 +441,7 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
           ))}</div>
         </div>
       ) : tab === "blood" ? (
-        <div className="mt-3 flex flex-col gap-3">
-          {blood[0] && <BloodPit b={blood[0].b} mid={mids[blood[0].b.coin] ?? 0} winner={blood[0].r.winner} loser={blood[0].r.loser} worst={blood[0].r.worst} minLiq={blood[0].r.minLiq} />}
-          {list.length > 0 && <div className="flex flex-col gap-2">{list.map((x) => row(x, "blood"))}</div>}
-          {!blood.length && <p className="muted text-sm">No bloodbaths right now. Everyone&rsquo;s still standing.</p>}
-          {knocked.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <div className="asub"><Glyph n="swords" /><b>Knockouts</b><span className="when">one side out, the other still in · last 24h</span></div>
-              {knocked.map((x) => row(x, "ko"))}
-            </div>
-          )}
-          {rekt.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <div className="asub"><Glyph n="tomb" /><b>Recently liquidated</b></div>
-              {rekt.map(({ b, r }) => (
-                <div key={`rekt${b.id}`} className="tomb">
-                  <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={<><span className="rekt">REKT</span><span className="gl"><Glyph n="tomb" /><b>{r.loser.handle}</b> got liquidated by <b>{r.winner.handle}</b></span></>} />
-                  <div className="bb-under"><RevengeButton handle={r.winner.handle} label={<span className="gl"><Glyph n="drop" />Revenge on {r.winner.handle}</span>} /></div>
-                </div>
-              ))}
-            </div>
-          )}
-          <KillFeed kills={data.kills ?? []} />
-          <BodyCount board={data.board} />
-        </div>
+        <BloodHub blood={blood} knocked={knocked} rekt={rekt} data={data} />
       ) : (
         <div className="mt-3 flex flex-col gap-2">
           {list.map((x) => row(x, tab))}
