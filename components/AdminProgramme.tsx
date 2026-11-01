@@ -62,7 +62,7 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
     ["Scheduled jobs", h.cronSecret, h.cronSecret ? "earnings daily, waitlist Mondays 9pm" : "CRON_SECRET missing"],
     ["Database", !Object.keys(p.errors).length, Object.keys(p.errors).length ? `${Object.keys(p.errors).length} section(s) failed to load` : "all queries OK"],
   ];
-  const f = m?.funnel;
+  const fn = m?.funnel;
   return (
     <div className="mt-3">
       <div className="adm-kpis">
@@ -98,7 +98,7 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
               <section className="inv-card">
                 <span className="eyebrow">Funnel · joined in the last 7 days</span>
                 <div className="adm-funnel mt-2">
-                  {([["Visited", m.events.visitors_week, m.events.visitors_week], ["Finished the intro", m.events.intro_week, m.events.visitors_week], ["Joined", f!.cohort, m.events.visitors_week], ["Made a trade", f!.traded, f!.cohort], ["Got into a fade", f!.battled, f!.cohort], ["Came back the next day", f!.returned, f!.cohort]] as [string, number, number][]).map(([k, n, of]) => (
+                  {([["Visited", m.events.visitors_week, m.events.visitors_week], ["Finished the intro", m.events.intro_week, m.events.visitors_week], ["Joined", fn!.cohort, m.events.visitors_week], ["Made a trade", fn!.traded, fn!.cohort], ["Got into a fade", fn!.battled, fn!.cohort], ["Came back the next day", fn!.returned, fn!.cohort]] as [string, number, number][]).map(([k, n, of]) => (
                     <div key={k} className="adm-step"><span>{k}</span><b className="mono">{n}</b><em>{pct(n, of)}</em><i style={{ width: of ? `${Math.min(100, (n / of) * 100)}%` : "0%" }} /></div>
                   ))}
                 </div>
