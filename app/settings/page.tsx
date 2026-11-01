@@ -14,6 +14,7 @@ import { tenthsBpsToLabel, type FeeInfo } from "@/lib/fees";
 import type { ReferralSummary } from "@/lib/referrals";
 import type { User } from "@/lib/schema";
 import { useLive, openComingSoon } from "@/lib/hooks/useLive";
+import { LEVEL_KEY, getLevel, type Level } from "@/lib/level";
 
 type Key = "showLiquidations" | "showSizes" | "allowCopy" | "allowFade" | "showBottomBoard" | "acceptDuels";
 
@@ -21,6 +22,8 @@ export default function SettingsPage() {
   const { profile, authedFetch, refreshMe, logout, address, fee, hasExternalWallet, linkWallet, linkError, isGuest, login, guestToken, linkX, linkXState } = useSession();
   const { allowed: liveOk, gate } = useLive();
   const [keyCopied, setKeyCopied] = useState(false);
+  const [level, setLevelState] = useState<Level | null>(null);
+  useEffect(() => { setLevelState(getLevel()); }, []);
   const [copied, setCopied] = useState(false);
   const { markets } = useMarkets();
   const topCap = markets.reduce((m, x) => Math.max(m, x.maxLeverage), 0) || 50;
@@ -76,6 +79,8 @@ export default function SettingsPage() {
       {(linkXState.done || linkXState.error) && <div className="px-5 pb-2 pt-3"><div className={`card p-3.5 text-sm ${linkXState.error ? "red" : ""}`} style={linkXState.done ? { color: "var(--green)", background: "var(--green-soft)" } : {}}>{linkXState.done ?? linkXState.error}</div></div>}
 
       <div className="eyebrow px-5 pb-1.5 pt-4">Appearance</div>
+      <div className="srow"><span>Crypto experience<span className="when ml-1.5">sets how things are explained</span></span><Seg value={level ?? "crypto"} options={[["new", "New"], ["crypto", "Some"], ["perps", "Pro"]]} onChange={(v) => { try { localStorage.setItem(LEVEL_KEY, v); } catch {} setLevelState(v as Level); }} /></div>
+      <Link href="/?welcome=1" className="srow"><span>Replay the walkthrough<span className="when ml-1.5">explainer, first trade, first fade</span></span><span>→</span></Link>
       <div className="srow"><span>Theme</span><Seg value={theme} options={[["light", "Day"], ["dark", "Night"], ["auto", "Auto"]]} onChange={(v) => { setTheme(v); setThemeState(v); }} /></div>
       <div className="srow"><span>Show P&L as</span><Seg value={local.pnlDisplay ?? "pct"} options={[["pct", "%"], ["usd", "$"], ["roi", "ROI"]]} onChange={(v) => save({ pnlDisplay: v })} /></div>
 
