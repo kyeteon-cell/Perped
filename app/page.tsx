@@ -56,7 +56,11 @@ export default function HomePage() {
     try { const ref = new URLSearchParams(window.location.search).get("ref"); if (ref) localStorage.setItem("perped:ref", ref.toLowerCase()); } catch {}
   }, []);
   const key = `/api/posts?tab=${tab}${filterQuery(filter)}`;
-  const { data, mutate, isLoading } = useSWR<{ posts: FeedRow[] }>(key, async () => (await authedFetch(key)).json(), { refreshInterval: 30_000, revalidateOnFocus: true });
+  // Instant start: the feed this device last saw shows immediately, then the fresh one replaces it.
+  const [feedCache, setFeedCache] = useState<{ key: string; posts: FeedRow[] } | null>(null);
+  useEffect(() => { try { const j = localStorage.getItem("perped:feed"); if (j) setFeedCache(JSON.parse(j)); } catch {} }, []);
+  const { data, mutate, isLoading } = useSWR<{ posts: FeedRow[] }>(key, async () => (await authedFetch(key)).json(), { refreshInterval: 30_000, revalidateOnFocus: true, fallbackData: feedCache?.key === key ? { posts: feedCache.posts } : undefined });
+  useEffect(() => { if (data?.posts?.length) try { localStorage.setItem("perped:feed", JSON.stringify({ key, posts: data.posts.slice(0, 12) })); } catch {} }, [data, key]); // eslint-disable-line react-hooks/exhaustive-deps
   const allPosts = data?.posts ?? [];
   const shown = realness === "real" && !liveOk ? "all" : realness;
   const posts = shown === "all" ? allPosts : allPosts.filter((p) => p.post.kind !== "trade" || (shown === "demo") === isDemoPost(p));

@@ -20,6 +20,8 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - run: npx tsc --noEmit
+      - name: Money and rank maths
+        run: npm test
 
   smoke:
     # After Vercel finishes deploying this commit, open the live app in a real browser and check it.

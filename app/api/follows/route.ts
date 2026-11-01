@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { notify } from "@/lib/feed";
+import { rateLimit } from "@/lib/ratelimit";
 
 const Body = z.object({ handle: z.string() });
 
@@ -12,6 +13,8 @@ export async function POST(req: Request) {
   if (!auth) return unauthorized();
   const me = await getProfile(auth.privyId);
   if (!me) return Response.json({ error: "pick a handle first" }, { status: 400 });
+  const limited = await rateLimit("follow", me);
+  if (limited) return limited;
   const parsed = Body.safeParse(await req.json());
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const [target] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.handle, parsed.data.handle.toLowerCase())).limit(1);

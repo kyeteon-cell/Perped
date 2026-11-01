@@ -54,7 +54,7 @@ function useSessionState() {
   }, []);
   const logout = useCallback(async () => {
     // Guests: keep a copy of the key on this device so "Continue as …" can bring them straight back.
-    try { const t = localStorage.getItem("perped:guest"); if (t) localStorage.setItem("perped:guest-prev", t); localStorage.removeItem("perped:guest"); } catch {}
+    try { const t = localStorage.getItem("perped:guest"); if (t) localStorage.setItem("perped:guest-prev", t); localStorage.removeItem("perped:guest"); localStorage.removeItem("perped:me"); } catch {}
     setGuestToken(null);
     await fetch("/api/guest", { method: "DELETE" }).catch(() => null);
     if (privyAuthed) await privyLogout();
@@ -155,11 +155,17 @@ function useSessionState() {
     [getAccessToken, address, privyAuthed, guestToken],
   );
 
-  const { data: me, mutate: refreshMe, isLoading: meLoading } = useSWR<{ profile: User | null; unread: number; fee?: FeeInfo; address?: string | null; guest?: boolean }>(
-    (privyAuthed && address) || isGuest ? ["/api/me", address ?? guestToken ?? "cookie"] : null,
+  // Instant start: show the last profile this device saw while the fresh one loads. Don't wait for the wallet either:
+  // the server knows who you are from the login token alone, so the profile loads in parallel with the wallet.
+  type MeRes = { profile: User | null; unread: number; fee?: FeeInfo; address?: string | null; guest?: boolean };
+  const [meCached, setMeCached] = useState<MeRes | undefined>(undefined);
+  useEffect(() => { try { const j = localStorage.getItem("perped:me"); if (j) setMeCached(JSON.parse(j)); } catch {} }, []);
+  const { data: me, mutate: refreshMe, isLoading: meLoading } = useSWR<MeRes>(
+    privyAuthed || isGuest ? ["/api/me", address ?? guestToken ?? "pending"] : null,
     async () => (await authedFetch("/api/me")).json(),
-    { refreshInterval: 30_000 },
+    { refreshInterval: 30_000, fallbackData: privyAuthed || isGuest ? meCached : undefined },
   );
+  useEffect(() => { if (me?.profile) try { localStorage.setItem("perped:me", JSON.stringify({ profile: me.profile, unread: me.unread, fee: me.fee, guest: me.guest })); } catch {} }, [me]);
 
   return {
     ready,

@@ -11,6 +11,7 @@ import { getLiveSettings, liveAllowed } from "@/lib/live";
 import { getFrontendOpenOrders, getMids, getPerpAssets } from "@/lib/hl-info";
 import { fillsForOrder, vwap } from "@/lib/hlfills";
 import { normCoin } from "@/lib/format";
+import { rateLimit } from "@/lib/ratelimit";
 
 /**
  * Keep the For-you feed mixed: system cards (battle / duel results, milestones, settlements, market stories)
@@ -144,6 +145,8 @@ export async function POST(req: Request) {
   if (!auth) return unauthorized();
   const profile = await getProfile(auth.privyId);
   if (!profile) return Response.json({ error: "pick a handle first" }, { status: 400 });
+  const limited = await rateLimit("post", profile);
+  if (limited) return limited;
   const parsed = Body.safeParse(await req.json());
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "invalid" }, { status: 400 });
   const b = parsed.data;

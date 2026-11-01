@@ -3,6 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { notify } from "@/lib/feed";
+import { rateLimit } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!auth) return unauthorized();
   const profile = await getProfile(auth.privyId);
   if (!profile) return Response.json({ error: "pick a handle first" }, { status: 400 });
+  const limited = await rateLimit("comment", profile);
+  if (limited) return limited;
   const { id } = await ctx.params;
   const parsed = Body.safeParse(await req.json());
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
