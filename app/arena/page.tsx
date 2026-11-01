@@ -15,13 +15,13 @@ import type { ArenaBattle, ArenaRes } from "@/app/api/arena/route";
 import { FollowButton, useFollowing } from "@/components/FollowButton";
 import { isFightNight } from "@/lib/fightnight";
 import { Tug } from "@/components/Tug";
-import { BloodPit, BodyCount, FinishSave, KillFeed, RevengeButton } from "@/components/Bloodbath";
+import { BodyCount, FinishSave, KillFeed } from "@/components/Bloodbath";
 import type { ReactNode } from "react";
 
 type Leg = ArenaBattle["faderLeg"];
 const liqPx = (l: Leg) => (l.leverage > 1 ? (l.side === "long" ? l.entryPx * (1 - 1 / l.leverage) : l.entryPx * (1 + 1 / l.leverage)) : null);
 const liqDist = (l: Leg, mid: number) => { const q = liqPx(l); return q && mid ? Math.abs((mid - q) / mid) * 100 : 100; };
-type Tab = "all" | "nemesis" | "high" | "following" | "blood";
+type Heat = "all" | "nemesis" | "high" | "blood";
 /** Everything the tabs need about one battle, at the live price. */
 function readBattle(b: ArenaBattle, mid: number) {
   const settled = b.status === "settled";
@@ -57,7 +57,219 @@ function Fighter({ u, roi, lead, right, side }: { u: ArenaBattle["fader"]; roi: 
   );
 }
 
-function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: ReactNode }) {
+/** Last standing: how the first side went out and when, the number the one still in has to beat, winning or chasing. */
+/** A knockout: how the first side went out and when, what the one still in has to beat, and whether they're beating it. */
+function koInfo(b: ArenaBattle, r: ReturnType<typeof readBattle>) {
+  const fIn = b.faderLeg.status === "open";
+  const out = fIn ? b.target : b.fader, outLeg = fIn ? b.targetLeg : b.faderLeg, still = fIn ? b.fader : b.target, stillLeg = fIn ? b.faderLeg : b.targetLeg;
+  const outRoi = fIn ? r.t : r.a, stillRoi = fIn ? r.a : r.t;
+  const x = outLeg.exitPx ?? outLeg.entryPx;
+  const liq = outLeg.leverage > 1 ? (outLeg.side === "long" ? outLeg.entryPx * (1 - 1 / outLeg.leverage) : outLeg.entryPx * (1 + 1 / outLeg.leverage)) : null;
+  const how = liq && (outLeg.side === "long" ? x <= liq * 1.002 : x >= liq * 0.998) ? "liquidated"
+    : outLeg.slPx && Math.abs(x - outLeg.slPx) / outLeg.slPx < 0.003 ? "stopped out"
+    : outRoi >= 0 ? "banked" : "cut";
+  return { out, outLeg, still, stillLeg, outRoi, stillRoi, how, winning: stillRoi > outRoi };
+}
+
+function GladBadge({ b, r }: { b: ArenaBattle; r: ReturnType<typeof readBattle> }) {
+  const k = koInfo(b, r);
+  return (
+    <>
+      <Glyph n="swords" />
+      <span className="truncate"><b>{k.out.handle}</b> {k.how} {fmtPct(k.outRoi, 1)}{k.outLeg.closedAt ? ` · ${timeAgo(k.outLeg.closedAt)} ago` : ""}</span>
+      <span className="ml-auto flex items-center gap-1.5"><span className="muted">{k.still.handle} needs {fmtPct(k.outRoi, 1)}</span><span className={`glad-st ${k.winning ? "g" : "r"}`}>{k.winning ? "Winning" : "Chasing"}</span></span>
+    </>
+  );
+}
+
+type Row = { b: ArenaBattle; r: ReturnType<typeof readBattle> };
+
+/** Hub card: the worst live fight, compact, with one Finish them button. */
+function PitCard({ x }: { x: Row }) {
+  const { b, r } = x, wr = r.winner.id === b.fader.id ? r.a : r.t;
+  return (
+    <div className="hub-card pit">
+      <Link href={`/battle/${b.faderPostId}`} className="hub-body">
+        <div className="hub-head"><span className="hub-tag blood gl"><Glyph n="drop" />The Pit</span><span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span></div>
+        <div className="hub-f"><span className="hub-av win"><Avatar handle={r.winner.handle} url={r.winner.avatarUrl} size={34} link={false} /><em><Glyph n="crown" tone="gold" /></em></span><b className="truncate">{r.winner.handle}</b><span className={`mono ${wr >= 0 ? "green" : "red"}`}>{fmtPct(wr, 1)}</span></div>
+        <div className="hub-vs">vs</div>
+        <div className="hub-f"><span className="hub-av crack"><Avatar handle={r.loser.handle} url={r.loser.avatarUrl} size={34} link={false} /></span><b className="truncate">{r.loser.handle}</b><span className={`mono ${r.worst >= 0 ? "green" : "red"}`}>{fmtPct(r.worst, 1)}</span></div>
+        <div className="hub-foot">{r.minLiq < 50 ? <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span> : <span className="when">{fmtPct(r.gap, 1).replace(/^[+−-]/, "")} gap</span>}</div>
+      </Link>
+      <FinishSave b={b} winner={r.winner} loser={r.loser} compact />
+    </div>
+  );
+}
+
+/** Hub card: the newest knockouts, one at a time (dots to flip), with a Back button for the one still in. */
+function StandingCard({ list }: { list: Row[] }) {
+  const [i, setI] = useState(0);
+  const x = list[Math.min(i, list.length - 1)];
+  if (!x) return (
+    <div className="hub-card stand empty">
+      <div className="hub-head"><span className="hub-tag chrome gl"><Glyph n="swords" />Last standing</span></div>
+      <p className="when mt-2">When one side of a fade gets knocked out and the other is still in, they show up here for 24 hours.</p>
+    </div>
+  );
+  const k = koInfo(x.b, x.r);
+  return (
+    <div className="hub-card stand">
+      <Link href={`/battle/${x.b.faderPostId}`} className="hub-body">
+        <div className="hub-head"><span className="hub-tag chrome gl"><Glyph n="swords" />Last standing</span><span className="when"><CoinMark coin={x.b.coin} size="xs" />{ticker(x.b.coin)}</span></div>
+        <div className="hub-solo">
+          <span className="hub-av big"><Avatar handle={k.still.handle} url={k.still.avatarUrl} size={48} link={false} /></span>
+          <b className="truncate">{k.still.handle}</b>
+          <span className={`mono hub-roi ${k.stillRoi >= 0 ? "green" : "red"}`}>{fmtPct(k.stillRoi, 1)}</span>
+          <span className={`glad-st ${k.winning ? "g" : "r"}`}>{k.winning ? "Winning" : "Chasing"}</span>
+        </div>
+        <div className="hub-foot when truncate"><b>{k.out.handle}</b> {k.how} {fmtPct(k.outRoi, 1)}{k.outLeg.closedAt ? ` · ${timeAgo(k.outLeg.closedAt)}` : ""}</div>
+        {k.outLeg.closedAt && <div className="hub-left">{leftOf(k.outLeg.closedAt)}</div>}
+      </Link>
+      {list.length > 1 && (
+        <div className="hub-dots" role="tablist">
+          {list.slice(0, 6).map((_, j) => <button key={j} aria-label={`Knockout ${j + 1}`} className={j === Math.min(i, list.length - 1) ? "on" : ""} onClick={() => setI(j)} />)}
+        </div>
+      )}
+      <FinishSave b={x.b} winner={x.r.winner} loser={x.r.loser} quiet />
+    </div>
+  );
+}
+
+/** Small swipeable card for the rails. */
+/** Time left before a knockout drops off Last standing (24 hours after it happened). */
+const leftOf = (at: string) => {
+  const ms = 86_400_000 - (Date.now() - +new Date(at));
+  if (ms <= 0) return "dropping off";
+  const h = Math.floor(ms / 3_600_000), m = Math.floor((ms % 3_600_000) / 60_000);
+  return `drops off in ${h ? `${h}h ` : ""}${m}m`;
+};
+
+function MiniFight({ x, rekt, lead }: { x: Row; rekt?: boolean; lead?: boolean }) {
+  const { b, r } = x;
+  if (lead) {
+    const wr = r.winner.id === b.fader.id ? r.a : r.t;
+    return (
+      <Link href={`/battle/${b.faderPostId}`} className={`hub-mini ${b.nemesis ? "nem" : ""}`}>
+        <div className="hub-head"><span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span><span className="mono when">{b.faderLeg.leverage}×·{b.targetLeg.leverage}×</span></div>
+        <div className="hub-pair"><Avatar handle={r.winner.handle} url={r.winner.avatarUrl} size={30} link={false} /><Avatar handle={r.loser.handle} url={r.loser.avatarUrl} size={30} link={false} /></div>
+        <div className="truncate text-[12.5px] font-bold">{r.winner.handle} <span className="muted font-medium">leads</span></div>
+        <div className={`mono text-[13px] font-extrabold ${wr >= 0 ? "green" : "red"}`}>{fmtPct(wr, 1)}</div>
+      </Link>
+    );
+  }
+  return (
+    <Link href={`/battle/${b.faderPostId}`} className={`hub-mini ${rekt ? "rekt" : ""}`}>
+      <div className="hub-head"><span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span>{rekt ? <span className="rekt">REKT</span> : <span className="mono when">{fmtPct(r.gap, 0).replace(/^[+−-]/, "")} gap</span>}</div>
+      <div className="hub-pair"><Avatar handle={r.winner.handle} url={r.winner.avatarUrl} size={30} link={false} /><Avatar handle={r.loser.handle} url={r.loser.avatarUrl} size={30} link={false} /></div>
+      <div className="truncate text-[12.5px] font-bold">{rekt ? <>{r.loser.handle} <span className="muted font-medium">by</span> {r.winner.handle}</> : r.loser.handle}</div>
+      <div className={`mono text-[13px] font-extrabold ${r.worst >= 0 ? "green" : "red"}`}>{fmtPct(r.worst, 1)}</div>
+    </Link>
+  );
+}
+
+/** Hub card for the All tab: one fight up big, both fighters and their P&L. */
+function FightCard({ x, tag, cls }: { x: Row; tag: ReactNode; cls: string }) {
+  const { b } = x, fa = b.fader, ta = b.target;
+  return (
+    <div className={`hub-card ${cls}`}>
+      <Link href={`/battle/${b.faderPostId}`} className="hub-body">
+        <div className="hub-head">{tag}<span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span></div>
+        {[[fa, x.r.a, b.faderLeg], [ta, x.r.t, b.targetLeg]].map(([u, roi, l], i) => {
+          const uu = u as ArenaBattle["fader"], rr = roi as number, ll = l as ArenaBattle["faderLeg"];
+          return (
+            <div key={i} className="hub-f">
+              <span className={`hub-av ${uu.id === x.r.winner.id && x.r.gap > 0.05 ? "win" : ""}`}><Avatar handle={uu.handle} url={uu.avatarUrl} size={34} link={false} />{uu.id === x.r.winner.id && x.r.gap > 0.05 && <em><Glyph n="crown" tone="gold" /></em>}</span>
+              <b className="truncate">{uu.handle}</b>
+              <span className="flex items-center gap-1.5"><span className={`mono ${rr >= 0 ? "green" : "red"}`}>{fmtPct(rr, 1)}</span><span className={`hub-side ${ll.side}`}>{ll.side === "long" ? "L" : "S"} {ll.leverage}×</span></span>
+            </div>
+          );
+        })}
+        <div className="hub-foot">{x.r.minLiq < 50 ? <span className="ab-warn">liq in {x.r.minLiq.toFixed(1)}%</span> : <span className="when">{fmtPct(x.r.gap, 1).replace(/^[+−-]/, "")} gap · {timeAgo(b.createdAt)}</span>}</div>
+      </Link>
+      <FinishSave b={b} winner={x.r.winner} loser={x.r.loser} quiet />
+    </div>
+  );
+}
+
+/** The All tab as a hub: Main event beside Your fight, then swipeable rails, then every fade. */
+function AllHub({ rows, nem, high, mine, list }: { rows: Row[]; nem: Row[]; high: Row[]; mine: Row | null; list: ReactNode }) {
+  const main = [...rows].sort((x, y) => y.r.risk - x.r.risk)[0];
+  if (!main) return <>{list}</>;
+  return (
+    <div className="mt-3 flex flex-col gap-3">
+      <div className="hub-hero">
+        <FightCard x={main} cls="main" tag={<span className="hub-tag gold gl"><Glyph n="trophy" />Main event</span>} />
+        {mine && mine.b.id !== main.b.id ? <FightCard x={mine} cls="yours" tag={<span className="hub-tag ink gl"><Glyph n="swords" />Your fight</span>} />
+          : (
+            <div className="hub-card yours empty">
+              <div className="hub-head"><span className="hub-tag ink gl"><Glyph n="swords" />Your fight</span></div>
+              <p className="when mt-1">{mine ? "You're in the main event." : "You're not in a fade right now. Fade a trade from the feed and your fight lives here."}</p>
+              <Link href="/" className="hub-btn mt-auto text-center">Find a trade to fade</Link>
+            </div>
+          )}
+      </div>
+      {nem.length > 0 && (
+        <section>
+          <div className="asub"><Glyph n="skull" /><b>Vendettas</b><span className="when">swipe</span></div>
+          <div className="hub-rail">{nem.map((x) => <MiniFight key={x.b.id} x={x} lead />)}</div>
+        </section>
+      )}
+      {high.length > 0 && (
+        <section>
+          <div className="asub"><Glyph n="flame" /><b>High stakes</b><span className="when">swipe</span></div>
+          <div className="hub-rail">{high.slice(0, 12).map((x) => <MiniFight key={x.b.id} x={x} lead />)}</div>
+        </section>
+      )}
+      <div className="asub"><Glyph n="bolt" /><b>Every fade</b><span className="when">{rows.length} live</span></div>
+      {list}
+    </div>
+  );
+}
+
+/** Slim kill ticker along the top of the Arena: who got liquidated by whom, scrolling. */
+function KillTicker({ kills }: { kills: ArenaBattle[] }) {
+  if (!kills.length) return null;
+  const items = kills.slice(0, 8).map((b) => {
+    const w = b.winnerId === b.fader.id ? b.fader : b.target, l = w.id === b.fader.id ? b.target : b.fader;
+    return <Link key={b.id} href={`/battle/${b.faderPostId}`} className="kt-item"><Glyph n="skull" tone="blood" /><b>{w.handle}</b> perped <b>{l.handle}</b><span className="when">{ticker(b.coin)} · {timeAgo(b.settledAt ?? b.createdAt)}</span></Link>;
+  });
+  return <div className="kticker" aria-label="Recent liquidations"><div className="kt-track">{items}{items.map((it, i) => <span key={`d${i}`} aria-hidden>{it}</span>)}</div></div>;
+}
+
+/** The Bloodbath as a hub: numbers up top, the Pit beside Last standing, then swipeable rails. */
+function BloodHub({ blood, knocked, rekt, data }: { blood: Row[]; knocked: Row[]; rekt: Row[]; data: ArenaRes }) {
+  const kills24 = (data.kills ?? []).filter((k) => Date.now() - +new Date(k.settledAt ?? k.createdAt) < 86_400_000).length;
+  return (
+    <div className="mt-3 flex flex-col gap-3">
+      <div className="hub-stats">
+        <div><b className="mono">{blood.length}</b><span>getting perped</span></div>
+        <div><b className="mono">{knocked.length}</b><span>knocked out</span></div>
+        <div><b className="mono">{kills24}</b><span>liquidated 24h</span></div>
+        <div><b className="mono">{blood[0] ? fmtPct(blood[0].r.gap, 0).replace(/^[+−-]/, "") : "–"}</b><span>widest gap</span></div>
+      </div>
+      <div className="hub-hero">
+        {blood[0] ? <PitCard x={blood[0]} /> : <div className="hub-card pit empty"><div className="hub-head"><span className="hub-tag blood gl"><Glyph n="drop" />The Pit</span></div><p className="when mt-2">No bloodbaths right now. Everyone&rsquo;s still standing.</p></div>}
+        <StandingCard list={knocked} />
+      </div>
+      {blood.length > 1 && (
+        <section>
+          <div className="asub"><Glyph n="drop" /><b>Getting perped</b><span className="when">swipe</span></div>
+          <div className="hub-rail">{blood.slice(1).map((x) => <MiniFight key={x.b.id} x={x} />)}</div>
+        </section>
+      )}
+      {rekt.length > 0 && (
+        <section>
+          <div className="asub"><Glyph n="tomb" /><b>Graveyard</b><span className="when">recently liquidated</span></div>
+          <div className="hub-rail">{rekt.map((x) => <MiniFight key={x.b.id} x={x} rekt />)}</div>
+        </section>
+      )}
+      <KillFeed kills={data.kills ?? []} />
+      <BodyCount board={data.board} />
+    </div>
+  );
+}
+
+function BattleRow({ b, mid, badge, noChase }: { b: ArenaBattle; mid: number; badge?: ReactNode; noChase?: boolean }) {
   const settled = b.status === "settled";
   const a = settled ? b.faderRoi ?? 0 : roiOf(b.faderLeg, mid), t = settled ? b.targetRoi ?? 0 : roiOf(b.targetLeg, mid);
   const total = Math.abs(a) + Math.abs(t) || 1;
@@ -75,7 +287,7 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
     <Link href={`/battle/${b.faderPostId}`} className={`arow ${b.nemesis ? "nemesis" : ""} ${flip ? "flip" : ""}`}>
       {b.nemesis && <NemesisBar b={b} />}
       {isFightNight(b.createdAt) && b.status === "open" && <span className="fn-badge gl"><Glyph n="glove" />Fight Night · 2× XP</span>}
-      {!settled && (b.faderLeg.status === "closed" || b.targetLeg.status === "closed") && (() => {
+      {!settled && !noChase && (b.faderLeg.status === "closed" || b.targetLeg.status === "closed") && (() => {
         const fBanked = b.faderLeg.status === "closed", banker = fBanked ? b.fader : b.target, chaser = fBanked ? b.target : b.fader;
         const bank = fBanked ? a : t, now = fBanked ? t : a;
         return <span className={`chase-badge gl ${now > bank ? "ahead" : ""}`}><Glyph n="bank" />{banker.handle} banked {fmtPct(bank, 1)} · {chaser.handle} {now > bank ? "ahead" : "chasing"}</span>;
@@ -253,73 +465,86 @@ export default function ArenaPage() {
   );
 }
 
-/** Live battles split four ways: All · High stakes · Following · Bloodbath. */
+/** Live battles by tab: All · Following · Vendettas · High stakes · Gladiators · Bloodbath. */
 function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, number>; me: string | null }) {
-  const [tab, setTab] = useState<Tab>("all");
+  // Two questions, two controls: whose fights (Everyone / Following) and how hot (All · Vendettas · High stakes · Bloodbath).
+  const [scope, setScope] = useState<"everyone" | "following">("everyone");
+  const [tab, setTab] = useState<Heat>("all");
   const { set: follow } = useFollowing();
   const rivals = new Set((data.me?.rivals ?? []).map((r) => r.user.handle));
-  // Nemesis matches float to the top of the live list.
-  const rows = data.live.map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) })).sort((x, y) => Number(!!y.b.nemesis) - Number(!!x.b.nemesis));
-  const nem = rows.filter((x) => !!x.b.nemesis);
   const mine = (b: ArenaBattle) => !!me && (b.fader.handle === me || b.target.handle === me);
   const followed = (b: ArenaBattle) => follow.has(b.fader.handle) || follow.has(b.target.handle) || rivals.has(b.fader.handle) || rivals.has(b.target.handle);
+  const inScope = (b: ArenaBattle) => scope === "everyone" || mine(b) || followed(b);
+  // Nemesis matches float to the top; in Following, your own fades come first, then the newest.
+  const all = data.live.map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) }));
+  const rows = all.filter((x) => inScope(x.b)).sort((x, y) => scope === "following"
+    ? Number(mine(y.b)) - Number(mine(x.b)) || +new Date(y.b.createdAt) - +new Date(x.b.createdAt)
+    : Number(!!y.b.nemesis) - Number(!!x.b.nemesis));
+  const nem = rows.filter((x) => !!x.b.nemesis);
   const high = rows.filter((x) => x.r.high).sort((x, y) => y.r.risk - x.r.risk);
-  const fol = rows.filter((x) => mine(x.b) || followed(x.b)).sort((x, y) => Number(mine(y.b)) - Number(mine(x.b)) || +new Date(y.b.createdAt) - +new Date(x.b.createdAt));
-  const blood = rows.filter((x) => x.r.blood).sort((x, y) => y.r.gap - x.r.gap);
-  const rekt = (data.rekt ?? []).map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) }));
-  const tabs: { k: Tab; icon: ReactNode; short: string; n: number }[] = [
-    { k: "all", icon: <Glyph n="bolt" />, short: "All", n: rows.length },
-    { k: "following", icon: <Glyph n="people" />, short: "Following", n: fol.length },
-    { k: "nemesis", icon: <Glyph n="skull" />, short: "Vendettas", n: nem.length },
-    { k: "high", icon: <Glyph n="flame" />, short: "High stakes", n: high.length },
-    { k: "blood", icon: <Glyph n="drop" />, short: "Bloodbath", n: blood.length + rekt.length },
+  // Knockouts: one side is already out (stopped, liquidated or banked), the other still in. Newest first, 24 hours each.
+  const solo = (b: ArenaBattle) => (b.faderLeg.status === "open") !== (b.targetLeg.status === "open");
+  const koAt = (b: ArenaBattle) => +new Date((b.faderLeg.status === "open" ? b.targetLeg : b.faderLeg).closedAt ?? b.createdAt);
+  const knocked = rows.filter((x) => solo(x.b) && Date.now() - koAt(x.b) < 86_400_000).sort((x, y) => koAt(y.b) - koAt(x.b));
+  const blood = rows.filter((x) => x.r.blood && !solo(x.b)).sort((x, y) => y.r.gap - x.r.gap);
+  const rekt = (data.rekt ?? []).map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) })).filter((x) => inScope(x.b));
+  const nFol = all.filter((x) => mine(x.b) || followed(x.b)).length;
+  const pills: { k: Heat; short: string; n: number }[] = [
+    { k: "all", short: "All", n: rows.length },
+    { k: "nemesis", short: "Vendettas", n: nem.length },
+    { k: "high", short: "High stakes", n: high.length },
+    { k: "blood", short: "Bloodbath", n: blood.length + knocked.length + rekt.length },
   ];
   const flames = (n: number) => <span className="flames">{Array.from({ length: n }, (_, i) => <Glyph key={i} n="flame" tone="gold" />)}</span>;
   const tag = (b: ArenaBattle) => mine(b) ? "your fade" : rivals.has(b.fader.handle) ? `your rival ${b.fader.handle}` : rivals.has(b.target.handle) ? `your rival ${b.target.handle}` : follow.has(b.fader.handle) ? `you follow ${b.fader.handle}` : follow.has(b.target.handle) ? `you follow ${b.target.handle}` : "";
-  const list = tab === "all" ? rows : tab === "nemesis" ? nem : tab === "high" ? high : tab === "following" ? fol : blood;
+  const list = tab === "all" ? rows : tab === "nemesis" ? nem : high;
+  const row = ({ b, r }: { b: ArenaBattle; r: ReturnType<typeof readBattle> }, kind: Heat | "ko") => (
+    <div key={`${kind}${b.id}`}>
+      <BattleRow b={b} mid={mids[b.coin] ?? 0} noChase={kind === "ko"} badge={
+        kind === "high" ? <><span>{flames(r.heat)}</span><b className="mono">{b.faderLeg.leverage}× vs {b.targetLeg.leverage}×</b>{r.minLiq < 50 && <span className="ab-warn">{r.closer.handle} liq in {r.minLiq.toFixed(1)}%</span>}</>
+        : kind === "blood" ? <><Glyph n="skull" tone="blood" /><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted"><span className="gl">{r.winner.handle}<Glyph n="crown" tone="gold" /></span></span></>
+        : kind === "ko" ? <GladBadge b={b} r={r} />
+        : scope === "following" && tag(b) ? <span className="ab-tag">{tag(b)}</span>
+        : undefined
+      } />
+      <div className="bb-under"><FinishSave b={b} winner={r.winner} loser={r.loser} quiet={kind !== "blood"} /></div>
+    </div>
+  );
+  const empty = scope === "following" && !rows.length;
   return (
     <section className="block">
-      <div className="flex items-center justify-between"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Live fades</span><span className="when">{rows.length} live</span></div>
-      {/* Every tab in one bar, no scrolling: levels of heat from everything to the bloodbath. */}
-      <div className="alevels mt-3" role="tablist">
-        {tabs.map((t) => <button key={t.k} role="tab" aria-selected={tab === t.k} className={`alv lv-${t.k} ${tab === t.k ? "on" : ""}`} onClick={() => setTab(t.k)}><span className="alv-ic">{t.icon}</span><span className="alv-l">{t.short}</span><span className="alv-n mono">{t.n}</span></button>)}
+      <div className="flex items-center justify-between"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Live fades</span><span className="when">{all.length} live</span></div>
+      <KillTicker kills={data.kills ?? []} />
+      <div className="ascope mt-3" role="tablist" aria-label="Whose fades">
+        <button role="tab" aria-selected={scope === "everyone"} className={scope === "everyone" ? "on" : ""} onClick={() => setScope("everyone")}>Everyone<small>{all.length}</small></button>
+        <button role="tab" aria-selected={scope === "following"} className={scope === "following" ? "on" : ""} onClick={() => setScope("following")}>Following<small>{nFol}</small></button>
       </div>
-      {tab === "blood" && (
-        <div className="mt-3 flex flex-col gap-3">
-          {blood[0] && <BloodPit b={blood[0].b} mid={mids[blood[0].b.coin] ?? 0} winner={blood[0].r.winner} loser={blood[0].r.loser} worst={blood[0].r.worst} minLiq={blood[0].r.minLiq} />}
-          <KillFeed kills={data.kills ?? []} />
+      <div className="aheat mt-2" role="tablist" aria-label="How hot">
+        {pills.map((t) => <button key={t.k} role="tab" aria-selected={tab === t.k} className={`ah-${t.k} ${tab === t.k ? "on" : ""}`} onClick={() => setTab(t.k)}>{t.short}<small className="mono">{t.n}</small></button>)}
+      </div>
+
+      {empty ? (
+        <div className="aempty mt-3">
+          <p className="muted text-sm">Follow traders to fill this. Their fades show up here the moment they fade or get faded.</p>
+          <div className="mt-2 flex flex-col gap-2">{data.streaks.slice(0, 3).map((s) => (
+            <div key={s.user.id} className="flex items-center gap-2.5"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={30} /><span className="flex-1 truncate text-[14px] font-bold">{s.user.handle}<span className="when ml-1.5 gl"><Glyph n="flame" tone="gold" />{s.streak} streak</span></span><FollowButton handle={s.user.handle} compact /></div>
+          ))}</div>
+        </div>
+      ) : tab === "blood" ? (
+        <BloodHub blood={blood} knocked={knocked} rekt={rekt} data={data} />
+      ) : tab === "all" ? (
+        <AllHub rows={rows} nem={nem} high={high} mine={rows.find((x) => mine(x.b)) ?? null} list={
+        <div className="flex flex-col gap-2">
+          {list.map((x) => row(x, tab))}
+          {!list.length && <p className="muted text-sm">No fades running. Fade a trade in the feed to start one.</p>}
+        </div>
+        } />
+      ) : (
+        <div className="mt-3 flex flex-col gap-2">
+          {list.map((x) => row(x, tab))}
+          {!list.length && <p className="muted text-sm">{tab === "high" ? "No high-stakes fades right now. Nobody's above 20× or near liquidation." : tab === "nemesis" ? "No vendettas running right now. A vendetta is a feud between two traders who have fought each other more than anyone else, or where one called the other out." : "No fades running. Fade a trade in the feed to start one."}</p>}
         </div>
       )}
-      <div className="mt-3 flex flex-col gap-2">
-        {tab === "blood" && rekt.map(({ b, r }) => (
-          <div key={`rekt${b.id}`} className="tomb">
-            <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={<><span className="rekt">REKT</span><span className="gl"><Glyph n="tomb" /><b>{r.loser.handle}</b> got liquidated by <b>{r.winner.handle}</b></span></>} />
-            <div className="bb-under"><RevengeButton handle={r.winner.handle} label={<span className="gl"><Glyph n="drop" />Revenge on {r.winner.handle}</span>} /></div>
-          </div>
-        ))}
-        {(tab === "blood" ? list.slice(1) : list).map(({ b, r }) => (
-          <div key={b.id}>
-          <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={
-            tab === "high" ? <><span>{flames(r.heat)}</span><b className="mono">{b.faderLeg.leverage}× vs {b.targetLeg.leverage}×</b>{r.minLiq < 50 && <span className="ab-warn">{r.closer.handle} liq in {r.minLiq.toFixed(1)}%</span>}</>
-            : tab === "blood" ? <><Glyph n="skull" tone="blood" /><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted"><span className="gl">{r.winner.handle}<Glyph n="crown" tone="gold" /></span></span></>
-            : tab === "following" && tag(b) ? <span className="ab-tag">{tag(b)}</span>
-            : undefined
-          } />
-          {tab === "blood" && <div className="bb-under"><FinishSave b={b} winner={r.winner} loser={r.loser} /></div>}
-          </div>
-        ))}
-        {tab === "blood" && <BodyCount board={data.board} />}
-        {!list.length && !(tab === "blood" && rekt.length) && (
-          tab === "following" ? (
-            <div className="aempty">
-              <p className="muted text-sm">Follow traders to fill this tab. Their fades show up here the moment they fade or get faded.</p>
-              <div className="mt-2 flex flex-col gap-2">{data.streaks.slice(0, 3).map((s) => (
-                <div key={s.user.id} className="flex items-center gap-2.5"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={30} /><span className="flex-1 truncate text-[14px] font-bold">{s.user.handle}<span className="when ml-1.5 gl"><Glyph n="flame" tone="gold" />{s.streak} streak</span></span><FollowButton handle={s.user.handle} compact /></div>
-              ))}</div>
-            </div>
-          ) : <p className="muted text-sm">{tab === "high" ? "No high-stakes fades right now. Nobody's above 20× or near liquidation." : tab === "blood" ? "No bloodbaths right now. Everyone's still standing." : tab === "nemesis" ? "No vendettas running right now. A vendetta is a feud between two traders who have fought each other more than anyone else, or where one called the other out." : "No fades running. Fade a trade in the feed to start one."}</p>
-        )}
-      </div>
     </section>
   );
 }

@@ -32,7 +32,8 @@ function Bar({ f, live, right }: { f: Fighter; live: number; right?: boolean }) 
 }
 
 /** Finish them (back the winner) / Save them (back the loser): one-tap, size-only, same leverage. */
-export function FinishSave({ b, winner, loser }: { b: ArenaBattle; winner: Mini; loser: Mini }) {
+/** Finish them / Save them in the Bloodbath; `quiet` gives every other battle a neutral "Back X / Back Y" pair (fader left, target right). */
+export function FinishSave({ b, winner, loser, quiet, compact }: { b: ArenaBattle; winner: Mini; loser: Mini; quiet?: boolean; compact?: boolean }) {
   const { authenticated, login, profile } = useSession();
   const [open, setOpen] = useState<null | { item: FeedRow; title: string }>(null);
   // The two fighters can't back a side of their own fight.
@@ -45,6 +46,27 @@ export function FinishSave({ b, winner, loser }: { b: ArenaBattle; winner: Mini;
   // A side that already banked (closed) can't be backed any more.
   const wOpen = legOf(b, winner).status === "open", lOpen = legOf(b, loser).status === "open";
   if (inFight || (!wOpen && !lOpen)) return null;
+  if (compact) {
+    // One button for a hub card: finish the winner while they can be backed, otherwise save the loser.
+    const u = wOpen ? winner : loser, fin = wOpen;
+    return (
+      <>
+        <button className={`hub-btn ${fin ? "fin" : ""}`} onClick={() => pick(u, fin ? "Finish them · back" : "Save them · back")}><span className="gl"><Glyph n={fin ? "dagger" : "buoy"} />{fin ? "Finish them" : "Save them"}</span></button>
+        {open && <QuickTrade item={open.item} mode="copy" lock title={open.title} onClose={() => setOpen(null)} />}
+      </>
+    );
+  }
+  if (quiet) {
+    const sides = [b.fader, b.target].filter((u) => legOf(b, u).status === "open");
+    return (
+      <>
+        <div className="bb-acts quiet" style={sides.length > 1 ? undefined : { gridTemplateColumns: "1fr" }}>
+          {sides.map((u) => <button key={u.id} onClick={() => pick(u, "Back")}><span>Back <b>{u.handle}</b></span></button>)}
+        </div>
+        {open && <QuickTrade item={open.item} mode="copy" lock title={open.title} onClose={() => setOpen(null)} />}
+      </>
+    );
+  }
   return (
     <>
       <div className="bb-acts" style={wOpen && lOpen ? undefined : { gridTemplateColumns: "1fr" }}>
