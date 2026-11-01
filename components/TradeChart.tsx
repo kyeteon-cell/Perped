@@ -120,7 +120,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
             <>
               {lvls.filter((l) => near(l.p)).map((l) => <span key={l.key} className={`tc-lv ${l.cls}`} style={{ top: pct(l.p) }}>{l.label}</span>)}
               <span className={`tc-act ${side}`} style={{ top: pct(entry), left: pctX(ex) }}>{side === "long" ? "▲ BUY" : "▼ SELL"}</span>
-              <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: pct(live), left: `${(nowX / W) * 100}%`, right: "auto" }} />
+              <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: `clamp(9px, ${pct(live)}, calc(100% - 9px))`, left: `${(nowX / W) * 100}%`, right: "auto" }} />
               <span className={`tc-zl up ${side === "long" ? "g" : "r"}`}>{side === "long" ? "profit" : "loss"}</span>
               <span className={`tc-zl down ${side === "long" ? "r" : "g"}`}>{side === "long" ? "loss" : "profit"}</span>
             </>

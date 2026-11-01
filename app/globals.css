@@ -1484,3 +1484,9 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .bcc-dot { right: auto; margin-left: -4px; }
 .bcc-zone { position: absolute; font-size: 9.5px; font-weight: 900; letter-spacing: .03em; white-space: nowrap; pointer-events: none; max-width: 24%; overflow: hidden; text-overflow: ellipsis; }
 .bcc-zone.up { top: 30px; color: var(--green); } .bcc-zone.down { bottom: 6px; color: var(--red); }
+/* "Now" marker: a steady dot with a soft ring that ripples out (the dot itself no longer blinks or grows) */
+.tc-dot, .bcc-dot { animation: none !important; width: 9px; height: 9px; margin-top: -4.5px; margin-left: -4.5px; box-shadow: 0 0 0 2px var(--surface); z-index: 2; }
+.tc-dot::after, .bcc-dot::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid currentColor; opacity: 0; animation: nowping 2.2s ease-out infinite; }
+.tc-dot.g { color: var(--green); } .tc-dot.r { color: var(--red); } .bcc-dot { color: var(--text); }
+@keyframes nowping { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(2.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tc-dot::after, .bcc-dot::after { animation: none; } }
