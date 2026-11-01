@@ -1595,3 +1595,21 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .hub-mini.rekt { background: linear-gradient(180deg, color-mix(in srgb, var(--text) 5%, var(--surface)), var(--surface)); }
 .hub-pair { display: flex; }
 .hub-pair > * + * { margin-left: -8px; box-shadow: 0 0 0 2px var(--surface); border-radius: 50%; }
+
+/* All hub, kill ticker, knockout countdown */
+.hub-card.main { border-color: color-mix(in srgb, var(--gold) 50%, var(--line)); background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, var(--surface)), var(--surface) 70%); }
+.hub-card.yours { background: linear-gradient(180deg, color-mix(in srgb, var(--text) 5%, var(--surface)), var(--surface) 70%); }
+.hub-tag.gold { color: #2a1c00; background: linear-gradient(180deg, #ffd98a, #f2b63a 55%, #c98a05); }
+.hub-tag.ink { color: var(--ink-fg); background: var(--ink); }
+.hub-side { font-family: var(--font-mono), "Barlow", sans-serif; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 6px; }
+.hub-side.long { background: var(--green-soft); color: var(--green); } .hub-side.short { background: var(--red-soft); color: var(--red); }
+.hub-mini.nem { border-color: color-mix(in srgb, #8b5cf6 45%, var(--line)); }
+.hub-left { font-size: 10.5px; font-weight: 700; color: var(--muted); text-align: center; }
+.kticker { position: relative; overflow: hidden; margin-top: 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.kt-track { display: flex; width: max-content; animation: ktscroll 40s linear infinite; }
+.kticker:hover .kt-track { animation-play-state: paused; }
+.kt-item { display: inline-flex; align-items: center; gap: 5px; padding: 7px 18px 7px 0; font-size: 12px; white-space: nowrap; color: var(--text); }
+.kt-item .g { width: 14px; height: 14px; }
+.kt-item .when { font-size: 11px; }
+@keyframes ktscroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .kt-track { animation: none; } }

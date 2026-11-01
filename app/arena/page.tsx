@@ -123,6 +123,7 @@ function StandingCard({ list }: { list: Row[] }) {
           <span className={`glad-st ${k.winning ? "g" : "r"}`}>{k.winning ? "Winning" : "Chasing"}</span>
         </div>
         <div className="hub-foot when truncate"><b>{k.out.handle}</b> {k.how} {fmtPct(k.outRoi, 1)}{k.outLeg.closedAt ? ` · ${timeAgo(k.outLeg.closedAt)}` : ""}</div>
+        {k.outLeg.closedAt && <div className="hub-left">{leftOf(k.outLeg.closedAt)}</div>}
       </Link>
       {list.length > 1 && (
         <div className="hub-dots" role="tablist">
@@ -135,8 +136,27 @@ function StandingCard({ list }: { list: Row[] }) {
 }
 
 /** Small swipeable card for the rails. */
-function MiniFight({ x, rekt }: { x: Row; rekt?: boolean }) {
+/** Time left before a knockout drops off Last standing (24 hours after it happened). */
+const leftOf = (at: string) => {
+  const ms = 86_400_000 - (Date.now() - +new Date(at));
+  if (ms <= 0) return "dropping off";
+  const h = Math.floor(ms / 3_600_000), m = Math.floor((ms % 3_600_000) / 60_000);
+  return `drops off in ${h ? `${h}h ` : ""}${m}m`;
+};
+
+function MiniFight({ x, rekt, lead }: { x: Row; rekt?: boolean; lead?: boolean }) {
   const { b, r } = x;
+  if (lead) {
+    const wr = r.winner.id === b.fader.id ? r.a : r.t;
+    return (
+      <Link href={`/battle/${b.faderPostId}`} className={`hub-mini ${b.nemesis ? "nem" : ""}`}>
+        <div className="hub-head"><span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span><span className="mono when">{b.faderLeg.leverage}×·{b.targetLeg.leverage}×</span></div>
+        <div className="hub-pair"><Avatar handle={r.winner.handle} url={r.winner.avatarUrl} size={30} link={false} /><Avatar handle={r.loser.handle} url={r.loser.avatarUrl} size={30} link={false} /></div>
+        <div className="truncate text-[12.5px] font-bold">{r.winner.handle} <span className="muted font-medium">leads</span></div>
+        <div className={`mono text-[13px] font-extrabold ${wr >= 0 ? "green" : "red"}`}>{fmtPct(wr, 1)}</div>
+      </Link>
+    );
+  }
   return (
     <Link href={`/battle/${b.faderPostId}`} className={`hub-mini ${rekt ? "rekt" : ""}`}>
       <div className="hub-head"><span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span>{rekt ? <span className="rekt">REKT</span> : <span className="mono when">{fmtPct(r.gap, 0).replace(/^[+−-]/, "")} gap</span>}</div>
@@ -147,13 +167,82 @@ function MiniFight({ x, rekt }: { x: Row; rekt?: boolean }) {
   );
 }
 
+/** Hub card for the All tab: one fight up big, both fighters and their P&L. */
+function FightCard({ x, tag, cls }: { x: Row; tag: ReactNode; cls: string }) {
+  const { b } = x, fa = b.fader, ta = b.target;
+  return (
+    <div className={`hub-card ${cls}`}>
+      <Link href={`/battle/${b.faderPostId}`} className="hub-body">
+        <div className="hub-head">{tag}<span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span></div>
+        {[[fa, x.r.a, b.faderLeg], [ta, x.r.t, b.targetLeg]].map(([u, roi, l], i) => {
+          const uu = u as ArenaBattle["fader"], rr = roi as number, ll = l as ArenaBattle["faderLeg"];
+          return (
+            <div key={i} className="hub-f">
+              <span className={`hub-av ${uu.id === x.r.winner.id && x.r.gap > 0.05 ? "win" : ""}`}><Avatar handle={uu.handle} url={uu.avatarUrl} size={34} link={false} />{uu.id === x.r.winner.id && x.r.gap > 0.05 && <em><Glyph n="crown" tone="gold" /></em>}</span>
+              <b className="truncate">{uu.handle}</b>
+              <span className="flex items-center gap-1.5"><span className={`mono ${rr >= 0 ? "green" : "red"}`}>{fmtPct(rr, 1)}</span><span className={`hub-side ${ll.side}`}>{ll.side === "long" ? "L" : "S"} {ll.leverage}×</span></span>
+            </div>
+          );
+        })}
+        <div className="hub-foot">{x.r.minLiq < 50 ? <span className="ab-warn">liq in {x.r.minLiq.toFixed(1)}%</span> : <span className="when">{fmtPct(x.r.gap, 1).replace(/^[+−-]/, "")} gap · {timeAgo(b.createdAt)}</span>}</div>
+      </Link>
+      <FinishSave b={b} winner={x.r.winner} loser={x.r.loser} quiet />
+    </div>
+  );
+}
+
+/** The All tab as a hub: Main event beside Your fight, then swipeable rails, then every fade. */
+function AllHub({ rows, nem, high, mine, list }: { rows: Row[]; nem: Row[]; high: Row[]; mine: Row | null; list: ReactNode }) {
+  const main = [...rows].sort((x, y) => y.r.risk - x.r.risk)[0];
+  if (!main) return <>{list}</>;
+  return (
+    <div className="mt-3 flex flex-col gap-3">
+      <div className="hub-hero">
+        <FightCard x={main} cls="main" tag={<span className="hub-tag gold gl"><Glyph n="trophy" />Main event</span>} />
+        {mine && mine.b.id !== main.b.id ? <FightCard x={mine} cls="yours" tag={<span className="hub-tag ink gl"><Glyph n="swords" />Your fight</span>} />
+          : (
+            <div className="hub-card yours empty">
+              <div className="hub-head"><span className="hub-tag ink gl"><Glyph n="swords" />Your fight</span></div>
+              <p className="when mt-1">{mine ? "You're in the main event." : "You're not in a fade right now. Fade a trade from the feed and your fight lives here."}</p>
+              <Link href="/" className="hub-btn mt-auto text-center">Find a trade to fade</Link>
+            </div>
+          )}
+      </div>
+      {nem.length > 0 && (
+        <section>
+          <div className="asub"><Glyph n="skull" /><b>Vendettas</b><span className="when">swipe</span></div>
+          <div className="hub-rail">{nem.map((x) => <MiniFight key={x.b.id} x={x} lead />)}</div>
+        </section>
+      )}
+      {high.length > 0 && (
+        <section>
+          <div className="asub"><Glyph n="flame" /><b>High stakes</b><span className="when">swipe</span></div>
+          <div className="hub-rail">{high.slice(0, 12).map((x) => <MiniFight key={x.b.id} x={x} lead />)}</div>
+        </section>
+      )}
+      <div className="asub"><Glyph n="bolt" /><b>Every fade</b><span className="when">{rows.length} live</span></div>
+      {list}
+    </div>
+  );
+}
+
+/** Slim kill ticker along the top of the Arena: who got liquidated by whom, scrolling. */
+function KillTicker({ kills }: { kills: ArenaBattle[] }) {
+  if (!kills.length) return null;
+  const items = kills.slice(0, 8).map((b) => {
+    const w = b.winnerId === b.fader.id ? b.fader : b.target, l = w.id === b.fader.id ? b.target : b.fader;
+    return <Link key={b.id} href={`/battle/${b.faderPostId}`} className="kt-item"><Glyph n="skull" tone="blood" /><b>{w.handle}</b> perped <b>{l.handle}</b><span className="when">{ticker(b.coin)} · {timeAgo(b.settledAt ?? b.createdAt)}</span></Link>;
+  });
+  return <div className="kticker" aria-label="Recent liquidations"><div className="kt-track">{items}{items.map((it, i) => <span key={`d${i}`} aria-hidden>{it}</span>)}</div></div>;
+}
+
 /** The Bloodbath as a hub: numbers up top, the Pit beside Last standing, then swipeable rails. */
 function BloodHub({ blood, knocked, rekt, data }: { blood: Row[]; knocked: Row[]; rekt: Row[]; data: ArenaRes }) {
   const kills24 = (data.kills ?? []).filter((k) => Date.now() - +new Date(k.settledAt ?? k.createdAt) < 86_400_000).length;
   return (
     <div className="mt-3 flex flex-col gap-3">
       <div className="hub-stats">
-        <div><b className="mono">{blood.length}</b><span>bleeding</span></div>
+        <div><b className="mono">{blood.length}</b><span>getting perped</span></div>
         <div><b className="mono">{knocked.length}</b><span>knocked out</span></div>
         <div><b className="mono">{kills24}</b><span>liquidated 24h</span></div>
         <div><b className="mono">{blood[0] ? fmtPct(blood[0].r.gap, 0).replace(/^[+−-]/, "") : "–"}</b><span>widest gap</span></div>
@@ -164,7 +253,7 @@ function BloodHub({ blood, knocked, rekt, data }: { blood: Row[]; knocked: Row[]
       </div>
       {blood.length > 1 && (
         <section>
-          <div className="asub"><Glyph n="drop" /><b>Bleeding now</b><span className="when">swipe</span></div>
+          <div className="asub"><Glyph n="drop" /><b>Getting perped</b><span className="when">swipe</span></div>
           <div className="hub-rail">{blood.slice(1).map((x) => <MiniFight key={x.b.id} x={x} />)}</div>
         </section>
       )}
@@ -425,6 +514,7 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   return (
     <section className="block">
       <div className="flex items-center justify-between"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Live fades</span><span className="when">{all.length} live</span></div>
+      <KillTicker kills={data.kills ?? []} />
       <div className="ascope mt-3" role="tablist" aria-label="Whose fades">
         <button role="tab" aria-selected={scope === "everyone"} className={scope === "everyone" ? "on" : ""} onClick={() => setScope("everyone")}>Everyone<small>{all.length}</small></button>
         <button role="tab" aria-selected={scope === "following"} className={scope === "following" ? "on" : ""} onClick={() => setScope("following")}>Following<small>{nFol}</small></button>
@@ -442,6 +532,13 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
         </div>
       ) : tab === "blood" ? (
         <BloodHub blood={blood} knocked={knocked} rekt={rekt} data={data} />
+      ) : tab === "all" ? (
+        <AllHub rows={rows} nem={nem} high={high} mine={rows.find((x) => mine(x.b)) ?? null} list={
+        <div className="flex flex-col gap-2">
+          {list.map((x) => row(x, tab))}
+          {!list.length && <p className="muted text-sm">No fades running. Fade a trade in the feed to start one.</p>}
+        </div>
+        } />
       ) : (
         <div className="mt-3 flex flex-col gap-2">
           {list.map((x) => row(x, tab))}
