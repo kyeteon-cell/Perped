@@ -13,6 +13,7 @@ type P = {
   month: { paidOut: number; invite: number; invite2: number; creator: number };
   health: { builder: boolean; appUrl: string; cronSecret: boolean; nextRelease: string };
   totals: { people?: number; live?: number; invited?: number; owed?: number };
+  live?: { open: boolean; openedAt?: string };
   errors: Record<string, string>;
   error?: string;
 };
@@ -73,6 +74,13 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
         <div><small>Waitlist</small><b className="mono">{p.waitlist.waiting}</b><span>{p.waitlist.paused ? "paused" : `next ${new Date(p.waitlist.next).toLocaleDateString("en-GB", { weekday: "short" })} 9pm`}</span></div>
         <div><small>Owed</small><b className="mono">{usd(Math.max(0, t.owed ?? 0))}</b><span>to pay out</span></div>
       </div>
+
+      <section className={`inv-card mt-3 live-switch ${p.live?.open ? "is-open" : ""}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div><span className="eyebrow">Real-money trading</span><p className="mt-1 text-[14px]"><b>{p.live?.open ? "Open" : "Closed · demo only"}</b><span className="when ml-1.5">{p.live?.open ? "everyone with access can go live" : "staff can still test real trades"}</span></p></div>
+          {owner && <button className={`btn ${p.live?.open ? "" : "brand"}`} style={{ padding: "10px 14px", fontSize: 13, flex: "none" }} onClick={() => confirm(p.live?.open ? "Close real-money trading? Everyone goes back to demo." : "Open real-money trading for everyone with access?") && act({ action: "live", open: !p.live?.open }, (j) => ((j.live as { open: boolean }).open ? "Real money is open" : "Real money is closed, demo only"))}>{p.live?.open ? "Close" : "Open"}</button>}
+        </div>
+      </section>
 
       <div className="adm-tabs" role="tablist">{tabs.map(([k, label, badge]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => { setTab(k); setMsg(null); }}>{label}{badge && <small>{badge}</small>}</button>)}</div>
       {msg && <div className="adm-msg mt-3">{msg}</div>}

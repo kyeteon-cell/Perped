@@ -11,6 +11,7 @@ import { Icon, I } from "@/components/ui";
 import { SignInOptions } from "@/components/SignInOptions";
 import { Intro } from "@/components/Intro";
 import { track } from "@/lib/track";
+import { useLive } from "@/lib/hooks/useLive";
 
 /**
  * Five steps: welcome/login → handle → how it works → fee approval (skippable) → funded or explore.
@@ -20,6 +21,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { ready, authenticated, login, address, walletClient, profile, profileLoading, authedFetch, refreshMe, fee, loginError, hasExternalWallet, linkWallet, linkError, isGuest, startGuest } = useSession();
   const [step, setStep] = useState(1);
+  const { allowed: liveOk, gate } = useLive();
   const [handle, setHandle] = useState("");
   const [bio, setBio] = useState("");
   const [avail, setAvail] = useState<null | boolean>(null);
@@ -109,7 +111,7 @@ export default function OnboardingPage() {
       {step === 3 && (
         <div className="flex-1 pt-2">
           <div className="px-6"><Progress n={3} /></div>
-          <Intro onDone={() => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} track("intro_done"); setStep(hasExternalWallet ? 4 : 5); }} doneLabel="Got it" />
+          <Intro onDone={() => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} track("intro_done"); setStep(hasExternalWallet && liveOk ? 4 : 5); }} doneLabel="Got it" />
         </div>
       )}
 
@@ -137,7 +139,7 @@ export default function OnboardingPage() {
         <>
           <div className="flex-1 px-6 pb-3 pt-6">
             <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">You&apos;re in{profile ? `, ${profile.handle}` : ""}.</h2>
-            {hasExternalWallet ? (
+            {hasExternalWallet && liveOk ? (
               <>
                 <p className="muted mt-2.5">Your wallet is connected and set as your Hyperliquid account. Fund it when you want to trade, or go look around first.</p>
                 <div className="card mt-4 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>Your Hyperliquid wallet {HL_NETWORK === "testnet" ? "(testnet)" : ""}</div><div className="mono mt-1.5 break-all text-[13px]">{address}</div><button className="chip info mt-3" onClick={copy}>{copied ? "Copied" : "Copy address"}</button></div>
@@ -149,7 +151,11 @@ export default function OnboardingPage() {
             ) : (
               <>
                 <p className="muted mt-2.5">You&apos;re in <b>demo mode</b> with $10,000 of practice money. Fills are simulated at live Hyperliquid prices and tagged Demo in the feed. Nothing is at risk.</p>
-                <button className="card mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" style={{ border: "1.5px solid var(--brand)" }} onClick={isGuest ? login : linkWallet}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}><Icon d={I.wallet} /></div><div><b>{isGuest ? "Sign in to keep your account or trade real money" : "Connect a wallet to trade real money"}</b><p className="muted mt-1 text-[13px]">{isGuest ? "Guest demo lives on this device only. Sign in with X to keep your record, or connect a wallet to trade for real." : "MetaMask, Rabby, Rainbow or WalletConnect. Your wallet becomes your Hyperliquid account. You can do this any time from Settings."}</p></div></button>
+                {isGuest || liveOk ? (
+                  <button className="card mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" style={{ border: "1.5px solid var(--brand)" }} onClick={isGuest ? login : linkWallet}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}><Icon d={I.wallet} /></div><div><b>{isGuest ? (liveOk ? "Sign in to keep your account or trade real money" : "Sign in to keep your account") : "Connect a wallet to trade real money"}</b><p className="muted mt-1 text-[13px]">{isGuest ? (liveOk ? "Guest demo lives on this device only. Sign in with X to keep your record, or connect a wallet to trade for real." : "Guest demo lives on this device only. Sign in with X to keep your record and get early access to real money.") : "MetaMask, Rabby, Rainbow or WalletConnect. Your wallet becomes your Hyperliquid account. You can do this any time from Settings."}</p></div></button>
+                ) : (
+                  <button className="card live-off mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" onClick={gate(() => null)}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--surface)", color: "var(--muted)" }}><Icon d={I.lock} /></div><div><b>Real money<span className="soon-pill">Soon</span></b><p className="muted mt-1 text-[13px]">Real trading on Hyperliquid opens soon. Tap for early access. Your demo record counts toward Season 0.</p></div></button>
+                )}
                 {linkError && <p className="red mt-2 text-sm">{linkError}</p>}
               </>
             )}

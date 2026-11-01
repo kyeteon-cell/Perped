@@ -5,6 +5,7 @@ import { staffFrom } from "@/lib/staff";
 import { addFounder, expireIdleFounders, getWaitlistSettings, letIn, nextRelease, releaseWaitlist, removeFounder, renameUser, setRole, setWaitlistSettings, waitlistCount } from "@/lib/programme";
 import { FOUNDER_GRACE_DAYS, FOUNDER_SEATS, FOUNDER_WAVE } from "@/lib/programme-rates";
 import { APP_URL, BUILDER_CONFIGURED } from "@/lib/config";
+import { getLiveSettings, setLiveOpen } from "@/lib/live";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export async function GET(req: Request) {
   const safe = async <T,>(name: string, f: () => Promise<T>, fallback: T): Promise<T> => {
     try { return await f(); } catch (e) { errors[name] = e instanceof Error ? e.message.slice(0, 300) : String(e); console.error(`[admin] ${name}:`, e); return fallback; }
   };
+  const live = await getLiveSettings();
   const [founders, admins, wl, waiting, money, totals] = await Promise.all([
     safe("founders", () => db.select({
       handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, seat: schema.users.founderSeat, since: schema.users.founderSince, status: schema.users.founderStatus,
@@ -52,6 +54,7 @@ export async function GET(req: Request) {
       nextRelease: nextRelease().toISOString(),
     },
     totals,
+    live,
     seats: { total: FOUNDER_SEATS, wave: FOUNDER_WAVE, filled: founders.filter((f) => f.status !== "expired").length, graceDays: FOUNDER_GRACE_DAYS },
     founders: founders.map((f) => ({ ...f, daysIn: f.since ? Math.floor((Date.now() - new Date(f.since).getTime()) / 86_400_000) : 0 })),
     staff: admins,
@@ -72,8 +75,9 @@ const Body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("whois"), handle: z.string() }),
   z.object({ action: z.literal("expireFounders") }),
   z.object({ action: z.literal("releaseNow") }),
+  z.object({ action: z.literal("live"), open: z.boolean() }),
 ]);
-const OWNER_ONLY = new Set(["addAdmin", "removeAdmin", "rename"]);
+const OWNER_ONLY = new Set(["addAdmin", "removeAdmin", "rename", "live"]);
 
 /** POST /api/admin/programme {action, …} → founders, admins, waitlist, renames. Admin/owner session or the CRON_SECRET key. */
 export async function POST(req: Request) {
@@ -108,6 +112,7 @@ async function runAction(b: z.infer<typeof Body>): Promise<Response> {
       return Response.json(u ? { ok: true, user: { ...u, id: undefined, guest: u.id.startsWith("guest:") } } : { ok: true, user: null });
     }
     case "expireFounders": return Response.json({ ok: true, expired: await expireIdleFounders() });
+    case "live": return Response.json({ ok: true, live: await setLiveOpen(b.open) });
     case "releaseNow": { const wl = await getWaitlistSettings(); return Response.json({ ok: true, released: await releaseWaitlist(wl.batch) }); }
   }
 }

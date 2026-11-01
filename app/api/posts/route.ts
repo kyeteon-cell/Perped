@@ -7,6 +7,7 @@ import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { queryFeed, notify } from "@/lib/feed";
 import { DEMO_ENABLED } from "@/lib/config";
+import { getLiveSettings, liveAllowed } from "@/lib/live";
 import { getFrontendOpenOrders, getMids, getPerpAssets } from "@/lib/hl-info";
 import { fillsForOrder, vwap } from "@/lib/hlfills";
 
@@ -168,6 +169,9 @@ export async function POST(req: Request) {
     }
   }
   const values: typeof schema.posts.$inferInsert = { userId: profile.id, kind: b.kind, body: "body" in b ? b.body : undefined };
+  if (b.kind === "trade" && !(b.paper || profile.isDemo) && !liveAllowed((await getLiveSettings()).open, profile)) {
+    return Response.json({ error: "live_closed", message: "Real-money trading opens soon. Trades are demo only for now." }, { status: 403 });
+  }
   if (b.kind === "trade" && (b.paper || profile.isDemo)) {
     if (!DEMO_ENABLED && !profile.isBot) return Response.json({ error: "demo mode is off; switch to live trading in Settings" }, { status: 403 });
     // Demo: fill at the live mid on the server, deduct margin from the virtual balance.

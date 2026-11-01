@@ -1,6 +1,7 @@
 "use client";
 
 import { SignInSheet } from "@/components/SignInSheet";
+import { ComingSoonSheet } from "@/components/ComingSoonSheet";
 import { SessionProvider } from "@/lib/hooks/useSession";
 import { PrivyProvider, usePrivy, useWallets } from "@privy-io/react-auth";
 import { useCallback, useEffect } from "react";
@@ -35,7 +36,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         supportedChains: [chain],
       }}
     >
-      <AuthedSWR><SessionProvider><Visit />{children}<SignInSheet /></SessionProvider></AuthedSWR>
+      <AuthedSWR><SessionProvider><Visit />{children}<SignInSheet /><ComingSoonSheet /></SessionProvider></AuthedSWR>
     </PrivyProvider>
   );
 }

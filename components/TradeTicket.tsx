@@ -12,6 +12,7 @@ import { getMaxBuilderFee } from "@/lib/hl-info";
 import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice, autoStopDist } from "@/lib/format";
 import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE } from "@/lib/config";
 import { CoinMark, ticker } from "./ui";
+import { useLive } from "@/lib/hooks/useLive";
 
 const QUICK = [50, 100, 250, 500, 1000, 2500];
 
@@ -44,7 +45,9 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
   const { mids } = useMids();
 
   const isFade = !!seed.fadedFromId;
-  const isDemo = !!profile?.isDemo;
+  const { allowed: liveOk } = useLive();
+  // Real money closed → every order is a demo fill, even if a stale profile still says live.
+  const isDemo = !!profile?.isDemo || !liveOk;
   const [coin, setCoin] = useState(seed.coin);
   const [side, setSide] = useState<"long" | "short">(seed.side ?? "long");
   const [usd, setUsd] = useState(seed.usd ?? 50);

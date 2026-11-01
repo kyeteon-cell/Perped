@@ -1397,3 +1397,18 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .adm-checks span { color: var(--muted); font-weight: 700; font-size: 12px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .adm-msg.bad { background: var(--red-soft); color: var(--red); }
 .adm-kv { display: grid; gap: 4px; font-size: 12.5px; } .adm-kv > div { display: flex; justify-content: space-between; gap: 10px; } .adm-kv span { color: var(--muted); font-weight: 700; }
+
+/* ---- Real money closed: greyed buttons + the Coming soon sheet ---- */
+.live-off { filter: grayscale(1); opacity: .55; position: relative; cursor: pointer; }
+.live-off:active { opacity: .7; }
+.soon-pill { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px; font-size: 9px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; background: var(--text); color: var(--bg); vertical-align: middle; line-height: 1.5; }
+.cs-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.cs-season { display: flex; gap: 12px; align-items: flex-start; margin-top: 16px; padding: 14px; border-radius: 16px; background: linear-gradient(135deg, rgba(242,182,58,.16), rgba(242,182,58,.04)); border: 1px solid rgba(242,182,58,.35); }
+.cs-season b { font-size: 15px; }
+.cs-ico { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: var(--gold); color: #1a1200; }
+.cs-ico.x { background: var(--text); color: var(--bg); border-radius: 50%; }
+.cs-state { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: 999px; font-size: 14px; font-weight: 700; background: var(--green-soft); color: var(--green); }
+.cs-x { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg); color: var(--text); text-decoration: none; }
+.cs-x b { font-size: 14px; }
+.cs-note { display: flex; gap: 10px; align-items: flex-start; width: 100%; margin-top: 10px; padding: 12px 14px; border-radius: 14px; text-align: left; font: inherit; font-size: 13px; line-height: 1.45; background: var(--gold-soft); border: 1px solid rgba(201,138,5,.35); color: var(--text); cursor: pointer; }
+.cs-note svg { flex: none; margin-top: 1px; color: var(--gold); }

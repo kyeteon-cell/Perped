@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "@/lib/hooks/useSession";
 import { track } from "@/lib/track";
+import { useLive } from "@/lib/hooks/useLive";
 
 /** The six things to know, one per slide. Each has a tiny live-looking mock so it reads at a glance. */
 const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock: React.ReactNode }[] = [
@@ -72,6 +73,18 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
   },
 ];
 
+/** The money slide while real trading is still closed. */
+const MONEY_SOON: (typeof SLIDES)[number] = {
+  k: "money", eyebrow: "6 · Your money", title: "Practice free. Real money soon.",
+  body: ["You start with $10,000 of demo money at live Hyperliquid prices. Nothing is at risk.", "Real trading opens soon. This is Season 0: your XP, rank and record carry over when it does."],
+  mock: (
+    <div className="im-card">
+      <div className="im-row"><span className="demo-tag">Demo</span><b className="mono">$10,000.00</b><span className="muted">practice balance</span></div>
+      <div className="im-row live-off"><span className="real-tag">Real</span><span>Your wallet → Hyperliquid</span><span className="soon-pill">Soon</span></div>
+    </div>
+  ),
+};
+
 /** Swipeable intro deck. `onDone` fires on the last slide (or "Skip"). */
 /** First visit: the intro as a full-screen overlay, shown once per device. */
 export function IntroOnce() {
@@ -93,7 +106,8 @@ export function Intro({ onDone, doneLabel = "Start trading" }: { onDone: () => v
   const [i, setI] = useState(0);
   const x0 = useRef<number | null>(null);
   const go = (n: number) => setI(Math.max(0, Math.min(SLIDES.length - 1, n)));
-  const s = SLIDES[i];
+  const { allowed: liveOk } = useLive();
+  const s = SLIDES[i].k === "money" && !liveOk ? MONEY_SOON : SLIDES[i];
   const last = i === SLIDES.length - 1;
   return (
     <div className="intro" onTouchStart={(e) => { x0.current = e.touches[0].clientX; }} onTouchEnd={(e) => { if (x0.current == null) return; const dx = e.changedTouches[0].clientX - x0.current; if (Math.abs(dx) > 50) go(i + (dx < 0 ? 1 : -1)); x0.current = null; }}>

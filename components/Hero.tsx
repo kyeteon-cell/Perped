@@ -8,9 +8,11 @@ import { fmtUsd } from "@/lib/format";
 import { SignInOptions } from "./SignInOptions";
 import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
 import { useMids } from "@/lib/hooks/useMids";
+import { useLive } from "@/lib/hooks/useLive";
 
 /** The "your day" card at the top of Home. Shows a generic welcome for logged-out visitors. */
 export function Hero({ onDeposit }: { onDeposit: () => void }) {
+  const { allowed: liveOk, gate } = useLive();
   const { authenticated, profile } = useSession();
   const { data } = useSWR<{ accountValue: number | null; stats: { realizedPnl7d: string; callStreak: number } | null; positions: unknown[] }>(
     profile ? `/api/profile/${profile.handle}` : null,
@@ -52,7 +54,7 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
       </div>
       <div className="hero-actions">
         <Link href="/markets" className="solid">Trade</Link>
-        {profile.isDemo ? <Link href="/settings">Connect wallet</Link> : <button onClick={onDeposit}>Deposit</button>}
+        {!liveOk ? <button className="live-off" onClick={gate(() => null)}>Go live<span className="soon-pill">Soon</span></button> : profile.isDemo ? <Link href="/settings">Connect wallet</Link> : <button onClick={onDeposit}>Deposit</button>}
         <Link href="/compose">Post</Link>
       </div>
       {bal === 0 && !profile.isDemo && <div className="relative mt-3 text-[12px] opacity-90">Fund your account to place your first trade.</div>}

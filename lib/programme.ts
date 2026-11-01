@@ -4,6 +4,14 @@ import { db, schema } from "./db";
 import { notify } from "./feed";
 import { FOUNDER_GRACE_DAYS, FOUNDER_SEATS, isFounder, isStaff } from "./programme-rates";
 import type { User } from "./schema";
+import { getLiveSettings } from "./live";
+
+/** What someone hears when they're let in: unlocked now, or first in line while real money is still closed. */
+async function letInMessage() {
+  return (await getLiveSettings()).open
+    ? ["You're in. Real trading is unlocked", "Connect a wallet in Settings and go live. Your demo record comes with you."] as const
+    : ["You've got early access", "You'll be among the first to trade real money when it opens. Keep climbing: your Season 0 record comes with you."] as const;
+}
 
 /** Real money needs an invite code, a waitlist release, staff/founder status, or a grandfathered account. */
 export function canGoLive(u: Pick<User, "canGoLive" | "referredBy" | "role" | "founderSeat" | "isBot">) {
@@ -42,9 +50,10 @@ export async function releaseWaitlist(n: number) {
   const rows = await db.select({ id: schema.users.id }).from(schema.users)
     .where(and(isNotNull(schema.users.waitlistAt), sql`coalesce(${schema.users.canGoLive}, false) = false`, isNull(schema.users.referredBy)))
     .orderBy(asc(schema.users.waitlistAt)).limit(Math.max(0, Math.min(5000, n)));
+  const [title, body] = await letInMessage();
   for (const r of rows) {
     await db.update(schema.users).set({ canGoLive: true }).where(eq(schema.users.id, r.id));
-    await notify(r.id, "waitlist", "You're in. Real trading is unlocked", "Connect a wallet in Settings and go live. Your demo record comes with you.", "/settings").catch(() => null);
+    await notify(r.id, "waitlist", title, body, "/settings").catch(() => null);
   }
   return rows.length;
 }
@@ -53,7 +62,8 @@ export async function letIn(handle: string) {
   const u = await byHandle(handle);
   if (!u) return null;
   await db.update(schema.users).set({ canGoLive: true }).where(eq(schema.users.id, u.id));
-  await notify(u.id, "waitlist", "You're in. Real trading is unlocked", "Connect a wallet in Settings and go live.", "/settings").catch(() => null);
+  const [title, body] = await letInMessage();
+  await notify(u.id, "waitlist", title, body, "/settings").catch(() => null);
   return u;
 }
 
@@ -92,7 +102,11 @@ export async function removeFounder(handle: string) {
 
 /** Founders who brought in no real-money trader within the grace period lose the seat (they keep regular rates). */
 export async function expireIdleFounders() {
+  // While real money is closed nobody can bring in a real trader, so the grace clock is paused. It starts when trading opens.
+  const live = await getLiveSettings();
+  if (!live.open) return 0;
   const cutoff = new Date(Date.now() - FOUNDER_GRACE_DAYS * 86_400_000);
+  if (live.openedAt && new Date(live.openedAt) > cutoff) return 0;
   const idle = await db.select({ id: schema.users.id, handle: schema.users.handle, seat: schema.users.founderSeat }).from(schema.users)
     .where(and(isNotNull(schema.users.founderSeat), eq(schema.users.founderStatus, "active"), sql`${schema.users.founderSince} < ${cutoff}`,
       sql`not exists (select 1 from referral_earnings e where e.referrer_id = "users"."id" and e.kind = 'invite' and e.fills > 0)`));

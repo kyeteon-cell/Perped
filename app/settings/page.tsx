@@ -13,11 +13,13 @@ import { fmtUsd } from "@/lib/format";
 import { tenthsBpsToLabel, type FeeInfo } from "@/lib/fees";
 import type { ReferralSummary } from "@/lib/referrals";
 import type { User } from "@/lib/schema";
+import { useLive } from "@/lib/hooks/useLive";
 
 type Key = "showLiquidations" | "showSizes" | "allowCopy" | "allowFade" | "showBottomBoard" | "acceptDuels";
 
 export default function SettingsPage() {
   const { profile, authedFetch, refreshMe, logout, address, fee, hasExternalWallet, linkWallet, linkError, isGuest, login, guestToken } = useSession();
+  const { allowed: liveOk, gate } = useLive();
   const [keyCopied, setKeyCopied] = useState(false);
   const [copied, setCopied] = useState(false);
   const { markets } = useMarkets();
@@ -82,13 +84,15 @@ export default function SettingsPage() {
 
       <div className="eyebrow px-5 pb-1.5 pt-4">Trading</div>
       <div className="srow"><span>Mode</span><span className="chip" style={local.isDemo ? {} : { color: "var(--green)", background: "var(--green-soft)" }}>{local.isDemo ? "Demo · practice money" : "Live · real money"}</span></div>
-      {local.isDemo ? (
+      {!liveOk ? (
+        <div className="srow"><span className="muted text-sm">{isGuest ? "Guest demo, this device only. Sign in with X to keep your record. Real-money trading opens soon." : "Real-money trading opens soon. Your demo record counts toward Season 0."}</span>{isGuest ? <button className="chip" style={{ color: "var(--brand)", background: "var(--brand-soft)" }} onClick={login}>Sign in</button> : <button className="chip live-off" onClick={gate(() => null)}>Go live<span className="soon-pill">Soon</span></button>}</div>
+      ) : local.isDemo ? (
         <div className="srow"><span className="muted text-sm">{isGuest ? "Guest demo, this device only. Sign in with X to keep your record, or connect a wallet to trade for real." : hasExternalWallet ? "Your wallet is connected. Switch to live to trade with real money." : "Connect a wallet to trade real money. Your wallet becomes your Hyperliquid account."}</span><button className="chip" style={{ color: "var(--brand)", background: "var(--brand-soft)" }} onClick={goLive}>{isGuest ? "Sign in" : hasExternalWallet ? "Go live" : "Connect wallet"}</button></div>
       ) : (
         DEMO_ENABLED && <div className="srow"><span className="muted text-sm">Back to practice money? Your real positions stay on Hyperliquid.</span><button className="chip" onClick={() => save({ isDemo: true })}>Switch to demo</button></div>
       )}
       {!hasExternalWallet && !isGuest && !local.isDemo && <div className="srow"><span className="muted text-sm">No wallet connected.</span><button className="chip" onClick={linkWallet}>Connect wallet</button></div>}
-      {saveErr === "invite_required" ? (
+      {saveErr === "live_closed" ? null : saveErr === "invite_required" ? (
         <div className="inv-card mx-4"><b>Real trading is invite only for now</b><p className="when mt-1">You&rsquo;re on the waitlist. Add someone&rsquo;s invite code to go live straight away, and your fees drop to the invite rate forever.</p><Link href="/invite" className="btn brand mt-3 w-full" style={{ padding: 12, fontSize: 14 }}>Add an invite code</Link></div>
       ) : (saveErr || linkError) && <p className="red px-5 pb-1 text-sm">{saveErr ?? linkError}</p>}
       <div className="srow"><span>Default leverage</span><Seg value={String(local.defaultLeverage ?? 3)} options={levOptions} onChange={(v) => save({ defaultLeverage: Number(v) })} /></div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { Sheet } from "./Sheet";
 import { CoinMark, ticker } from "./ui";
+import { useLive } from "@/lib/hooks/useLive";
 
 export type FeedFilter = {
   coins: string[];
@@ -66,6 +67,7 @@ function Opt({ on, onClick, children }: { on: boolean; onClick: () => void; chil
 export function FeedFilters({ value, onChange, onClose }: { value: FeedFilter; onChange: (f: FeedFilter) => void; onClose: () => void }) {
   const { markets } = useMarkets();
   const [f, setF] = useState<FeedFilter>(value);
+  const { allowed: liveOk, gate } = useLive();
   const [q, setQ] = useState("");
   useEffect(() => { onChange(f); }, [f]); // eslint-disable-line react-hooks/exhaustive-deps
   const top = [...markets].sort((a, b) => Number(b.volume24h ?? 0) - Number(a.volume24h ?? 0));
@@ -105,7 +107,9 @@ export function FeedFilters({ value, onChange, onClose }: { value: FeedFilter; o
           {([["trade", "Trades"], ["call", "Calls"], ["poll", "Polls"], ["text", "Posts"], ["system", "Results & alerts"]] as const).map(([v, l]) => <Opt key={v} on={f.kinds.includes(v)} onClick={() => toggleKind(v)}>{l}</Opt>)}
         </Row>
         <Row label="Money">
-          {([["", "All"], ["real", "Real money"], ["demo", "Demo"]] as const).map(([v, l]) => <Opt key={v} on={f.money === v} onClick={() => setF({ ...f, money: v })}>{l}</Opt>)}
+          {([["", "All"], ["real", "Real money"], ["demo", "Demo"]] as const).map(([v, l]) => v === "real" && !liveOk
+            ? <button key={v} type="button" className="chip live-off" style={{ padding: "7px 11px", fontSize: 12 }} onClick={gate(() => null)}>{l}<span className="soon-pill">Soon</span></button>
+            : <Opt key={v} on={f.money === v} onClick={() => setF({ ...f, money: v })}>{l}</Opt>)}
         </Row>
         <Row label="Traders">
           <Opt on={f.verified} onClick={() => setF({ ...f, verified: !f.verified })}>Verified only</Opt>

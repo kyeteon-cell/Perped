@@ -40,6 +40,7 @@ export const I = {
   share: "M12 3v12M8 7l4-4 4 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7",
   mail: "M4 7h16v10H4zM4 7l8 6 8-6",
   circle: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",
+  lock: "M6 11h12v10H6zM8.5 11V7.5a3.5 3.5 0 0 1 7 0V11",
 };
 
 /** Coloured disc with the ticker's first letters. */

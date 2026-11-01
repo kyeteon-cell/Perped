@@ -5,6 +5,7 @@ import { db, schema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized, HANDLE_RE } from "@/lib/auth";
 import { normaliseReferralCode, resolveFeeTier, type FeeInfo } from "@/lib/fees";
 import { getFeeInfo } from "@/lib/referrals";
+import { enforceDemo, getLiveSettings, liveAllowed } from "@/lib/live";
 
 /** GET /api/me → profile (null until a handle is chosen), wallet address, unread count, fee tier. */
 export const dynamic = "force-dynamic";
@@ -12,7 +13,9 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const auth = await getAuth(req);
   if (!auth) return unauthorized();
-  const profile = await getProfile(auth.privyId);
+  const live = await getLiveSettings();
+  let profile = await getProfile(auth.privyId);
+  if (profile) profile = await enforceDemo(profile, live.open);
   let unread = 0;
   let fee: FeeInfo = resolveFeeTier({});
   if (profile) {
@@ -20,7 +23,7 @@ export async function GET(req: Request) {
     unread = r?.n ?? 0;
     fee = await getFeeInfo(profile.id, profile.referredBy);
   }
-  return Response.json({ profile, address: auth.address, unread, fee, guest: !!auth.guest });
+  return Response.json({ profile, address: auth.address, unread, fee, guest: !!auth.guest, live: { open: live.open, allowed: liveAllowed(live.open, profile) } });
 }
 
 const Body = z.object({

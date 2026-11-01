@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Glyph } from "@/components/Glyph";
+import { LiveSoonNote } from "@/components/ComingSoonSheet";
 import { BUILDER_FEE_STANDARD_TENTHS_BPS, BUILDER_FEE_REFERRED_TENTHS_BPS, BUILDER_FEE_TOP_TENTHS_BPS, BUILDER_MAX_FEE_TENTHS_BPS, TOP_TIER_RANK, REFERRAL_SHARE_PCT, REFERRAL_TOP_SHARE_PCT, REFERRAL_TOP_THRESHOLD, HL_NETWORK } from "@/lib/config";
 import { tenthsBpsToLabel } from "@/lib/fees";
 import { RANKS } from "@/lib/rank";
@@ -87,6 +88,7 @@ export default function HowItWorks() {
 
       <section id="real-path" className="hw mt-7">
         <h2 className="text-lg font-bold">Real money, step by step</h2>
+        <LiveSoonNote />
         <p className="mt-2">Only do this once you have closed a few demo trades and understand leverage. Every step below is signed by you in your own wallet.</p>
         <ol className="hw-steps mt-3">
           <li><b>Get a wallet.</b> Install Rabby, MetaMask, Rainbow or Phantom (with Ethereum networks on) on your phone. Write the seed phrase on paper. Nobody — not Perped, not Hyperliquid — can recover it for you.</li>

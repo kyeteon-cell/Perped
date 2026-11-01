@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/hooks/useSession";
 import { Icon, I } from "./ui";
 import { DEMO_ENABLED } from "@/lib/config";
+import { useLive } from "@/lib/hooks/useLive";
 
 type Method = "twitter" | "google" | "email" | "wallet";
 
@@ -15,6 +16,7 @@ type Method = "twitter" | "google" | "email" | "wallet";
 export function SignInOptions({ compact = false, onDark = false }: { compact?: boolean; onDark?: boolean }) {
   const { login, startGuest, restoreGuest, loginError, refreshMe } = useSession();
   const router = useRouter();
+  const { allowed: liveOk, gate } = useLive();
   const [busy, setBusy] = useState(false);
   const [guestError, setGuestError] = useState<string | null>(null);
   const [prev, setPrev] = useState<{ token: string; handle: string } | null>(null);
@@ -37,12 +39,21 @@ export function SignInOptions({ compact = false, onDark = false }: { compact?: b
           {DEMO_ENABLED && <button onClick={demo} disabled={busy}><Icon d={I.bolt} size={16} />{busy ? "…" : "Guest"}</button>}
         </div>
       </div>
-      <div className="sio-group">
-        <div className="sio-head"><span className="real-tag">Real</span><span>Your wallet becomes your Hyperliquid account.</span></div>
-        <div className="sio-row">
-          <button className="primary" onClick={() => go("wallet")}><Icon d={I.wallet} size={16} />Connect a wallet · trade real money</button>
+      {liveOk ? (
+        <div className="sio-group">
+          <div className="sio-head"><span className="real-tag">Real</span><span>Your wallet becomes your Hyperliquid account.</span></div>
+          <div className="sio-row">
+            <button className="primary" onClick={() => go("wallet")}><Icon d={I.wallet} size={16} />Connect a wallet · trade real money</button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="sio-group live-off" role="button" tabIndex={0} onClick={gate(() => null)}>
+          <div className="sio-head"><span className="real-tag">Real</span><span>Real-money trading opens soon.</span><span className="soon-pill">Soon</span></div>
+          <div className="sio-row">
+            <button className="primary" onClick={(e) => { e.stopPropagation(); gate(() => null)(); }}><Icon d={I.lock} size={16} />Connect a wallet · coming soon</button>
+          </div>
+        </div>
+      )}
       <div className="mt-2 text-center">
         {!restoring ? <button className="when underline" onClick={() => setRestoring(true)}>Have a guest key? Restore your account</button> : (
           <div className="flex gap-2"><input className="field" style={{ padding: "8px 12px", fontSize: 13 }} placeholder="Paste your guest key" value={key} onChange={(e) => setKey(e.target.value)} /><button className="chip on" disabled={busy || !key.trim()} onClick={() => back(key)}>Restore</button></div>

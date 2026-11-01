@@ -24,12 +24,14 @@ import { fmtUsd, fmtPct, fmtPrice } from "@/lib/format";
 import type { User, Stats } from "@/lib/schema";
 import type { AssetPosition } from "@/lib/hl-info";
 import type { FeedRow } from "@/lib/feed";
+import { useLive } from "@/lib/hooks/useLive";
 
 type ProfileRes = { form?: { r: "W" | "L" | "D"; href: string }[]; vendetta?: null | { handle: string; avatarUrl: string | null; mine: number; theirs: number; draws: number; fights: number }; battleStreak?: number; bestStreak?: number; user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
 type Tab = "me" | "fades" | "trades" | "stats" | "people";
 type People = "followers" | "following";
 
 export default function ProfilePage({ params }: { params: Promise<{ handle: string }> }) {
+  const { allowed: liveOk, gate } = useLive();
   const { handle } = use(params);
   const { data, mutate } = useSWR<ProfileRes>(`/api/profile/${handle}`, { refreshInterval: 20_000 });
   const { authedFetch, walletClient, authenticated, login, fee } = useSession();
@@ -247,8 +249,10 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
             <div className="stat"><small>In trades</small><div className="v mono">{fmtUsd(demoEq.margin)}</div></div>
             <div className="stat"><small>Unrealised</small><div className={`v mono ${demoEq.upnl >= 0 ? "green" : "red"}`}>{fmtUsd(demoEq.upnl, { sign: true })}</div></div>
           </div>
-          <div className="pf-golive mt-3.5"><b>Ready to trade real?</b>Connect a wallet and your trades fill on Hyperliquid from your own wallet. Your record and rank come with you.</div>
-          <div className="mt-3.5 grid grid-cols-2 gap-2.5"><Link href="/settings" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Go live</Link><button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ resetDemo: true }) }); mutate(); setBal(false); }}>Reset to $10,000</button></div>
+          {liveOk
+            ? <div className="pf-golive mt-3.5"><b>Ready to trade real?</b>Connect a wallet and your trades fill on Hyperliquid from your own wallet. Your record and rank come with you.</div>
+            : <div className="pf-golive mt-3.5"><b>Real money opens soon</b>This is Season 0. Your XP, rank and record carry over when real trading opens.</div>}
+          <div className="mt-3.5 grid grid-cols-2 gap-2.5">{liveOk ? <Link href="/settings" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Go live</Link> : <button className="btn live-off" style={{ padding: 12, fontSize: 14 }} onClick={gate(() => null)}>Go live<span className="soon-pill">Soon</span></button>}<button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={async () => { await authedFetch("/api/me/settings", { method: "PATCH", body: JSON.stringify({ resetDemo: true }) }); mutate(); setBal(false); }}>Reset to $10,000</button></div>
           <Link href="/invite" className="srow mt-3" style={{ color: "var(--brand)" }} onClick={() => setBal(false)}><span><b>Invite &amp; earn</b><span className="when ml-1.5">your link and earnings</span></span><span>→</span></Link>
         </div>
         </Sheet>

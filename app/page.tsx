@@ -21,6 +21,7 @@ import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
 import { fmtUsd, fmtPct } from "@/lib/format";
+import { useLive } from "@/lib/hooks/useLive";
 
 type Tab = "foryou" | "following" | "live";
 
@@ -28,6 +29,7 @@ type Tab = "foryou" | "following" | "live";
 const isLive = (p: FeedRow["post"]) => (p.kind === "trade" ? p.status === "open" : p.kind === "call" && p.callStatus === "open");
 
 export default function HomePage() {
+  const { allowed: liveOk, gate } = useLive();
   const { authenticated, profile, authedFetch, unread } = useSession();
   const { mids, connected } = useMids();
   const liveMid = (it: FeedRow) => (it.post.coin && isLive(it.post) ? mids[it.post.coin] : undefined);
@@ -41,7 +43,7 @@ export default function HomePage() {
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     try {
-      const r = localStorage.getItem("perped:realness") as "all" | "real" | "demo" | null; if (r) setRealness(r);
+      const r = localStorage.getItem("perped:realness") as "all" | "real" | "demo" | null; if (r && r !== "real") setRealness(r);
       setFilter({ ...EMPTY_FILTER, ...JSON.parse(localStorage.getItem("perped:filter") || "{}") });
     } catch {}
     setLoaded(true);
@@ -97,7 +99,9 @@ export default function HomePage() {
       {tab === "foryou" && <Banked />}
 
       <div className="realness">
-        {(["all", "real", "demo"] as const).map((v) => <button key={v} className={`chip ${realness === v ? (v === "demo" ? "on demo-on" : v === "real" ? "on real-on" : "on") : ""}`} onClick={() => setRealnessP(v)}>{v === "all" ? "All trades" : v === "real" ? "Real money" : "Demo"}</button>)}
+        {(["all", "real", "demo"] as const).map((v) => v === "real" && !liveOk
+          ? <button key={v} className="chip live-off" onClick={gate(() => null)}>Real money<span className="soon-pill">Soon</span></button>
+          : <button key={v} className={`chip ${realness === v ? (v === "demo" ? "on demo-on" : v === "real" ? "on real-on" : "on") : ""}`} onClick={() => setRealnessP(v)}>{v === "all" ? "All trades" : v === "real" ? "Real money" : "Demo"}</button>)}
         <button className={`chip ml-auto ${nFilters ? "on" : ""}`} onClick={() => setFiltering(true)}><Icon d={I.list} size={14} />Filter{nFilters ? ` · ${nFilters}` : ""}</button>
       </div>
       {nFilters > 0 && <div className="flex items-center gap-2 px-5 pb-1"><span className="when truncate">{filterSummary(filter)}</span><button className="when ml-auto underline" onClick={() => setFilter(EMPTY_FILTER)}>clear</button></div>}
