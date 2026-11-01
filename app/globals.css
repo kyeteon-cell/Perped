@@ -1522,3 +1522,5 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .alv-l { font-size: 9.5px; letter-spacing: -.01em; }
 .alv.lv-glad.on { color: var(--chrome-fg); background: linear-gradient(180deg, var(--chrome-hi), var(--chrome-lo)); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 8px 18px -10px rgba(0,0,0,.5); }
 .alv.lv-glad:not(.on) .alv-ic { color: var(--chrome); }
+.glad-st { flex: none; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 900; letter-spacing: .02em; }
+.glad-st.g { background: var(--green-soft); color: var(--green); } .glad-st.r { background: var(--red-soft); color: var(--red); }

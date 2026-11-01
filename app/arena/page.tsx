@@ -57,7 +57,27 @@ function Fighter({ u, roi, lead, right, side }: { u: ArenaBattle["fader"]; roi: 
   );
 }
 
-function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: ReactNode }) {
+/** Last standing: how the first side went out and when, the number the one still in has to beat, winning or chasing. */
+function GladBadge({ b, r }: { b: ArenaBattle; r: ReturnType<typeof readBattle> }) {
+  const fIn = b.faderLeg.status === "open";
+  const out = fIn ? b.target : b.fader, outLeg = fIn ? b.targetLeg : b.faderLeg, still = fIn ? b.fader : b.target;
+  const outRoi = fIn ? r.t : r.a, stillRoi = fIn ? r.a : r.t;
+  const x = outLeg.exitPx ?? outLeg.entryPx;
+  const liq = outLeg.leverage > 1 ? (outLeg.side === "long" ? outLeg.entryPx * (1 - 1 / outLeg.leverage) : outLeg.entryPx * (1 + 1 / outLeg.leverage)) : null;
+  const how = liq && (outLeg.side === "long" ? x <= liq * 1.002 : x >= liq * 0.998) ? "liquidated"
+    : outLeg.slPx && Math.abs(x - outLeg.slPx) / outLeg.slPx < 0.003 ? "stopped out"
+    : outRoi >= 0 ? "banked" : "cut";
+  const winning = stillRoi > outRoi;
+  return (
+    <>
+      <Glyph n="swords" />
+      <span className="truncate"><b>{out.handle}</b> {how} {fmtPct(outRoi, 1)}{outLeg.closedAt ? ` · ${timeAgo(outLeg.closedAt)} ago` : ""}</span>
+      <span className="ml-auto flex items-center gap-1.5"><span className="muted">{still.handle} needs {fmtPct(outRoi, 1)}</span><span className={`glad-st ${winning ? "g" : "r"}`}>{winning ? "Winning" : "Chasing"}</span></span>
+    </>
+  );
+}
+
+function BattleRow({ b, mid, badge, noChase }: { b: ArenaBattle; mid: number; badge?: ReactNode; noChase?: boolean }) {
   const settled = b.status === "settled";
   const a = settled ? b.faderRoi ?? 0 : roiOf(b.faderLeg, mid), t = settled ? b.targetRoi ?? 0 : roiOf(b.targetLeg, mid);
   const total = Math.abs(a) + Math.abs(t) || 1;
@@ -75,7 +95,7 @@ function BattleRow({ b, mid, badge }: { b: ArenaBattle; mid: number; badge?: Rea
     <Link href={`/battle/${b.faderPostId}`} className={`arow ${b.nemesis ? "nemesis" : ""} ${flip ? "flip" : ""}`}>
       {b.nemesis && <NemesisBar b={b} />}
       {isFightNight(b.createdAt) && b.status === "open" && <span className="fn-badge gl"><Glyph n="glove" />Fight Night · 2× XP</span>}
-      {!settled && (b.faderLeg.status === "closed" || b.targetLeg.status === "closed") && (() => {
+      {!settled && !noChase && (b.faderLeg.status === "closed" || b.targetLeg.status === "closed") && (() => {
         const fBanked = b.faderLeg.status === "closed", banker = fBanked ? b.fader : b.target, chaser = fBanked ? b.target : b.fader;
         const bank = fBanked ? a : t, now = fBanked ? t : a;
         return <span className={`chase-badge gl ${now > bank ? "ahead" : ""}`}><Glyph n="bank" />{banker.handle} banked {fmtPct(bank, 1)} · {chaser.handle} {now > bank ? "ahead" : "chasing"}</span>;
@@ -268,7 +288,9 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   // Gladiators: one side is already out (stopped, liquidated or banked) and the other is still in the trade.
   // They get their own tab so the Bloodbath stays about fights that are still two-sided.
   const solo = (b: ArenaBattle) => (b.faderLeg.status === "open") !== (b.targetLeg.status === "open");
-  const glad = rows.filter((x) => solo(x.b)).sort((x, y) => +new Date(y.b.createdAt) - +new Date(x.b.createdAt));
+  // Newest knockout first; each one stays for 24 hours after the first side went out.
+  const koAt = (b: ArenaBattle) => +new Date((b.faderLeg.status === "open" ? b.targetLeg : b.faderLeg).closedAt ?? b.createdAt);
+  const glad = rows.filter((x) => solo(x.b) && Date.now() - koAt(x.b) < 86_400_000).sort((x, y) => koAt(y.b) - koAt(x.b));
   const blood = rows.filter((x) => x.r.blood && !solo(x.b)).sort((x, y) => y.r.gap - x.r.gap);
   const rekt = (data.rekt ?? []).map((b) => ({ b, r: readBattle(b, mids[b.coin] ?? 0) }));
   const tabs: { k: Tab; icon: ReactNode; short: string; n: number }[] = [
@@ -298,7 +320,7 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
       <div className="mt-3 flex flex-col gap-2">
         {tab === "blood" && rekt.map(({ b, r }) => (
           <div key={`rekt${b.id}`} className="tomb">
-            <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={<><span className="rekt">REKT</span><span className="gl"><Glyph n="tomb" /><b>{r.loser.handle}</b> got liquidated by <b>{r.winner.handle}</b></span></>} />
+            <BattleRow b={b} mid={mids[b.coin] ?? 0} noChase={tab === "glad"} badge={<><span className="rekt">REKT</span><span className="gl"><Glyph n="tomb" /><b>{r.loser.handle}</b> got liquidated by <b>{r.winner.handle}</b></span></>} />
             <div className="bb-under"><RevengeButton handle={r.winner.handle} label={<span className="gl"><Glyph n="drop" />Revenge on {r.winner.handle}</span>} /></div>
           </div>
         ))}
@@ -307,6 +329,7 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
           <BattleRow b={b} mid={mids[b.coin] ?? 0} badge={
             tab === "high" ? <><span>{flames(r.heat)}</span><b className="mono">{b.faderLeg.leverage}× vs {b.targetLeg.leverage}×</b>{r.minLiq < 50 && <span className="ab-warn">{r.closer.handle} liq in {r.minLiq.toFixed(1)}%</span>}</>
             : tab === "blood" ? <><Glyph n="skull" tone="blood" /><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted"><span className="gl">{r.winner.handle}<Glyph n="crown" tone="gold" /></span></span></>
+            : tab === "glad" ? <GladBadge b={b} r={r} />
             : tab === "following" && tag(b) ? <span className="ab-tag">{tag(b)}</span>
             : undefined
           } />
