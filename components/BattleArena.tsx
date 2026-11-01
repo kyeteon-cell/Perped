@@ -288,7 +288,11 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
     return () => io.disconnect();
   }, []);
   const { data } = useSWR<{ candles: Candle[] }>(vis ? `/api/markets/${coin}/candles?interval=5m&limit=50` : null, { refreshInterval: 60_000, dedupingInterval: 30_000, revalidateOnFocus: false });
-  const candles = (data?.candles ?? []).slice(-36);
+  // Zoom on the fight: a short run of history before the first entry (4–8 candles), then everything since.
+  const all = (data?.candles ?? []).slice(-36);
+  const firstT = Math.min(ts(a.openedAt), ts(b.openedAt));
+  const allFirst = Math.max(0, all.findIndex((c) => c.t + IVS["5m"] > firstT));
+  const candles = all.slice(Math.max(0, allFirst - Math.max(4, Math.min(8, all.length - allFirst))));
   const px = live || candles[candles.length - 1]?.c || a.entry;
   const W = 300, H = 130, PAD = 8;
   const hi = Math.max(px, a.entry, b.entry, ...candles.map((c) => c.h));
@@ -303,7 +307,7 @@ export function BattleCardChart({ coin, live, a, b }: { coin: string; live: numb
   const idx = (t: number) => Math.max(0, Math.min(n - 1, Math.floor((t - t0) / ms)));
   const first = Math.min(idx(ts(a.openedAt)), idx(ts(b.openedAt)));
   const FUT = W * 0.26, room = W - FUT;
-  const histW = first ? Math.min(W * 0.3, (room * first) / n) : 0, liveW = room - histW, liveN = Math.max(1, n - first);
+  const histW = first ? Math.min(W * 0.25, (room * first) / n) : 0, liveW = room - histW, liveN = Math.max(1, n - first);
   const xOf = (i: number) => (i < first ? (i + 0.5) * (histW / first) : histW + (i - first + 0.5) * (liveW / liveN));
   const bwOf = (i: number) => Math.max(1.6, (i < first ? histW / first : liveW / liveN) * 0.62);
   const nowX = histW + liveW;

@@ -38,7 +38,11 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const { data } = useSWR<{ candles: Candle[] }>(vis ? `/api/markets/${coin}/candles?interval=${iv}&limit=${limit}` : null, { refreshInterval: 60_000, dedupingInterval: 30_000, revalidateOnFocus: false });
   const { markets } = useMarkets();
   const m = markets.find((x) => x.name === coin);
-  const candles = (data?.candles ?? []).slice(-limit);
+  // Zoom on the trade: keep only a short run of history before the entry (never more than the trade itself, 4–10 candles),
+  // so the price scale is set by the trade, not by an old high or low.
+  const all = (data?.candles ?? []).slice(-limit);
+  const allEi = Math.max(0, Math.min(Math.max(all.length, 1) - 1, Math.floor((opened - (all[0]?.t ?? opened)) / ms)));
+  const candles = all.slice(Math.max(0, allEi - Math.max(4, Math.min(10, all.length - allEi))));
   const live = mark || m?.mid || candles[candles.length - 1]?.c || entry;
 
   // Price colour (the "Price now" number) follows the market; the chart zones and live dot follow YOUR P&L.
@@ -64,11 +68,11 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   const n = Math.max(candles.length, 1);
   const t0 = candles[0]?.t ?? opened;
   const ei = Math.max(0, Math.min(n - 1, Math.floor((opened - t0) / ms)));
-  // Layout: grey history before the entry takes at most 45% of the width, the trade fills the middle in colour,
+  // Layout: grey history before the entry takes at most 30% of the width, the trade fills the middle in colour,
   // and the last 24% is open space ahead of "now", split into the profit and loss zones.
   const FUT = W * 0.24, room = W - RIGHT - FUT;
   const histN = Math.min(ei, n), liveN = Math.max(1, n - histN);
-  const histW = histN ? Math.min(W * 0.45, (room * histN) / n) : 0, liveW = room - histW;
+  const histW = histN ? Math.min(W * 0.3, (room * histN) / n) : 0, liveW = room - histW;
   const xOf = (i: number) => (i < histN ? (i + 0.5) * (histW / histN) : histW + (i - histN + 0.5) * (liveW / liveN));
   const bwOf = (i: number) => Math.max(1.2, (i < histN ? histW / histN : liveW / liveN) * 0.66);
   const ex = histW, nowX = histW + liveW;
