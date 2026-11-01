@@ -134,7 +134,6 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
         {candles.length > 0 && (
           <>
             <span className={`tc-act ${side}`} style={{ top: pct(entry), left: pctX(ex) }}>{side === "long" ? "BUY" : "SELL"}</span>
-            <i className={`tc-dot ${winning ? "g" : "r"}`} style={{ top: `clamp(9px, ${pct(live)}, calc(100% - 9px))`, left: `${(nowX / W) * 100}%`, right: "auto" }} />
             {placed.map((t) => <span key={t.key} className={`tc-tag ${t.cls}`} style={{ top: `${t.top}%` }}>{t.label}</span>)}
           </>
         )}
