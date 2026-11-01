@@ -39,6 +39,7 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
   const [who, setWho] = useState(""), [whoRes, setWhoRes] = useState<Record<string, unknown> | null>(null);
   const [p, setP] = useState<P | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [gk, setGk] = useState(""), [gkRes, setGkRes] = useState<{ handle: string; key: string } | null>(null);
   const [f, setF] = useState(""), [wl, setWl] = useState(""), [ad, setAd] = useState(""), [rf, setRf] = useState(""), [rt, setRt] = useState(""), [batch, setBatch] = useState("");
   const [pay, setPay] = useState<{ referrers: { handle: string; address: string; owedUsd: number; earnedUsd: number; paidUsd: number }[]; totals: { totalOwedUsd: number } } | null>(null);
   const loadPay = useCallback(() => call("/api/admin/referrals").then((r) => (r.ok ? r.json() : null)).then((j) => j && !j.error && setPay(j)).catch(() => null), [call]);
@@ -178,6 +179,14 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
 
       {tab === "payouts" && owner && (
         <>
+          {owner && (
+            <section className="inv-card">
+              <div className="flex items-center justify-between"><span className="eyebrow">Recover a guest key</span></div>
+              <p className="when mt-1">For someone who lost their guest key. Only give it to the account&rsquo;s owner: the key is the login.</p>
+              <div className="inv-input"><input value={gk} onChange={(e) => setGk(e.target.value)} placeholder="@guest handle" autoCapitalize="none" /><button disabled={!gk.trim()} onClick={async () => { const j = await act({ action: "guestKey", handle: gk }, (r) => `Key for @${r.handle}`); setGkRes(j.key ? { handle: String(j.handle), key: String(j.key) } : null); }}>Get key</button></div>
+              {gkRes && <div className="mt-2"><div className="mono break-all text-[12px]">{gkRes.key}</div><button className="chip mt-2" onClick={async () => { try { await navigator.clipboard.writeText(gkRes.key); setMsg(`Copied @${gkRes.handle}'s key`); } catch {} }}>Copy key</button></div>}
+            </section>
+          )}
           {owner && (
             <section className="inv-card">
               <div className="flex items-center justify-between"><span className="eyebrow">Payouts</span><span className="when">owed in total <b style={{ color: "var(--text)" }}>{usd(pay?.totals.totalOwedUsd ?? 0)}</b></span></div>

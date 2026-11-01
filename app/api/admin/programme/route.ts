@@ -6,6 +6,7 @@ import { addFounder, expireIdleFounders, getWaitlistSettings, letIn, nextRelease
 import { FOUNDER_GRACE_DAYS, FOUNDER_SEATS, FOUNDER_WAVE } from "@/lib/programme-rates";
 import { APP_URL, BUILDER_CONFIGURED } from "@/lib/config";
 import { getLiveSettings, setLiveOpen } from "@/lib/live";
+import { isGuestId, tokenForGuestId } from "@/lib/guest";
 
 export const dynamic = "force-dynamic";
 
@@ -76,8 +77,9 @@ const Body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("expireFounders") }),
   z.object({ action: z.literal("releaseNow") }),
   z.object({ action: z.literal("live"), open: z.boolean() }),
+  z.object({ action: z.literal("guestKey"), handle: z.string() }),
 ]);
-const OWNER_ONLY = new Set(["addAdmin", "removeAdmin", "rename", "live"]);
+const OWNER_ONLY = new Set(["addAdmin", "removeAdmin", "rename", "live", "guestKey"]);
 
 /** POST /api/admin/programme {action, …} → founders, admins, waitlist, renames. Admin/owner session or the CRON_SECRET key. */
 export async function POST(req: Request) {
@@ -112,6 +114,12 @@ async function runAction(b: z.infer<typeof Body>): Promise<Response> {
       return Response.json(u ? { ok: true, user: { ...u, id: undefined, guest: u.id.startsWith("guest:") } } : { ok: true, user: null });
     }
     case "expireFounders": return Response.json({ ok: true, expired: await expireIdleFounders() });
+    case "guestKey": {
+      const [u] = await db.select({ id: schema.users.id, handle: schema.users.handle }).from(schema.users).where(sql`${schema.users.handle} = ${b.handle.toLowerCase().replace(/^@/, "")}`).limit(1);
+      if (!u) return Response.json({ error: "no account with that handle" });
+      if (!isGuestId(u.id)) return Response.json({ error: `@${u.handle} isn't a guest account (it signs in with X, Google, email or a wallet)` });
+      return Response.json({ ok: true, handle: u.handle, key: tokenForGuestId(u.id) });
+    }
     case "live": return Response.json({ ok: true, live: await setLiveOpen(b.open) });
     case "releaseNow": { const wl = await getWaitlistSettings(); return Response.json({ ok: true, released: await releaseWaitlist(wl.batch) }); }
   }
