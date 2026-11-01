@@ -20,7 +20,7 @@ import type { ReactNode } from "react";
 
 type Leg = ArenaBattle["faderLeg"];
 const liqPx = (l: Leg) => (l.leverage > 1 ? (l.side === "long" ? l.entryPx * (1 - 1 / l.leverage) : l.entryPx * (1 + 1 / l.leverage)) : null);
-const liqDist = (l: Leg, mid: number) => { const q = liqPx(l); return q && mid ? Math.abs((mid - q) / mid) * 100 : 100; };
+const liqDist = (l: Leg, mid: number) => { if (l.status !== "open") return 100; const q = liqPx(l); return q && mid ? Math.abs((mid - q) / mid) * 100 : 100; };
 type Heat = "all" | "nemesis" | "high" | "blood";
 /** Everything the tabs need about one battle, at the live price. */
 function readBattle(b: ArenaBattle, mid: number) {
@@ -228,8 +228,8 @@ function AllHub({ rows, nem, high, mine, list }: { rows: Row[]; nem: Row[]; high
 
 /** Slim kill ticker along the top of the Arena: who got liquidated by whom, scrolling. */
 function KillTicker({ kills }: { kills: ArenaBattle[] }) {
-  if (!kills.length) return null;
-  const items = kills.slice(0, 8).map((b) => {
+  if (!kills.some((k) => k.winnerId)) return null;
+  const items = kills.filter((k) => k.winnerId).slice(0, 8).map((b) => {
     const w = b.winnerId === b.fader.id ? b.fader : b.target, l = w.id === b.fader.id ? b.target : b.fader;
     return <Link key={b.id} href={`/battle/${b.faderPostId}`} className="kt-item"><Glyph n="skull" tone="blood" /><b>{w.handle}</b> perped <b>{l.handle}</b><span className="when">{ticker(b.coin)} · {timeAgo(b.settledAt ?? b.createdAt)}</span></Link>;
   });
@@ -442,7 +442,11 @@ function ArenaHow({ onClose }: { onClose: () => void }) {
 
 export default function ArenaPage() {
   const { authenticated, login, profile, authedFetch } = useSession();
-  const { mids } = useMids();
+  const { mids: liveMids } = useMids();
+  // The Arena lists dozens of fights: refresh their prices every 3s, not every second, so phones stay smooth.
+  const [mids, setMids] = useState(liveMids);
+  const lastMids = useRef(0);
+  useEffect(() => { const now = Date.now(); if (now - lastMids.current >= 3000 || !Object.keys(mids).length) { lastMids.current = now; setMids(liveMids); } }, [liveMids, mids]);
   const { data } = useSWR<ArenaRes>("/api/arena", async () => (await authedFetch("/api/arena")).json(), { refreshInterval: 20_000 });
   const [picking, setPicking] = useState(false);
   const [how, setHow] = useState(false);

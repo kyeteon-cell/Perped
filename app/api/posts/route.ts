@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ensureBattle } from "@/lib/battles";
 import { fadeBlockReason } from "@/lib/fades";
 import { alertRivals } from "@/lib/rivalries";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth, getProfile, unauthorized } from "@/lib/auth";
 import { queryFeed, notify } from "@/lib/feed";
@@ -166,6 +166,13 @@ export async function POST(req: Request) {
   if (b.kind === "trade" && (b.fadedFromId || b.copiedFromId)) {
     const srcId = (b.fadedFromId ?? b.copiedFromId)!;
     const [src] = await db.select({ userId: schema.posts.userId }).from(schema.posts).where(eq(schema.posts.id, srcId)).limit(1);
+    if (src?.userId === profile.id) return Response.json({ error: "you can't copy or fade your own trade" }, { status: 400 });
+    // The two fighters in a fade can't back either side of their own fight (that would hedge it).
+    if (b.copiedFromId && src?.userId) {
+      const [own] = await db.select({ id: schema.battles.id }).from(schema.battles)
+        .where(and(eq(schema.battles.status, "open"), or(eq(schema.battles.faderPostId, srcId), eq(schema.battles.targetPostId, srcId)), or(eq(schema.battles.faderId, profile.id), eq(schema.battles.targetId, profile.id)))).limit(1);
+      if (own) return Response.json({ error: "you're in this fight, so you can't back a side of it" }, { status: 400 });
+    }
     if (src?.userId) {
       const [owner] = await db.select({ allowFade: schema.users.allowFade, allowCopy: schema.users.allowCopy }).from(schema.users).where(eq(schema.users.id, src.userId)).limit(1);
       if (owner && b.fadedFromId && !owner.allowFade) return Response.json({ error: "this trader has turned fading off" }, { status: 403 });

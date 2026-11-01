@@ -140,7 +140,7 @@ export function KillFeed({ kills }: { kills: ArenaBattle[] }) {
   return (
     <div className="bb-kills">
       <div className="eyebrow">Kill feed</div>
-      {kills.slice(0, 6).map((b) => {
+      {kills.filter((k) => k.winnerId).slice(0, 6).map((b) => {
         const w = b.winnerId === b.fader.id ? b.fader : b.target, l = w.id === b.fader.id ? b.target : b.fader;
         const ll = legOf(b, l);
         return (

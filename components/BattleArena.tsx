@@ -12,6 +12,8 @@ export type Fighter = {
   side: "long" | "short"; lev: number; entry: number;
   tp?: number | null; sl?: number | null; openedAt?: string | Date | null;
   margin?: number | null; roi: number;
+  /** Closed already: their ROI is banked and no longer moves with the price. */
+  closed?: boolean;
 };
 
 type Iv = "1m" | "5m" | "15m" | "1h";
@@ -324,7 +326,11 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
   // Who wins where: one line, the price at which both ROIs are equal (leverage included). Above it the long side
   // is ahead, below it the short side. No gap in the middle, whatever the two entries are.
   const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
-  const even = L && S && L !== S ? (L.lev + S.lev) / (L.lev / L.entry + S.lev / S.entry) : null;
+  // If one side has already closed, their ROI is banked: the line is where the open side's ROI matches it.
+  const even = !(L && S && L !== S) ? null
+    : L.closed && !S.closed ? S.entry * (1 - L.roi / 100 / S.lev)
+    : S.closed && !L.closed ? L.entry * (1 + S.roi / 100 / L.lev)
+    : (L.lev + S.lev) / (L.lev / L.entry + S.lev / S.entry);
   const zones = L && S && even ? { up: L, down: S, yb: Math.max(2, Math.min(H - 2, y(even))) } : null;
   // Pins in the gutter: nudge apart when the two entries are close so both avatars stay readable.
   const pinY = [y(a.entry), y(b.entry)];

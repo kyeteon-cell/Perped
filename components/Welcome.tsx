@@ -95,11 +95,18 @@ function FirstTrade({ level, onDone, onSkip }: { level: Level; onDone: () => voi
 
 /** Step 3: the first fade, guided. Takes the other side of a live trade from the feed. */
 function FirstFade({ level, onDone, onSkip }: { level: Level; onDone: () => void; onSkip: () => void }) {
-  const { profile } = useSession();
-  const { data } = useSWR<{ posts: FeedRow[] }>("/api/posts?tab=live&limit=30");
-  const pick = (data?.posts ?? []).find((p) => p.post.kind === "trade" && p.post.status === "open" && p.author && p.author.handle !== profile?.handle);
-  useEffect(() => { if (data && !pick) onSkip(); }, [data, pick, onSkip]);
-  if (!pick) return <div className="intro"><div className="intro-slide"><p className="muted">Finding a live trade to fade…</p></div></div>;
+  const { profile, authedFetch } = useSession();
+  // Pick one trade once and keep it: a feed refresh mustn't swap the trade under the ticket.
+  const [pick, setPick] = useState<FeedRow | null>(null);
+  const [none, setNone] = useState(false);
+  const { data, error } = useSWR<{ posts: FeedRow[] }>(pick ? null : "/api/posts?tab=live&limit=30", (u: string) => authedFetch(u).then((r) => r.json()), { revalidateOnFocus: false });
+  useEffect(() => {
+    if (pick || !data) return;
+    const p = (data.posts ?? []).find((x) => x.post.kind === "trade" && x.post.status === "open" && x.author && x.author.handle !== profile?.handle && x.author.allowFade !== false && !x.noFade);
+    if (p) setPick(p); else setNone(true);
+  }, [data, pick, profile?.handle]);
+  useEffect(() => { if (none || error) onSkip(); }, [none, error, onSkip]);
+  if (!pick) return <div className="intro"><div className="intro-top"><span className="eyebrow">Your first fade</span><button className="intro-skip" onClick={onSkip}>Skip</button></div><div className="intro-slide"><p className="muted">Finding a live trade to fade…</p></div><div className="intro-nav"><button className="btn ghost" onClick={onSkip}>Skip this</button><span /></div></div>;
   const s = pick.post.side as "long" | "short", mine = s === "long" ? "short" : "long", lev = pick.post.leverage ?? 2;
   return (
     <div className="intro">
@@ -113,7 +120,7 @@ function FirstFade({ level, onDone, onSkip }: { level: Level; onDone: () => void
           <CoinMark coin={pick.post.coin!} size="sm" />
         </div>
         <div className="wl-vs"><span>You go <b className={mine === "long" ? "green" : "red"}>{mine}</b></span><span className="when">{level === "new" ? (mine === "short" ? "you win if the price falls" : "you win if the price rises") : `same ${lev}×, stop loss added`}</span></div>
-        <div className="wl-ticket"><TradeTicket seed={{ coin: pick.post.coin!, side: mine, leverage: lev, fadedFromId: pick.post.id, handle: pick.author!.handle, lockLev: true, toBattle: true }} compact quick onDone={onDone} /></div>
+        <div className="wl-ticket"><TradeTicket key={pick.post.id} seed={{ coin: pick.post.coin!, side: mine, leverage: lev, fadedFromId: pick.post.id, handle: pick.author!.handle, lockLev: true, toBattle: true }} compact quick onDone={onDone} /></div>
       </div>
       <div className="intro-nav"><button className="btn ghost" onClick={onSkip}>Skip this</button><span className="wl-hint">Place the fade above to start the fight</span></div>
     </div>
@@ -137,6 +144,7 @@ export function Welcome({ onClose }: { onClose: () => void }) {
   const finish = () => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} track("intro_done"); onClose(); };
   // Before the first trade, make sure there's a free demo account to trade with.
   const toTrade = async () => {
+    if (busy) return;
     if (ready && !authenticated) { setBusy(true); await startGuest().catch(() => null); await refreshMe().catch(() => null); setBusy(false); }
     setStep("trade");
   };

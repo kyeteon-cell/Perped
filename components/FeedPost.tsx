@@ -386,7 +386,7 @@ function fightersOf(item: FeedRow, mark: number, myRoi: number): [Fighter, Fight
   const theirMark = src.status === "open" ? mark : Number(src.exitPx ?? entry);
   const theirRoi = entry ? pnlForPosition(src.side, entry, theirMark, Number(src.size ?? 0)).pct * lev : 0;
   return [
-    { handle: src.handle, avatarUrl: src.avatarUrl, side: src.side, lev, entry, sl: src.slPx ? Number(src.slPx) : null, openedAt: src.createdAt ?? null, roi: theirRoi },
+    { handle: src.handle, avatarUrl: src.avatarUrl, side: src.side, lev, entry, sl: src.slPx ? Number(src.slPx) : null, openedAt: src.createdAt ?? null, roi: theirRoi, closed: src.status !== "open" },
     { handle: author.handle, avatarUrl: author.avatarUrl, side: post.side as "long" | "short", lev: post.leverage ?? 1, entry: Number(post.entryPx), sl: post.slPx ? Number(post.slPx) : null, openedAt: post.createdAt, roi: myRoi },
   ];
 }

@@ -5,11 +5,12 @@ import { Sheet } from "./Sheet";
 import { HERO_BACKGROUNDS, SHARE_BACKGROUNDS } from "@/lib/share-backgrounds";
 import { rankFor } from "@/lib/rank";
 import { referralLink } from "@/lib/fees";
+import { useSession } from "@/lib/hooks/useSession";
 
 /** What the profile card shows. Numbers are taken when the sheet opens. */
 export type ProfileShareData = { handle: string; avatarUrl: string | null; verified: boolean; demo: boolean; xp: number; url: string };
 type CardRange = "1d" | "7d" | "28d" | "1y" | "all";
-type CardStats = { won: number; lost: number; drawn: number; form: ("W" | "L" | "D")[]; streak: number; bestStreak: number; closedTrades: number; tradesWon: number; pnl: number; callsHit: number; callsResolved: number; copied: number; faded: number; xp: number };
+type CardStats = { won: number; lost: number; drawn: number; form: ("W" | "L" | "D")[]; streak: number; bestStreak: number; closedTrades: number; tradesWon: number; pnl: number | null; callsHit: number; callsResolved: number; copied: number; faded: number; xp: number };
 const RANGE_LABEL: Record<CardRange, [string, string]> = { "1d": ["1D", "LAST 24 HOURS"], "7d": ["7D", "LAST 7 DAYS"], "28d": ["28D", "LAST 28 DAYS"], "1y": ["1Y", "LAST 12 MONTHS"], all: ["All", "ALL TIME"] };
 
 const BGS: { key: string; name: string }[] = [
@@ -84,7 +85,7 @@ async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey:
   const tiles: [string, string, string?][] = [
     ["STREAK", st.streak > 0 ? `${st.streak}` : "–", `best ${st.bestStreak}`],
     ["TRADES WON", st.closedTrades ? `${Math.round((st.tradesWon / st.closedTrades) * 100)}%` : "–", `${st.closedTrades} closed`],
-    [d.demo ? "PNL · DEMO" : "PNL", st.closedTrades ? money(st.pnl) : "–", st.xp ? `${st.xp > 0 ? "+" : ""}${st.xp.toLocaleString("en-US")} XP` : undefined],
+    [d.demo ? "PNL · DEMO" : "PNL", st.closedTrades && st.pnl != null ? money(st.pnl) : "–", st.xp ? `${st.xp > 0 ? "+" : ""}${st.xp.toLocaleString("en-US")} XP` : undefined],
     ["CALLS HIT", st.callsResolved ? `${Math.round((st.callsHit / st.callsResolved) * 100)}%` : "–", `${st.callsHit}/${st.callsResolved}`],
     ["COPIED", `${st.copied}`, "times"],
     ["FADED", `${st.faded}`, "times"],
@@ -95,7 +96,7 @@ async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey:
     g.fillStyle = "rgba(255,255,255,.08)"; rr(g, tx, ty, tw, th, 26); g.fill();
     g.strokeStyle = "rgba(255,255,255,.14)"; g.lineWidth = 2; g.stroke();
     g.font = `800 24px ${sans}`; g.fillStyle = "rgba(255,255,255,.65)"; g.fillText(k, tx + 24, ty + 42);
-    g.font = `900 54px ${mono}`; g.fillStyle = k.startsWith("PNL") && st.closedTrades ? (st.pnl >= 0 ? G : R) : "#fff"; g.fillText(v, tx + 24, ty + 102);
+    g.font = `900 54px ${mono}`; g.fillStyle = k.startsWith("PNL") && st.closedTrades && st.pnl != null ? (st.pnl >= 0 ? G : R) : "#fff"; g.fillText(v, tx + 24, ty + 102);
     if (s2) { g.font = `700 22px ${sans}`; g.fillStyle = "rgba(255,255,255,.55)"; g.fillText(s2, tx + 24, ty + 132); }
   });
 
@@ -120,6 +121,7 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [frozen] = useState(data);
+  const { authedFetch } = useSession();
   const invite = referralLink(new URL(data.url).origin, data.handle);
   const [range, setRange] = useState<CardRange>(() => { try { return (localStorage.getItem("perped:profile-range") as CardRange) || "all"; } catch { return "all"; } });
   // Stats for the chosen period, fetched once per period and kept while the sheet is open.
@@ -127,9 +129,9 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
   useEffect(() => {
     if (stats[range]) return;
     let off = false;
-    fetch(`/api/profile/${frozen.handle}/card?range=${range}`).then((r) => r.json()).then((j: CardStats) => { if (!off) setStats((s) => ({ ...s, [range]: j })); }).catch(() => setMsg("Couldn't load the stats"));
+    authedFetch(`/api/profile/${frozen.handle}/card?range=${range}`).then((r) => r.json()).then((j: CardStats) => { if (!off) setStats((s) => ({ ...s, [range]: j })); }).catch(() => setMsg("Couldn't load the stats"));
     return () => { off = true; };
-  }, [range, frozen.handle, stats]);
+  }, [range, frozen.handle, stats, authedFetch]);
   const st = stats[range];
   useEffect(() => {
     if (!st) { setPng(null); return; }

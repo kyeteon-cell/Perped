@@ -319,4 +319,6 @@ create table if not exists account_links (
 );
 -- Earnings: trades placed on someone's call.
 create index if not exists posts_backed_idx on posts (backed_post_id) where backed_post_id is not null;
+-- Profile activity: a user's own likes/dislikes.
+create index if not exists votes_user_idx on votes (user_id, created_at);
 `;

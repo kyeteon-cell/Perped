@@ -30,22 +30,24 @@ export async function estimateEarnings(userId: string, paper: boolean, rates: { 
   const held = sql`coalesce(f.closed_at, now()) - f.created_at >= make_interval(secs => ${CREATOR_MIN_HOLD_S})`;
   const since14 = new Date(Date.now() - 13 * 86_400_000).toISOString().slice(0, 10);
   const [fills, inv] = await Promise.all([
+    // Three index-friendly branches (copies, fades, call trades), each starting from this trader's own posts.
     db.execute(sql`select f.id, f.created_at::date::text as day, f.notional_usd::float as volume, ${fee} as fee,
-        case when f.copied_from_id is not null then 'copy' when f.faded_from_id is not null then 'fade' else 'call' end as how,
-        s.id as src, s.coin, s.side, coalesce(s.leverage, 1) as leverage, s.created_at as at, u.handle, u.avatar_url as "avatarUrl"
-      from posts f join users u on u.id = f.user_id
+        x.how, s.id as src, s.coin, s.side, coalesce(s.leverage, 1) as leverage, s.created_at as at, u.handle, u.avatar_url as "avatarUrl"
+      from (
+        select f2.id as fid, 'copy' as how from posts s2 join posts f2 on f2.copied_from_id = s2.id where s2.user_id = ${userId}
+        union all select f2.id, 'fade' from posts s2 join posts f2 on f2.faded_from_id = s2.id where s2.user_id = ${userId}
+        union all select f2.id, 'call' from posts s2 join posts f2 on f2.backed_post_id = s2.id where s2.user_id = ${userId}
+      ) x
+      join posts f on f.id = x.fid
       join posts s on s.id = coalesce(f.copied_from_id, f.faded_from_id, f.backed_post_id)
-      where (f.copied_from_id in (select id from posts where user_id = ${userId})
-          or f.faded_from_id in (select id from posts where user_id = ${userId})
-          or f.backed_post_id in (select id from posts where user_id = ${userId}))
-        and s.user_id = ${userId} and f.user_id <> ${userId} and f.kind = 'trade' and f.paper = ${paper}
-        and f.notional_usd is not null and ${held}
+      join users u on u.id = f.user_id
+      where f.user_id <> ${userId} and f.kind = 'trade' and f.paper = ${paper} and f.notional_usd is not null and ${held}
       order by f.created_at desc limit 5000`),
     db.execute(sql`select f.created_at::date::text as day, ${fee} as fee, case when u.referred_by = ${userId} then 1 else 2 end as lvl
       from posts f join users u on u.id = f.user_id
       where f.kind = 'trade' and f.paper = ${paper} and f.notional_usd is not null
         and (u.referred_by = ${userId} or u.referred_by in (select id from users where referred_by = ${userId}))
-      limit 10000`),
+      order by f.created_at desc limit 10000`),
   ]);
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
   const blank = (): Src => ({ total: 0, week: 0 });
