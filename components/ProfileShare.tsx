@@ -33,7 +33,7 @@ function rr(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: num
 const money = (n: number) => `${n < 0 ? "-" : "+"}$${Math.abs(n) >= 1e6 ? (Math.abs(n) / 1e6).toFixed(1) + "M" : Math.abs(n) >= 1e3 ? (Math.abs(n) / 1e3).toFixed(1) + "K" : Math.abs(n).toFixed(0)}`;
 
 /** The trader card: 1080×1350 (4:5), on the chosen background. */
-async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey: string, top: string[] = []) {
+async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey: string, best: string[] = []) {
   const W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
   await document.fonts?.ready;
@@ -67,13 +67,13 @@ async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey:
   const sub = `${rank.title.toUpperCase()} · ${d.xp.toLocaleString("en-US")} XP${d.demo ? " · DEMO" : ""}`; g.fillText(sub, cx - g.measureText(sub).width / 2, 528);
 
   // Their best three trophies, under the rank line.
-  if (top.length) {
-    const s = 56, gap = 18, tw = top.length * s + (top.length - 1) * gap; let tx = W / 2 - tw / 2;
-    for (const k of top) { const t = TROPHY[k]; if (!t) continue; const em = await img(emblemUrl(t)); if (em) g.drawImage(em, tx, 542, s, s); tx += s + gap; }
+  if (best.length) {
+    const s = 56, gap = 18, tw = best.length * s + (best.length - 1) * gap; let tx = W / 2 - tw / 2;
+    for (const k of best) { const t = TROPHY[k]; if (!t) continue; const em = await img(emblemUrl(t)); if (em) g.drawImage(em, tx, 542, s, s); tx += s + gap; }
   }
   // Fade record, big
   const fights = st.won + st.lost, wr = fights ? Math.round((st.won / fights) * 100) : null;
-  g.font = `900 ${top.length ? 118 : 140}px ${mono}`;
+  g.font = `900 ${best.length ? 118 : 140}px ${mono}`;
   const wS = String(st.won), lS = String(st.lost), dash = " – ";
   const ww = g.measureText(wS).width, dw = g.measureText(dash).width, lw = g.measureText(lS).width;
   let x = cx - (ww + dw + lw) / 2;
