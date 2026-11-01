@@ -1613,3 +1613,23 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .kt-item .when { font-size: 11px; }
 @keyframes ktscroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) { .kt-track { animation: none; } }
+
+/* Earnings page: staff preview switch, would've-earned look, 14-day bars, source breakdown */
+.inv-as { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; margin-bottom: 10px; border-radius: 999px; border: 1px dashed var(--line); background: var(--surface); }
+.inv-as button { border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 800; color: var(--muted); padding: 7px 4px; border-radius: 999px; cursor: pointer; }
+.inv-as button.on { background: var(--ink); color: var(--ink-fg); }
+.inv-card.would { border-style: dashed; background: repeating-linear-gradient(135deg, var(--surface) 0 10px, color-mix(in srgb, var(--text) 2.5%, var(--surface)) 10px 20px); }
+.inv-card.would .mono.text-\[32px\] { color: var(--muted); }
+.inv-est { font-size: 10.5px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; color: var(--chrome-fg); background: linear-gradient(180deg, var(--chrome-hi), var(--chrome-lo)); }
+.inv-brag { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 999px; padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.inv-days { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; align-items: end; height: 70px; margin-top: 14px; }
+.inv-days > div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 3px; min-width: 0; }
+.inv-days i { display: block; width: 100%; border-radius: 4px 4px 2px 2px; background: var(--green); opacity: .85; }
+.inv-card.would .inv-days i { background: var(--chrome); }
+.inv-days span { font-size: 9px; color: var(--muted); font-weight: 700; line-height: 1; }
+.inv-srcs { display: grid; gap: 11px; margin-top: 10px; }
+.inv-bar { height: 6px; margin-top: 5px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); overflow: hidden; }
+.inv-bar i { display: block; height: 100%; border-radius: 999px; background: var(--green); }
+.inv-bar i.fade { background: var(--red); } .inv-bar i.call { background: var(--gold); } .inv-bar i.invite, .inv-bar i.invite2 { background: #8b5cf6; }
+.inv-card.would .inv-bar i { opacity: .55; }
+a.inv-erow { color: inherit; }

@@ -9,6 +9,8 @@ import { CREATOR_FOUNDER_PCT, CREATOR_PCT, CREATOR_RANKED_LEVEL, CREATOR_RANKED_
 import { RANKS, rankFor } from "@/lib/rank";
 import { notify } from "@/lib/feed";
 import { getLiveSettings } from "@/lib/live";
+import { estimateEarnings } from "@/lib/earn-estimate";
+import { isStaff } from "@/lib/programme-rates";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +22,17 @@ export async function GET(req: Request) {
   const me = await getProfile(auth.privyId);
   if (!me) return Response.json({ error: "no profile" }, { status: 404 });
   const week = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
-  const founder = isFounder(me);
+  // Staff can preview the page as each kind of member: ?as=founder | regular | demo (presentation only, their own data).
+  const staff = isStaff(me.role);
+  const as = staff ? new URL(req.url).searchParams.get("as") : null;
+  const founder = as === "founder" ? true : as === "regular" || as === "demo" ? false : isFounder(me);
+  // Demo accounts see "would've earned": the same page, worked out from demo trades.
+  const mode: "real" | "demo" = as === "demo" ? "demo" : as === "regular" || as === "founder" ? "real" : me.isDemo ? "demo" : "real";
+  const since14 = new Date(Date.now() - 13 * 86_400_000).toISOString().slice(0, 10);
   const live = await getLiveSettings();
   // Grace clock runs from the later of the seat date and the day real money opened; paused while closed.
   const graceStart = Math.max(me.founderSince ? new Date(me.founderSince).getTime() : Date.now(), live.open && live.openedAt ? new Date(live.openedAt).getTime() : Date.now());
-  const [bySource, paid, people, people2, creator, active, inviter, counts] = await Promise.all([
+  const [bySource, paid, people, people2, creator, active, inviter, realDaily, counts] = await Promise.all([
     db.execute(sql`select kind, coalesce(sum(share_usd),0)::float as total, coalesce(sum(share_usd) filter (where day >= ${week}),0)::float as week from referral_earnings where referrer_id = ${me.id} group by kind`),
     db.execute(sql`select coalesce(sum(amount_usd),0)::float as paid from referral_payouts where referrer_id = ${me.id}`),
     db.select({
@@ -41,6 +49,7 @@ export async function GET(req: Request) {
       where e.referrer_id = ${me.id} and e.kind = 'creator' order by e.day desc, e.share_usd desc limit 20`),
     countActiveReferees(me.id),
     me.referredBy ? db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, me.referredBy)).limit(1) : Promise.resolve([]),
+    db.execute(sql`select day::text as day, coalesce(sum(share_usd),0)::float as earned from referral_earnings where referrer_id = ${me.id} and day >= ${since14} group by day`),
     db.execute(sql`select count(*)::int as joined, count(*) filter (where not is_demo)::int as live,
       exists (select 1 from referral_earnings e where e.referrer_id = ${me.id} and e.kind = 'invite' and e.fills > 0) as secured from users where referred_by = ${me.id}`),
   ]);
@@ -53,8 +62,15 @@ export async function GET(req: Request) {
   const ranked = RANKS.find((r) => r.level === CREATOR_RANKED_LEVEL)!;
   const c = rows(counts)[0] ?? { joined: 0, live: 0 };
   const base = /localhost/.test(APP_URL) ? new URL(req.url).origin : APP_URL;
+  const fSince = me.founderSince ?? new Date().toISOString();
+  const invitePct = founder ? founderL1Pct(fSince) : (active >= REFERRAL_TOP_THRESHOLD ? REFERRAL_TOP_SHARE_PCT : REFERRAL_SHARE_PCT);
+  const est = await estimateEarnings(me.id, mode === "demo", { creatorPct, invitePct, l2Pct: founder ? FOUNDER_L2_PCT : 0 });
+  const rd = new Map(rows(realDaily).map((r) => [String(r.day), Number(r.earned)]));
   return Response.json({
     handle: me.handle,
+    mode, staff, as,
+    est,
+    daily: mode === "demo" ? est.daily : est.daily.map((d) => ({ day: d.day, earned: rd.get(d.day) ?? 0 })),
     link: referralLink(base, me.handle),
     canGoLive: canGoLive(me),
     onWaitlist: !!me.waitlistAt && !canGoLive(me),
@@ -62,13 +78,13 @@ export async function GET(req: Request) {
     invitedBy: (inviter as { handle: string }[])[0]?.handle ?? null,
     canRedeem: !me.referredBy && me.isDemo,
     founder: founder ? {
-      seat: me.founderSeat, wave: FOUNDER_WAVE, seats: FOUNDER_SEATS, since: me.founderSince, l1Pct: founderL1Pct(me.founderSince), l1LaterPct: FOUNDER_L1_LATER_PCT, l1TopPct: FOUNDER_L1_PCT,
-      l1Ends: me.founderSince ? founderL1Ends(me.founderSince).toISOString() : null, l2Pct: FOUNDER_L2_PCT, graceDays: FOUNDER_GRACE_DAYS,
+      seat: me.founderSeat ?? 0, wave: FOUNDER_WAVE, seats: FOUNDER_SEATS, since: fSince, l1Pct: founderL1Pct(fSince), l1LaterPct: FOUNDER_L1_LATER_PCT, l1TopPct: FOUNDER_L1_PCT,
+      l1Ends: founderL1Ends(fSince).toISOString(), l2Pct: FOUNDER_L2_PCT, graceDays: FOUNDER_GRACE_DAYS,
       graceLeft: Math.max(0, FOUNDER_GRACE_DAYS - Math.floor((Date.now() - graceStart) / 86_400_000)), gracePaused: !live.open,
       secured: !!(c as Record<string, unknown>).secured,
     } : null,
     rates: {
-      invitePct: founder ? founderL1Pct(me.founderSince) : (active >= REFERRAL_TOP_THRESHOLD ? REFERRAL_TOP_SHARE_PCT : REFERRAL_SHARE_PCT),
+      invitePct,
       baseInvitePct: REFERRAL_SHARE_PCT, topInvitePct: REFERRAL_TOP_SHARE_PCT, topThreshold: REFERRAL_TOP_THRESHOLD, activeInvites: active,
       creatorPct, creatorBasePct: CREATOR_PCT, creatorRankedPct: CREATOR_RANKED_PCT, creatorRankTitle: ranked.title, xpToRanked: Math.max(0, ranked.min - (me.xp ?? 0)),
     },
