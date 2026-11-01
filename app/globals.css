@@ -1645,3 +1645,12 @@ a.inv-erow { color: inherit; }
 .ah-sec ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 6px; }
 .ah-sec li { font-size: 13.5px; line-height: 1.45; color: var(--muted); }
 .ah-sec li b { color: var(--text); }
+
+/* Fade card chart: overlays share the drawing's box; pins live in a left gutter; one "even" line splits who's ahead. */
+.bcc-in { position: absolute; inset: 8px 4px; }
+.bcc .bcc-in svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bcc-zone.up, .bcc-zone.down { bottom: auto; }
+.bcc-zone.up { transform: translateY(calc(-100% - 3px)); }
+.bcc-zone.down { transform: translateY(3px); }
+.bcc-pin { z-index: 2; }
+.tc-foot .when b { color: var(--text); }

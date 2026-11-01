@@ -316,25 +316,35 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
   const n = Math.max(candles.length, 1), t0 = candles[0]?.t ?? Date.now(), ms = IVS[civ];
   const idx = (t: number) => Math.max(0, Math.min(n - 1, Math.floor((t - t0) / ms)));
   const first = idx(fightStart);
-  const SLOTS = Math.max(44, Math.ceil(n / 0.74)), slotW = W / SLOTS, histW = first * slotW;
-  const xOf = (i: number) => (i + 0.5) * slotW;
+  // A left gutter holds the two fighters' pins at their entry prices, so they never sit on top of the candles.
+  const G = 30;
+  const SLOTS = Math.max(40, Math.ceil(n / 0.74)), slotW = (W - G) / SLOTS, histW = G + first * slotW;
+  const xOf = (i: number) => G + (i + 0.5) * slotW;
   const bwOf = (_i: number) => Math.max(1, slotW * 0.56);
-  const nowX = n * slotW;
-  // Who wins where: the long side wins above its entry, the short side below its entry.
+  const nowX = G + n * slotW;
+  // Who wins where: one line, the price at which both ROIs are equal (leverage included). Above it the long side
+  // is ahead, below it the short side. No gap in the middle, whatever the two entries are.
   const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
-  const zones = L && S && L !== S ? { up: L, upP: Math.max(L.entry, S.entry), down: S, downP: Math.min(L.entry, S.entry) } : null;
+  const even = L && S && L !== S ? (L.lev + S.lev) / (L.lev / L.entry + S.lev / S.entry) : null;
+  const zones = L && S && even ? { up: L, down: S, yb: Math.max(2, Math.min(H - 2, y(even))) } : null;
+  // Pins in the gutter: nudge apart when the two entries are close so both avatars stay readable.
+  const pinY = [y(a.entry), y(b.entry)];
+  if (Math.abs(pinY[0] - pinY[1]) < 24) { const mid = (pinY[0] + pinY[1]) / 2, up = pinY[0] <= pinY[1] ? 0 : 1; pinY[up] = mid - 12; pinY[1 - up] = mid + 12; }
   const leader = Math.abs(a.roi - b.roi) < 0.05 ? null : a.roi > b.roi ? a : b;
   return (
     <>
-    <div ref={box} className="bcc">
+    <div ref={box} className="bcc"><div className="bcc-in">
       {candles.length ? (
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
           {zones && (
             <>
-              <rect x={histW} y="0" width={W - histW} height={y(zones.upP)} fill={GREEN} opacity=".1" />
-              <rect x={histW} y={y(zones.downP)} width={W - histW} height={Math.max(0, H - y(zones.downP))} fill={RED} opacity=".1" />
+              <rect x={histW} y="0" width={W - histW} height={zones.yb} fill={GREEN} opacity=".1" />
+              <rect x={histW} y={zones.yb} width={W - histW} height={Math.max(0, H - zones.yb)} fill={RED} opacity=".1" />
             </>
           )}
+          {/* Each fighter's entry: a thin line in their side's colour from their pin across the chart. */}
+          {[a, b].map((f, i) => <line key={i} x1={G - 2} x2={W} y1={y(f.entry)} y2={y(f.entry)} stroke={f.side === "long" ? GREEN : RED} strokeDasharray="3 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".55" />)}
+          <line x1={G} x2={G} y1="0" y2={H} stroke="var(--line)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
           <line x1={nowX} x2={nowX} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".18" />
           <line x1={nowX - slotW} x2={W} y1={y(px)} y2={y(px)} stroke="var(--chrome)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
           {candles.map((c, i) => {
@@ -351,19 +361,18 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
       ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 12 }} />}
       {candles.length > 0 && (
         <>
-          {zones && <span className="bcc-zone up" style={{ left: pctX(nowX + 6) }}>{zones.up.handle} wins</span>}
-          {zones && <span className="bcc-zone down" style={{ left: pctX(nowX + 6) }}>{zones.down.handle} wins</span>}
+          {zones && <span className="bcc-zone up" style={{ left: pctX(Math.min(nowX + 6, W * 0.74)), top: `${(zones.yb / H) * 100}%` }}>{zones.up.handle} ahead ↑</span>}
+          {zones && <span className="bcc-zone down" style={{ left: pctX(Math.min(nowX + 6, W * 0.74)), top: `${(zones.yb / H) * 100}%` }}>{zones.down.handle} ahead ↓</span>}
           {[a, b].map((f, i) => (
-            <span key={i} className={`bcc-pin ${f.side}`} style={{ left: `clamp(14px, ${pctX(xOf(idx(ts(f.openedAt))))}, calc(100% - 14px))`, top: `clamp(14px, ${pctY(f.entry)}, calc(100% - 14px))` }} title={`${f.handle} ${f.side === "long" ? "bought" : "sold"} at ${fmtPrice(f.entry)}`}>
+            <span key={i} className={`bcc-pin ${f.side}`} style={{ left: pctX(G / 2), top: `clamp(12px, ${(pinY[i] / H) * 100}%, calc(100% - 12px))` }} title={`${f.handle} ${f.side === "long" ? "bought" : "sold"} at ${fmtPrice(f.entry)}`}>
               <Avatar handle={f.handle} url={f.avatarUrl} size={20} link={false} />
             </span>
           ))}
-          <span className="bcc-lead">{leader ? `${leader.handle} leads by ${Math.abs(a.roi - b.roi).toFixed(1)}%` : "Dead level"}</span>
         </>
       )}
-    </div>
+    </div></div>
     <div className="tc-foot">
-      <span className="when truncate">{civ} candles · fight started {Math.max(1, Math.round(age / 60_000)) < 60 ? `${Math.max(1, Math.round(age / 60_000))}m` : `${Math.round(age / 3_600_000)}h`} ago</span>
+      <span className="when truncate">{leader ? <><b>{leader.handle}</b> leads by <b className="mono">{Math.abs(a.roi - b.roi).toFixed(1)}%</b></> : <b>Dead level</b>} · started {Math.max(1, Math.round(age / 60_000)) < 60 ? `${Math.max(1, Math.round(age / 60_000))}m` : `${Math.round(age / 3_600_000)}h`} ago</span>
       <span className="tc-ivs v2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
         {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === civ ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
       </span>
