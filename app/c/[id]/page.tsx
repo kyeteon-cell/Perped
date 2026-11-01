@@ -56,7 +56,7 @@ export default function ChallengePage() {
 
   return (
     <main className="px-5 pb-10 pt-8">
-      <div className="hero photo" style={{ backgroundImage: "url(/api/share-bg/hero-fightnight)", margin: 0 }}>
+      <div className="hero photo" style={{ backgroundImage: "url(/api/share-bg/hero-chrome-gold)", margin: 0 }}>
         <div className="k">You&rsquo;ve been challenged</div>
         <div className="mt-3 flex items-center gap-3">
           <Avatar handle={handle} url={author?.avatarUrl} size={48} />
