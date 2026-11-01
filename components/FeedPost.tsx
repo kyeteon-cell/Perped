@@ -365,14 +365,13 @@ function FadeCard({ item, a, b, mark, mid, onChanged, quick, setQuick, canAct, c
       <div className="fc-row">{side(a, false, src?.xp)}<span className="fc-vs">vs</span>{side(b, true, author?.xp)}</div>
       <BattleCardChart coin={post.coin!} live={mark} a={a} b={b} />
       {post.body && <div className="fc-quote"><b>{b.handle}:</b> <RichText text={post.body} /></div>}
-      <Acts item={item} onChanged={onChanged} mid={mid} manage={mine}>
-        {canAct && (
-          <>
-            {canFade && <button className="fc-back ml-auto" onClick={() => setQuick("fade")}>Back {a.handle}</button>}
-            {canCopy && <button className={`fc-back ${canFade ? "" : "ml-auto"}`} onClick={() => setQuick("copy")}>Back {b.handle}</button>}
-          </>
-        )}
-      </Acts>
+      {canAct && (canFade || canCopy) && (
+        <div className="fc-backs">
+          {canFade && <button className="fc-back" onClick={() => setQuick("fade")}><span>Back</span><b>{a.handle}</b></button>}
+          {canCopy && <button className="fc-back" onClick={() => setQuick("copy")}><span>Back</span><b>{b.handle}</b></button>}
+        </div>
+      )}
+      <Acts item={item} onChanged={onChanged} mid={mid} manage={mine} />
     </article>
   );
 }

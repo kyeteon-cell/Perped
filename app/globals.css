@@ -1508,3 +1508,6 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .tc-ivs.v2 { position: static; flex: none; }
 /* P&L on trade cards: plain coloured numbers, no box */
 .pnlpill, .pnlpill.g, .pnlpill.r { background: transparent !important; box-shadow: none !important; padding: 0 !important; }
+.fc-backs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.fc-backs .fc-back { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; padding: 10px 12px; }
+.fc-back span { font-weight: 700; color: var(--muted); flex: none; } .fc-back b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
