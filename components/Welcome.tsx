@@ -102,7 +102,9 @@ function FirstFade({ level, onDone, onSkip }: { level: Level; onDone: () => void
   const { data, error } = useSWR<{ posts: FeedRow[] }>(pick ? null : "/api/posts?tab=live&limit=30", (u: string) => authedFetch(u).then((r) => r.json()), { revalidateOnFocus: false });
   useEffect(() => {
     if (pick || !data) return;
-    const p = (data.posts ?? []).find((x) => x.post.kind === "trade" && x.post.status === "open" && x.author && x.author.handle !== profile?.handle && x.author.allowFade !== false && !x.noFade);
+    // The one most worth fading: an open trade by someone else, boldest leverage first.
+    const p = (data.posts ?? []).filter((x) => x.post.kind === "trade" && x.post.status === "open" && x.author && x.author.handle !== profile?.handle && x.author.allowFade !== false && !x.noFade)
+      .sort((a, b) => (b.post.leverage ?? 1) - (a.post.leverage ?? 1))[0];
     if (p) setPick(p); else setNone(true);
   }, [data, pick, profile?.handle]);
   useEffect(() => { if (none || error) onSkip(); }, [none, error, onSkip]);
@@ -144,7 +146,8 @@ export function Welcome({ onClose }: { onClose: () => void }) {
   const [sel, setSel] = useState<Level | null>(null);
   const finish = () => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} track("intro_done"); onClose(); };
   // Before the first trade, make sure there's a free demo account to trade with.
-  const toTrade = async () => {
+  /** Make sure there's a free demo account, then go to `next`. */
+  const withAccount = async (next: "fade" | "trade") => {
     if (busy) return;
     if (ready && !authenticated) {
       setBusy(true); setErr(null);
@@ -152,9 +155,10 @@ export function Welcome({ onClose }: { onClose: () => void }) {
       await refreshMe().catch(() => null); setBusy(false);
       if (!ok) return;
     }
-    setStep("trade");
+    setStep(next);
   };
-  const choose = (l: Level) => { track(l === "new" ? "welcome_new" : l === "crypto" ? "welcome_crypto" : "welcome_perps"); setLevel(l); try { localStorage.setItem(LEVEL_KEY, l); } catch {} setStep("learn"); };
+  const toTrade = () => withAccount("trade");
+  const choose = (l: Level) => { track(l === "new" ? "welcome_new" : l === "crypto" ? "welcome_crypto" : "welcome_perps"); setLevel(l); try { localStorage.setItem(LEVEL_KEY, l); } catch {} void withAccount("fade"); };
 
   return (
     <div className="intro-overlay" role="dialog" aria-label="Welcome to Perped">
@@ -174,8 +178,8 @@ export function Welcome({ onClose }: { onClose: () => void }) {
         </div>
       )}
       {step === "learn" && level && (level === "perps" ? <Intro onDone={toTrade} doneLabel={busy ? "…" : "Try it"} /> : <Deck slides={SLIDES[level]} onDone={toTrade} />)}
-      {step === "trade" && level && <FirstTrade level={level} onDone={() => { track("first_trade_done"); setStep("fade"); }} onSkip={() => { track("first_trade_skip"); setStep("fade"); }} />}
-      {step === "fade" && level && <FirstFade level={level} onDone={() => { track("first_fade_done"); finish(); }} onSkip={() => { track("first_fade_skip"); setStep("done"); }} />}
+      {step === "trade" && level && <FirstTrade level={level} onDone={() => { track("first_trade_done"); setStep("done"); }} onSkip={() => { track("first_trade_skip"); setStep("done"); }} />}
+      {step === "fade" && level && <FirstFade level={level} onDone={() => { track("first_fade_done"); finish(); }} onSkip={() => { track("first_fade_skip"); setStep("learn"); }} />}
       {step === "done" && level && (
         <div className="intro">
           <div className="intro-slide">

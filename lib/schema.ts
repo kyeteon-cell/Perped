@@ -185,6 +185,9 @@ export const battles = pgTable(
     settledAt: timestamp("settled_at", { withTimezone: true }),
     faderLow: numeric("fader_low"),
     targetLow: numeric("target_low"),
+    /** Who is ahead right now (for "you're winning / they overtook you" alerts), and when that last changed. */
+    leader: text("leader"),
+    leaderAt: timestamp("leader_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("battles_status_idx").on(t.status), index("battles_fader_idx").on(t.faderId), index("battles_target_idx").on(t.targetId)],

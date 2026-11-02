@@ -52,14 +52,15 @@ async function board(req: Request, forceDemo = false): Promise<{ mode: string; d
     battlesLost: schema.stats.battlesLost,
   };
   if (mode === "season") {
-    // Season = calendar month (UTC). Ranked by XP earned this month; the seed grant doesn't count.
-    const start = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1));
+    // Season = one week, Monday 00:00 UTC, so newcomers can top it. XP earned this week; bots don't compete.
+    const t = new Date(), dow = (t.getUTCDay() + 6) % 7;
+    const start = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate() - dow));
     const seasonXp = sql<number>`(select coalesce(sum(x.delta), 0) from xp_log x where x.user_id = ${schema.users.id} and x.created_at >= ${start.toISOString()} and x.reason <> 'season_start')`.mapWith(Number);
     const rows = await db.select({ ...base, seasonXp }).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId))
-      .where(and(realOnly, sql`exists (select 1 from xp_log x where x.user_id = ${schema.users.id} and x.created_at >= ${start.toISOString()} and x.reason <> 'season_start')`))
+      .where(and(realOnly, eq(schema.users.isBot, false), sql`exists (select 1 from xp_log x where x.user_id = ${schema.users.id} and x.created_at >= ${start.toISOString()} and x.reason <> 'season_start')`))
       .orderBy(desc(seasonXp)).limit(50);
-    const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1));
-    return { mode, demo, rows, season: { name: start.toLocaleString("en", { month: "long", timeZone: "UTC" }), endsAt: end.toISOString() } } as { mode: string; demo: boolean; rows: unknown[] };
+    const end = new Date(start.getTime() + 7 * 86_400_000);
+    return { mode, demo, rows, season: { name: `Week of ${start.toLocaleString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}`, endsAt: end.toISOString() } } as { mode: string; demo: boolean; rows: unknown[] };
   }
   if (mode === "ranks") {
     const rows = await db.select(base).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(realOnly).orderBy(desc(schema.users.xp), desc(schema.stats.battlesWon)).limit(50);
