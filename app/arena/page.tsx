@@ -9,7 +9,7 @@ import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
 import { fmtPct, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
-import { Avatar, CoinMark, RankEmblem, SkeletonList, ticker } from "@/components/ui";
+import { Avatar, CoinMark, RankEmblem, SkeletonList, ticker, LoadFail } from "@/components/ui";
 const ChallengeSheet = dynamic(() => import("@/components/ChallengeSheet").then((m) => m.ChallengeSheet), { ssr: false });
 import { Sheet } from "@/components/Sheet";
 import { rankFor } from "@/lib/rank";
@@ -450,7 +450,7 @@ export default function ArenaPage() {
   const [mids, setMids] = useState(liveMids);
   const lastMids = useRef(0);
   useEffect(() => { const now = Date.now(); if (now - lastMids.current >= 3000 || !Object.keys(mids).length) { lastMids.current = now; setMids(liveMids); } }, [liveMids, mids]);
-  const { data } = useSWR<ArenaRes>("/api/arena", async () => (await authedFetch("/api/arena")).json(), { refreshInterval: 20_000 });
+  const { data, error: arenaErr, mutate: retryArena } = useSWR<ArenaRes>("/api/arena", async () => (await authedFetch("/api/arena")).json(), { refreshInterval: 20_000 });
   const [picking, setPicking] = useState(false);
   const [how, setHow] = useState(false);
   const [target, setTarget] = useState<string | null>(null);
@@ -465,7 +465,7 @@ export default function ArenaPage() {
     <div className="fade-in pb-8" data-tint="gold">
       <div className={`arena-sticky ${stuck ? "on" : ""}`} aria-hidden={!stuck}>
         <b className="text-[15px] font-extrabold">Arena</b>
-        {me && <span className="mono text-[13px] font-bold"><span className="green">{me.won}</span><span className="muted">–</span><span className="red">{me.lost}</span></span>}
+        {me && <span className="mono text-[13px] font-bold"><span>{me.won}</span><span className="muted">–</span><span className="muted">{me.lost}</span></span>}
         {me && me.streak > 0 && <span className="gl text-[13px] font-bold"><Glyph n="flame" tone="gold" />{me.streak}</span>}
         <span className="ml-auto"><FightNight /></span>
       </div>
@@ -475,7 +475,7 @@ export default function ArenaPage() {
         <div className="mt-3 flex flex-wrap items-center gap-2"><button className="arena-cta" onClick={callOut}><span className="gl"><Glyph n="swords" />Call someone out</span></button><FightNight /></div>
       </header>
 
-      {!data && <SkeletonList n={3} card={false} />}
+      {!data && (arenaErr ? <LoadFail retry={() => retryArena()} /> : <SkeletonList n={3} card={false} />)}
 
       {me && (
         <section className="block">
@@ -483,7 +483,7 @@ export default function ArenaPage() {
             <RankEmblem level={lvl.level} size={52} />
             <div className="flex-1">
               <div className="eyebrow">Your record</div>
-              <div className="mono text-[24px] font-bold"><span className="green">{me.won}</span><span className="muted"> – </span><span className="red">{me.lost}</span>{me.drawn ? <span className="muted text-[15px]"> · {me.drawn} drawn</span> : null}</div>
+              <div className="mono text-[24px] font-bold"><span>{me.won}</span><span className="muted"> – </span><span className="muted">{me.lost}</span>{me.drawn ? <span className="muted text-[15px]"> · {me.drawn} drawn</span> : null}</div>
             </div>
             <div className="text-right"><div className="text-[22px] font-extrabold">{me.streak > 0 ? <span className="gl"><Glyph n="flame" tone="gold" />{me.streak}</span> : "—"}</div><div className="when text-[11px]">streak · best {me.best}</div></div>
           </div>
@@ -512,7 +512,7 @@ export default function ArenaPage() {
           {me.rivals.map((r) => (
             <div key={r.user.id} className="lb">
               <Avatar handle={r.user.handle} url={r.user.avatarUrl} size={40} xp={r.user.xp} />
-              <div className="min-w-0 flex-1"><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="name">{r.user.handle}</Link><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="mono when block"><span className="green">{r.won}W</span> · <span className="red">{r.lost}L</span> · see the series →</Link></div>
+              <div className="min-w-0 flex-1"><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="name">{r.user.handle}</Link><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="mono when block"><span style={{ color: "var(--text)" }}>{r.won}W</span> · <span>{r.lost}L</span> · see the series →</Link></div>
               <button className="chip on" onClick={() => setTarget(r.user.handle)}>Rematch</button>
             </div>
           ))}

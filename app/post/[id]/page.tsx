@@ -7,7 +7,7 @@ import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
 import { RichText } from "@/components/RichText";
 const ShareSheet = dynamic(() => import("@/components/ShareSheet").then((m) => m.ShareSheet), { ssr: false });
-import { Avatar, Badges, Icon, I, SkeletonList } from "@/components/ui";
+import { Avatar, Badges, Icon, I, SkeletonList, LoadFail } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
@@ -22,7 +22,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   const { mids } = useMids();
   const [autoQuick, setAutoQuick] = useState<"copy" | "fade" | null>(null);
   useEffect(() => { try { const q = new URLSearchParams(window.location.search); setAutoQuick(q.get("fade") === "1" ? "fade" : q.get("copy") === "1" ? "copy" : null); } catch {} }, []);
-  const { data, mutate } = useSWR<{ post: FeedRow }>(`/api/posts/${id}`, async () => (await authedFetch(`/api/posts/${id}`)).json());
+  const { data, mutate, error } = useSWR<{ post?: FeedRow; error?: string }>(`/api/posts/${id}`, async () => (await authedFetch(`/api/posts/${id}`)).json());
   const { data: cm, mutate: mutateC } = useSWR<{ comments: C[] }>(`/api/posts/${id}/comments`);
   const coin = data?.post?.post.coin;
   const { data: copiers } = useSWR<{ posts: FeedRow[] }>(coin ? `/api/posts?kind=trade&coin=${coin}&limit=50` : null);
@@ -61,14 +61,14 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div data-tint="brand" className="fade-in pb-40">
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Thread</div>{post ? <button className="iconbtn" aria-label="Share" onClick={() => setReceipt(true)}><Icon d={I.share} /></button> : <span className="w-9" />}</header>
-      {!post && <SkeletonList n={1} />}
+      {!post && (data || error ? <LoadFail gone={!!data} what="post" retry={() => mutate()} /> : <SkeletonList n={1} />)}
       {post && <FeedPost item={post} full autoQuick={autoQuick} mid={post.post.coin ? mids[post.post.coin] : undefined} onChanged={() => mutate()} />}
       {roots.map((c) => (<div key={c.comment.id}>{Row({ c })}{children(c.comment.id).map((r) => <div key={r.comment.id}>{Row({ c: r, reply: true })}</div>)}</div>))}
       {cm && roots.length === 0 && <p className="muted p-5 text-sm">No comments yet. Respect or roast.</p>}
       <div style={{ bottom: "calc(88px + env(safe-area-inset-bottom, 0px))", background: "var(--bg)", borderColor: "var(--line)" }} className="fixed left-1/2 flex w-full max-w-md -translate-x-1/2 items-center gap-2.5 border-t px-4 py-2.5">
         {profile && <Avatar handle={profile.handle} url={profile.avatarUrl} size={32} />}
         <input className="field" placeholder={replyTo ? "Reply…" : "Add a comment"} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} />
-        {replyTo && <button className="chip" onClick={() => setReplyTo(null)}>×</button>}
+        {replyTo && <button className="chip" onClick={() => setReplyTo(null)} aria-label="Cancel reply">×</button>}
         <button className="copy" onClick={send}>Send</button>
       </div>
       {cErr && <p style={{ bottom: "calc(144px + env(safe-area-inset-bottom, 0px))" }} className="red fixed left-1/2 w-full max-w-md -translate-x-1/2 px-5 text-xs">{cErr}</p>}

@@ -25,11 +25,12 @@ export function ChallengeSheet({ handle, onClose }: { handle: string; onClose: (
   const go = async () => {
     if (!authenticated) return login();
     setBusy(true); setErr(null);
-    const r = await authedFetch("/api/duels", { method: "POST", body: JSON.stringify({ opponent: handle, coin, side, stakeUsd: stake, hours }) });
-    const j = await r.json();
+    let r: Response, j: { error?: string; duel?: { id: number }; [k: string]: unknown };
+    try { r = await authedFetch("/api/duels", { method: "POST", body: JSON.stringify({ opponent: handle, coin, side, stakeUsd: stake, hours }) }); j = await r.json().catch(() => ({})); }
+    catch { setBusy(false); return setErr("Couldn't reach Perped. Check your connection."); }
     setBusy(false);
     if (!r.ok) return setErr(j.error ?? "Couldn't create the duel");
-    router.push(`/trade?duel=${j.duel.id}`);
+    router.push(`/trade?duel=${j.duel?.id}`);
   };
 
   return (

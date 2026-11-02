@@ -64,11 +64,13 @@ function ComposeInner() {
       if (!q.trim() || clean.length < 2) { setBusy(false); return setErr("A question and at least two options."); }
       payload = { kind: "poll", body: q.trim(), options: clean, closesAt: new Date(Date.now() + closeH * 3600_000).toISOString(), settle: settleOn && Number(settlePx) > 0 ? { coin, op: settleOp, px: Number(settlePx) } : null };
     }
-    const r = await authedFetch("/api/posts", { method: "POST", body: JSON.stringify(payload) });
-    const j = await r.json();
+    // Never leave the button stuck on "…": a network or non-JSON error still resets it.
+    let r: Response, j: { error?: string; post?: { id: number } };
+    try { r = await authedFetch("/api/posts", { method: "POST", body: JSON.stringify(payload) }); j = await r.json().catch(() => ({})); }
+    catch { setBusy(false); return setErr("Couldn't reach Perped. Check your connection."); }
     setBusy(false);
     if (!r.ok) return setErr(j.error ?? "Couldn't post");
-    if (mode === "call" && back) return router.push(`/trade?coin=${coin}&side=${dir}&backs=${j.post.id}`);
+    if (mode === "call" && back) return router.push(`/trade?coin=${coin}&side=${dir}&backs=${j.post?.id}`);
     router.push("/");
   };
 

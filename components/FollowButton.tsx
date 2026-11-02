@@ -31,7 +31,8 @@ export function FollowButton({ handle, compact = false, className = "" }: { hand
     if (!r.ok) { if (key) mutate(); return; }
     const j = await r.json();
     if (key) mutate({ handles: j.following ? [...new Set([...set, handle])] : [...set].filter((h) => h !== handle) }, { revalidate: false });
-    globalMutate((k) => typeof k === "string" && k.startsWith("/api/profile/"), undefined, { revalidate: true });
+    // Revalidate without blanking: passing undefined as data would wipe the profile to a skeleton until it refetches.
+    globalMutate((k) => typeof k === "string" && k.startsWith("/api/profile/"));
   };
   if (compact) return <button type="button" className={`fbtn ${on ? "on" : ""} ${className}`} onClick={toggle} aria-pressed={on}>{on ? "Following" : "Follow"}</button>;
   return <button type="button" className={`btn ${on ? "" : "brand"} ${className}`} style={{ padding: 12, fontSize: 14 }} onClick={toggle} aria-pressed={on}>{on ? "Following" : "Follow"}</button>;

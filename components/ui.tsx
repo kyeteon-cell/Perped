@@ -166,3 +166,14 @@ export function Badges({ u, seat = false }: { u: BadgeUser | null | undefined; s
     </span>
   );
 }
+
+/** Shown instead of a skeleton when a page's data failed to load (or the thing is gone). */
+export function LoadFail({ gone, what = "this", retry }: { gone?: boolean; what?: string; retry?: () => void }) {
+  return (
+    <div className="load-fail" role="status">
+      <b>{gone ? `This ${what} is gone` : "Couldn't load this right now"}</b>
+      <span>{gone ? "It may have been deleted, or the link is wrong." : "Check your connection and try again."}</span>
+      {gone ? <Link href="/" className="chip mt-3">Back to the feed</Link> : retry ? <button type="button" className="chip mt-3" onClick={retry}>Try again</button> : null}
+    </div>
+  );
+}

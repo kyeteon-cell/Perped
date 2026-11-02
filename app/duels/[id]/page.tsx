@@ -8,7 +8,7 @@ import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition } from "@/lib/format";
-import { Avatar, CoinMark, Icon, I, ticker, SkeletonList } from "@/components/ui";
+import { Avatar, CoinMark, Icon, I, ticker, SkeletonList, LoadFail } from "@/components/ui";
 import type { Duel, Post } from "@/lib/schema";
 
 type U = { id: string; handle: string; avatarUrl: string | null; isDemo: boolean };
@@ -18,12 +18,12 @@ type Res = { duel: Duel; challenger: U; opponent: U; challengerPost: Post | null
 export default function DuelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { data, mutate } = useSWR<Res>(`/api/duels/${id}`, { refreshInterval: 15_000 });
+  const { data, mutate, error } = useSWR<Res>(`/api/duels/${id}`, { refreshInterval: 15_000 });
   const { authedFetch, authenticated, login } = useSession();
   const { mids } = useMids();
   const [busy, setBusy] = useState(false);
-  if (!data) return <SkeletonList n={2} />;
-  if (data.error) return <p className="muted p-5 text-sm">Duel not found.</p>;
+  if (!data) return error ? <LoadFail retry={() => mutate()} /> : <SkeletonList n={2} />;
+  if (data.error) return <LoadFail gone what="duel" />;
   const { duel: d, challenger, opponent, challengerPost: cp, opponentPost: op, role } = data;
   const mid = mids[d.coin] ?? 0;
   const oppSide = d.challengerSide === "long" ? "short" : "long";

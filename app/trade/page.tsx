@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { TradeTicket, type Seed } from "@/components/TradeTicket";
 import { Icon, I, SkeletonList } from "@/components/ui";
+import { normCoin } from "@/lib/format";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 
