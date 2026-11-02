@@ -1925,3 +1925,11 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 .pos-acts > * { text-align: center; border: 0; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--text); padding: 9px 4px; border-radius: 12px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; text-decoration: none; }
 .pos-acts > *:disabled { opacity: .5; }
 .tk-chart { border-radius: 14px; overflow: hidden; }
+.pos-wl { display: inline-flex; gap: 4px; padding-left: 9px; margin-left: 1px; border-left: 1px solid color-mix(in srgb, var(--bg) 30%, transparent); font-weight: 700; }
+.pos-fades { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; padding: 9px 12px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; font-weight: 700; }
+.pos-fades b { font-size: 16px; } .pos-fades span { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--muted); }
+.pos-vs { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: 10px; font-size: 12.5px; text-decoration: none; color: var(--text); background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
+.pos-vs.ahead { box-shadow: inset 3px 0 0 var(--text), inset 0 0 0 1px var(--line); }
+.pos-vs.behind { box-shadow: inset 3px 0 0 var(--muted), inset 0 0 0 1px var(--line); }
+.pos-vs span:last-child { color: var(--muted); } .pos-vs span:last-child b { color: var(--text); }
+.pos-wl.solo { border-left: 0; padding-left: 0; }
