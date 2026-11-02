@@ -7,7 +7,8 @@ export type Book = { bids: Lvl[]; asks: Lvl[] };
 
 /** Dollars resting within ±pct of mid. `full` is false when the levels we have don't reach the band edge. */
 export function depthWithin(b: Book, mid: number, pct: number) {
-  const lo = mid * (1 - pct / 100), hi = mid * (1 + pct / 100);
+  // Tiny tolerance so a level sitting exactly on the band edge counts (floating point).
+  const lo = mid * (1 - pct / 100) * (1 - 1e-12), hi = mid * (1 + pct / 100) * (1 + 1e-12);
   let bids = 0, asks = 0;
   for (const l of b.bids) if (l.px >= lo) bids += l.px * l.sz;
   for (const l of b.asks) if (l.px <= hi) asks += l.px * l.sz;

@@ -103,11 +103,23 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
     { key: "entry", p: entry, label: fmtPrice(entry), cls: "entry", color: "var(--muted)" },
     ...lvls.filter((l) => near(l.p)).map((l) => ({ key: l.key, p: l.p, label: `${l.label} ${fmtPrice(l.p)}`, cls: l.cls, color: l.cls === "tp" ? "var(--green)" : l.cls === "sl" ? "var(--red)" : "var(--text)" })),
   ];
-  // Keep tags from overlapping: walk them top to bottom and push each one down past the last.
-  const GAP = 17; // percent of the chart height per tag
-  const placed = tags.map((t) => ({ ...t, top: (y(t.p) / H) * 100 })).sort((a, b) => a.top - b.top);
-  for (let i = 0; i < placed.length; i++) placed[i].top = Math.max(placed[i].top, i ? placed[i - 1].top + GAP : 8);
-  for (let i = placed.length - 1; i >= 0; i--) placed[i].top = Math.min(placed[i].top, i < placed.length - 1 ? placed[i + 1].top - GAP : 92);
+  // Tags sit in three columns (entry left, TP/SL middle, now + LIQ right). The live price tag stays exactly on its
+  // line; anything sharing its column is nudged away from it, never the other way round.
+  const GAP = 14; // percent of the chart height per tag
+  const col = (t: Tag) => (t.key === "entry" ? "l" : t.key === "tp" || t.key === "sl" ? "m" : "r");
+  const placed = tags.map((t) => ({ ...t, top: Math.max(7, Math.min(93, (y(t.p) / H) * 100)) }));
+  for (const c of ["l", "m", "r"]) {
+    const g = placed.filter((t) => col(t) === c).sort((a, b) => a.top - b.top);
+    const fixed = g.findIndex((t) => t.key === "now");
+    if (fixed >= 0) {
+      for (let i = fixed - 1; i >= 0; i--) g[i].top = Math.min(g[i].top, g[i + 1].top - GAP);
+      for (let i = fixed + 1; i < g.length; i++) g[i].top = Math.max(g[i].top, g[i - 1].top + GAP);
+    } else {
+      for (let i = 1; i < g.length; i++) g[i].top = Math.max(g[i].top, g[i - 1].top + GAP);
+    }
+    // Anything pushed off the plot hides rather than stacking on top of something else.
+    for (const t of g) if (t.key !== "now" && (t.top < 4 || t.top > 96)) t.top = NaN;
+  }
 
   return (
     <div ref={box} role="link" tabIndex={0} className="tchart" aria-label={`${coin} chart`}
@@ -138,7 +150,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
         {candles.length > 0 && (
           <>
             <span className={`tc-act ${side}`} style={{ top: pct(entry), left: pctX(ex) }}>{side === "long" ? "BUY" : "SELL"}</span>
-            {placed.map((t) => <span key={t.key} className={`tc-tag ${t.cls}`} style={{ top: `${t.top}%` }}>{t.label}</span>)}
+            {placed.filter((t) => Number.isFinite(t.top)).map((t) => <span key={t.key} className={`tc-tag ${t.cls}`} style={{ top: `${t.top}%`, zIndex: t.key === "now" ? 3 : 2 }}>{t.label}</span>)}
           </>
         )}
         {offUp.length > 0 && <span className="tc-edges up">{offUp.map((l) => <b key={l.key} className={l.cls}>{l.label} ↑</b>)}</span>}
