@@ -16,9 +16,7 @@ export default function MarketsPage() {
   const { data, error, mutate } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 60_000 });
   const { data: live } = useSWR<{ posts: FeedRow[] }>("/api/posts?tab=live&limit=50", { refreshInterval: 30_000 });
   const { mids } = useMids();
-  const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("volume");
-  const [showSearch, setShowSearch] = useState(false);
 
   const liveByCoin = useMemo(() => {
     const m: Record<string, { n: number; longs: number }> = {};
@@ -32,23 +30,21 @@ export default function MarketsPage() {
   const totals = useMemo(() => ({ vol: all.reduce((a, m) => a + m.volume24h, 0), oi: all.reduce((a, m) => a + m.openInterest, 0) }), [all]);
   const movers = useMemo(() => [...all].sort((a, b) => Math.abs(b.change24h) - Math.abs(a.change24h)).slice(0, 8), [all]);
   const rows = useMemo(() => {
-    let list = all;
-    if (q) list = list.filter((m) => m.name.toLowerCase().includes(q.toLowerCase()));
+    const list = all;
     const by: Record<Sort, (a: MarketRow, b: MarketRow) => number> = {
       volume: (a, b) => b.volume24h - a.volume24h, gainers: (a, b) => b.change24h - a.change24h, losers: (a, b) => a.change24h - b.change24h,
       oi: (a, b) => b.openInterest - a.openInterest, oirise: (a, b) => (b.oiChange24h ?? -Infinity) - (a.oiChange24h ?? -Infinity) || b.volume24h - a.volume24h,
       crowded: (a, b) => Math.abs(b.funding8h - 0.01) - Math.abs(a.funding8h - 0.01), hot: (a, b) => (liveByCoin[b.name]?.n ?? 0) - (liveByCoin[a.name]?.n ?? 0),
     };
     return [...list].sort(by[sort]).slice(0, 80);
-  }, [all, q, sort, liveByCoin]);
+  }, [all, sort, liveByCoin]);
 
   return (
     <div data-tint="blue" className="fade-in">
       <header className="flex items-center justify-between px-5 pt-4">
         <div><h1 className="h1 dot">Markets</h1><div className="when">{all.length || "…"} perps · Hyperliquid</div></div>
-        <button className="iconbtn" aria-label="Search" onClick={() => setShowSearch((v) => !v)}><Icon d={I.search} /></button>
+        <Link href="/search" className="iconbtn" aria-label="Search"><Icon d={I.search} /></Link>
       </header>
-      {showSearch && <div className="px-5 pt-3"><input className="field" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} autoFocus /></div>}
 
       <div className="px-5 pt-4">
         <div className="grid grid-cols-3 gap-2.5">
