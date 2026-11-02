@@ -1932,3 +1932,4 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 .pos-vs.ahead { box-shadow: inset 3px 0 0 var(--text), inset 0 0 0 1px var(--line); }
 .pos-vs.behind { box-shadow: inset 3px 0 0 var(--muted), inset 0 0 0 1px var(--line); }
 .pos-vs span:last-child { color: var(--muted); } .pos-vs span:last-child b { color: var(--text); }
+.pos-wl.solo { border-left: 0; padding-left: 0; }

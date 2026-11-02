@@ -69,9 +69,8 @@ export function PositionsPill() {
     <>
       <button type="button" className="pos-pill" onClick={() => setOpen(true)} aria-label={`${rows.length} open trades, ${fmtUsd(total, { sign: true })}`}>
         <span className="pos-stack">{coins.map((c) => <CoinMark key={c} coin={c} size="xs" />)}</span>
-        <span>{rows.length} open</span>
-        <b className={`mono ${total >= 0 ? "green" : "red"}`}>{fmtUsd(total, { sign: true })}</b>
-        {fades.length > 0 && <span className="pos-wl">Fades <b className="mono">{wins}–{losses}</b></span>}
+        {rows.length > 0 && <><span>{rows.length} open</span><b className={`mono ${total >= 0 ? "green" : "red"}`}>{fmtUsd(total, { sign: true })}</b></>}
+        {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>Fades <b className="mono">{wins}–{losses}</b></span>}
         <span className="pos-go" aria-hidden>›</span>
       </button>
 
