@@ -39,8 +39,10 @@ export default function InvitePage() {
   const { authenticated, login, authedFetch } = useSession();
   // Staff preview from Admin → Tools: /invite?as=founder|regular|demo (the server ignores it for everyone else).
   const [as, setAs] = useState<string | null>(null);
-  useEffect(() => { try { setAs(new URLSearchParams(window.location.search).get("as")); } catch {} }, []);
-  const { data, mutate } = useSWR<InviteRes>(authenticated ? `/api/invite${as ? `?as=${as}` : ""}` : null, (u: string) => authedFetch(u).then((r) => r.json()), { refreshInterval: 60_000 });
+  // Read ?as= before the first fetch, so staff previews don't load the real view first and then flash.
+  const [asRead, setAsRead] = useState(false);
+  useEffect(() => { try { setAs(new URLSearchParams(window.location.search).get("as")); } catch {} setAsRead(true); }, []);
+  const { data, mutate } = useSWR<InviteRes>(authenticated && asRead ? `/api/invite${as ? `?as=${as}` : ""}` : null, (u: string) => authedFetch(u).then((r) => r.json()), { refreshInterval: 60_000 });
   const [toast, setToast] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [err, setErr] = useState<string | null>(null);

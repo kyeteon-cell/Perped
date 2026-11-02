@@ -13,7 +13,7 @@ import type { FeedRow } from "@/lib/feed";
 type Sort = "volume" | "gainers" | "losers" | "oi" | "funding" | "hot";
 
 export default function MarketsPage() {
-  const { data } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 30_000 });
+  const { data } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 60_000 });
   const { data: live } = useSWR<{ posts: FeedRow[] }>("/api/posts?tab=live&limit=50", { refreshInterval: 30_000 });
   const { mids } = useMids();
   const [q, setQ] = useState("");

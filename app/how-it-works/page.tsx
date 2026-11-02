@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { small } from "@/lib/img";
 import { Glyph } from "@/components/Glyph";
 import { LiveSoonNote } from "@/components/ComingSoonSheet";
 import { BUILDER_FEE_STANDARD_TENTHS_BPS, BUILDER_FEE_REFERRED_TENTHS_BPS, BUILDER_FEE_TOP_TENTHS_BPS, BUILDER_MAX_FEE_TENTHS_BPS, TOP_TIER_RANK, REFERRAL_SHARE_PCT, REFERRAL_TOP_SHARE_PCT, REFERRAL_TOP_THRESHOLD, HL_NETWORK } from "@/lib/config";
@@ -175,7 +176,7 @@ export default function HowItWorks() {
           <li><b>XP is slow and it can go down.</b> Fade win +60 (+30 for a 20%+ margin, +40 for beating someone two ranks above you), loss +10, draw +20. Duel +75 / +10. One-hour call +6 / +2. Closed trade +4 / +1. Liquidations earn nothing. From Knife Catcher up, losing costs XP: fade −15, duel −10, liquidation −25, multiplied by how many ranks you are above Wick Hunter, so ranks can be lost. Beating a guest account made that same day pays draw XP only.</li>
           <li><b><Glyph n="bag" tone="gold" /> Streak bounties.</b> Anyone on a 5+ fade win streak carries a bounty. Break it and you get 25 XP plus 10 XP for every win in their streak, on top of the win, and a feed post.</li>
           <li><b>Ranks.</b> Your emblem shows next to your name everywhere. Demo and real accounts earn XP the same way; the leaderboard still separates them.
-            <div className="ladder mt-3">{RANKS.map((r) => <div key={r.level} className="lad"><img src={`/api/share-bg/rank-${r.level}`} alt="" /><div className="text-[12px] font-bold">{r.title}</div><div className="mono when text-[11px]">{r.min.toLocaleString()} XP</div></div>)}</div>
+            <div className="ladder mt-3">{RANKS.map((r) => <div key={r.level} className="lad"><img src={small(`/api/share-bg/rank-${r.level}`, 128)} alt="" loading="lazy" decoding="async" /><div className="text-[12px] font-bold">{r.title}</div><div className="mono when text-[11px]">{r.min.toLocaleString()} XP</div></div>)}</div>
           </li>
         </ul>
       </section>
@@ -188,7 +189,7 @@ export default function HowItWorks() {
           <li><b><Glyph n="flame" tone="gold" /> High stakes:</b> 20× or more, a $5k+ position, or someone within 10% of liquidation.</li>
           <li><b><Glyph n="people" /> Everyone / Following:</b> the switch at the top. Following shows your fades and fades of people you follow or your rivals, and works with every tab.</li>
           <li><b><Glyph n="bolt" /> All:</b> the Main event (the riskiest fight right now) beside Your fight, then Vendettas and High stakes to swipe, then every fade.</li>
-          <li><b><Glyph n="drop" tone="blood" /> Bloodbath:</b> fades where the two sides are more than 7 ROI points apart. At the top is <b>The Pit</b>, the most one-sided fight right now, beside <b>Last standing</b>: fades where one side is already out (stopped, liquidated or banked) and the other is still in, newest first, each for 24 hours, marked Winning or Chasing against the number the other side finished on.</li>
+          <li><b><Glyph n="drop" tone="blood" /> Bloodbath:</b> fades where one side is more than 7% ahead of the other (ROI, leverage included). At the top is <b>The Pit</b>, the most one-sided fight right now, beside <b>Last standing</b>: fades where one side is already out (stopped, liquidated or banked) and the other is still in, newest first, each for 24 hours, marked Winning or Chasing against the number the other side finished on.</li>
           <li><b><Glyph n="dagger" /> Finish them / <Glyph n="buoy" /> Save them:</b> on every Bloodbath fade. Finish backs the winner, Save backs the loser for a comeback. Every other fade has a plain <b>Back</b> for each side. One tap, size only, at their leverage. The two fighters can&rsquo;t back either side of their own fight.</li>
           <li><b>REKT and Revenge:</b> liquidations stay in Bloodbath for six hours as tombstones. <b><Glyph n="drop" tone="blood" /> Revenge</b> quick-fades the winner&rsquo;s newest open trade; if they have none, they become your rival and you&rsquo;re pinged when they next trade. The <b>kill feed</b> lists the last day&rsquo;s liquidations.</li>
           <li><b>Body count:</b> this week&rsquo;s <Glyph n="dagger" /> Butcher (most people perped) and <Glyph n="tomb" /> Most rekt.</li>

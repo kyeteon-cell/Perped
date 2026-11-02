@@ -18,7 +18,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
   const { coin: raw } = use(params);
   const coin = raw.toUpperCase();
   const { profile } = useSession();
-  const { data } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 30_000 });
+  const { data } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 60_000 });
   const { data: feed, mutate } = useSWR<{ posts: FeedRow[] }>(`/api/posts?coin=${coin}&limit=20`, { refreshInterval: 20_000 });
   const { data: me } = useSWR<{ stats: { closedTrades: number } | null }>(profile ? `/api/profile/${profile.handle}` : null);
   const { mids } = useMids();

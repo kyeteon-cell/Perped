@@ -1,5 +1,6 @@
 "use client";
 
+import { small } from "@/lib/img";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { Sheet } from "./Sheet";
@@ -178,7 +179,7 @@ export function TrophyShare({ t, row, handle, onClose }: { t: Trophy; row: Troph
         <div className="text-lg font-extrabold" data-sheet-handle>Share {t.name}</div>
         <div className="bshare-prev mt-3">{png ? <img src={png} alt={`${t.name} trophy card`} /> : <div className="skel" style={{ aspectRatio: "4 / 5", borderRadius: 18 }} />}</div>
         <div className="eyebrow mt-4">Background</div>
-        <div className="themes mt-2">{BGS.map((b) => <button key={b.key} type="button" className={`theme-dot ${b.key === bg ? "on" : ""}`} onClick={() => setBg(b.key)} aria-label={b.name}><i style={{ backgroundImage: `url(/api/share-bg/${b.key})` }} /><span>{b.name}</span></button>)}</div>
+        <div className="themes mt-2">{BGS.map((b) => <button key={b.key} type="button" className={`theme-dot ${b.key === bg ? "on" : ""}`} onClick={() => setBg(b.key)} aria-label={b.name}><i style={{ backgroundImage: `url(${small(`/api/share-bg/${b.key}`, 128)})` }} /><span>{b.name}</span></button>)}</div>
         {msg && <p className="when mt-2 text-center">{msg}</p>}
         <div className="mt-4 grid grid-cols-[2fr_1fr] gap-2.5">
           <button className="btn ink" onClick={share} disabled={!png || busy}>{busy ? "Opening…" : "Share image"}</button>

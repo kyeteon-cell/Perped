@@ -1,5 +1,6 @@
 "use client";
 
+import { small } from "@/lib/img";
 import { Glyph } from "@/components/Glyph";
 import { useState } from "react";
 import useSWR from "swr";
@@ -22,7 +23,7 @@ export default function LeaderboardPage() {
 
   return (
     <div data-tint="gold" className="fade-in">
-      <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/arena)" }}><h1 className="h1" style={{ color: "#fff" }}>Leaders</h1><div className="text-[12px]" style={{ color: "rgba(255,255,255,.8)" }}>{mode === "trades" ? "Realised PnL from Hyperliquid fills" : mode === "calls" ? "Public predictions, scored against the chart" : "XP from fades, duels, calls and trades"}</div></header>
+      <header className="lb-hero" style={{ backgroundImage: `url(${small("/api/share-bg/arena", 1080)})` }}><h1 className="h1" style={{ color: "#fff" }}>Leaders</h1><div className="text-[12px]" style={{ color: "rgba(255,255,255,.8)" }}>{mode === "trades" ? "Realised PnL from Hyperliquid fills" : mode === "calls" ? "Public predictions, scored against the chart" : "XP from fades, duels, calls and trades"}</div></header>
       <div className="px-5 pb-3 pt-4">
         <div className="modes"><button className={mode === "trades" ? "on" : ""} onClick={() => setMode("trades")}>Trades</button><button className={mode === "calls" ? "on" : ""} onClick={() => setMode("calls")}>Calls</button><button className={mode === "ranks" ? "on" : ""} onClick={() => setMode("ranks")}>Ranks</button><button className={mode === "season" ? "on" : ""} onClick={() => setMode("season")}>Season</button></div>
         {mode === "season" && data?.season && <div className="season-bar mt-3"><b className="gl"><Glyph n="trophy" tone="gold" />{data.season.name} season</b><span>{seasonLeft(data.season.endsAt)} left · XP earned this month only</span></div>}
@@ -43,7 +44,7 @@ export default function LeaderboardPage() {
             const place = i === 1 ? 1 : i === 0 ? 2 : 3;
             return (
               <Link key={r.handle} href={`/u/${r.handle}`} className="card relative p-3.5 text-center" style={{ background: place === 1 ? "var(--gold-soft)" : undefined, paddingTop: place === 1 ? 18 : 14 }}>
-                <img src={`/api/share-bg/medal-${place}`} alt="" className="medal" />
+                <img src={small(`/api/share-bg/medal-${place}`, 128)} alt="" className="medal" loading="lazy" decoding="async" />
                 <div className="flex justify-center"><Avatar handle={r.handle} url={r.avatarUrl} size={place === 1 ? 60 : 48} link={false} /></div>
                 <div className="mt-2 text-[13px] font-bold">{r.handle}</div>
                 {mode === "ranks" || mode === "season" ? (

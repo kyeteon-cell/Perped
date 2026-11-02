@@ -1,5 +1,6 @@
 "use client";
 
+import { small } from "@/lib/img";
 import { useEffect, useState } from "react";
 import { Sheet } from "./Sheet";
 import { HERO_BACKGROUNDS, SHARE_BACKGROUNDS } from "@/lib/share-backgrounds";
@@ -180,7 +181,7 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
         <div className="ps-range mt-2" role="tablist">{(Object.keys(RANGE_LABEL) as CardRange[]).map((k) => <button key={k} role="tab" aria-selected={range === k} className={range === k ? "on" : ""} onClick={() => setRange(k)}>{RANGE_LABEL[k][0]}</button>)}</div>
         <div className="eyebrow mt-4">Background</div>
         <div className="themes mt-2">
-          {BGS.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === bg ? "on" : ""}`} onClick={() => setBg(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(/api/share-bg/${t.key})` }} /><span>{t.name}</span></button>)}
+          {BGS.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === bg ? "on" : ""}`} onClick={() => setBg(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(${small(`/api/share-bg/${t.key}`, 128)})` }} /><span>{t.name}</span></button>)}
         </div>
         {msg && <p className="when mt-2 text-center">{msg}</p>}
         <div className="mt-4 grid grid-cols-[2fr_1fr] gap-2.5">

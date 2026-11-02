@@ -183,16 +183,3 @@ export function Welcome({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** Shown once per device on first open (or with ?welcome=1 to replay it from Settings). */
-export function WelcomeOnce() {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    try {
-      const replay = new URLSearchParams(window.location.search).get("welcome") === "1";
-      if (replay || !localStorage.getItem("perped:intro-seen")) setShow(true);
-      if (replay) window.history.replaceState(null, "", window.location.pathname);
-    } catch {}
-  }, []);
-  if (!show) return null;
-  return <Welcome onClose={() => setShow(false)} />;
-}

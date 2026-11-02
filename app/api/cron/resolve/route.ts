@@ -71,7 +71,7 @@ export async function GET(req: Request) {
       await notify(c.userId, outcome === "hit" ? "call_hit" : "call_missed", `Your ${c.coin} call ${outcome === "hit" ? "hit" : "missed"}`, `${target} · now ${p}`, `/post/${c.id}`);
       // "Told you so": name the dislikers who were wrong, likers who were right.
       const disagreed = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(schema.votes).where(and(eq(schema.votes.postId, c.id), eq(schema.votes.value, -1)));
-      await db.insert(schema.comments).values({ postId: c.id, userId: c.userId, body: outcome === "hit" ? `✓ HIT at ${p}. ${disagreed[0]?.n ?? 0} people disagreed.` : `✗ MISSED. Target ${target}, ended ${p}.` });
+      await db.insert(schema.comments).values({ postId: c.id, userId: c.userId, body: outcome === "hit" ? `HIT at ${p}. ${disagreed[0]?.n ?? 0} people disagreed.` : `MISSED. Target ${target}, ended ${p}.` });
       await awardXp(c.userId, outcome === "hit" ? XP.callHit : XP.callMiss, outcome === "hit" ? "call_hit" : "call_miss", `call:${c.id}`);
       if (outcome === "hit") hit++; else missed++;
       void u;

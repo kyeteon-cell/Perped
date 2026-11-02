@@ -5,16 +5,16 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
-import { DepositSheet } from "@/components/DepositSheet";
+
 import { Sheet } from "@/components/Sheet";
-import { ChallengeSheet } from "@/components/ChallengeSheet";
+
 import { PerformanceCard } from "@/components/Performance";
 import { Avatar, Badges, CoinMark, Icon, I, ticker, SkeletonList, RankChip } from "@/components/ui";
 import { RankCard, RecordLine } from "@/components/RankCard";
 import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
 import { FollowButton } from "@/components/FollowButton";
 import { ActivityFeed } from "@/components/ActivityFeed";
-import { TrophyCase } from "@/components/Trophies";
+
 import { PinCard } from "@/components/PinCard";
 import type { RivalRow } from "@/app/api/rivalries/route";
 import { useMids } from "@/lib/hooks/useMids";
@@ -27,6 +27,9 @@ import type { AssetPosition } from "@/lib/hl-info";
 import type { FeedRow } from "@/lib/feed";
 import { useLive } from "@/lib/hooks/useLive";
 import dynamic from "next/dynamic";
+const DepositSheet = dynamic(() => import("@/components/DepositSheet").then((m) => m.DepositSheet), { ssr: false });
+const ChallengeSheet = dynamic(() => import("@/components/ChallengeSheet").then((m) => m.ChallengeSheet), { ssr: false });
+const TrophyCase = dynamic(() => import("@/components/Trophies").then((m) => m.TrophyCase), { ssr: false });
 const ProfileShare = dynamic(() => import("@/components/ProfileShare").then((m) => m.ProfileShare), { ssr: false });
 
 type ProfileRes = { form?: { r: "W" | "L" | "D"; href: string }[]; vendetta?: null | { handle: string; avatarUrl: string | null; mine: number; theirs: number; draws: number; fights: number }; battleStreak?: number; bestStreak?: number; user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };

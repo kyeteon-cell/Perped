@@ -1,5 +1,7 @@
 "use client";
 
+import { small } from "@/lib/img";
+import dynamic from "next/dynamic";
 import { Glyph } from "@/components/Glyph";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -8,7 +10,7 @@ import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
 import { fmtPct, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
 import { Avatar, CoinMark, RankChip, RankEmblem, SkeletonList, ticker } from "@/components/ui";
-import { ChallengeSheet } from "@/components/ChallengeSheet";
+const ChallengeSheet = dynamic(() => import("@/components/ChallengeSheet").then((m) => m.ChallengeSheet), { ssr: false });
 import { Sheet } from "@/components/Sheet";
 import { rankFor } from "@/lib/rank";
 import type { ArenaBattle, ArenaRes } from "@/app/api/arena/route";
@@ -402,7 +404,7 @@ function ArenaHow({ onClose }: { onClose: () => void }) {
 
         <S icon="skull" title="Bloodbath">
           <ul>
-            <li>Fights where the two sides are more than 7 ROI points apart.</li>
+            <li>Fights where one side is more than 7% ahead of the other.</li>
             <li><b>The Pit:</b> the most one-sided fight right now.</li>
             <li><b>Last standing:</b> one side is out (stopped, liquidated or banked) and the other is still in. Newest first; each stays 24 hours. <b>Winning</b> means they&rsquo;re beating the number the other side finished on; <b>Chasing</b> means they&rsquo;re not, yet.</li>
             <li><b>Getting perped:</b> the rest of the one-sided fights, to swipe through.</li>
@@ -467,7 +469,7 @@ export default function ArenaPage() {
         {me && me.streak > 0 && <span className="gl text-[13px] font-bold"><Glyph n="flame" tone="gold" />{me.streak}</span>}
         <span className="ml-auto"><FightNight /></span>
       </div>
-      <header className="lb-hero" style={{ backgroundImage: "url(/api/share-bg/hero-bulls)" }}>
+      <header className="lb-hero" style={{ backgroundImage: `url(${small("/api/share-bg/hero-bulls", 1080)})` }}>
         <div className="flex items-center justify-between gap-2"><h1 className="h1" style={{ color: "#fff" }}>Arena</h1><button className="arena-how" onClick={() => setHow(true)}>How it works</button></div>
         <div className="text-[12px]" style={{ color: "rgba(255,255,255,.85)" }}>Fade someone and it&rsquo;s on. Call them out and it&rsquo;s a duel. Winner takes the XP.</div>
         <div className="mt-3 flex flex-wrap items-center gap-2"><button className="arena-cta" onClick={callOut}><span className="gl"><Glyph n="swords" />Call someone out</span></button><FightNight /></div>
@@ -549,7 +551,7 @@ export default function ArenaPage() {
   );
 }
 
-/** Live battles by tab: All · Following · Vendettas · High stakes · Gladiators · Bloodbath. */
+/** Live battles by tab: All · Following · Vendettas · High stakes · Bloodbath (with Last standing). */
 function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, number>; me: string | null }) {
   // Two questions, two controls: whose fights (Everyone / Following) and how hot (All · Vendettas · High stakes · Bloodbath).
   const [scope, setScope] = useState<"everyone" | "following">("everyone");

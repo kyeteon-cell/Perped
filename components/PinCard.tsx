@@ -36,7 +36,7 @@ export function PinCard({ item, roi }: { item: FeedRow; roi: number }) {
       </div>
       {battles.length > 0 && <div className="mt-2"><BattleSummary battles={battles} size="sm" /></div>}
       <div className="pc-chips mt-2">
-        {live ? <span className="pc-chip live">● LIVE</span> : reason === "tp" ? <span className="pc-chip good">TP hit</span> : reason === "liquidation" ? <span className="pc-chip bad">Liquidated</span> : null}
+        {live ? <span className="pc-chip live"><i className="dot" />LIVE</span> : reason === "tp" ? <span className="pc-chip good">TP hit</span> : reason === "liquidation" ? <span className="pc-chip bad">Liquidated</span> : null}
         {item.copyCount > 0 && <span className="pc-chip">{item.copyCount} copied</span>}
         {item.fadeCount > 0 && <span className="pc-chip">{item.fadeCount} faded</span>}
         {wins >= 3 && <span className="pc-chip gold">Giant slayer</span>}
