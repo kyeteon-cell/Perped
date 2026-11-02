@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { Sheet } from "./Sheet";
 import { Sparkline } from "./Sparkline";
-import { CoinMark, ticker } from "./ui";
+import { Avatar, CoinMark, ticker } from "./ui";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
 import { demoLiqPx, fmtPct, fmtPrice, fmtUsd, pnlForPosition, tradeRoiPct } from "@/lib/format";
@@ -29,6 +28,10 @@ export function PositionsPill() {
   type Fade = { battleId: number; iFade: boolean; opp: string; oppAvatar: string | null; fader: Leg; target: Leg };
   const { data: fd, mutate: mutateF } = useSWR<{ fades: Fade[] }>(profile ? "/api/me/fades" : null, async (u: string) => (await authedFetch(u)).json(), { refreshInterval: 30_000 });
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<"positions" | "arena">("positions");
+  const router = useRouter();
+  // Close the sheet first, then navigate (navigating from inside a closing sheet could be swallowed).
+  const go = (href: string) => { setOpen(false); setTimeout(() => router.push(href), 0); };
   const [manage, setManage] = useState<FeedRow["post"] | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -42,7 +45,6 @@ export function PositionsPill() {
     return { ...f, myPostId: mine.id, gap, ahead: gap > 0 };
   });
   const wins = fades.filter((f) => f.ahead).length, losses = fades.length - wins;
-  const fadeOf = (postId: number) => fades.find((f) => f.myPostId === postId);
   if (!profile || (!rows.length && !fades.length) || HIDE.some((r) => r.test(path))) return null;
 
   const live = rows.map(({ post }) => {
@@ -67,7 +69,7 @@ export function PositionsPill() {
 
   return (
     <>
-      <button type="button" className="pos-pill" onClick={() => setOpen(true)} aria-label={`${rows.length} open trades, ${fmtUsd(total, { sign: true })}`}>
+      <button type="button" className="pos-pill" onClick={() => { setTab(rows.length ? "positions" : "arena"); setOpen(true); }} aria-label={`${rows.length} open trades, ${fmtUsd(total, { sign: true })}`}>
         <span className="pos-stack">{coins.map((c) => <CoinMark key={c} coin={c} size="xs" />)}</span>
         {rows.length > 0 && <><span>{rows.length} open</span><b className={`mono ${total >= 0 ? "green" : "red"}`}>{fmtUsd(total, { sign: true })}</b></>}
         {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>Fades <b className="mono">{wins}–{losses}</b></span>}
@@ -78,12 +80,33 @@ export function PositionsPill() {
         <Sheet label="Your trades" onClose={() => setOpen(false)}>
           <div className="pos-sheet">
             <div className="pos-h"><b>Your trades</b><span>{profile.isDemo ? "Demo · " : ""}updates live</span></div>
+            <div className="pos-tabs" role="tablist">
+              <button type="button" role="tab" aria-selected={tab === "positions"} className={tab === "positions" ? "on" : ""} onClick={() => setTab("positions")}>Positions <span className="mono">{rows.length}</span></button>
+              <button type="button" role="tab" aria-selected={tab === "arena"} className={tab === "arena" ? "on" : ""} onClick={() => setTab("arena")}>Live arena <span className="mono">{wins}–{losses}</span></button>
+            </div>
+            {tab === "arena" ? (
+              fades.length ? <>
+                <p className="pos-sub">{wins} ahead · {losses} behind · scored at live prices</p>
+                {[...fades].sort((a, b) => b.gap - a.gap).map((f) => {
+                  const mine = f.iFade ? f.fader : f.target;
+                  return (
+                    <button key={f.battleId} type="button" className="pos-fight" onClick={() => go(`/battle/${f.battleId}`)}>
+                      <Avatar handle={f.opp} url={f.oppAvatar} size={36} link={false} />
+                      <span className="pos-fmid">
+                        <b>vs @{f.opp}</b>
+                        <span>{ticker(mine.coin)} · you're {mine.side} {mine.leverage ?? 1}×{mine.status === "closed" ? " · banked" : ""}{f.iFade ? " · you faded them" : " · they faded you"}</span>
+                      </span>
+                      <span className={`pos-gap ${f.ahead ? "ahead" : "behind"}`}><b className="mono">{f.ahead ? "+" : "−"}{Math.abs(f.gap).toFixed(1)}%</b><small>{f.ahead ? "ahead" : "behind"}</small></span>
+                    </button>
+                  );
+                })}
+              </> : <p className="pos-sub" style={{ padding: "20px 0", textAlign: "center" }}>No live fades. Find a trade to fade on the home feed.</p>
+            ) : <>
             <div className="pos-tot">
               <div><small>Open P&amp;L</small><b className={`mono ${total >= 0 ? "green" : "red"}`}>{fmtUsd(total, { sign: true })}</b></div>
               <div><small>In margin</small><b className="mono">{fmtUsd(margin)}</b></div>
               {profile.isDemo && <div><small>Balance</small><b className="mono">{fmtUsd(Number(profile.demoBalance ?? 0))}</b></div>}
             </div>
-            {fades.length > 0 && <div className="pos-fades">Live fades <b className="mono">{wins}–{losses}</b><span>{wins} ahead · {losses} behind</span></div>}
             {err && <p className="pos-err">{err}</p>}
             {live.map(({ post, px, pnl, roi }) => {
               const side = post.side as "long" | "short", lev = post.leverage ?? 1;
@@ -98,13 +121,9 @@ export function PositionsPill() {
                     </div>
                     <div className="pos-pnl"><b className={`mono ${pnl >= 0 ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</b><small className={`mono ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 1)}</small></div>
                   </div>
-                  {(() => { const f = fadeOf(post.id); return f ? (
-                    <Link href={`/battle/${f.battleId}`} className={`pos-vs ${f.ahead ? "ahead" : "behind"}`} onClick={() => setOpen(false)}>
-                      <span>Fade vs <b>@{f.opp}</b></span><span>{f.ahead ? "You're ahead" : "You're behind"} by <b className="mono">{Math.abs(f.gap).toFixed(1)}%</b> ›</span>
-                    </Link>) : null; })()}
                   <div className="pos-spark"><Sparkline coin={post.coin!} up={pnl >= 0} wide /></div>
                   <div className="pos-acts">
-                    <Link href={`/markets/${post.coin}`} onClick={() => setOpen(false)}>Chart</Link>
+                    <button type="button" onClick={() => go(`/markets/${post.coin}`)}>Chart</button>
                     <button type="button" onClick={() => setManage(post)}>Stop / target</button>
                     {post.paper ? <>
                       <button type="button" disabled={busy === post.id} onClick={() => quickClose(post.id, 0.5)}>Close half</button>
@@ -114,6 +133,8 @@ export function PositionsPill() {
                 </div>
               );
             })}
+            {!live.length && <p className="pos-sub" style={{ padding: "20px 0", textAlign: "center" }}>No open positions.</p>}
+            </>}
           </div>
         </Sheet>
       )}
