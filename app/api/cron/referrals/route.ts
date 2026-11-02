@@ -10,7 +10,7 @@ import { BUILDER_CONFIGURED } from "@/lib/config";
 /**
  * GET /api/cron/referrals[?day=YYYY-MM-DD] → once a day (after 00:00 UTC): for every live trader, read
  * yesterday's Hyperliquid fills, sum the builder fee they paid us, and credit:
- *  - invite:  whoever invited them (founder 50% → 40% after a year; others 25%, 40% at 10 active invites)
+ *  - invite:  whoever invited them (founder 50% for life; others 25%, 40% at 10 active invites)
  *  - invite2: a founder whose invitee invited them (10%)
  *  - creator: the author of the trade or call they copied/faded (10%, 15% from Liquidator, founders 20%),
  *             only for positions held 2+ minutes, never for your own posts
