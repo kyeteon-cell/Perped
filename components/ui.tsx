@@ -2,6 +2,7 @@
 
 import { small, fit } from "@/lib/img";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import useSWR from "swr";
 import { rankFor } from "@/lib/rank";
 import { BADGES, isAdminBadge, isFounderBadge, type BadgeUser } from "@/lib/badges";
@@ -93,7 +94,8 @@ export function Avatar({ handle, size = 40, url, link = true, xp }: { handle: st
   // Pass `xp` to pin the rank emblem on the photo's corner (instead of a chip beside the name).
   if (xp !== undefined) {
     const r = rankFor(xp ?? 0), em = Math.max(16, Math.round(size * 0.44));
-    pic = <span className="av-wrap" style={{ width: size, height: size }}>{pic}<img src={small(`/api/share-bg/rank-${r.level}`, fit(em))} alt="" title={`${r.title} · ${r.xp} XP`} className={`av-rank rk${r.level}`} loading="lazy" decoding="async" width={em} height={em} style={{ width: em, height: em }} /></span>;
+    const d = ([...handle].reduce((a, c) => a * 31 + c.charCodeAt(0), 7) >>> 0) % 70 / 10;
+    pic = <span className="av-wrap" style={{ width: size, height: size, ["--em" as string]: `${em}px`, ["--gd" as string]: `${d}s` } as CSSProperties}>{pic}<img src={small(`/api/share-bg/rank-${r.level}`, fit(em))} alt="" title={`${r.title} · ${r.xp} XP`} className={`av-rank rk${r.level}`} loading="lazy" decoding="async" width={em} height={em} style={{ width: em, height: em }} /></span>;
   }
   // Every profile picture is a link to that profile, unless the caller already sits inside a link.
   if (!link || !handle || handle === "?") return pic;

@@ -1743,3 +1743,9 @@ a.inv-erow { color: inherit; }
 .av-rank.rk6 { background: linear-gradient(160deg, #9cc4ff, #3a76e0 55%, #1d3f8f); }
 .av-rank.rk7 { background: linear-gradient(160deg, #e3c8ff, #9b5de5 55%, #5a2b99); }
 .av-rank.rk8 { background: linear-gradient(160deg, #ffe3a3, #f2b63a 28%, #1a1a1f 52%, #0b0b0e 74%, #f2b63a); box-shadow: 0 0 9px -1px rgba(242,182,58,.75), 0 2px 6px -1px rgba(0,0,0,.55); }
+/* An occasional gleam across the rank emblem (staggered per person; off for reduced motion) */
+.av-wrap::after { content: ""; position: absolute; right: -3px; bottom: -3px; width: var(--em, 18px); height: var(--em, 18px); border-radius: 50%; pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.85) 50%, transparent 62%) no-repeat; background-size: 260% 100%; background-position: 160% 0;
+  animation: av-gleam 7s ease-in-out var(--gd, 0s) infinite; }
+@keyframes av-gleam { 0%, 84% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
+@media (prefers-reduced-motion: reduce) { .av-wrap::after { animation: none; display: none; } }
