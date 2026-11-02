@@ -3,12 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
+import dynamic from "next/dynamic";
 import { Avatar, ticker } from "./ui";
 import { small } from "@/lib/img";
 import { useSession } from "@/lib/hooks/useSession";
 import { useLive, openComingSoon } from "@/lib/hooks/useLive";
 import { RANKS, rankFor } from "@/lib/rank";
 import { fmtUsd } from "@/lib/format";
+
+const DepositSheet = dynamic(() => import("./DepositSheet").then((m) => m.DepositSheet), { ssr: false });
 
 type Moment = { id: number; type: string; title: string; body: string | null; href: string | null };
 type DemoWin = { id: number; coin: string | null; side: string | null; leverage: number | null; pnl: number };
@@ -59,6 +62,7 @@ export function Moments() {
 
   const [queue, setQueue] = useState<Moment[]>([]);
   const [d2r, setD2r] = useState<DemoWin | null>(null);
+  const [deposit, setDeposit] = useState(false);
   useEffect(() => {
     if (!data || !profile || !Array.isArray(data.moments)) return;
     const k = `${LS_LAST}:${profile.id}`;
@@ -103,12 +107,13 @@ export function Moments() {
             <b className="mono green"><Count to={d2r.pnl} /></b>
             <span className="when">{ticker(d2r.coin ?? "")} {d2r.side} {d2r.leverage ?? 1}× · same size, same prices</span>
             <div className="mo-d2r-acts">
-              <button type="button" className="btn primary" onClick={() => { setD2r(null); if (allowed) router.push("/onboarding?fund=1"); else openComingSoon(); }}>{allowed ? "Fund a real account" : "Get early access to real money"}</button>
+              <button type="button" className="btn primary" onClick={() => { setD2r(null); if (allowed) setDeposit(true); else openComingSoon(); }}>{allowed ? "Fund a real account" : "Get early access to real money"}</button>
               <button type="button" className="btn" onClick={() => setD2r(null)}>Keep practising</button>
             </div>
           </div>
         </div>
       )}
+      {deposit && <DepositSheet onClose={() => setDeposit(false)} />}
     </>
   );
 }
