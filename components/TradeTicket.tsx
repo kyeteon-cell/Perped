@@ -14,6 +14,8 @@ import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice, autoStopDist, demoLiqPx }
 import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE } from "@/lib/config";
 import { CoinMark, ticker } from "./ui";
 import { useLive } from "@/lib/hooks/useLive";
+import dynamic from "next/dynamic";
+const PriceChart = dynamic(() => import("./PriceChart").then((m) => m.PriceChart), { ssr: false, loading: () => <div className="skel" style={{ height: 200, borderRadius: 14 }} /> });
 
 const QUICK = [50, 100, 250, 500, 1000, 2500];
 
@@ -190,6 +192,8 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
 
   return (
     <div className="fade-in" data-tint="blue">
+      {/* Full ticket (not the one already under a market chart): live candles stay on screen while you set it up. */}
+      {!compact && !quick && coin && <div className="px-5 pt-3 tk-chart"><PriceChart coin={coin} livePx={mid || undefined} height={200} /></div>}
       {seed.handle && (
         <div className="px-5 pt-3 text-[13px]"><span className="muted">{isFade ? "Fading" : "Copying"}</span> <b>{seed.handle}</b> <span className="muted">· {seed.side === "long" ? "Long" : "Short"} {seed.coin}{isFade ? " → you go the other way" : ""}</span></div>
       )}

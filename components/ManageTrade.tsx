@@ -9,6 +9,8 @@ import { useMarkets } from "@/lib/hooks/useMarkets";
 import { demoLiqPx, fmtPct, fmtPrice, fmtStake, fmtUsd, pnlForPosition } from "@/lib/format";
 import { closePosition, makeExchangeClient, setPositionTpSl } from "@/lib/hl-exchange";
 import { CoinMark, ticker } from "./ui";
+import dynamic from "next/dynamic";
+const PriceChart = dynamic(() => import("./PriceChart").then((m) => m.PriceChart), { ssr: false, loading: () => <div className="skel" style={{ height: 190, borderRadius: 14 }} /> });
 
 /**
  * Everything you can do to an open trade of yours, in one sheet: close some or all of it, set or move
@@ -83,6 +85,8 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
             </div>
             <div className="text-right"><div className={`mono text-xl font-bold ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 1)}</div><div className={`mono text-[12px] ${pnl >= 0 ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</div></div>
           </div>
+          {/* Live candles while you manage: no going back to the market page to catch a level. */}
+          <div className="mt-3 tk-chart"><PriceChart coin={post.coin!} livePx={mid} height={190} guides={[{ price: entry, label: "Entry" }, ...(post.paper && lev > 1 ? [{ price: liq, label: "Liq" }] : [])]} /></div>
           {post.paper && <p className="faint mt-2 text-[11px]">Demo · liquidates at {fmtPrice(liq)} · exits trigger within a few minutes of the price printing.</p>}
 
           <div className="mt-5 flex items-center justify-between"><span className="font-bold">Close</span><span className="when">at market</span></div>

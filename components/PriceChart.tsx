@@ -24,7 +24,7 @@ function cssVar(name: string, fallback: string) {
  * Trading-grade chart (TradingView lightweight-charts): candles or line, volume, six intervals,
  * pinch-zoom and drag to pan, crosshair with OHLC, live last candle from the WebSocket mid.
  */
-export function PriceChart({ coin, livePx, markers = [], onMarkerClick, guides = [] }: { coin: string; livePx?: number; markers?: ChartMarker[]; onMarkerClick?: (id: string) => void; guides?: { price: number; label: string }[] }) {
+export function PriceChart({ coin, livePx, markers = [], onMarkerClick, guides = [], height = 260 }: { coin: string; livePx?: number; markers?: ChartMarker[]; onMarkerClick?: (id: string) => void; guides?: { price: number; label: string }[]; height?: number }) {
   const [interval, setInterval_] = useState<Interval>("15m");
   const [mode, setMode] = useState<Mode>("candles");
   const [legend, setLegend] = useState<Candle | null>(null);
@@ -58,7 +58,7 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick, guides =
     const el = box.current; if (!el) return;
     const green = cssVar("--green", "#16a34a"), red = cssVar("--red", "#dc2626"), text = cssVar("--muted", "#888"), line = cssVar("--line", "#eee");
     const ch = createChart(el, {
-      width: el.clientWidth, height: 260,
+      width: el.clientWidth, height,
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: text, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 10 },
       grid: { vertLines: { color: line }, horzLines: { color: line } },
       rightPriceScale: { borderColor: line, scaleMargins: { top: 0.08, bottom: 0.25 } },
@@ -187,7 +187,7 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick, guides =
         </div>
       )}
       <div className="relative mt-1.5">
-        <div ref={box} className="w-full" style={{ height: 260 }} />
+        <div ref={box} className="w-full" style={{ height }} />
         <div className="pins">
           {pins.map((p) => (
             <Link key={p.id} href={p.m.href ?? "#"} className={`pin ${p.m.side} ${p.m.hot ? "hot" : ""}`} style={{ left: p.x, top: p.y }} title={p.m.label} onClick={() => onMarkerClick?.(p.id)}>
