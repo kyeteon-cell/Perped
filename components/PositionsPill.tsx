@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
@@ -49,6 +49,28 @@ export function PositionsPill() {
     return { ...f, myPostId: mine.id, gap, ahead: gap > 0 };
   });
   const wins = fades.filter((f) => f.ahead).length, losses = fades.length - wins;
+  const unbeaten = fades.length > 0 && losses === 0;
+  // Moments worth marking: you overtake (stamp once) and your opponent gets stopped or liquidated (KO + a short buzz).
+  // The first load only records state, so reopening the app doesn't replay old moments.
+  const seen = useRef<Map<number, { ahead: boolean; ko: boolean }> | null>(null);
+  const [stamps, setStamps] = useState<Record<number, number>>({});
+  const koOf = (f: Fade) => { const t = f.iFade ? f.target : f.fader; const r = (t.meta as { closeReason?: string } | null)?.closeReason; return t.status !== "open" && (r === "liquidation" || r === "sl"); };
+  const fadeSig = fades.map((f) => `${f.battleId}:${f.ahead ? 1 : 0}:${koOf(f) ? 1 : 0}`).join(",");
+  useEffect(() => {
+    if (!fd) return;
+    const first = !seen.current; const prev = seen.current ?? new Map(); const next = new Map<number, { ahead: boolean; ko: boolean }>();
+    let buzz = false; const fresh: Record<number, number> = {};
+    for (const f of fades) {
+      const ko = koOf(f), p = prev.get(f.battleId);
+      next.set(f.battleId, { ahead: f.ahead, ko });
+      if (first || !p) continue;
+      if (f.ahead && !p.ahead) fresh[f.battleId] = Date.now();
+      if (ko && !p.ko) buzz = true;
+    }
+    seen.current = next;
+    if (Object.keys(fresh).length) setStamps((s0) => ({ ...s0, ...fresh }));
+    if (buzz) { try { navigator.vibrate?.([30, 40, 60]); } catch {} }
+  }, [fadeSig, !!fd]); // eslint-disable-line react-hooks/exhaustive-deps
   // A trade opened or closed anywhere in the app changes this list: refresh the fades with it, so the
   // arena never shows a leg as still running after you've closed it.
   const openSig = rows.map((r) => `${r.post.id}:${r.post.size}`).join(",");
@@ -78,10 +100,11 @@ export function PositionsPill() {
 
   return (
     <>
-      <button type="button" className="pos-pill" onClick={() => { setTab(rows.length ? "positions" : "arena"); setChartFor(rows[0]?.post.id ?? null); setOpen(true); }} aria-label={`${rows.length} open trades, ${fmtUsd(total, { sign: true })}`}>
+      <button type="button" className={`pos-pill ${unbeaten ? "gold" : ""}`} onClick={() => { setTab(rows.length ? "positions" : "arena"); setChartFor(rows[0]?.post.id ?? null); setOpen(true); }} aria-label={`${rows.length} open trades, ${fmtUsd(total, { sign: true })}`}>
+        {unbeaten && <span className="pos-dot" aria-hidden />}
         <span className="pos-stack">{coins.map((c) => <CoinMark key={c} coin={c} size="xs" />)}</span>
         {rows.length > 0 && <><span>{rows.length} open</span><b className={`mono ${total >= 0 ? "green" : "red"}`}>{fmtUsd(total, { sign: true })}</b></>}
-        {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>Fades <b className="mono">{wins}–{losses}</b></span>}
+        {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>{unbeaten ? "Unbeaten" : "Fades"} <b className="mono">{wins}–{losses}</b></span>}
         <span className="pos-go" aria-hidden>›</span>
       </button>
 
@@ -95,7 +118,12 @@ export function PositionsPill() {
             </div>
             {tab === "arena" ? (
               fades.length ? <>
-                <p className="pos-sub">{wins} ahead · {losses} behind · scored at live prices</p>
+                {unbeaten ? (
+                  <div className="pos-unb">
+                    <small>Unbeaten</small><b className="mono">{wins}–0</b><p>Leading every fade you&apos;re in</p>
+                    <span className="pos-pips" aria-hidden>{fades.slice(0, 8).map((f) => <i key={f.battleId} />)}</span>
+                  </div>
+                ) : <p className="pos-sub">{wins} ahead · {losses} behind · scored at live prices</p>}
                 {[...fades].sort((a, b) => b.gap - a.gap).map((f) => {
                   const mine = f.iFade ? f.fader : f.target, theirs = f.iFade ? f.target : f.fader;
                   const mark = Number(mids[mine.coin] ?? 0) || Number(mine.entryPx);
@@ -111,14 +139,17 @@ export function PositionsPill() {
                     </div>
                   );
                   return (
-                    <button key={f.battleId} type="button" className="pos-fcard" onClick={() => go(`/battle/${f.battleId}`)}>
+                    <button key={f.battleId} type="button" className={`pos-fcard ${f.ahead ? "lead" : ""}`} onClick={() => go(`/battle/${f.battleId}`)}>
                       <div className="fc-top">
                         <span className="fc-tag">Fade · {ticker(mine.coin)}</span>
-                        <span className={`pos-lead ${f.ahead ? "up" : ""}`}>{f.ahead ? "You lead" : "You trail"} by <b className="mono">{Math.abs(f.gap).toFixed(1)}%</b></span>
+                        <span className={`pos-lead ${f.ahead ? "up" : ""}`}>{f.ahead ? "You lead" : "You trail"} by <RollNum v={Math.abs(f.gap)} signed={f.gap} /></span>
                       </div>
                       <div className="fc-hp"><MiniHp f={me} live={mark} big /><span>HP</span><MiniHp f={them} live={mark} big right /></div>
                       <div className="fc-row">{side(me, mine)}<span className="fc-vs">vs</span>{side(them, theirs, true)}</div>
+                      <div className={`pos-tug ${f.ahead ? "up" : ""}`}><i style={{ width: `${Math.max(6, Math.min(94, 50 + f.gap * 2))}%` }} /><u /></div>
                       <div className="pos-fwatch">{f.iFade ? `You faded @${f.opp}` : `@${f.opp} faded you`} · watch the fight ›</div>
+                      {stamps[f.battleId] && Date.now() - stamps[f.battleId] < 5000 && <span key={stamps[f.battleId]} className="pos-stamp">Took the lead</span>}
+                      {koOf(f) && <span className="pos-ko"><b>KO</b><small>@{f.opp} got {(theirs.meta as { closeReason?: string } | null)?.closeReason === "liquidation" ? "liquidated" : "stopped out"}</small></span>}
                     </button>
                   );
                 })}
@@ -197,5 +228,32 @@ function PosChart({ post, liq, onGo }: { post: FeedRow["post"]; liq: number | nu
       <PriceChart coin={coin} livePx={Number(mids[coin] ?? 0) || undefined} markers={markers} guides={guides} height={230} />
       <p className="pos-chart-note">Faces mark where traders in {ticker(coin)} got in. <button type="button" onClick={() => onGo(`/markets/${coin}`)}>Full market ›</button></p>
     </div>
+  );
+}
+
+/** A number that rolls to its new value, with a brief flash of how far it moved. */
+function RollNum({ v, signed }: { v: number; signed: number }) {
+  const [shown, setShown] = useState(v);
+  const [delta, setDelta] = useState<{ d: number; k: number } | null>(null);
+  const from = useRef(v), raf = useRef(0), lastSigned = useRef(signed);
+  useEffect(() => {
+    const start = from.current, end = v, t0 = performance.now();
+    const d = signed - lastSigned.current; lastSigned.current = signed;
+    if (Math.abs(d) >= 0.1) setDelta({ d, k: t0 });
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || Math.abs(end - start) < 0.05) { from.current = end; setShown(end); return; }
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / 600), e = 1 - Math.pow(1 - k, 3);
+      const x = start + (end - start) * e; from.current = x; setShown(x);
+      if (k < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf.current);
+  }, [v]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <>
+      <b className="mono">{shown.toFixed(1)}%</b>
+      {delta && <span key={delta.k} className={`pos-delta mono ${delta.d > 0 ? "green" : "red"}`}>{delta.d > 0 ? "▲" : "▼"}{Math.abs(delta.d).toFixed(1)}</span>}
+    </>
   );
 }
