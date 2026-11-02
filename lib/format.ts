@@ -115,3 +115,11 @@ export function normCoin(c: string) {
   const t = c.trim();
   return /^k[A-Za-z0-9]/.test(t) && t.length > 2 && t[1] === t[1].toUpperCase() ? "k" + t.slice(1).toUpperCase() : t.toUpperCase();
 }
+
+/** Funding per 8h (%) → a plain label when one side is clearly crowded. Hyperliquid's resting rate is 0.01% / 8h. */
+export function crowdLabel(funding8h: number): string | null {
+  if (funding8h >= 0.03) return "crowded long";
+  if (funding8h <= -0.03) return "crowded short";
+  if (funding8h < 0) return "shorts pay";
+  return null;
+}

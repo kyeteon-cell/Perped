@@ -53,7 +53,7 @@ export type Fill = {
  */
 type Scope = "data" | "user";
 
-async function info<T>(body: Record<string, unknown>, revalidate = 0, scope: Scope = "data"): Promise<T> {
+export async function info<T>(body: Record<string, unknown>, revalidate = 0, scope: Scope = "data"): Promise<T> {
   const res = await fetch(`${scope === "user" ? HL_API_URL : HL_DATA_API_URL}/info`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -99,7 +99,7 @@ export async function resolveTradingAsset(asset: PerpAsset): Promise<PerpAsset> 
 
 /** Short in-process cache with request de-duplication: many requests in the same second share one Hyperliquid call. */
 const memoStore = new Map<string, { at: number; v: Promise<unknown> }>();
-function memo<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
+export function memo<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
   const hit = memoStore.get(key), now = Date.now();
   if (hit && now - hit.at < ttlMs) return hit.v as Promise<T>;
   const v = fn();
@@ -196,6 +196,8 @@ export type MarketRow = PerpAsset & {
   volume24h: number; // USD notional
   openInterest: number; // USD
   funding8h: number; // percent per 8h
+  oracle: number; // spot index price
+  premiumPct: number; // mark vs index, percent
 };
 
 /** Universe + live context in one call (metaAndAssetCtxs). */
@@ -222,6 +224,8 @@ async function loadMarkets(): Promise<MarketRow[]> {
         openInterest: Number(c?.openInterest ?? 0) * mark,
         // Hyperliquid quotes funding per hour (paid hourly); show it per 8h like other venues.
         funding8h: Number(c?.funding ?? 0) * 100 * 8,
+        oracle: Number(c?.oraclePx ?? 0),
+        premiumPct: Number(c?.oraclePx) > 0 ? ((mark - Number(c.oraclePx)) / Number(c.oraclePx)) * 100 : 0,
       };
     })
     .filter((m) => !m.isDelisted && m.mark > 0);

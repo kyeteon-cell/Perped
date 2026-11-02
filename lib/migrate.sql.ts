@@ -335,4 +335,12 @@ create index if not exists achievements_key_idx on achievements (key);
 -- Lowest ROI each fighter reached during a fade (Comeback Kid).
 alter table battles add column if not exists fader_low numeric;
 alter table battles add column if not exists target_low numeric;
+-- Open interest snapshots every 10 minutes (Hyperliquid only gives the current value).
+create table if not exists market_oi (
+  coin text not null,
+  at timestamptz not null,
+  oi numeric not null,
+  primary key (coin, at)
+);
+create index if not exists market_oi_at_idx on market_oi (at);
 `;
