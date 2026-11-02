@@ -140,18 +140,25 @@ export function Welcome({ onClose }: { onClose: () => void }) {
   const [level, setLevel] = useState<Level | null>(null);
   const [step, setStep] = useState<"ask" | "learn" | "trade" | "fade" | "done">("ask");
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const [sel, setSel] = useState<Level | null>(null);
   const finish = () => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} track("intro_done"); onClose(); };
   // Before the first trade, make sure there's a free demo account to trade with.
   const toTrade = async () => {
     if (busy) return;
-    if (ready && !authenticated) { setBusy(true); await startGuest().catch(() => null); await refreshMe().catch(() => null); setBusy(false); }
+    if (ready && !authenticated) {
+      setBusy(true); setErr(null);
+      const ok = await startGuest().then(() => true).catch((e: unknown) => { setErr(e instanceof Error && e.message ? e.message : "Couldn't start a demo account. Try again in a moment."); return false; });
+      await refreshMe().catch(() => null); setBusy(false);
+      if (!ok) return;
+    }
     setStep("trade");
   };
   const choose = (l: Level) => { track(l === "new" ? "welcome_new" : l === "crypto" ? "welcome_crypto" : "welcome_perps"); setLevel(l); try { localStorage.setItem(LEVEL_KEY, l); } catch {} setStep("learn"); };
 
   return (
     <div className="intro-overlay" role="dialog" aria-label="Welcome to Perped">
+      {err && <div className="welcome-err" role="alert">{err}</div>}
       {step === "ask" && (
         <div className="intro">
           <div className="intro-top"><span className="eyebrow">Welcome to Perped</span><button className="intro-skip" onClick={finish}>Skip</button></div>

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { Sparkline } from "@/components/Sparkline";
-import { CoinMark, Icon, I, ticker, SkeletonList } from "@/components/ui";
+import { CoinMark, Icon, I, ticker, SkeletonList, LoadFail } from "@/components/ui";
 import { fmtPct, fmtUsd, fmtPrice, crowdLabel } from "@/lib/format";
 import type { MarketItem as MarketRow } from "@/components/MarketStats";
 import { useMids } from "@/lib/hooks/useMids";
@@ -13,7 +13,7 @@ import type { FeedRow } from "@/lib/feed";
 type Sort = "volume" | "gainers" | "losers" | "oi" | "oirise" | "crowded" | "hot";
 
 export default function MarketsPage() {
-  const { data } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 60_000 });
+  const { data, error, mutate } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 60_000 });
   const { data: live } = useSWR<{ posts: FeedRow[] }>("/api/posts?tab=live&limit=50", { refreshInterval: 30_000 });
   const { mids } = useMids();
   const [q, setQ] = useState("");
@@ -75,7 +75,7 @@ export default function MarketsPage() {
       </div>
 
       <div className="faint grid grid-cols-[1fr_96px_64px] gap-3 px-5 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider"><span>Market</span><span className="text-right">Price · 24h</span><span className="text-right">Fund./yr</span></div>
-      {!data && <SkeletonList n={6} card={false} />}
+      {!data?.markets?.length && (error || data) ? <LoadFail retry={() => mutate()} /> : !data && <SkeletonList n={6} card={false} />}
       {rows.map((m) => {
         const px = mids[m.name] ?? m.mid, up = m.change24h >= 0, lv = liveByCoin[m.name];
         return (

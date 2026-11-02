@@ -84,7 +84,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
   const callHit = s && s.callsResolved ? (s.callsHit / s.callsResolved) * 100 : null;
 
   const closePos = async (p: AssetPosition, fraction: number) => {
-    if (!walletClient) return;
+    if (!walletClient) return setErr("Wallet still loading, try again in a second.");
     const asset = markets.find((m) => m.name === p.coin), mid = mids[p.coin];
     if (!asset || !mid) return setErr("Market data not ready");
     setBusy(p.coin); setErr(null);
@@ -120,7 +120,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         <div className="flex items-center gap-4">
           <div className="rounded-full" style={{ border: "4px solid var(--bg)" }}><Avatar handle={user.handle} url={user.avatarUrl} size={84} xp={user.xp} /></div>
           <div className="min-w-0 flex-1 pt-[46px]">
-            <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1">✓</span>}<Badges u={user} seat />{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
+            <div className="text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1" title="Verified" aria-label="Verified">✓</span>}<Badges u={user} seat />{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
             <div className="mono when text-xs">{user.isDemo ? "practice account · simulated fills" : `${user.address.slice(0, 6)}…${user.address.slice(-4)} · verified on-chain`}</div>
             <div className="mt-2.5 flex gap-4 text-sm">
               <button className="muted" onClick={() => { setPeopleDir("followers"); setTab("people"); }}><b style={{ color: "var(--text)" }}>{data.followers}</b> followers</button>
@@ -183,7 +183,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
                 <Link key={r.handle} href={`/rivalry/${user.handle}/${r.handle}`} className="lb">
                   <Avatar handle={r.handle} url={r.avatarUrl} size={40} link={false} />
                   <div className="min-w-0 flex-1"><div className="name">{r.handle}<RankChip xp={r.xp} compact /></div><div className="when">{r.fights} fights{r.runHolderIsMe !== null && r.runLen >= 2 ? ` · ${r.runHolderIsMe ? user.handle : r.handle} on a ${r.runLen}-run` : ""}{r.calledByThem ? " · called them out" : ""}</div></div>
-                  <div className="text-right"><div className="mono text-[18px] font-bold"><span className={r.mine >= r.theirs ? "green" : "muted"}>{r.mine}</span><span className="muted">–</span><span className={r.theirs > r.mine ? "red" : "muted"}>{r.theirs}</span></div>{r.mine > r.theirs && <div className="when text-[10px] gl"><Glyph n="crown" tone="gold" />leads</div>}</div>
+                  <div className="text-right"><div className="mono text-[18px] font-bold"><span className={r.mine >= r.theirs ? "" : "muted"}>{r.mine}</span><span className="muted">–</span><span className="muted">{r.theirs}</span></div>{r.mine > r.theirs && <div className="when text-[10px] gl"><Glyph n="crown" tone="gold" />leads</div>}</div>
                 </Link>
               ))}
             </div>
@@ -208,7 +208,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
               <span className="eyebrow">{showingTop ? "Top trades" : "Pinned"}</span>
               <span className="flex items-center gap-2">
                 {(data.battleStreak ?? 0) >= 2 && <span className="pin-streak gl"><Glyph n="flame" tone="gold" />{data.battleStreak}-win streak</span>}
-                {(s?.battlesWon ?? 0) + (s?.battlesLost ?? 0) > 0 && <span className="mono when"><span className="green">{s?.battlesWon ?? 0}W</span>–<span className="red">{s?.battlesLost ?? 0}L</span></span>}
+                {(s?.battlesWon ?? 0) + (s?.battlesLost ?? 0) > 0 && <span className="mono when"><span style={{ color: "var(--text)" }}>{s?.battlesWon ?? 0}W</span>–<span>{s?.battlesLost ?? 0}L</span></span>}
               </span>
             </div>
             {isMe && showingTop && <div className="when mt-0.5 text-[11px]">Showing your best results. Pin your own picks from any trade or fade.</div>}

@@ -4,12 +4,13 @@ import Link from "next/link";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSWRConfig } from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets, type Market } from "@/lib/hooks/useMarkets";
 import { useMids } from "@/lib/hooks/useMids";
 import { makeExchangeClient, placeMarketOrder, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
-import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice, autoStopDist } from "@/lib/format";
+import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice, autoStopDist, demoLiqPx } from "@/lib/format";
 import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE } from "@/lib/config";
 import { CoinMark, ticker } from "./ui";
 import { useLive } from "@/lib/hooks/useLive";
@@ -40,7 +41,10 @@ export type Seed = {
 /** The trade ticket: market or limit, leverage, TP/SL, builder-fee approval, copy and fade modes. */
 export function TradeTicket({ seed, compact = false, quick = false, onDone }: { seed: Seed; compact?: boolean; quick?: boolean; onDone?: () => void }) {
   const router = useRouter();
-  const { authenticated, login, walletClient, address, profile, authedFetch, fee } = useSession();
+  const { authenticated, login, walletClient, address, profile, authedFetch, fee, refreshMe } = useSession();
+  const { mutate: swrMutate } = useSWRConfig();
+  const submitting = useRef(false);
+  const duelErr = useRef<string | null>(null);
   const { markets } = useMarkets();
   const { mids } = useMids();
 
@@ -53,7 +57,9 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
   const [usd, setUsd] = useState(seed.usd ?? 50);
   // Leverage cap = whatever Hyperliquid allows on this market (BTC 40×, ETH 25×, …). No caps of our own.
   const [lev, setLev] = useState(seed.leverage ?? profile?.defaultLeverage ?? 2);
-  const [orderType, setOrderType] = useState<"market" | "limit">("market");
+  const [orderType_, setOrderType] = useState<"market" | "limit">("market");
+  // Demo fills are always at the live price, so there is no limit order in demo.
+  const orderType = isDemo ? "market" : orderType_;
   const [limitPx, setLimitPx] = useState("");
   const [tpslOn, setTpslOn] = useState(isFade);
   const [tp, setTp] = useState("");
@@ -81,7 +87,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
   const notional = usd * lev;
   const size = market && refPx ? roundSize(notional / refPx, market.szDecimals) : 0;
   const liqPct = (100 / lev) * 0.9;
-  const estLiq = refPx ? (side === "long" ? refPx * (1 - liqPct / 100) : refPx * (1 + liqPct / 100)) : 0;
+  const estLiq = !refPx ? 0 : isDemo ? demoLiqPx(side, refPx, lev) : side === "long" ? refPx * (1 - liqPct / 100) : refPx * (1 + liqPct / 100);
   const preview = (t: string) => { const v = Number(t); if (!v || !refPx || !size) return null; const diff = side === "long" ? v - refPx : refPx - v; return { pct: (diff / refPx) * 100 * lev, usd: diff * size }; };
   const tpPrev = tpslOn ? preview(tp) : null, slPrev = tpslOn ? preview(sl) : null;
   const tpslValid = !tpslOn || ((!tp || (side === "long" ? Number(tp) > refPx : Number(tp) < refPx)) && (!sl || (side === "long" ? Number(sl) < refPx : Number(sl) > refPx)));
@@ -99,24 +105,32 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     setBusy(null);
   };
 
-  const postTrade = async (entryPx: number, filledSz: number, oid?: number, paper = false) => {
+  const postTrade = async (entryPx: number, filledSz: number, oid?: number, paper = false, slOverride?: number) => {
+    const slPx = slOverride ?? (tpslOn && Number(sl) > 0 ? Number(sl) : undefined);
     const r = await authedFetch("/api/posts", {
       method: "POST",
-      body: JSON.stringify({ kind: "trade", coin, side, size: filledSz, notionalUsd: filledSz * entryPx, leverage: lev, entryPx, oid, paper, body: note.trim() || undefined, copiedFromId: seed.copiedFromId, fadedFromId: seed.fadedFromId, backsCallId: seed.backsCallId, tpPx: tpslOn && Number(tp) > 0 ? Number(tp) : undefined, slPx: tpslOn && Number(sl) > 0 ? Number(sl) : undefined }),
+      body: JSON.stringify({ kind: "trade", coin, side, size: filledSz, notionalUsd: filledSz * entryPx, leverage: lev, entryPx, oid, paper, body: note.trim() || undefined, copiedFromId: seed.copiedFromId, fadedFromId: seed.fadedFromId, backsCallId: seed.backsCallId, tpPx: tpslOn && Number(tp) > 0 ? Number(tp) : undefined, slPx }),
     });
     // Duel: attach this position to the duel (opponent accepting, or challenger posting their side).
     if (r.ok && seed.duelId) {
       try {
         const j = await r.clone().json();
         const postId = j?.post?.id ?? j?.id;
-        if (postId) await authedFetch("/api/duels", { method: "PATCH", body: JSON.stringify({ id: seed.duelId, action: seed.duelRole === "opponent" ? "accept" : "post", postId, startPx: entryPx }) });
-      } catch {}
+        if (postId) {
+          const d = await authedFetch("/api/duels", { method: "PATCH", body: JSON.stringify({ id: seed.duelId, action: seed.duelRole === "opponent" ? "accept" : "post", postId, startPx: entryPx }) });
+          if (!d.ok) duelErr.current = (await d.json().catch(() => null))?.error ?? "Your trade is placed, but it couldn't be attached to the duel.";
+        }
+      } catch { duelErr.current = "Your trade is placed, but it couldn't be attached to the duel."; }
     }
     return r;
   };
 
   /** Where to go once the trade is posted: the battle for a quick fade, otherwise close the sheet / go home. */
   const finish = async (r: Response) => {
+    // Balance and open positions update straight away (not on the next 30s poll).
+    void Promise.resolve(refreshMe?.()).catch(() => null);
+    swrMutate((k) => typeof k === "string" && (k.startsWith("/api/posts") || k.startsWith("/api/profile") || k.startsWith("/api/me")));
+    if (duelErr.current) { const m = duelErr.current; duelErr.current = null; return setErr(m); }
     if (seed.toBattle) {
       const j = await r.json().catch(() => null);
       const id = j?.post?.id;
@@ -127,19 +141,30 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
   };
 
   const submit = async () => {
+    if (submitting.current) return;
+    submitting.current = true;
+    try { await submitOnce(); } finally { submitting.current = false; }
+  };
+  const submitOnce = async () => {
     if (!authenticated) return login();
     if (!profile) return router.push("/onboarding");
     if (seed.fadedFromId) {
+      setBusy("Checking…");
       const c = await authedFetch(`/api/posts/${seed.fadedFromId}/fade-check`).then((r) => r.json()).catch(() => ({ ok: true }));
+      setBusy(null);
       if (!c.ok) return setErr(c.reason ?? "You can't fade this trade.");
     }
     if (!market || !mid) return setErr("Market not ready.");
     if (orderType === "limit" && !(Number(limitPx) > 0)) return setErr("Enter a limit price.");
-    if (!tpslValid) return setErr(side === "long" ? "Take profit must be above entry and stop loss below." : "Take profit must be below entry and stop loss above.");
+    let slOverride: number | undefined;
+    if (isFade && quick && slSeeded.current && !tpslValid) {
+      slOverride = side === "long" ? mid * (1 - autoStopDist(lev)) : mid * (1 + autoStopDist(lev));
+      setSl(slOverride.toFixed(market?.szDecimals ? 6 - market.szDecimals : 2));
+    } else if (!tpslValid) return setErr(side === "long" ? "Take profit must be above entry and stop loss below." : "Take profit must be below entry and stop loss above.");
     setErr(null);
     if (isDemo) {
       setBusy("Filling (demo)…");
-      const r = await postTrade(mid, size, undefined, true);
+      const r = await postTrade(mid, size, undefined, true, slOverride);
       setBusy(null);
       if (!r.ok) return setErr((await r.json()).error ?? "Couldn't place demo trade");
       return finish(r);
@@ -157,7 +182,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     setBusy("Posting to feed…");
     const r = await postTrade(res.avgPx ?? refPx, res.totalSz ?? size, res.oid);
     setBusy(null);
-    if (!r.ok) return setErr("Filled on Hyperliquid but posting failed; refresh your profile.");
+    if (!r.ok) return setErr((await r.json().catch(() => null))?.error ?? "Filled on Hyperliquid but posting failed; refresh your profile.");
     return finish(r);
   };
 
@@ -180,7 +205,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
         </div></div>
       )}
 
-      {!compact && !quick && (
+      {!compact && !quick && !seed.duelId && (
         <div className="block">
           <input className="field mb-2.5" placeholder="Search markets" value={search} onChange={(e) => setSearch(e.target.value)} />
           <div className="seg">{filtered.map((m) => <button key={m.name} className={`chip ${m.name === coin ? "on" : ""}`} onClick={() => setCoin(m.name)}><CoinMark coin={m.name} size="xs" />{ticker(m.name)}</button>)}</div>
@@ -190,10 +215,10 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
 
       {!seed.lockLev && <div className="block">
         <div className="grid grid-cols-2 gap-2.5">
-          <button onClick={() => setSide("long")} className={`btn ${side === "long" ? "long" : ""}`}>Long</button>
-          <button onClick={() => setSide("short")} className={`btn ${side === "short" ? "short" : ""}`}>Short</button>
+          <button disabled={!!seed.duelId} onClick={() => setSide("long")} className={`btn ${side === "long" ? "long" : ""}`}>Long</button>
+          <button disabled={!!seed.duelId} onClick={() => setSide("short")} className={`btn ${side === "short" ? "short" : ""}`}>Short</button>
         </div>
-        {!quick && <div className="seg mt-3.5">{(["market", "limit"] as const).map((t) => <button key={t} className={`chip capitalize ${t === orderType ? "info" : ""}`} onClick={() => setOrderType(t)}>{t}</button>)}</div>}
+        {!quick && !isDemo && <div className="seg mt-3.5">{(["market", "limit"] as const).map((t) => <button key={t} className={`chip capitalize ${t === orderType ? "info" : ""}`} onClick={() => setOrderType(t)}>{t}</button>)}</div>}
         {orderType === "limit" && <div className="mt-3 flex items-center justify-between text-sm"><span className="muted">Limit price</span><input type="number" inputMode="decimal" className="field mono !w-36 !py-2.5 text-right" placeholder={mid ? String(mid) : ""} value={limitPx} onChange={(e) => setLimitPx(e.target.value)} /></div>}
       </div>}
 
@@ -229,7 +254,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       </div>}
 
       <div className="block">
-        {isFade && !quick && <div className="warn mb-3.5">Fading is a real {side} on Hyperliquid at your size. If they're right, you're the one who gets perped, publicly: your name goes on their post.</div>}
+        {isFade && !quick && <div className="warn mb-3.5">Fading is a {isDemo ? "demo" : "real"} {side}{isDemo ? "" : " on Hyperliquid"} at your size. If they're right, you're the one who gets perped, publicly: your name goes on their post.</div>}
         {!quick && <input className="field mb-3.5" placeholder="Add a note for the feed" value={note} maxLength={280} onChange={(e) => setNote(e.target.value)} />}
         {err && <p className="red mb-3 text-sm">{err}</p>}
         <button onClick={submit} disabled={!!busy || !market || size <= 0 || (!isDemo && approved === false)} className={`btn ${side}`}>{busy ?? (authenticated ? (isDemo ? `Demo · ${cta}` : cta) : "Log in to trade")}</button>

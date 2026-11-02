@@ -41,7 +41,7 @@ const Body = z.object({ handle: z.string().min(3).max(20), amountUsd: z.number()
 /** POST /api/admin/referrals?key=… {handle, amountUsd, txHash?} → record a payout you've sent. */
 export async function POST(req: Request) {
   if (!(await authed(req))) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const parsed = Body.safeParse(await req.json());
+  const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const [u] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.handle, parsed.data.handle.toLowerCase())).limit(1);
   if (!u) return Response.json({ error: "no such user" }, { status: 404 });

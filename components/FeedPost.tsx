@@ -70,7 +70,7 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
         <div className="flex items-center gap-3">
           <Link href={`/u/${author.handle}`} onClick={(e) => e.stopPropagation()}><Avatar handle={author.handle} url={author.avatarUrl} link={false} xp={author.xp} /></Link>
           <div>
-            <Link href={`/u/${author.handle}`} className="name nrow" onClick={(e) => e.stopPropagation()}><span className="truncate">{author.handle}</span>{author.verified && <span className="vbadge">✓</span>}<Badges u={author} />{item.rival ? <span className={`rival-chip ${item.rival.mine > item.rival.theirs ? "lead" : ""}`}><Glyph n="swords" /> {item.rival.mine}–{item.rival.theirs}</span> : null}</Link>
+            <Link href={`/u/${author.handle}`} className="name nrow" onClick={(e) => e.stopPropagation()}><span className="truncate">{author.handle}</span>{author.verified && <span className="vbadge" title="Verified" aria-label="Verified">✓</span>}<Badges u={author} />{item.rival ? <span className={`rival-chip ${item.rival.mine > item.rival.theirs ? "lead" : ""}`}><Glyph n="swords" /> {item.rival.mine}–{item.rival.theirs}</span> : null}</Link>
             <div className="when">{isDemoPost(item) ? <><span className="demo-word">Demo</span> · </> : null}{timeAgo(post.createdAt)} ago{post.kind === "trade" && (
               post.copiedFromId ? <> · copied {item.src ? <Link href={`/u/${item.src.handle}`} className="srcname" onClick={(e) => e.stopPropagation()}>@{item.src.handle}</Link> : "a trade"}</>
               : post.fadedFromId ? <> · faded {item.src ? <Link href={`/u/${item.src.handle}`} className="srcname" onClick={(e) => e.stopPropagation()}>@{item.src.handle}</Link> : "a trade"}</>
@@ -113,8 +113,8 @@ function Acts({ item, onChanged, children, mid, challenge, manage }: { item: Fee
   };
   return (
     <div className="acts">
-      <button className={`vote up ${mine === 1 ? "on" : ""}`} onClick={() => vote(1)}><Icon d={I.like} size={18} /><b>{likes}</b></button>
-      <button className={`vote down ${mine === -1 ? "on" : ""}`} onClick={() => vote(-1)}><Icon d={I.dislike} size={18} /><b>{dislikes}</b></button>
+      <button className={`vote up ${mine === 1 ? "on" : ""}`} onClick={() => vote(1)} aria-label="Like" aria-pressed={mine === 1}><Icon d={I.like} size={18} /><b>{likes}</b></button>
+      <button className={`vote down ${mine === -1 ? "on" : ""}`} onClick={() => vote(-1)} aria-label="Dislike" aria-pressed={mine === -1}><Icon d={I.dislike} size={18} /><b>{dislikes}</b></button>
       <button className={commenting ? "on" : ""} onClick={() => setCommenting((v) => !v)} aria-label="Comment"><Icon d={I.comment} size={18} />{commentCount}</button>
       <button onClick={() => setShare(true)} aria-label="Share"><Icon d={I.share} size={18} /></button>
       {children}
@@ -184,7 +184,7 @@ function PinButton({ item }: { item: FeedRow }) {
     setBusy(true); setOn((v) => !v);
     const r = await authedFetch(`/api/posts/${item.post.id}/pin`, { method: "POST" });
     if (!r.ok) setOn((v) => !v); else { const j = await r.json(); setOn(!!j.pinned); }
-    mutate((k) => typeof k === "string" && k.startsWith("/api/posts?handle="), undefined, { revalidate: true });
+    mutate((k) => typeof k === "string" && k.startsWith("/api/posts?handle="));
     setBusy(false);
   };
   return <button className={`pinbtn ${on ? "on" : ""}`} disabled={busy} onClick={toggle} aria-pressed={on}>{on ? <span className="gl"><Glyph n="pin" />Pinned</span> : "Pin to profile"}</button>;
@@ -439,9 +439,9 @@ function CallPost({ item, mid, onChanged }: Props) {
   const left = deadline ? Math.max(0, deadline.getTime() - Date.now()) : 0;
   const leftTxt = left > 86_400_000 ? `${Math.round(left / 86_400_000)} d left` : left > 3_600_000 ? `${Math.round(left / 3_600_000)} h left` : left > 0 ? `${Math.max(1, Math.round(left / 60_000))} m left` : "";
   return (
-    <article className={`post ${open ? "tint-blue" : post.callStatus === "hit" ? "tint-green" : "tint-red"}`}>
+    <article className={`post ${open ? "tint-blue" : ""}`}>
       <KindTag icon={I.trophy}>{quick ? (open ? "One-hour call" : post.callStatus === "hit" ? "Called it" : "Got perped") : open ? "Price call" : post.callStatus === "hit" ? "Call hit" : "Call missed"}</KindTag>
-      <Who item={item} right={<>{post.backedPostId && <span className="lbl backed">Backed</span>}<span className={`lbl ${open ? "call" : post.callStatus === "hit" ? "long" : "short"}`}><i />{open ? "Call" : post.callStatus === "hit" ? "Hit" : "Missed"}</span></>} />
+      <Who item={item} right={<>{post.backedPostId && <span className="lbl backed">Backed</span>}<span className={`lbl ${open ? "call" : post.callStatus === "hit" ? "wl win" : "wl"}`}>{open && <i />}{open ? "Call" : post.callStatus === "hit" ? "Hit" : "Missed"}</span></>} />
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <CoinMark coin={post.coin!} />
@@ -455,7 +455,7 @@ function CallPost({ item, mid, onChanged }: Props) {
           <div className="when">{open ? (quick ? `${liveMove >= 0 ? "winning" : "losing"} · ${leftTxt}` : `to target · ${leftTxt}`) : `resolved ${resolvedAt ? timeAgo(resolvedAt) + " ago" : ""}`}</div>
         </div>
       </div>
-      <div className="track"><b style={{ width: `${open ? progress : 100}%`, background: open ? "var(--text)" : post.callStatus === "hit" ? "var(--green)" : "var(--red)" }} /></div>
+      <div className="track"><b style={{ width: `${open ? progress : 100}%`, background: open || post.callStatus === "hit" ? "var(--text)" : "var(--muted)" }} /></div>
       {post.body && !quick && <RichText text={post.body} />}
       <Acts item={item} onChanged={onChanged} challenge={open && !!item.author && item.author.id === profile?.id}>
         {open && item.author?.id !== profile?.id && <Link href={`/trade?coin=${post.coin}&side=${post.side}`} className={`copy side ${post.side} ml-auto`}>Trade it · {post.side === "long" ? "Long" : "Short"}</Link>}
@@ -539,9 +539,9 @@ function SystemPost({ item, onChanged }: Props) {
       <article className="post duel">
         <div className="duel-head"><span className="lbl gold"><Glyph n="swords" /> Duel settled</span><span className="when">{post.coin ?? ""} · {timeAgo(post.createdAt)} ago</span></div>
         <div className="duel-body">
-          <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} link={false} /></Link><div className="name mt-1.5">{winner}</div><span className="lbl long mt-1"><i />Won</span></div>
+          <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} link={false} /></Link><div className="name mt-1.5">{winner}</div><span className="lbl wl win mt-1">Won</span></div>
           <div className="duel-mid"><div className="mono muted text-xs">{post.coin}</div><div className="duel-bar"><i style={{ width: "100%" }} /></div><div className="when">{meta.start ? `${fmtPrice(Number(meta.start))} → ${fmtPrice(Number(meta.end))}` : "settled"}</div></div>
-          <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} link={false} /></Link><div className="name mt-1.5">{loser}</div><span className="lbl short mt-1"><i />Lost</span></div>
+          <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} link={false} /></Link><div className="name mt-1.5">{loser}</div><span className="lbl wl mt-1">Lost</span></div>
         </div>
         <Acts item={item} onChanged={onChanged}>
           <Link href={`/u/${winner}`} className="chip ml-auto">Challenge {winner}</Link>
@@ -557,9 +557,9 @@ function SystemPost({ item, onChanged }: Props) {
       <article className="post duel">
         <div className="duel-head"><span className="lbl gold"><Glyph n="bolt" /> Fade settled</span><span className="when">{post.coin ?? ""} · {timeAgo(post.createdAt)} ago</span></div>
         <div className="duel-body">
-          <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} link={false} /></Link><div className="name mt-1.5">{winner}</div><span className="mono green text-[13px] font-bold">{fmtPct(wr, 1)}</span></div>
+          <div className="duelist"><Link href={`/u/${winner}`}><Avatar handle={winner} size={48} link={false} /></Link><div className="name mt-1.5">{winner}</div><span className={`mono text-[13px] font-bold ${wr >= 0 ? "green" : "red"}`}>{fmtPct(wr, 1)}</span></div>
           <div className="duel-mid"><div className="mono muted text-xs">perped</div><div className="duel-bar"><i style={{ width: "100%" }} /></div><div className="when">{meta.reason === "liquidation" ? "by liquidation" : `${fmtPct(Math.abs(wr - lr), 1)} gap`}</div></div>
-          <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} link={false} /></Link><div className="name mt-1.5">{loser}</div><span className="mono red text-[13px] font-bold">{fmtPct(lr, 1)}</span></div>
+          <div className="duelist"><Link href={`/u/${loser}`}><Avatar handle={loser} size={48} link={false} /></Link><div className="name mt-1.5">{loser}</div><span className={`mono text-[13px] font-bold ${lr >= 0 ? "green" : "red"}`}>{fmtPct(lr, 1)}</span></div>
         </div>
         <Acts item={item} onChanged={onChanged}>
           {typeof meta.faderPostId === "number" && <Link href={`/battle/${meta.faderPostId}`} className="chip ml-auto">See the fade</Link>}

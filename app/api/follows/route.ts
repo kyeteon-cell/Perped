@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   if (!me) return Response.json({ error: "pick a handle first" }, { status: 400 });
   const limited = await rateLimit("follow", me);
   if (limited) return limited;
-  const parsed = Body.safeParse(await req.json());
+  const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const [target] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.handle, parsed.data.handle.toLowerCase())).limit(1);
   if (!target || target.id === me.id) return Response.json({ error: "not found" }, { status: 404 });
@@ -25,8 +25,9 @@ export async function POST(req: Request) {
     await db.delete(schema.follows).where(where);
     return Response.json({ following: false });
   }
-  await db.insert(schema.follows).values({ followerId: me.id, followeeId: target.id });
-  await notify(target.id, "follow", `${me.handle} followed you`, undefined, `/u/${me.handle}`);
+  // A double tap races here: the second insert is a no-op instead of a unique-key error.
+  const added = await db.insert(schema.follows).values({ followerId: me.id, followeeId: target.id }).onConflictDoNothing().returning();
+  if (added.length) await notify(target.id, "follow", `${me.handle} followed you`, undefined, `/u/${me.handle}`);
   return Response.json({ following: true });
 }
 

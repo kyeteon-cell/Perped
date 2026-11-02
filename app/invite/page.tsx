@@ -63,6 +63,11 @@ export default function InvitePage() {
     </main>
   );
   if (!data) return <SkeletonList n={3} />;
+  // Signed in but no profile yet (or the API answered with an error): finish setup first.
+  if ((data as { error?: string }).error || !data.earnings) return (
+    <main className="px-4 pb-10 pt-4"><section className="inv-hero"><small>Almost there</small><h2>Pick a handle first.</h2><p>Your invite page appears once your profile is set up.</p></section>
+      <Link href="/onboarding" className="btn brand mt-4 w-full" style={{ padding: 15, display: "block", textAlign: "center" }}>Finish setup</Link></main>
+  );
   const f = data.founder, e = data.earnings, r = data.rates, demo = data.mode === "demo", est = data.est;
   // Demo shows "would've earned" from demo trades; real shows what's actually been earned.
   const headline = demo ? est.week : e.owed;

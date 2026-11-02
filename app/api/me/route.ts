@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   const auth = await getAuth(req);
   if (!auth) return unauthorized();
   if (!auth.address) return Response.json({ error: "wallet not ready" }, { status: 400 });
-  const parsed = Body.safeParse(await req.json());
+  const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "invalid" }, { status: 400 });
   const { handle, bio, avatarUrl, referralCode } = parsed.data;
   const taken = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.handle, handle)).limit(1);

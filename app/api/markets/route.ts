@@ -23,7 +23,8 @@ function oiDayAgo() {
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [markets, ago] = await Promise.all([getMarkets(), oiDayAgo()]);
+  const [markets, ago] = await Promise.all([getMarkets().catch(() => null), oiDayAgo()]);
+  if (!markets) return Response.json({ error: "Hyperliquid is not answering right now", markets: [] }, { status: 502, headers: { "cache-control": "public, s-maxage=5" } });
   const out = markets.map((m) => ({ ...m, oiChange24h: ago[m.name] > 0 ? ((m.openInterest - ago[m.name]) / ago[m.name]) * 100 : null }));
   out.sort((a, b) => b.volume24h - a.volume24h);
   return Response.json({ markets: out, at: Date.now() }, { headers: { "cache-control": "public, s-maxage=5, stale-while-revalidate=30" } });

@@ -61,7 +61,7 @@ export default function SettingsPage() {
     <div data-tint="violet" className="fade-in pb-6">
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href={`/u/${profile.handle}`} className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Settings</div><span className="w-9" /></header>
 
-      <ProfileEditor />
+      <div id="profile" style={{ scrollMarginTop: 12 }}><ProfileEditor /></div>
       {isGuest && guestToken && (
         <div className="px-5 pb-2 pt-3">
           <div className="card p-4" style={{ border: "1.5px solid var(--gold)" }}>

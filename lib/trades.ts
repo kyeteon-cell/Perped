@@ -15,7 +15,7 @@ export type CloseReason = "manual" | "tp" | "sl" | "liquidation";
  * demo take-profit / stop-loss / liquidation. A partial close books the realised P&L on the closed slice and
  * keeps the post open with the smaller size.
  */
-export async function closeTradePost(postId: number, userId: string, opts: { exitPx?: number; fraction?: number; reason?: CloseReason; trusted?: boolean }) {
+export async function closeTradePost(postId: number, userId: string, opts: { exitPx?: number; fraction?: number; reason?: CloseReason; trusted?: boolean; retried?: boolean }) {
   const [post] = await db.select().from(schema.posts).where(eq(schema.posts.id, postId)).limit(1);
   if (!post || post.kind !== "trade" || post.userId !== userId) return { error: "not found", status: 404 } as const;
   if (post.status === "closed") return { post } as const;
@@ -69,9 +69,12 @@ export async function closeTradePost(postId: number, userId: string, opts: { exi
   // Claim the close atomically so a double tap or the cron racing a manual close can't settle it twice.
   const [updated] = await db.update(schema.posts)
     .set({ status: "closed", exitPx: String(exitPx), realizedPnl: total.toFixed(4), closedAt: new Date(), meta: { ...meta, closeReason: reason } })
-    .where(and(eq(schema.posts.id, post.id), eq(schema.posts.status, "open"))).returning();
+    // Size must still match: a partial close that landed in between changes it (and was already paid out).
+    .where(and(eq(schema.posts.id, post.id), eq(schema.posts.status, "open"), eq(schema.posts.size, post.size!))).returning();
   if (!updated) {
     const [now] = await db.select().from(schema.posts).where(eq(schema.posts.id, post.id)).limit(1);
+    // Still open with a smaller size: settle what's left, once.
+    if (now?.status === "open" && !opts.retried) return closeTradePost(postId, userId, { ...opts, retried: true });
     return { post: now } as const;
   }
   if (post.paper) await db.update(schema.users).set({ demoBalance: sql`greatest(0, ${schema.users.demoBalance} + ${(fullMargin + fullPnl).toFixed(2)})` }).where(eq(schema.users.id, userId));
@@ -84,7 +87,9 @@ export async function closeTradePost(postId: number, userId: string, opts: { exi
     await awardXp(userId, reason === "liquidation" ? (liqPen < 0 ? liqPen : XP.liquidation) : total > 0 ? XP.tradeWin : XP.tradeLoss, reason === "liquidation" ? "liquidation" : total > 0 ? "trade_win" : "trade_loss", `post:${post.id}`);
   }
   const [me] = await db.select({ handle: schema.users.handle, showLiquidations: schema.users.showLiquidations }).from(schema.users).where(eq(schema.users.id, userId)).limit(1);
-  const roi = pct * lev;
+  // Whole-trade ROI on the starting margin (earlier partial slices included).
+  const startMargin = (Number(post.size) + ((meta.partials as { size: number }[] | undefined) ?? []).reduce((a, x) => a + Number(x.size || 0), 0)) * Number(post.entryPx) / lev;
+  const roi = startMargin > 0 ? (total / startMargin) * 100 : pct * lev;
   if (reason === "liquidation" && me?.showLiquidations) {
     await systemPost("liquidation", `${me.handle} got perped. −$${Math.abs(total).toFixed(0)} on ${post.coin} ${lev}× ${post.side}, liquidated at ${exitPx}.`, { handle: me.handle, pnl: total, coin: post.coin, postId: post.id }, post.coin ?? undefined);
   }

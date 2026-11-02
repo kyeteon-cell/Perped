@@ -10,7 +10,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const auth = await getAuth(req);
   if (!auth) return unauthorized();
   const { id } = await ctx.params;
-  const parsed = Body.safeParse(await req.json());
+  // Votes need a profile row (a fresh sign-in that hasn't picked a handle yet has none).
+  const [me] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.id, auth.privyId)).limit(1);
+  if (!me) return Response.json({ error: "pick a handle first" }, { status: 400 });
+  const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const postId = Number(id);
   // Calls lock once they resolve: no voting after you know the answer.

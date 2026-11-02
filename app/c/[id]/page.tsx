@@ -9,7 +9,7 @@ import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
 import { fmtPct, fmtPrice, pnlForPosition } from "@/lib/format";
-import { Avatar, CoinMark, ticker, SkeletonList } from "@/components/ui";
+import { Avatar, CoinMark, ticker, SkeletonList, LoadFail } from "@/components/ui";
 import { isDemoPost } from "@/components/FeedPost";
 
 /**
@@ -23,14 +23,15 @@ export default function ChallengePage() {
   const router = useRouter();
   const { authenticated, startGuest, refreshMe, authedFetch, profile } = useSession();
   const { mids } = useMids();
-  const { data } = useSWR<{ post: FeedRow }>(`/api/posts/${id}`);
+  const { data, error, mutate } = useSWR<{ post?: FeedRow; error?: string }>(`/api/posts/${id}`);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const ref = sp.get("ref")?.toLowerCase() ?? null;
   // Remember who sent the link so sign-up (guest or wallet) credits them.
   useEffect(() => { try { if (ref) localStorage.setItem("perped:ref", ref); } catch {} }, [ref]);
 
-  if (!data) return <SkeletonList n={1} />;
+  if (!data) return error ? <LoadFail retry={() => mutate()} /> : <SkeletonList n={1} />;
+  if (!data.post) return <LoadFail gone what="challenge" />;
   const { post, author } = data.post;
   const handle = author?.handle ?? "someone";
   const mid = post.coin ? mids[post.coin] : undefined;

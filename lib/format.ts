@@ -79,6 +79,27 @@ export function pnlForPosition(side: "long" | "short", entryPx: number, markPx: 
   return { pnl, pct };
 }
 
+type RoiPost = { side: string | null; entryPx: string | number | null; exitPx?: string | number | null; size: string | number | null; leverage: number | null; status: string | null; realizedPnl?: string | number | null; meta?: unknown };
+/**
+ * Leverage-adjusted ROI of a whole trade, partial closes included: everything banked plus what's still open,
+ * over the margin the trade started with. Scoring on the last exit price alone would ignore earlier slices.
+ */
+export function tradeRoiPct(p: RoiPost, mark?: number) {
+  const entry = Number(p.entryPx), lev = p.leverage ?? 1, size = Number(p.size ?? 0);
+  const meta = (p.meta ?? {}) as { partials?: { size: number }[]; realizedSoFar?: number; closeReason?: string };
+  const sliced = (meta.partials ?? []).reduce((a, x) => a + Number(x.size || 0), 0);
+  const margin = ((size + sliced) * entry) / lev;
+  const side = p.side === "short" ? "short" : "long";
+  if (!(margin > 0)) return 0;
+  if (p.status === "closed") {
+    if (p.realizedPnl != null && p.realizedPnl !== "") return (Number(p.realizedPnl) / margin) * 100;
+    if (meta.closeReason === "liquidation") return -100;
+    return pnlForPosition(side, entry, Number(p.exitPx ?? entry), size + sliced).pct * lev;
+  }
+  const open = pnlForPosition(side, entry, mark || entry, size).pnl;
+  return ((Number(meta.realizedSoFar ?? 0) + open) / margin) * 100;
+}
+
 export function sizeTier(usd: number) {
   if (usd >= 10000) return "whale";
   if (usd >= 1000) return "large";

@@ -11,7 +11,7 @@ import { useSession } from "@/lib/hooks/useSession";
 import { ManageTrade } from "@/components/ManageTrade";
 const ChallengeSheet = dynamic(() => import("@/components/ChallengeSheet").then((m) => m.ChallengeSheet), { ssr: false });
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
-import { Avatar, Badges, CoinMark, Icon, I, ticker, SkeletonList, RankEmblem } from "@/components/ui";
+import { Avatar, Badges, CoinMark, Icon, I, ticker, SkeletonList, RankEmblem, LoadFail } from "@/components/ui";
 import { rankFor } from "@/lib/rank";
 import { BattleArena, type Fighter } from "@/components/BattleArena";
 import { RevengeButton } from "@/components/Bloodbath";
@@ -40,7 +40,7 @@ function roi(p: Post, mid: number) {
 /** /battle/:id — a fade as a head-to-head: live score, the two positions, trader vs trader stats, and their history. */
 export default function BattlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data, mutate } = useSWR<Res>(`/api/battle/${id}`, { refreshInterval: 15_000 });
+  const { data, mutate, error } = useSWR<Res>(`/api/battle/${id}`, { refreshInterval: 15_000 });
   const [manage, setManage] = useState<Res["fade"] | null>(null);
   const [rematch, setRematch] = useState<string | null>(null);
   const [sideWith, setSide] = useState<null | { p: Post; u: U }>(null);
@@ -57,8 +57,8 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const [pinBusy, setPinBusy] = useState(false);
   const { mids } = useMids();
   const { profile, authedFetch } = useSession();
-  if (!data) return <SkeletonList n={2} />;
-  if (data.error) return <p className="muted p-5 text-sm">That isn&apos;t a fade.</p>;
+  if (!data) return error ? <LoadFail retry={() => mutate()} /> : <SkeletonList n={2} />;
+  if (data.error) return <LoadFail gone what="fade" />;
   const { fade, target, fader, targetUser: tu, history, record, camps, battle, nemesis } = data;
   const myPost = profile ? (profile.id === fader.user.id ? fade : profile.id === tu.user.id ? target : null) : null;
   const pinnedWin = pinOverride ?? !!myPost?.pinned;
@@ -97,7 +97,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const Side = ({ u, p, r, left }: { u: U; p: Post; r: { pnl: number; roi: number }; left: boolean }) => (
     <div className={`bside ${left ? "l" : "r"}`}>
       <Link href={`/u/${u.handle}`}><div className={`avring ${(left ? faderLeads : !faderLeads) && (live || chasing) ? "lead" : live || chasing ? "losing" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={64} link={false} xp={u.xp} /></div></Link>
-      <div className="name mt-2 truncate">{u.handle}{u.verified && <span className="vbadge">✓</span>}<Badges u={u} /></div>
+      <div className="name mt-2 truncate">{u.handle}{u.verified && <span className="vbadge" title="Verified" aria-label="Verified">✓</span>}<Badges u={u} /></div>
       {u.isDemo ? <div className="mt-1 flex items-center justify-center"><span className="demo-word text-[12px]">Demo</span></div> : null}
       <span className={`lbl ${p.side} mt-2`}><i />{p.side === "long" ? "Long" : "Short"} {p.leverage}×</span>
       <div className={`mono mt-2 text-[30px] font-bold leading-none ${r.roi >= 0 ? "green" : "red"}`}>{fmtPct(r.roi, 1)}</div>
@@ -177,7 +177,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         )}
         <Tug share={share} left={fade.side as "long" | "short"} right={target.side as "long" | "short"} height={10} className="mt-5" />
         {(live || chasing) && <div className="bgap"><span className="bgap-n mono">{fmtPct(Math.abs(a.roi - b.roi), 1).replace(/^[+−-]/, "")}</span><span className="bgap-l">{faderLeads ? fader.user.handle : tu.user.handle} ahead</span></div>}
-        <div className="when mt-2 text-center">{live || chasing ? "the gap between their ROIs, live" : `${a.roi > b.roi ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`}</div>
+        <div className="when mt-2 text-center">{live || chasing ? "the gap between their ROIs, live" : (battle?.winnerId ? `${battle.winnerId === fader.user.id ? fader.user.handle : tu.user.handle} took it · ${fmtPct(Math.abs(a.roi - b.roi), 1)} gap` : battle?.status === "settled" ? "Draw" : `${fmtPct(Math.abs(a.roi - b.roi), 1)} gap`)}</div>
         {live && profile && (profile.id === fader.user.id || profile.id === tu.user.id) && (
           <button className="btn ink mt-4" style={{ padding: 11, fontSize: 13 }} onClick={() => setManage(profile.id === fader.user.id ? fade : target)}>Manage trade</button>
         )}
@@ -215,7 +215,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
       <section className="block">
         <div className="flex items-center justify-between"><span className="eyebrow">This trade</span><span className="when">{camps.copied} copied · {camps.faded} faded</span></div>
         <div className="split mt-3"><i style={{ width: `${(camps.copied / Math.max(1, camps.copied + camps.faded)) * 100}%` }} /></div>
-        <div className="mt-1.5 flex justify-between text-[12px]"><span className="green font-bold">with {tu.user.handle}</span><span className="red font-bold">against</span></div>
+        <div className="mt-1.5 flex justify-between text-[12px]"><span className="font-bold">with {tu.user.handle}</span><span className="muted font-bold">against</span></div>
         {target.body && <p className="say">&ldquo;{target.body}&rdquo; <span className="muted">— {tu.user.handle}</span></p>}
         {fade.body && <p className="say">&ldquo;{fade.body}&rdquo; <span className="muted">— {fader.user.handle}</span></p>}
         <div className="mt-3 flex gap-2"><Link href={`/post/${fade.id}`} className="chip">Fader&apos;s thread</Link><Link href={`/post/${target.id}`} className="chip">Original thread</Link></div>
@@ -227,7 +227,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
           <div className="mt-3 flex flex-col gap-2">
             {history.map((h) => {
               const isFader = h.userId === fader.user.id; const pnl = Number(h.pnl ?? 0);
-              const winner = (isFader ? pnl > 0 : pnl < 0) ? fader.user.handle : tu.user.handle;
+              const winner = pnl === 0 ? "Draw" : (isFader ? pnl > 0 : pnl < 0) ? fader.user.handle : tu.user.handle;
               return (
                 <Link key={h.id} href={`/battle/${h.id}`} className="flex items-center gap-2.5 text-[13px]">
                   <CoinMark coin={h.coin} size="sm" /><span className="w-12 font-bold">{ticker(h.coin)}</span>

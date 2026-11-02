@@ -30,10 +30,16 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const limited = await rateLimit("comment", profile);
   if (limited) return limited;
   const { id } = await ctx.params;
-  const parsed = Body.safeParse(await req.json());
+  const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
-  const [comment] = await db.insert(schema.comments).values({ postId: Number(id), userId: profile.id, body: parsed.data.body, parentId: parsed.data.parentId }).returning();
   const [post] = await db.select({ userId: schema.posts.userId }).from(schema.posts).where(eq(schema.posts.id, Number(id))).limit(1);
+  if (!post) return Response.json({ error: "not found" }, { status: 404 });
+  // A reply must belong to this post's thread.
+  if (parsed.data.parentId) {
+    const [parent] = await db.select({ postId: schema.comments.postId }).from(schema.comments).where(eq(schema.comments.id, parsed.data.parentId)).limit(1);
+    if (!parent || parent.postId !== Number(id)) return Response.json({ error: "that reply is on another post" }, { status: 400 });
+  }
+  const [comment] = await db.insert(schema.comments).values({ postId: Number(id), userId: profile.id, body: parsed.data.body, parentId: parsed.data.parentId }).returning();
   if (post?.userId && post.userId !== profile.id) await notify(post.userId, "reply", `${profile.handle} commented on your post`, parsed.data.body.slice(0, 80), `/post/${id}`);
   return Response.json({ comment: { comment, author: { handle: profile.handle, avatarUrl: profile.avatarUrl, verified: profile.verified, role: profile.role, founderSeat: profile.founderSeat, founderStatus: profile.founderStatus } } });
 }

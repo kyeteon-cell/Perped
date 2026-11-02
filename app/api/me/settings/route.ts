@@ -23,7 +23,7 @@ const Body = z.object({
 export async function PATCH(req: Request) {
   const auth = await getAuth(req);
   if (!auth) return unauthorized();
-  const parsed = Body.safeParse(await req.json());
+  const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const { resetDemo, ...patch } = parsed.data;
   const set: Record<string, unknown> = { ...patch };

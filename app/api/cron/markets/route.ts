@@ -10,7 +10,8 @@ export async function GET(req: Request) {
   await ensureSchema();
   const secret = process.env.CRON_SECRET;
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const markets = await getMarkets();
+  const markets = await getMarkets().catch(() => null);
+  if (!markets) return Response.json({ ok: false, error: "hyperliquid unavailable" }, { status: 502 });
   const at = new Date(Math.floor(Date.now() / 600_000) * 600_000).toISOString();
   const rows = JSON.stringify(markets.map((m) => ({ c: m.name, o: m.openInterest })));
   await db.execute(sql`insert into market_oi (coin, at, oi)

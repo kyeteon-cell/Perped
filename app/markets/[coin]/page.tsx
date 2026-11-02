@@ -25,7 +25,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
   const { data: feed, mutate } = useSWR<{ posts: FeedRow[] }>(`/api/posts?coin=${coin}&limit=20`, { refreshInterval: 20_000 });
   const { data: me } = useSWR<{ stats: { closedTrades: number } | null }>(profile ? `/api/profile/${profile.handle}` : null);
   const { mids } = useMids();
-  const m = data?.markets.find((x) => x.name === coin);
+  const m = data?.markets?.find((x) => x.name === coin);
   const px = mids[coin] ?? m?.mid ?? 0;
   const live = (feed?.posts ?? []).filter((p) => p.post.kind === "trade" && p.post.status === "open");
   const longs = live.filter((p) => p.post.side === "long").length;
@@ -40,6 +40,13 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
   const [selected, setSelected] = useState<string | null>(null);
   const markers = useMemo(() => toMarkers(pick(traders, lens)), [traders, lens]);
 
+  // Unknown coin (typo or delisted): say so instead of showing a trade ticket for a market that doesn't exist.
+  if (data?.markets?.length && !m) return (
+    <div data-tint="blue" className="fade-in">
+      <header className="flex items-center px-4 py-3"><Link href="/markets" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link></header>
+      <div className="load-fail"><b>No market called {coin}</b><span>Hyperliquid doesn&apos;t list it right now.</span><Link href="/markets" className="chip mt-3">All markets</Link></div>
+    </div>
+  );
   return (
     <div data-tint="blue" className="fade-in">
       <header className="flex items-center justify-between px-4 py-3">

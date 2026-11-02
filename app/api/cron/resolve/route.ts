@@ -42,7 +42,8 @@ export async function GET(req: Request) {
     else if (t.slPx && (up ? mid <= Number(t.slPx) : mid >= Number(t.slPx))) reason = "sl";
     else if (t.tpPx && (up ? mid >= Number(t.tpPx) : mid <= Number(t.tpPx))) reason = "tp";
     if (!reason) continue;
-    await closeTradePost(t.id, t.userId, { exitPx: reason === "liquidation" ? liq : reason === "sl" ? Number(t.slPx) : Number(t.tpPx), reason, trusted: true });
+    // Stops and targets fill at the live price once triggered (like a market order), never at the number typed in.
+    await closeTradePost(t.id, t.userId, { exitPx: reason === "liquidation" ? liq : mid, reason, trusted: true });
     demoClosed++;
   }
 

@@ -12,12 +12,12 @@ const B = ["maxi", "hunter", "lord", "cat", "enjoyer", "andy", "farmer", "wizard
 export async function POST(req: Request) {
   if (!DEMO_ENABLED) return Response.json({ error: "demo mode is off" }, { status: 403 });
   await ensureSchema();
-  // Rate limit: 5 new guest accounts per network per hour (stops XP farming with throwaway accounts).
+  // Rate limit: 25 new guest accounts per network per hour (stops XP farming; high enough for shared wifi and mobile carriers).
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || req.headers.get("x-real-ip") || "";
   if (ip) {
     const [n] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(schema.users)
       .where(and(eq(schema.users.signupIp, ip), gt(schema.users.createdAt, new Date(Date.now() - 3_600_000))));
-    if ((n?.n ?? 0) >= 5) return Response.json({ error: "too many new demo accounts from this network, try again in an hour" }, { status: 429 });
+    if ((n?.n ?? 0) >= 25) return Response.json({ error: "too many new demo accounts from this network, try again in an hour" }, { status: 429 });
   }
   try {
     const { id, token } = newGuestToken();

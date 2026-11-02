@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { queryFeed } from "@/lib/feed";
+import { getMids } from "@/lib/hl-info";
 
 /** GET /api/posts/:id → one post in feed shape (with the viewer's vote state). */
 export const dynamic = "force-dynamic";
@@ -39,10 +40,13 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const [post] = await db.select().from(schema.posts).where(and(eq(schema.posts.id, Number(id)), eq(schema.posts.userId, auth.privyId))).limit(1);
   if (!post || post.kind !== "trade" || post.status !== "open") return Response.json({ error: "not an open trade of yours" }, { status: 404 });
-  const entry = Number(post.entryPx), up = post.side === "long";
+  const up = post.side === "long";
+  // Checked against the live price, not the entry: a stop must still be ahead of you, so it can't be set
+  // on the far side of where price already is (which would settle a loss as if it never happened).
+  const mid = Number((await getMids().catch(() => ({} as Record<string, string>)))[post.coin!] ?? 0) || Number(post.entryPx);
   const { tpPx, slPx } = parsed.data;
-  if (tpPx && (up ? tpPx <= entry : tpPx >= entry)) return Response.json({ error: `Take profit must be ${up ? "above" : "below"} your entry` }, { status: 400 });
-  if (slPx && (up ? slPx >= entry : slPx <= entry)) return Response.json({ error: `Stop loss must be ${up ? "below" : "above"} your entry` }, { status: 400 });
+  if (tpPx && (up ? tpPx <= mid : tpPx >= mid)) return Response.json({ error: `Take profit must be ${up ? "above" : "below"} the current price` }, { status: 400 });
+  if (slPx && (up ? slPx >= mid : slPx <= mid)) return Response.json({ error: `Stop loss must be ${up ? "below" : "above"} the current price` }, { status: 400 });
   const set: Record<string, unknown> = {};
   if (tpPx !== undefined) set.tpPx = tpPx == null ? null : String(tpPx);
   if (slPx !== undefined) set.slPx = slPx == null ? null : String(slPx);
