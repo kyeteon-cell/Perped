@@ -73,17 +73,17 @@ export default function HomePage() {
   const [fresh, setFresh] = useState<Set<number>>(new Set());
   const [newCount, setNewCount] = useState(0);
   const idSig = posts.map((p) => p.post.id).join(",");
-  useEffect(() => { seen.current = null; setNewCount(0); }, [key]);
+  useEffect(() => { seen.current = null; setNewCount(0); }, [key, shown]);
   useEffect(() => {
     const ids = posts.map((p) => p.post.id);
-    if (!ids.length) return;
+    if (!ids.length || isLoading) return; // the cached feed shown while loading isn't a baseline
     if (!seen.current) { seen.current = new Set(ids); return; }
     const n = ids.filter((id) => !seen.current!.has(id));
     if (!n.length) return;
     n.forEach((id) => seen.current!.add(id));
     setFresh(new Set(n));
     if (window.scrollY > 400) setNewCount((c) => c + n.length);
-  }, [idSig]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [idSig, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!newCount) return;
     const f = () => { if (window.scrollY < 200) setNewCount(0); };

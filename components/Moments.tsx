@@ -3,12 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
+import dynamic from "next/dynamic";
 import { Avatar, ticker } from "./ui";
 import { small } from "@/lib/img";
 import { useSession } from "@/lib/hooks/useSession";
 import { useLive, openComingSoon } from "@/lib/hooks/useLive";
 import { RANKS, rankFor } from "@/lib/rank";
 import { fmtUsd } from "@/lib/format";
+
+const DepositSheet = dynamic(() => import("./DepositSheet").then((m) => m.DepositSheet), { ssr: false });
 
 type Moment = { id: number; type: string; title: string; body: string | null; href: string | null };
 type DemoWin = { id: number; coin: string | null; side: string | null; leverage: number | null; pnl: number };
@@ -50,30 +53,37 @@ export function Moments() {
   useEffect(() => { const f = () => setVis(document.visibilityState === "visible"); f(); document.addEventListener("visibilitychange", f); return () => document.removeEventListener("visibilitychange", f); }, []);
   const after = useRef<number | null>(null);
   const afterTrade = useRef<number>(0);
-  useEffect(() => { after.current = profile ? Number(get(`${LS_LAST}:${profile.id}`) ?? -1) : null; afterTrade.current = Number(get(LS_TRADE) ?? 0); }, [profile]);
-  const key = profile && vis ? ["/api/me/moments", profile.id] : null;
+  const pid = profile?.id ?? null;
+  // Read the device's high-water mark straight from storage the first time (the fetch can fire before any effect).
+  const mark = () => { if (after.current == null && pid) { after.current = Number(get(`${LS_LAST}:${pid}`) ?? -1); afterTrade.current = Number(get(LS_TRADE) ?? 0); } return after.current ?? -1; };
+  useEffect(() => { after.current = null; }, [pid]);
+  const key = pid && vis ? ["/api/me/moments", pid] : null;
   const { data } = useSWR<{ moments: Moment[]; latest: number; demoWin: DemoWin | null }>(key, async () => {
-    const a = after.current ?? -1;
+    const a = mark();
     return (await authedFetch(`/api/me/moments?after=${Math.max(0, a)}&afterTrade=${afterTrade.current}`)).json();
   }, { refreshInterval: 40_000, revalidateOnFocus: true, dedupingInterval: 10_000 });
 
   const [queue, setQueue] = useState<Moment[]>([]);
   const [d2r, setD2r] = useState<DemoWin | null>(null);
+  const [deposit, setDeposit] = useState(false);
+  const done = useRef<unknown>(null);
   useEffect(() => {
-    if (!data || !profile || !Array.isArray(data.moments)) return;
-    const k = `${LS_LAST}:${profile.id}`;
-    const first = (after.current ?? -1) < 0;
-    after.current = Math.max(after.current ?? 0, data.latest ?? 0);
-    set(k, String(after.current));
-    // First run on this device: start from now, don't replay history.
-    if (!first && data.moments.length) setQueue((q) => [...q, ...[...data.moments].reverse().filter((m) => !q.some((x) => x.id === m.id))].slice(-4));
+    if (!data || !pid || !Array.isArray(data.moments) || done.current === data) return;
+    done.current = data; // each response is handled once, however often the profile object changes
+    const prev = mark();
+    const first = prev < 0;
+    after.current = Math.max(prev, data.latest ?? 0);
+    set(`${LS_LAST}:${pid}`, String(after.current));
+    // First run on this device: start from now, don't replay history. After that, only moments newer than the last one shown.
+    const fresh = first ? [] : [...data.moments].reverse().filter((m) => m.id > prev);
+    if (fresh.length) setQueue((q) => [...q, ...fresh.filter((m) => !q.some((x) => x.id === m.id))].slice(-4));
     if (data.demoWin && data.demoWin.id > afterTrade.current) {
       afterTrade.current = data.demoWin.id; set(LS_TRADE, String(data.demoWin.id));
       // At most one "for real" moment every 6 hours, and never on the first run.
       const last = Number(get(LS_D2R_AT) ?? 0);
       if (!first && Date.now() - last > 6 * 3_600_000) { set(LS_D2R_AT, String(Date.now())); setD2r(data.demoWin); }
     }
-  }, [data, profile]);
+  }, [data, pid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Don't interrupt a trade being set up or a sign-in.
   const quiet = /^\/(trade|onboarding|admin)/.test(path);
@@ -94,7 +104,7 @@ export function Moments() {
           </span>
         </div>
       )}
-      {cur && profile && <Ceremony m={cur} handle={profile.handle} avatarUrl={profile.avatarUrl ?? null} xp={profile.xp ?? 0} onClose={next} onOpen={() => open(cur.href)} />}
+      {cur && profile && <Ceremony key={cur.id} m={cur} handle={profile.handle} avatarUrl={profile.avatarUrl ?? null} xp={profile.xp ?? 0} onClose={next} onOpen={() => open(cur.href)} />}
       {!cur && d2r && !quiet && (
         <div className="mo-d2r-bg" onClick={() => setD2r(null)}>
           <div className="mo-d2r" role="dialog" aria-label="What this would have paid" onClick={(e) => e.stopPropagation()}>
@@ -103,12 +113,13 @@ export function Moments() {
             <b className="mono green"><Count to={d2r.pnl} /></b>
             <span className="when">{ticker(d2r.coin ?? "")} {d2r.side} {d2r.leverage ?? 1}× · same size, same prices</span>
             <div className="mo-d2r-acts">
-              <button type="button" className="btn primary" onClick={() => { setD2r(null); if (allowed) router.push("/onboarding?fund=1"); else openComingSoon(); }}>{allowed ? "Fund a real account" : "Get early access to real money"}</button>
+              <button type="button" className="btn primary" onClick={() => { setD2r(null); if (allowed) setDeposit(true); else openComingSoon(); }}>{allowed ? "Fund a real account" : "Get early access to real money"}</button>
               <button type="button" className="btn" onClick={() => setD2r(null)}>Keep practising</button>
             </div>
           </div>
         </div>
       )}
+      {deposit && <DepositSheet onClose={() => setDeposit(false)} />}
     </>
   );
 }
@@ -127,7 +138,10 @@ function Count({ to }: { to: number }) {
 
 /** Full-screen moment: rank up (the rim changes metal in front of you), trophy (flip + glint), fade or duel won (confetti). */
 function Ceremony({ m, handle, avatarUrl, xp, onClose, onOpen }: { m: Moment; handle: string; avatarUrl: string | null; xp: number; onClose: () => void; onOpen: () => void }) {
-  const now = rankFor(xp);
+  // The rank comes from the alert itself ("Ranked up: X", "Level N."), not the cached profile, which can lag.
+  const lvl = Number(/Level (\d+)/.exec(m.body ?? "")?.[1] ?? 0);
+  const byAlert = m.type === "rank" && lvl ? RANKS.find((r) => r.level === lvl) : undefined;
+  const now = byAlert ? { ...rankFor(byAlert.min), xp: Math.max(xp, byAlert.min) } : rankFor(xp);
   const prevLevel = Math.max(1, now.level - 1);
   const [morphed, setMorphed] = useState(false);
   useEffect(() => { const t = setTimeout(() => setMorphed(true), reduced() ? 0 : 900); return () => clearTimeout(t); }, []);

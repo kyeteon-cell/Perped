@@ -9,6 +9,7 @@ export function PullRefresh({ onRefresh }: { onRefresh: () => Promise<unknown> |
   const start = useRef<number | null>(null);
   const cb = useRef(onRefresh); cb.current = onRefresh;
   const pullRef = useRef(0); pullRef.current = pull;
+  const busyRef = useRef(false); busyRef.current = busy;
   useEffect(() => {
     const down = (e: TouchEvent) => { start.current = window.scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null; };
     const move = (e: TouchEvent) => {
@@ -29,8 +30,13 @@ export function PullRefresh({ onRefresh }: { onRefresh: () => Promise<unknown> |
     };
     window.addEventListener("touchstart", down, { passive: true });
     window.addEventListener("touchmove", move, { passive: true });
+    const cancel = () => { start.current = null; if (!busyRef.current) setPull(0); };
     window.addEventListener("touchend", up);
-    return () => { window.removeEventListener("touchstart", down); window.removeEventListener("touchmove", move); window.removeEventListener("touchend", up); };
+    window.addEventListener("touchcancel", cancel);
+    // The browser's own pull-to-refresh would reload the whole page on top of ours.
+    const html = document.documentElement, prevOb = html.style.overscrollBehaviorY;
+    html.style.overscrollBehaviorY = "contain";
+    return () => { window.removeEventListener("touchstart", down); window.removeEventListener("touchmove", move); window.removeEventListener("touchend", up); window.removeEventListener("touchcancel", cancel); html.style.overscrollBehaviorY = prevOb; };
   }, []);
   if (!pull && !busy) return null;
   const k = Math.min(1, pull / 64);
