@@ -8,7 +8,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtPrice, fmtStake, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
 import { useSession } from "@/lib/hooks/useSession";
-import { Avatar, Badges, CoinMark, Icon, I, ticker, RankChip } from "./ui";
+import { Avatar, Badges, CoinMark, Icon, I, ticker } from "./ui";
 import { Sparkline } from "./Sparkline";
 import { TradeChart } from "./TradeChart";
 import dynamic from "next/dynamic";
@@ -268,7 +268,7 @@ function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
     // Closed trade: one compact row. The feed is about what's live; banked results are a footnote.
     return (
       <article className={`post row ${isDemoPost(item) ? "demo" : ""}`} onClick={() => router.push(`/post/${post.id}`)} role="link">
-        {author ? <Link href={`/u/${author.handle}`} onClick={(e) => e.stopPropagation()}><Avatar handle={author.handle} url={author.avatarUrl} size={34} link={false} /></Link> : <span />}
+        {author ? <Link href={`/u/${author.handle}`} onClick={(e) => e.stopPropagation()}><Avatar handle={author.handle} url={author.avatarUrl} size={34} link={false} xp={author.xp} /></Link> : <span />}
         <CoinMark coin={post.coin!} size="sm" />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px]"><b>{author?.handle}</b> <span className="muted">closed</span> <b>{ticker(post.coin!)}</b> <span className={post.side === "long" ? "green" : "red"}>{post.side}</span> <span className="muted">{lev}×</span>{isDemoPost(item) ? <span className="demo-word"> · Demo</span> : null}</div>
@@ -347,9 +347,9 @@ function FadeCard({ item, a, b, mark, mid, onChanged, quick, setQuick, canAct, c
   const lead = Math.abs(a.roi - b.roi) < 0.05 ? null : a.roi > b.roi ? a : b;
   const side = (f: Fighter, right?: boolean, xp?: number | null) => (
     <div className={`fc-f ${right ? "r" : ""} ${lead === f ? "lead" : ""}`}>
-      <span className={`fc-av ${f.side}`}><Avatar handle={f.handle} url={f.avatarUrl} size={36} link={false} /></span>
+      <span className={`fc-av ${f.side}`}><Avatar handle={f.handle} url={f.avatarUrl} size={36} link={false} xp={xp ?? 0} /></span>
       <div className="min-w-0">
-        <Link href={`/u/${f.handle}`} className="fc-name" onClick={(e) => e.stopPropagation()}><span className="truncate">{f.handle}</span><RankChip xp={xp ?? 0} compact size={15} /></Link>
+        <Link href={`/u/${f.handle}`} className="fc-name" onClick={(e) => e.stopPropagation()}><span className="truncate">{f.handle}</span></Link>
         <div className={`fc-pos ${f.side}`}>{f.side === "long" ? "Long" : "Short"} {f.lev}×</div>
         <div className={`mono fc-roi ${f.roi >= 0 ? "green" : "red"}`}>{fmtPct(f.roi, 1)}</div>
       </div>
@@ -407,13 +407,13 @@ function BattleHead({ item, mark, myRoi }: { item: FeedRow; mark: number; myRoi:
       <div className="bh-top"><span className="bh-tag"><Icon d={I.bolt} size={12} />Fade{src.nemesis && <span className="bh-nem gl"><Glyph n="skull" />Vendetta</span>}</span><span className="bh-watch">{even ? "Dead level" : `${meAhead ? author.handle : src.handle} ahead`} · watch →</span></div>
       <div className="bh-row">
         <div className={`bh-f ${!meAhead && !even ? "lead" : ""}`}>
-          <span className={`bh-av ${src.side ?? "long"}`}><Avatar handle={src.handle} url={src.avatarUrl} size={30} link={false} /></span>
-          <div className="min-w-0"><div className="bh-name"><span className="truncate">{src.handle}</span><RankChip xp={src.xp} compact size={16} /></div><div className={`mono bh-roi ${theirRoi >= 0 ? "green" : "red"}`}>{fmtPct(theirRoi, 1)}</div>{fx && <MiniHp f={fx[0]} live={mark} />}</div>
+          <span className={`bh-av ${src.side ?? "long"}`}><Avatar handle={src.handle} url={src.avatarUrl} size={30} link={false} xp={src.xp} /></span>
+          <div className="min-w-0"><div className="bh-name"><span className="truncate">{src.handle}</span></div><div className={`mono bh-roi ${theirRoi >= 0 ? "green" : "red"}`}>{fmtPct(theirRoi, 1)}</div>{fx && <MiniHp f={fx[0]} live={mark} />}</div>
         </div>
         <span className="bh-vs">VS</span>
         <div className={`bh-f r ${meAhead && !even ? "lead" : ""}`}>
-          <div className="min-w-0 text-right"><div className="bh-name r"><RankChip xp={author.xp} compact size={16} /><span className="truncate">{author.handle}</span></div><div className={`mono bh-roi ${myRoi >= 0 ? "green" : "red"}`}>{fmtPct(myRoi, 1)}</div>{fx && <MiniHp f={fx[1]} live={mark} right />}</div>
-          <span className={`bh-av ${post.side ?? "short"}`}><Avatar handle={author.handle} url={author.avatarUrl} size={30} link={false} /></span>
+          <div className="min-w-0 text-right"><div className="bh-name r"><span className="truncate">{author.handle}</span></div><div className={`mono bh-roi ${myRoi >= 0 ? "green" : "red"}`}>{fmtPct(myRoi, 1)}</div>{fx && <MiniHp f={fx[1]} live={mark} right />}</div>
+          <span className={`bh-av ${post.side ?? "short"}`}><Avatar handle={author.handle} url={author.avatarUrl} size={30} link={false} xp={author.xp} /></span>
         </div>
       </div>
       <div className="bh-tug" style={{ background: post.side === "long" ? "var(--green)" : "var(--red)" }}><i style={{ width: `${share}%`, background: src.side === "short" ? "var(--red)" : "var(--green)" }} /></div>

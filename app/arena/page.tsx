@@ -9,7 +9,7 @@ import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
 import { fmtPct, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
-import { Avatar, CoinMark, RankChip, RankEmblem, SkeletonList, ticker } from "@/components/ui";
+import { Avatar, CoinMark, RankEmblem, SkeletonList, ticker } from "@/components/ui";
 const ChallengeSheet = dynamic(() => import("@/components/ChallengeSheet").then((m) => m.ChallengeSheet), { ssr: false });
 import { Sheet } from "@/components/Sheet";
 import { rankFor } from "@/lib/rank";
@@ -50,9 +50,9 @@ const roiOf = (l: ArenaBattle["faderLeg"], mid: number) => {
 function Fighter({ u, roi, lead, right, side }: { u: ArenaBattle["fader"]; roi: number; lead: boolean; right?: boolean; side: "long" | "short" }) {
   return (
     <div className={`ab-f ${right ? "r" : ""} ${lead ? "lead" : ""}`}>
-      <span className={`ab-av ${side}`}><Avatar handle={u.handle} url={u.avatarUrl} size={38} link={false} /></span>
+      <span className={`ab-av ${side}`}><Avatar handle={u.handle} url={u.avatarUrl} size={38} link={false} xp={u.xp} /></span>
       <div className="min-w-0">
-        <div className="ab-name"><span className="truncate">{u.handle}</span><RankChip xp={u.xp} compact size={16} /></div>
+        <div className="ab-name"><span className="truncate">{u.handle}</span></div>
         <div className={`mono ab-roi ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 1)}</div>
       </div>
     </div>
@@ -93,9 +93,9 @@ function PitCard({ x }: { x: Row }) {
     <div className="hub-card pit">
       <Link href={`/battle/${b.faderPostId}`} className="hub-body">
         <div className="hub-head"><span className="hub-tag blood gl"><Glyph n="drop" />The Pit</span><span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span></div>
-        <div className="hub-f"><span className="hub-av win"><Avatar handle={r.winner.handle} url={r.winner.avatarUrl} size={34} link={false} /><em><Glyph n="crown" tone="gold" /></em></span><b className="truncate">{r.winner.handle}</b><span className={`mono ${wr >= 0 ? "green" : "red"}`}>{fmtPct(wr, 1)}</span></div>
+        <div className="hub-f"><span className="hub-av win"><Avatar handle={r.winner.handle} url={r.winner.avatarUrl} size={34} link={false} xp={r.winner.xp} /><em><Glyph n="crown" tone="gold" /></em></span><b className="truncate">{r.winner.handle}</b><span className={`mono ${wr >= 0 ? "green" : "red"}`}>{fmtPct(wr, 1)}</span></div>
         <div className="hub-vs">vs</div>
-        <div className="hub-f"><span className="hub-av crack"><Avatar handle={r.loser.handle} url={r.loser.avatarUrl} size={34} link={false} /></span><b className="truncate">{r.loser.handle}</b><span className={`mono ${r.worst >= 0 ? "green" : "red"}`}>{fmtPct(r.worst, 1)}</span></div>
+        <div className="hub-f"><span className="hub-av crack"><Avatar handle={r.loser.handle} url={r.loser.avatarUrl} size={34} link={false} xp={r.loser.xp} /></span><b className="truncate">{r.loser.handle}</b><span className={`mono ${r.worst >= 0 ? "green" : "red"}`}>{fmtPct(r.worst, 1)}</span></div>
         <div className="hub-foot">{r.minLiq < 50 ? <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span> : <span className="when">{fmtPct(r.gap, 1).replace(/^[+−-]/, "")} gap</span>}</div>
       </Link>
       <FinishSave b={b} winner={r.winner} loser={r.loser} compact />
@@ -119,7 +119,7 @@ function StandingCard({ list }: { list: Row[] }) {
       <Link href={`/battle/${x.b.faderPostId}`} className="hub-body">
         <div className="hub-head"><span className="hub-tag chrome gl"><Glyph n="swords" />Last standing</span><span className="when"><CoinMark coin={x.b.coin} size="xs" />{ticker(x.b.coin)}</span></div>
         <div className="hub-solo">
-          <span className="hub-av big"><Avatar handle={k.still.handle} url={k.still.avatarUrl} size={48} link={false} /></span>
+          <span className="hub-av big"><Avatar handle={k.still.handle} url={k.still.avatarUrl} size={48} link={false} xp={k.still.xp} /></span>
           <b className="truncate">{k.still.handle}</b>
           <span className={`mono hub-roi ${k.stillRoi >= 0 ? "green" : "red"}`}>{fmtPct(k.stillRoi, 1)}</span>
           <span className={`glad-st ${k.winning ? "g" : "r"}`}>{k.winning ? "Winning" : "Chasing"}</span>
@@ -180,7 +180,7 @@ function FightCard({ x, tag, cls }: { x: Row; tag: ReactNode; cls: string }) {
           const uu = u as ArenaBattle["fader"], rr = roi as number, ll = l as ArenaBattle["faderLeg"];
           return (
             <div key={i} className="hub-f">
-              <span className={`hub-av ${uu.id === x.r.winner.id && x.r.gap > 0.05 ? "win" : ""}`}><Avatar handle={uu.handle} url={uu.avatarUrl} size={34} link={false} />{uu.id === x.r.winner.id && x.r.gap > 0.05 && <em><Glyph n="crown" tone="gold" /></em>}</span>
+              <span className={`hub-av ${uu.id === x.r.winner.id && x.r.gap > 0.05 ? "win" : ""}`}><Avatar handle={uu.handle} url={uu.avatarUrl} size={34} link={false} xp={uu.xp} />{uu.id === x.r.winner.id && x.r.gap > 0.05 && <em><Glyph n="crown" tone="gold" /></em>}</span>
               <b className="truncate">{uu.handle}</b>
               <span className="flex items-center gap-1.5"><span className={`mono ${rr >= 0 ? "green" : "red"}`}>{fmtPct(rr, 1)}</span><span className={`hub-side ${ll.side}`}>{ll.side === "long" ? "L" : "S"} {ll.leverage}×</span></span>
             </div>
@@ -353,8 +353,8 @@ function CallOut({ onPick, onClose, rivals }: { onPick: (h: string) => void; onC
         <div className="mt-2 flex flex-col">
           {list.map((u) => (
             <button key={u.handle} className="lb" style={{ width: "100%", textAlign: "left", background: "none", border: 0 }} onClick={() => onPick(u.handle)}>
-              <Avatar handle={u.handle} url={u.avatarUrl} size={36} link={false} />
-              <div className="min-w-0 flex-1"><div className="name">{u.handle}<RankChip xp={u.xp} compact /></div><div className="when">{rankFor(u.xp).title} · {u.xp.toLocaleString()} XP</div></div>
+              <Avatar handle={u.handle} url={u.avatarUrl} size={36} link={false} xp={u.xp} />
+              <div className="min-w-0 flex-1"><div className="name">{u.handle}</div><div className="when">{rankFor(u.xp).title} · {u.xp.toLocaleString()} XP</div></div>
               <span className="chip on"><Glyph n="swords" />Challenge</span>
             </button>
           ))}
@@ -495,7 +495,7 @@ export default function ArenaPage() {
           <div className="eyebrow" style={{ color: "var(--red)" }}>You&rsquo;ve been called out</div>
           {me.challenges.map((c) => (
             <Link key={c.id} href={`/duels/${c.id}`} className="lb">
-              <Avatar handle={c.from.handle} url={c.from.avatarUrl} size={40} link={false} />
+              <Avatar handle={c.from.handle} url={c.from.avatarUrl} size={40} link={false} xp={c.from.xp} />
               <div className="min-w-0 flex-1"><div className="name">{c.from.handle}</div><div className="when">{c.side} {ticker(c.coin)} · {fmtUsd(c.stakeUsd)} each · {c.hours}h</div></div>
               <span className="chip on">Answer</span>
             </Link>
@@ -511,8 +511,8 @@ export default function ArenaPage() {
           <div className="eyebrow">Your rivals</div>
           {me.rivals.map((r) => (
             <div key={r.user.id} className="lb">
-              <Avatar handle={r.user.handle} url={r.user.avatarUrl} size={40} />
-              <div className="min-w-0 flex-1"><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="name">{r.user.handle}<RankChip xp={r.user.xp} compact /></Link><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="mono when block"><span className="green">{r.won}W</span> · <span className="red">{r.lost}L</span> · see the series →</Link></div>
+              <Avatar handle={r.user.handle} url={r.user.avatarUrl} size={40} xp={r.user.xp} />
+              <div className="min-w-0 flex-1"><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="name">{r.user.handle}</Link><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="mono when block"><span className="green">{r.won}W</span> · <span className="red">{r.lost}L</span> · see the series →</Link></div>
               <button className="chip on" onClick={() => setTarget(r.user.handle)}>Rematch</button>
             </div>
           ))}
@@ -525,7 +525,7 @@ export default function ArenaPage() {
           <div className="hstrip mt-2" style={{ margin: "8px -20px 0", padding: "0 20px 4px" }}>
             {data.streaks.map((s) => (
               <div key={s.user.id} className="hcard text-center" style={{ width: 120 }}>
-                <div className="flex justify-center"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={44} /></div>
+                <div className="flex justify-center"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={44} xp={s.user.xp} /></div>
                 <div className="name mt-1.5 truncate text-[13px]">{s.user.handle}</div>
                 <div className="text-[18px] font-extrabold"><span className="gl"><Glyph n="flame" tone="gold" />{s.streak}</span></div>
                 {s.streak >= 5 && <div className="bounty gl"><Glyph n="bag" />Bounty +{25 + s.streak * 10} XP</div>}

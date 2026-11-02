@@ -11,7 +11,7 @@ import { useSession } from "@/lib/hooks/useSession";
 import { ManageTrade } from "@/components/ManageTrade";
 const ChallengeSheet = dynamic(() => import("@/components/ChallengeSheet").then((m) => m.ChallengeSheet), { ssr: false });
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
-import { Avatar, Badges, CoinMark, Icon, I, ticker, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
+import { Avatar, Badges, CoinMark, Icon, I, ticker, SkeletonList, RankEmblem } from "@/components/ui";
 import { rankFor } from "@/lib/rank";
 import { BattleArena, type Fighter } from "@/components/BattleArena";
 import { RevengeButton } from "@/components/Bloodbath";
@@ -96,9 +96,9 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
 
   const Side = ({ u, p, r, left }: { u: U; p: Post; r: { pnl: number; roi: number }; left: boolean }) => (
     <div className={`bside ${left ? "l" : "r"}`}>
-      <Link href={`/u/${u.handle}`}><div className={`avring ${(left ? faderLeads : !faderLeads) && (live || chasing) ? "lead" : live || chasing ? "losing" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={64} link={false} /></div></Link>
+      <Link href={`/u/${u.handle}`}><div className={`avring ${(left ? faderLeads : !faderLeads) && (live || chasing) ? "lead" : live || chasing ? "losing" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={64} link={false} xp={u.xp} /></div></Link>
       <div className="name mt-2 truncate">{u.handle}{u.verified && <span className="vbadge">✓</span>}<Badges u={u} /></div>
-      <div className="mt-1 flex items-center justify-center gap-1.5"><RankChip xp={u.xp} compact size={20} />{u.isDemo ? <span className="demo-tag">Demo</span> : <span className="real-tag">Real</span>}</div>
+      {u.isDemo ? <div className="mt-1 flex items-center justify-center"><span className="demo-word text-[12px]">Demo</span></div> : null}
       <span className={`lbl ${p.side} mt-2`}><i />{p.side === "long" ? "Long" : "Short"} {p.leverage}×</span>
       <div className={`mono mt-2 text-[30px] font-bold leading-none ${r.roi >= 0 ? "green" : "red"}`}>{fmtPct(r.roi, 1)}</div>
       <div className={`mono text-[13px] ${r.pnl >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl, { sign: true })}</div>
