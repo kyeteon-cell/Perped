@@ -11,7 +11,7 @@ import { Avatar, CoinMark, ticker } from "./ui";
  * appear in the For you feed; this is where they live, as a stream of results. Tap one for the thread.
  */
 export function Banked() {
-  const { data } = useSWR<{ posts: FeedRow[] }>("/api/posts?kind=trade&status=closed&limit=20", { refreshInterval: 30_000 });
+  const { data } = useSWR<{ posts: FeedRow[] }>("/api/posts?kind=trade&status=closed&limit=20", { refreshInterval: 60_000 });
   const rows = (data?.posts ?? []).filter((r) => r.author && r.post.entryPx && r.post.exitPx);
   if (!rows.length) return null;
   const items = [...rows, ...rows]; // duplicated for a seamless loop

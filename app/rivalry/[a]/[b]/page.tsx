@@ -1,5 +1,7 @@
 "use client";
 
+import { small } from "@/lib/img";
+import dynamic from "next/dynamic";
 import { Glyph } from "@/components/Glyph";
 import Link from "next/link";
 import { use, useState } from "react";
@@ -7,7 +9,7 @@ import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 import { fmtPct, fmtUsd, timeAgo } from "@/lib/format";
 import { Avatar, CoinMark, RankChip, SkeletonList, ticker } from "@/components/ui";
-import { ChallengeSheet } from "@/components/ChallengeSheet";
+const ChallengeSheet = dynamic(() => import("@/components/ChallengeSheet").then((m) => m.ChallengeSheet), { ssr: false });
 import type { PairRes } from "@/app/api/rivalries/pair/route";
 
 /** /rivalry/:a/:b — the series between two traders: scoreboard, runs, money, every fight, rematch and mute. */
@@ -38,7 +40,7 @@ export default function RivalryPage({ params }: { params: Promise<{ a: string; b
 
   return (
     <div className="fade-in pb-10" data-tint="red">
-      <section className="battle photo" style={{ backgroundImage: "url(/api/share-bg/hero-chrome-gold)" }}>
+      <section className="battle photo" style={{ backgroundImage: `url(${small("/api/share-bg/hero-chrome-gold", 1080)})` }}>
         <div className="flex items-center justify-between"><Link href="/arena" className="when" style={{ color: "rgba(255,255,255,.8)" }}>← Arena</Link><button className="when" style={{ color: "rgba(255,255,255,.8)" }} onClick={share}>{copied ? "Link copied" : "Share"}</button></div>
         <div className="mt-3 text-center text-[11px] font-extrabold uppercase tracking-[.14em]" style={{ color: "rgba(255,255,255,.75)" }}>{data.active ? "Rivalry" : `${data.fights} fight${data.fights === 1 ? "" : "s"} · rivals at 3`}{data.calledBy ? ` · called out by ${data.calledBy}` : ""}</div>
         <div className="riv-board mt-3">

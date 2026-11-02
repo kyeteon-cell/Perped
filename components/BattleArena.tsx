@@ -252,7 +252,7 @@ function RaceChart({ coin, live, a, b }: { coin: string; live: number; a: Fighte
   };
   return (
     <div className="rc">
-      <div className="rc-gap">{leader ? <><b>{leader.handle}</b> ahead by <b className="mono">{gap.toFixed(1)}%</b></> : "Dead level"}</div>
+      <div className="rc-gap">{leader ? <><b>{leader.handle}</b> ahead by <b className="mono">{gap.toFixed(1)}%</b></> : "All square"}</div>
       {Lane({ f: a, m: mom(0) })}
       {leader && (
         <div className="rc-gapbar">
@@ -383,7 +383,7 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
       )}
     </div></div>
     <div className="tc-foot">
-      <span className="when truncate">{leader ? <><b>{leader.handle}</b> leads by <b className="mono">{Math.abs(a.roi - b.roi).toFixed(1)}%</b></> : <b>Dead level</b>} · started {Math.max(1, Math.round(age / 60_000)) < 60 ? `${Math.max(1, Math.round(age / 60_000))}m` : `${Math.round(age / 3_600_000)}h`} ago</span>
+      <span className="when truncate">{leader ? <><b>{leader.handle}</b> leads by <b className="mono">{Math.abs(a.roi - b.roi).toFixed(1)}%</b></> : <b>All square</b>} · started {Math.max(1, Math.round(age / 60_000)) < 60 ? `${Math.max(1, Math.round(age / 60_000))}m` : `${Math.round(age / 3_600_000)}h`} ago</span>
       <span className="tc-ivs v2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
         {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === civ ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
       </span>

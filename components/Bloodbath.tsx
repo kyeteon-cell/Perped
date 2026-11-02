@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Glyph } from "./Glyph";
 import Link from "next/link";
 import { useState } from "react";
@@ -8,7 +9,8 @@ import type { FeedRow } from "@/lib/feed";
 import { fmtPct, timeAgo } from "@/lib/format";
 import { useSession } from "@/lib/hooks/useSession";
 import { healthOf, type Fighter } from "./BattleArena";
-import { QuickTrade, legItem } from "./QuickTrade";
+import { legItem } from "./legItem";
+const QuickTrade = dynamic(() => import("./QuickTrade").then((m) => m.QuickTrade), { ssr: false });
 import { Avatar, CoinMark, ticker } from "./ui";
 
 type Mini = ArenaBattle["fader"];
@@ -105,34 +107,6 @@ export function RevengeButton({ handle, label = <span className="gl"><Glyph n="d
   );
 }
 
-/** The Pit: the most one-sided live battle, shown big. */
-export function BloodPit({ b, mid, winner, loser, worst, minLiq }: { b: ArenaBattle; mid: number; winner: Mini; loser: Mini; worst: number; minLiq: number }) {
-  const wl = legOf(b, winner), ll = legOf(b, loser);
-  const roiOf = (l: Leg) => (mid && l.entryPx ? ((l.side === "long" ? mid - l.entryPx : l.entryPx - mid) / l.entryPx) * 100 * l.leverage : 0);
-  const fw = fighter(winner, wl, roiOf(wl)), fl = fighter(loser, ll, roiOf(ll));
-  return (
-    <div className="bb-pit">
-      <div className="bb-pit-top"><span className="bb-pit-tag gl"><Glyph n="drop" />The Pit</span><span className="when"><CoinMark coin={b.coin} size="xs" /> {ticker(b.coin)} · {timeAgo(b.createdAt)}</span></div>
-      <Link href={`/battle/${b.faderPostId}`} className="bb-pit-body">
-        <div className="bb-f win">
-          <span className="bb-av"><Avatar handle={winner.handle} url={winner.avatarUrl} size={56} link={false} /><em><Glyph n="crown" tone="gold" /></em></span>
-          <b className="truncate">{winner.handle}</b>
-          <span className={`mono bb-roi ${fw.roi >= 0 ? "green" : "red"}`}>{fmtPct(fw.roi, 1)}</span>
-          <span className={`lbl ${wl.side}`}><i />{wl.side === "long" ? "Long" : "Short"} {wl.leverage}×</span>
-        </div>
-        <div className="bb-vs">VS{minLiq < 50 && <small>liq in {minLiq.toFixed(1)}%</small>}</div>
-        <div className="bb-f lose">
-          <span className="bb-av crack"><Avatar handle={loser.handle} url={loser.avatarUrl} size={56} link={false} /></span>
-          <b className="truncate">{loser.handle}</b>
-          <span className={`mono bb-roi ${worst >= 0 ? "green" : "red"}`}>{fmtPct(worst, 1)}</span>
-          <span className={`lbl ${ll.side}`}><i />{ll.side === "long" ? "Long" : "Short"} {ll.leverage}×</span>
-        </div>
-      </Link>
-      <div className="ar-hp mt-3"><Bar f={fw} live={mid} /><Bar f={fl} live={mid} right /></div>
-      <FinishSave b={b} winner={winner} loser={loser} />
-    </div>
-  );
-}
 
 /** Kill feed: liquidations as they happen. */
 export function KillFeed({ kills }: { kills: ArenaBattle[] }) {

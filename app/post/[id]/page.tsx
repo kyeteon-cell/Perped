@@ -1,11 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost } from "@/components/FeedPost";
 import { RichText } from "@/components/RichText";
-import { ShareSheet } from "@/components/ShareSheet";
+const ShareSheet = dynamic(() => import("@/components/ShareSheet").then((m) => m.ShareSheet), { ssr: false });
 import { Avatar, Badges, Icon, I, SkeletonList } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";

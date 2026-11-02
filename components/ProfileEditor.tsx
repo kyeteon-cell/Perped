@@ -63,7 +63,7 @@ export function ProfileEditor() {
         <div className="-mt-9 flex items-end gap-3 px-2">
           <button type="button" className="pe-av" onClick={() => avatarIn.current?.click()} aria-label="Change profile picture">
             <Avatar handle={profile.handle} url={profile.avatarUrl} size={76} link={false} />
-            <span className="pe-cam">{busy === "avatar" ? "…" : "✎"}</span>
+            <span className="pe-cam">{busy === "avatar" ? "…" : <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-label="Change photo"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></svg>}</span>
           </button>
           <div className="flex flex-wrap gap-2 pb-1">
             <button className="chip" onClick={() => avatarIn.current?.click()}>Change photo</button>

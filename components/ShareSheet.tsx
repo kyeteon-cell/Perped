@@ -1,5 +1,6 @@
 "use client";
 
+import { small } from "@/lib/img";
 import { useEffect, useMemo, useState } from "react";
 import { Sheet } from "./Sheet";
 import type { FeedRow } from "@/lib/feed";
@@ -193,7 +194,7 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
         <div className="flex flex-col items-center gap-3.5 px-5 pb-5">
           {img ? <img src={img} alt="Share card preview" className="share-prev" /> : <div className="share-prev" />}
           <div className="themes">
-            {THEMES.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === themeId ? "on" : ""}`} onClick={() => setThemeId(t.key)} aria-label={t.name}><i style={t.scrim === "light" ? { background: "linear-gradient(160deg,#fff,#e6e7ea)" } : { backgroundImage: `url(/api/share-bg/${t.key})` }} /><span>{t.name}</span></button>)}
+            {THEMES.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === themeId ? "on" : ""}`} onClick={() => setThemeId(t.key)} aria-label={t.name}><i style={t.scrim === "light" ? { background: "linear-gradient(160deg,#fff,#e6e7ea)" } : { backgroundImage: `url(${small(`/api/share-bg/${t.key}`, 128)})` }} /><span>{t.name}</span></button>)}
           </div>
           <div className="grid w-full grid-cols-2 gap-2.5">
             <button className="btn brand" style={{ padding: 12 }} onClick={nativeShare}>{challengeable ? "Challenge a friend" : "Share"}</button>

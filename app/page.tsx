@@ -1,5 +1,6 @@
 "use client";
 
+import { small } from "@/lib/img";
 import { PushPrompt } from "@/components/PushPrompt";
 import { FirstBattle } from "@/components/FirstBattle";
 import { FightNightHome } from "@/components/FightNightHome";
@@ -8,7 +9,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
-import { WelcomeOnce } from "@/components/Welcome";
+import { WelcomeGate as WelcomeOnce } from "@/components/WelcomeGate";
 import { Pulse } from "@/components/Pulse";
 import { QuickCall } from "@/components/QuickCall";
 import { QuickPost } from "@/components/QuickPost";
@@ -71,7 +72,7 @@ export default function HomePage() {
     <div data-tint="brand" className="fade-in">
       <WelcomeOnce />
       <header className="home-banner">
-        <img src="/api/share-bg/banner-mercury" alt="" className="home-banner-img" />
+        <img src={small("/api/share-bg/banner-mercury", 1080)} alt="" className="home-banner-img" decoding="async" fetchPriority="high" />
         <div className="home-banner-shade" />
         <div className="home-banner-row">
         <div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { small } from "@/lib/img";
+import dynamic from "next/dynamic";
 import { Glyph } from "@/components/Glyph";
 import { use, useState } from "react";
 import Link from "next/link";
@@ -7,16 +9,17 @@ import useSWR from "swr";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { ManageTrade } from "@/components/ManageTrade";
-import { ChallengeSheet } from "@/components/ChallengeSheet";
+const ChallengeSheet = dynamic(() => import("@/components/ChallengeSheet").then((m) => m.ChallengeSheet), { ssr: false });
 import { fmtPct, fmtPrice, fmtUsd, pnlForPosition, timeAgo } from "@/lib/format";
 import { Avatar, Badges, CoinMark, Icon, I, ticker, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
 import { rankFor } from "@/lib/rank";
 import { BattleArena, type Fighter } from "@/components/BattleArena";
 import { RevengeButton } from "@/components/Bloodbath";
 import { isFightNight } from "@/lib/fightnight";
-import { QuickTrade, legItem } from "@/components/QuickTrade";
+import { legItem } from "@/components/legItem";
+const QuickTrade = dynamic(() => import("@/components/QuickTrade").then((m) => m.QuickTrade), { ssr: false });
 import { Tug } from "@/components/Tug";
-import { BattleShare } from "@/components/BattleShare";
+const BattleShare = dynamic(() => import("@/components/BattleShare").then((m) => m.BattleShare), { ssr: false });
 import type { Post, Stats } from "@/lib/schema";
 
 type U = { id: string; handle: string; avatarUrl: string | null; verified: boolean; isDemo: boolean; bio: string | null; xp?: number; role?: string | null; founderSeat?: number | null; founderStatus?: string | null };
@@ -131,8 +134,8 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
         </div>
       )}
 
-      <section className="battle photo mx-4 mt-4" style={{ backgroundImage: "url(/api/share-bg/hero-chrome-gold)" }}>
-        <div className="flex items-center justify-between"><span className="pc-tag violet">{live ? "● Live fade" : chasing ? "● Chase on" : "Settled fade"} · {timeAgo(fade.createdAt)} ago</span><Link href={`/markets/${coin}`} className="flex items-center gap-1.5 text-sm"><CoinMark coin={coin} size="sm" /><b>{ticker(coin, true)}</b><span className="mono muted">{mid ? fmtPrice(mid) : ""}</span></Link></div>
+      <section className="battle photo mx-4 mt-4" style={{ backgroundImage: `url(${small("/api/share-bg/hero-chrome-gold", 1080)})` }}>
+        <div className="flex items-center justify-between"><span className="pc-tag violet">{live ? <><i className="dot" />Live fade</> : chasing ? <><i className="dot" />Chase on</> : "Settled fade"} · {timeAgo(fade.createdAt)} ago</span><Link href={`/markets/${coin}`} className="flex items-center gap-1.5 text-sm"><CoinMark coin={coin} size="sm" /><b>{ticker(coin, true)}</b><span className="mono muted">{mid ? fmtPrice(mid) : ""}</span></Link></div>
         <div className="bgrid mt-4">
           {Side({ u: fader.user, p: fade, r: a, left: true })}
           <div className="bmid"><div className="vs">VS</div><div className="when text-[11px] mt-1">{fader.user.handle} faded</div></div>

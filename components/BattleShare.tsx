@@ -1,5 +1,6 @@
 "use client";
 
+import { small } from "@/lib/img";
 import { useEffect, useMemo, useState } from "react";
 import { Sheet } from "./Sheet";
 import { SHARE_BACKGROUNDS, HERO_BACKGROUNDS } from "@/lib/share-backgrounds";
@@ -150,7 +151,7 @@ export function BattleShare({ data, onClose }: { data: BattleShareData; onClose:
         <div className="bshare-prev mt-3">{png ? <img src={png} alt="Fade scorecard" /> : <div className="skel" style={{ aspectRatio: "4 / 5", borderRadius: 18 }} />}</div>
         <div className="eyebrow mt-4">Background</div>
         <div className="themes mt-2">
-          {BGS.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === bg ? "on" : ""}`} onClick={() => setBg(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(/api/share-bg/${t.key})` }} /><span>{t.name}</span></button>)}
+          {BGS.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === bg ? "on" : ""}`} onClick={() => setBg(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(${small(`/api/share-bg/${t.key}`, 128)})` }} /><span>{t.name}</span></button>)}
         </div>
         {msg && <p className="when mt-2 text-center">{msg}</p>}
         <div className="mt-4 grid grid-cols-[2fr_1fr] gap-2.5">

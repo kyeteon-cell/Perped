@@ -1,5 +1,6 @@
 "use client";
 
+import { small } from "@/lib/img";
 import { Glyph } from "./Glyph";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -56,7 +57,7 @@ const SLIDES: { k: string; eyebrow: string; title: string; body: string[]; mock:
     body: ["Wins, calls and fades earn XP and ranks. From Knife Catcher up, losses cost XP, so ranks can be lost. 29 trophies to collect, bronze to obsidian, each with a card to share.", "Beat someone on a 5+ win streak and you claim their bounty. Fight the same trader three times and you’re rivals. Fight Night is 9pm Bangkok, every night."],
     mock: (
       <div className="im-card">
-        <div className="im-ranks">{[1, 3, 5, 7, 8].map((l) => <img key={l} src={`/api/share-bg/rank-${l}`} alt="" />)}</div>
+        <div className="im-ranks">{[1, 3, 5, 7, 8].map((l) => <img key={l} src={small(`/api/share-bg/rank-${l}`, 128)} alt="" loading="lazy" decoding="async" />)}</div>
         <div className="im-row small"><span className="im-bounty"><Glyph n="bag" /> Bounty +95 XP</span><span className="im-fn"><Glyph n="glove" /> Fight Night in 2h 10m</span></div>
       </div>
     ),
@@ -86,21 +87,6 @@ const MONEY_SOON: (typeof SLIDES)[number] = {
 };
 
 /** Swipeable intro deck. `onDone` fires on the last slide (or "Skip"). */
-/** First visit: the intro as a full-screen overlay, shown once per device. */
-export function IntroOnce() {
-  const [show, setShow] = useState(false);
-  const { ready, authenticated, startGuest } = useSession();
-  useEffect(() => { try { if (!localStorage.getItem("perped:intro-seen")) setShow(true); } catch {} }, []);
-  if (!show) return null;
-  const done = () => {
-    try { localStorage.setItem("perped:intro-seen", "1"); } catch {}
-    track("intro_done");
-    setShow(false);
-    // Straight into a free demo account so the first trade is one tap away.
-    if (ready && !authenticated) startGuest().catch(() => null);
-  };
-  return <div className="intro-overlay" role="dialog" aria-label="Welcome to Perped"><Intro onDone={done} doneLabel={authenticated ? "Start trading" : "Try it free"} /></div>;
-}
 
 export function Intro({ onDone, doneLabel = "Start trading" }: { onDone: () => void; doneLabel?: string }) {
   const [i, setI] = useState(0);

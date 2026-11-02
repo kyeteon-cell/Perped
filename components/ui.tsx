@@ -1,5 +1,6 @@
 "use client";
 
+import { small, fit } from "@/lib/img";
 import Link from "next/link";
 import useSWR from "swr";
 import { rankFor } from "@/lib/rank";
@@ -87,7 +88,7 @@ export function Avatar({ handle, size = 40, url, link = true }: { handle: string
   const { data } = useSWR<{ url: string | null }>(url === undefined && handle && handle !== "?" ? `/api/avatar?handle=${encodeURIComponent(handle)}` : null, { dedupingInterval: 300_000, revalidateOnFocus: false });
   const src = url ?? data?.url ?? null;
   const pic = src
-    ? <img src={src} alt="" className="av" style={{ width: size, height: size, objectFit: "cover" }} />
+    ? <img src={src} alt="" className="av" loading="lazy" decoding="async" width={size} height={size} style={{ width: size, height: size, objectFit: "cover" }} />
     : <span className={`av av-${idx}`} style={{ width: size, height: size, fontSize: Math.round(size / 3) }}>{handle.slice(0, 2).toUpperCase()}</span>;
   // Every profile picture is a link to that profile, unless the caller already sits inside a link.
   if (!link || !handle || handle === "?") return pic;
@@ -133,7 +134,7 @@ export function RankChip({ xp, compact = false, size }: { xp?: number | null; co
   const px = size ?? (compact ? 18 : 22);
   return (
     <span className={`rank-chip lv${r.level} ${compact ? "compact" : ""}`} title={`${r.title} · ${r.xp} XP`}>
-      <img src={`/api/share-bg/rank-${r.level}`} alt="" className="rank-em" style={{ width: px, height: px }} />
+      <img src={small(`/api/share-bg/rank-${r.level}`, fit(px))} alt="" className="rank-em" loading="lazy" decoding="async" width={px} height={px} style={{ width: px, height: px }} />
       {!compact && <span>{r.title}</span>}
     </span>
   );
@@ -141,7 +142,7 @@ export function RankChip({ xp, compact = false, size }: { xp?: number | null; co
 
 /** Big emblem for cards and headers. */
 export function RankEmblem({ level, size = 72 }: { level: number; size?: number }) {
-  return <img src={`/api/share-bg/rank-${level}`} alt="" className={`rank-big lv${level}`} style={{ width: size, height: size }} />;
+  return <img src={small(`/api/share-bg/rank-${level}`, fit(size))} alt="" className={`rank-big lv${level}`} loading="lazy" decoding="async" width={size} height={size} style={{ width: size, height: size }} />;
 }
 
 /** Admin and founder badges for a name. `seat` adds the founder's seat number (profile header). */

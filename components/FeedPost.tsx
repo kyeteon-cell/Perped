@@ -17,7 +17,7 @@ import { RichText } from "./RichText";
 import { BattleSummary, battlesOf } from "./BattleSummary";
 import { BattleCardChart, MiniHp, type Fighter } from "./BattleArena";
 import { HL_NETWORK } from "@/lib/config";
-import { TrophyPost } from "./Trophies";
+const TrophyPost = dynamic(() => import("./Trophies").then((m) => m.TrophyPost), { ssr: false });
 
 // Sheets only open after a tap: load their code (and the Hyperliquid trading SDK behind them) on demand, not with the feed.
 const ShareSheet = dynamic(() => import("./ShareSheet").then((m) => m.ShareSheet), { ssr: false });
