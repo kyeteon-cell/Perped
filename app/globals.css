@@ -1731,6 +1731,15 @@ a.inv-erow { color: inherit; }
 .ubadge-seat { font-size: 12px; font-weight: 800; color: #b07d12; }
 .av-wrap { position: relative; display: inline-block; flex: none; line-height: 0; }
 .av-wrap .av { display: inline-grid; }
-.av-rank { position: absolute; right: -3px; bottom: -3px; border-radius: 50%; background: #111; box-shadow: 0 0 0 1.5px #d9dee5, 0 0 0 3px var(--surface); }
 .demo-word { color: #b07d12; font-weight: 700; }
 [data-theme="dark"] .demo-word, [data-theme="dark"] .ubadge-seat { color: #e2b04a; }
+/* Rank emblem on the avatar: no cut-out, a metal rim that climbs with rank (iron → obsidian) */
+.av-rank { position: absolute; right: -3px; bottom: -3px; border-radius: 50%; padding: 2px; box-sizing: border-box; box-shadow: 0 2px 6px -1px rgba(0,0,0,.55); background: #9aa1ab; object-fit: cover; }
+.av-rank.rk1 { background: linear-gradient(160deg, #a7adb5, #5d636b); }
+.av-rank.rk2 { background: linear-gradient(160deg, #f1c39a, #b0703f 55%, #7a4421); }
+.av-rank.rk3 { background: linear-gradient(160deg, #ffffff, #c9d0d8 55%, #8b939e); }
+.av-rank.rk4 { background: linear-gradient(160deg, #ffe6a6, #f2b63a 55%, #b07d12); }
+.av-rank.rk5 { background: linear-gradient(160deg, #f4fbff, #b9dcef 55%, #7fa6bd); }
+.av-rank.rk6 { background: linear-gradient(160deg, #9cc4ff, #3a76e0 55%, #1d3f8f); }
+.av-rank.rk7 { background: linear-gradient(160deg, #e3c8ff, #9b5de5 55%, #5a2b99); }
+.av-rank.rk8 { background: linear-gradient(160deg, #ffe3a3, #f2b63a 28%, #1a1a1f 52%, #0b0b0e 74%, #f2b63a); box-shadow: 0 0 9px -1px rgba(242,182,58,.75), 0 2px 6px -1px rgba(0,0,0,.55); }
