@@ -1796,3 +1796,22 @@ a.inv-erow { color: inherit; }
 .mk-slip span { display: block; font-size: 10.5px; margin-top: 1px; }
 .mk-means { margin-top: 16px; padding: 12px 14px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
 .mk-means p { font-size: 13.5px; line-height: 1.5; margin-top: 6px; }
+/* Verdict-first market tiles */
+.mk-read { background: var(--surface); border-radius: 18px; padding: 12px 14px; box-shadow: inset 0 0 0 1px var(--line); margin-bottom: 8px; }
+.mk-read small { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.mk-read p { font-size: 15px; line-height: 1.45; margin-top: 4px; font-weight: 600; color: var(--text); }
+.mk-read p b { font-weight: 800; }
+.mk-tile .w { font-size: 18px; font-weight: 800; letter-spacing: -.01em; margin-top: 3px; color: var(--text); line-height: 1.2; }
+.mk-tile.wide { grid-column: 1 / -1; }
+.mk-tile.wide .w { font-size: 16px; }
+.mk-scale { position: relative; height: 6px; border-radius: 9px; margin: 10px 2px 2px; background: linear-gradient(90deg, color-mix(in srgb, var(--muted) 55%, transparent), var(--line) 35%, var(--line) 65%, color-mix(in srgb, var(--muted) 55%, transparent)); }
+.mk-scale i { position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%; background: var(--text); transform: translate(-50%, -50%); box-shadow: 0 0 0 3px var(--surface); }
+.mk-ruler { position: relative; height: 32px; margin-top: 8px; }
+.mk-ruler .track, .mk-ruler .norm, .mk-ruler .today { position: absolute; left: 0; top: 6px; height: 8px; border-radius: 4px; }
+.mk-ruler .track { right: 0; background: var(--line); }
+.mk-ruler .norm { background: color-mix(in srgb, var(--muted) 45%, transparent); }
+.mk-ruler .today { background: var(--text); min-width: 4px; }
+.mk-ruler .tick { position: absolute; top: 2px; width: 2px; height: 16px; margin-left: -1px; background: var(--muted); border-radius: 1px; }
+.mk-ruler .tick.liq { background: var(--text); }
+.mk-ruler span { position: absolute; top: 20px; font-size: 10px; font-weight: 700; color: var(--muted); white-space: nowrap; transform: translateX(-50%); }
+.mk-ruler span.end { transform: translateX(-100%); }

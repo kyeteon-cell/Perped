@@ -109,11 +109,25 @@ export async function bookStats(coin: string): Promise<BookStats> {
 }
 
 export type CoinStats = {
-  funding: { now8h: number; apr: number; venues: { venue: string; rate8h: number }[]; history: { t: number; rate8h: number }[]; peak: { t: number; rate8h: number } | null };
+  funding: { now8h: number; apr: number; venues: { venue: string; rate8h: number }[]; history: { t: number; rate8h: number }[]; peak: { t: number; rate8h: number } | null; p10: number | null; p90: number | null };
   premiumPct: number; oracle: number; maxLev: number;
-  typical: ReturnType<typeof typicalDay> & { open: number; high: number; low: number };
+  typical: ReturnType<typeof typicalDay> & { open: number; high: number; low: number; todayPct: number };
   liq: { lev: number; distPct: number };
 };
+
+type FundRow = { fundingRate: string; time: number };
+/** Hourly funding since `start`. Hyperliquid pages at 500 rows, so 30 days takes two calls. */
+async function funding30(coin: string, start: number): Promise<FundRow[]> {
+  const out: FundRow[] = [];
+  let from = start;
+  for (let i = 0; i < 3; i++) {
+    const page = await info<FundRow[]>({ type: "fundingHistory", coin, startTime: from }).catch(() => [] as FundRow[]);
+    out.push(...page);
+    if (page.length < 500) break;
+    from = page[page.length - 1].time + 1;
+  }
+  return out;
+}
 
 /** Slower-moving stats (funding, premium, typical day). Cached a minute per coin. */
 export function coinStats(coin: string): Promise<CoinStats> {
@@ -122,7 +136,7 @@ export function coinStats(coin: string): Promise<CoinStats> {
     const [markets, predicted, hist, daily] = await Promise.all([
       getMarkets(),
       memo("predfund", 60_000, () => info<Predicted>({ type: "predictedFundings" })).catch(() => [] as Predicted),
-      info<{ fundingRate: string; time: number }[]>({ type: "fundingHistory", coin, startTime: now - 7 * day }).catch(() => []),
+      funding30(coin, now - 30 * day),
       getCandles(coin, "1d", now - 31 * day).catch(() => []),
     ]);
     const m = markets.find((x) => x.name === coin);
@@ -131,19 +145,22 @@ export function coinStats(coin: string): Promise<CoinStats> {
       .filter((v) => v[1] && VENUE[v[0]] && v[0] !== "HlPerp")
       .map(([k, v]) => ({ venue: VENUE[k].name, rate8h: (Number(v!.fundingRate) / (v!.fundingIntervalHours ?? VENUE[k].hours)) * 8 * 100 }));
     // Hourly history → 4-hour averages (42 bars for 7 days).
+    const all8h = hist.map((h) => Number(h.fundingRate) * 100 * 8).sort((a, b) => a - b);
+    const q = (p: number) => (all8h.length >= 48 ? all8h[Math.min(all8h.length - 1, Math.floor(p * all8h.length))] : null);
+    const week = hist.filter((h) => h.time >= now - 7 * day);
     const buckets = new Map<number, number[]>();
-    for (const h of hist) { const k = Math.floor(h.time / 14_400_000) * 14_400_000; (buckets.get(k) ?? buckets.set(k, []).get(k)!).push(Number(h.fundingRate) * 100 * 8); }
+    for (const h of week) { const k = Math.floor(h.time / 14_400_000) * 14_400_000; (buckets.get(k) ?? buckets.set(k, []).get(k)!).push(Number(h.fundingRate) * 100 * 8); }
     const history = [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([t, xs]) => ({ t, rate8h: xs.reduce((a, b) => a + b, 0) / xs.length }));
     let peak: { t: number; rate8h: number } | null = null;
-    for (const h of hist) { const r = Number(h.fundingRate) * 100 * 8; if (!peak || Math.abs(r) > Math.abs(peak.rate8h)) peak = { t: h.time, rate8h: r }; }
+    for (const h of week) { const r = Number(h.fundingRate) * 100 * 8; if (!peak || Math.abs(r) > Math.abs(peak.rate8h)) peak = { t: h.time, rate8h: r }; }
     const done = daily.filter((c) => c.t + day <= now), today = daily.find((c) => c.t + day > now);
     const td = typicalDay(done.slice(-30));
     const open = today?.o ?? m.mark;
     const lev = Math.min(10, m.maxLeverage);
     return {
-      funding: { now8h: m.funding8h, apr: m.funding8h * 3 * 365, venues, history, peak },
+      funding: { now8h: m.funding8h, apr: m.funding8h * 3 * 365, venues, history, peak, p10: q(0.1), p90: q(0.9) },
       premiumPct: m.premiumPct, oracle: m.oracle, maxLev: m.maxLeverage,
-      typical: { ...td, open, high: open * (1 + td.upPct / 100), low: open * (1 - td.downPct / 100) },
+      typical: { ...td, open, high: open * (1 + td.upPct / 100), low: open * (1 - td.downPct / 100), todayPct: today && today.o > 0 ? ((Math.max(today.h, m.mark) - Math.min(today.l, m.mark)) / today.o) * 100 : 0 },
       liq: { lev, distPct: liqDistancePct(lev, m.maxLeverage) },
     };
   });

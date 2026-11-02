@@ -7,6 +7,7 @@ import { fmtPct, fmtUsd, fmtPrice } from "@/lib/format";
 import { getLevel, type Level } from "@/lib/level";
 import type { MarketRow } from "@/lib/hl-info";
 import type { BookStats, CoinStats } from "@/lib/market-stats";
+import { fundingVerdict, fundingDot, flowVerdict, depthVerdict, premiumVerdict, marketRead } from "@/lib/market-read";
 
 export type MarketItem = MarketRow & { oiChange24h?: number | null };
 type Kind = "funding" | "depth" | "premium" | "typical";
@@ -25,15 +26,12 @@ export function useFundingCountdown() {
 }
 
 const pct = (n: number, d = 3) => `${n.toFixed(d)}%`;
-const LABELS: Record<Level | "default", Record<Kind, [string, string | null]>> = {
-  new: { funding: ["Cost to hold", "Funding"], depth: ["Liquidity", "Depth ±2%"], premium: ["Price vs spot", "Premium"], typical: ["Typical day", null] },
-  crypto: { funding: ["Funding", null], depth: ["Depth ±2%", null], premium: ["Premium", null], typical: ["Typical day", null] },
-  perps: { funding: ["Funding", null], depth: ["Depth ±2%", null], premium: ["Premium", null], typical: ["Typical day", null] },
-  default: { funding: ["Funding", null], depth: ["Depth ±2%", null], premium: ["Premium", null], typical: ["Typical day", null] },
-};
+type Tk = "funding" | "flow" | "depth" | "premium" | "typical";
+const PLAIN: Record<Tk, string> = { funding: "Cost to hold", flow: "Buyers vs sellers", depth: "Liquidity", premium: "Price vs spot", typical: "Today vs a normal day" };
+const PRO: Record<Tk, string> = { funding: "Funding", flow: "Order flow ±2%", depth: "Depth", premium: "Premium", typical: "Today vs typical day" };
 const TIP_KEY = "perped:mk-tip";
 
-/** Four tiles under the chart (funding, depth, premium, typical day), a stats strip, and a detail sheet for each. */
+/** Verdict-first market read: a one-line summary, tiles that lead with a word, and a detail sheet behind each. */
 export function MarketStats({ coin, m }: { coin: string; m: MarketItem }) {
   const [open, setOpen] = useState<Kind | null>(null);
   const [level, setLevel] = useState<Level | null>(null);
@@ -44,7 +42,8 @@ export function MarketStats({ coin, m }: { coin: string; m: MarketItem }) {
   }, []);
   const { data: st } = useCoinStats(coin);
   const { data: bk } = useSWR<BookStats>(`/api/markets/${coin}/book`, { refreshInterval: open === "depth" ? 3_000 : 15_000, revalidateOnFocus: false });
-  const L = LABELS[level ?? "default"], beginner = level === "new" || level === "crypto";
+  const beginner = level === "new" || level === "crypto";
+  const N = level === "perps" ? PRO : PLAIN;
 
   const tap = (k: Kind) => {
     setOpen(k);
@@ -52,14 +51,23 @@ export function MarketStats({ coin, m }: { coin: string; m: MarketItem }) {
   };
   const d2 = bk?.depth.find((d) => d.pct === 2);
   const bidShare = d2 && d2.bids + d2.asks > 0 ? Math.round((d2.bids / (d2.bids + d2.asks)) * 100) : null;
-  const binance = st?.funding.venues.find((v) => v.venue === "Binance") ?? st?.funding.venues[0];
   const premium = st?.premiumPct ?? m.premiumPct;
+  const s100 = bk?.slip.find((x) => x.usd === 100_000);
+  const slip100 = s100 ? (s100.buy == null || s100.sell == null ? null : (s100.buy + s100.sell) / 2) : undefined;
 
-  const Tile = ({ k, right, value, sub, children }: { k: Kind; right?: React.ReactNode; value: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) => (
-    <button className="mk-tile" onClick={() => tap(k)} aria-label={`${L[k][0]}: details`}>
-      <small><span>{L[k][0]}{beginner && <i className="mk-q" aria-hidden>?</i>}</span>{right && !L[k][1] && <em>{right}</em>}</small>
-      {L[k][1] && <span className="mk-term">{L[k][1]}{right ? <> · {right}</> : null}</span>}
-      <div className="v mono">{value}</div>
+  const fv = fundingVerdict(m.funding8h, st?.funding.p10 ?? null, st?.funding.p90 ?? null);
+  const flow = bidShare == null ? null : flowVerdict(bidShare);
+  const depth = slip100 === undefined ? null : depthVerdict(slip100);
+  const read = st ? marketRead({ funding: fv, flow, depth, todayPct: st.typical.todayPct, typicalPct: st.typical.rangePct }) : null;
+
+  // Ruler for the full-width tile: today's range, a normal day, and liquidation at the reference leverage.
+  const rMax = st ? Math.max(st.liq.distPct * 1.08, st.typical.rangePct * 1.4, st.typical.todayPct * 1.1, 0.5) : 1;
+  const at = (x: number) => `${Math.min(100, (x / rMax) * 100)}%`;
+
+  const Tile = ({ k, open: o, verdict, sub, wide, children }: { k: Tk; open: Kind; verdict: React.ReactNode; sub?: React.ReactNode; wide?: boolean; children?: React.ReactNode }) => (
+    <button className={`mk-tile ${wide ? "wide" : ""}`} onClick={() => tap(o)} aria-label={`${N[k]}: details`}>
+      <small><span>{N[k]}{beginner && <i className="mk-q" aria-hidden>?</i>}</span></small>
+      <div className="w">{verdict}</div>
       {children}
       {sub && <div className="s">{sub}</div>}
     </button>
@@ -67,17 +75,29 @@ export function MarketStats({ coin, m }: { coin: string; m: MarketItem }) {
 
   return (
     <>
+      {read && <div className="mk-read"><small>Right now on {coin}</small><p><b>{read.head}</b> {read.body}</p></div>}
       {tip && <div className="mk-tip">Tap any tile to see what it means</div>}
       <div className="mk-tiles">
-        <Tile k="funding" right={m.funding8h >= 0 ? "longs pay" : "shorts pay"} value={<>{pct(m.funding8h)} <span className="mk-unit">/ 8h</span></>}
-          sub={<>{(m.funding8h * 3 * 365).toFixed(1)}% a year{binance ? ` · ${binance.venue} ${pct(binance.rate8h)}` : ""}</>} />
-        <Tile k="depth" right={bk ? `spread ${pct(bk.spreadPct)}` : undefined} value={d2 ? fmtUsd(d2.bids + d2.asks, { compact: true }) : "…"}
-          sub={bidShare != null ? `Bids ${bidShare}% · asks ${100 - bidShare}%` : "Reading the order book"}>
+        <Tile k="funding" open="funding" verdict={fv}
+          sub={level === "perps" ? <span className="mono">{pct(m.funding8h)} / 8h · {(m.funding8h * 3 * 365).toFixed(1)}% yr</span> : <>{(m.funding8h * 3 * 365).toFixed(0)}% a year · {m.funding8h >= 0 ? "longs pay" : "shorts pay"}</>}>
+          <div className="mk-scale"><i style={{ left: `${fundingDot(m.funding8h)}%` }} /></div>
+        </Tile>
+        <Tile k="flow" open="depth" verdict={flow ?? "…"} sub={d2 ? `${fmtUsd(d2.bids + d2.asks, { compact: true })} within 2%` : "Reading the order book"}>
           <div className="mk-bar"><b style={{ width: `${bidShare ?? 50}%` }} /><u style={{ width: `${100 - (bidShare ?? 50)}%` }} /></div>
         </Tile>
-        <Tile k="premium" right="vs index" value={fmtPct(premium, 3)} sub={Math.abs(premium) < 0.01 ? "In line with spot" : premium > 0 ? "Perp trading above spot" : "Perp trading below spot"} />
-        <Tile k="typical" value={st ? <>{st.typical.rangePct.toFixed(1)}% <span className="mk-unit">low to high</span></> : "…"}
-          sub={st ? `At ${st.liq.lev}×, a move of ${st.liq.distPct.toFixed(1)}% liquidates you` : "Reading 30 days of candles"} />
+        <Tile k="depth" open="depth" verdict={depth ?? "…"} sub={slip100 === undefined ? "Reading the order book" : slip100 == null ? "$100k order is too big for the book" : <>$100k order costs <span className="mono">{pct(slip100)}</span></>} />
+        <Tile k="premium" open="premium" verdict={premiumVerdict(premium)} sub={<><span className="mono">{pct(Math.abs(premium))}</span> {premium >= 0 ? "above" : "below"} spot</>} />
+        <Tile k="typical" open="typical" wide verdict={st ? <>Moved {st.typical.todayPct.toFixed(1)}% of a usual {st.typical.rangePct.toFixed(1)}%</> : "…"}>
+          {st && <div className="mk-ruler">
+            <div className="track" />
+            <div className="norm" style={{ width: at(st.typical.rangePct) }} />
+            <div className="today" style={{ width: at(st.typical.todayPct) }} />
+            <div className="tick" style={{ left: at(st.typical.rangePct) }} />
+            <div className="tick liq" style={{ left: at(st.liq.distPct) }} />
+            <span style={{ left: at(st.typical.rangePct) }}>normal day</span>
+            <span className="end" style={{ left: at(st.liq.distPct) }}>{st.liq.lev}× liquidation · {st.liq.distPct.toFixed(0)}%</span>
+          </div>}
+        </Tile>
       </div>
       <div className="mk-strip">
         <div><small>Open interest</small><b className="mono">{fmtUsd(m.openInterest, { compact: true })}</b></div>

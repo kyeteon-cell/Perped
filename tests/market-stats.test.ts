@@ -32,3 +32,26 @@ describe("market stats", () => {
     expect(t.downPct).toBeCloseTo(2);
   });
 });
+
+import { fundingVerdict, fundingDot, flowVerdict, depthVerdict, premiumVerdict, marketRead } from "../lib/market-read";
+describe("market read", () => {
+  it("judges funding against resting rate and the coin's own range", () => {
+    expect(fundingVerdict(0.01, -0.01, 0.02)).toBe("Normal");
+    expect(fundingVerdict(0.02, -0.01, 0.05)).toBe("Above normal");
+    expect(fundingVerdict(0.04, -0.01, 0.035)).toBe("Longs crowded");
+    expect(fundingVerdict(0.04, -0.01, 0.06)).toBe("Above normal"); // normal for this coin
+    expect(fundingVerdict(-0.01, -0.03, 0.02)).toBe("Shorts pay");
+    expect(fundingVerdict(-0.05, -0.03, 0.02)).toBe("Shorts crowded");
+    expect(fundingDot(0.01)).toBeCloseTo(50);
+  });
+  it("flow, depth, premium and the summary", () => {
+    expect(flowVerdict(47)).toBe("Balanced");
+    expect(flowVerdict(65)).toBe("Buyers heavy");
+    expect(depthVerdict(0.004)).toBe("Deep");
+    expect(depthVerdict(null)).toBe("Thin");
+    expect(premiumVerdict(-0.035)).toBe("In line");
+    const r = marketRead({ funding: "Normal", flow: "Balanced", depth: "Deep", todayPct: 0.5, typicalPct: 3.3 });
+    expect(r.head).toBe("Calm and balanced.");
+    expect(r.body).toBe("Cheap to hold either way, deep enough that size won't move it, and today is a normal day so far.");
+  });
+});
