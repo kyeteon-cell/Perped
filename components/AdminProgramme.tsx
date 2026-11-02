@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Avatar } from "./ui";
+import { AdminCompetition } from "./AdminCompetition";
 
 type Founder = { handle: string; avatarUrl: string | null; seat: number | null; since: string | null; status: string | null; invited: number; invited2: number; realTraders: number; feesIn: number; earned: number; daysIn: number };
 type P = {
@@ -30,7 +31,7 @@ export type Metrics = {
   estFees: { today: number; week: number };
   daily: { day: string; signups: number; trades: number; traders: number }[];
 };
-type Tab = "overview" | "founders" | "waitlist" | "payouts" | "team" | "tools";
+type Tab = "overview" | "founders" | "waitlist" | "payouts" | "team" | "tools" | "comp";
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
 const usd = (n: number) => `$${n >= 1e3 ? (n / 1e3).toFixed(1) + "k" : n.toFixed(n < 10 ? 2 : 0)}`;
 
@@ -58,7 +59,7 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
   const owner = p.me.role === "owner";
   const seatMap = new Map(p.founders.filter((x) => x.seat != null).map((x) => [x.seat!, x]));
   const h = p.health, t = p.totals;
-  const tabs: [Tab, string, string?][] = [["overview", "Overview"], ["founders", "Founders", `${p.seats.filled}`], ["waitlist", "Waitlist", p.waitlist.waiting ? `${p.waitlist.waiting}` : undefined], ...(owner ? [["payouts", "Payouts", (t.owed ?? 0) >= 0.01 ? usd(t.owed ?? 0) : undefined] as [Tab, string, string?]] : []), ["team", "Team"], ["tools", "Tools"]];
+  const tabs: [Tab, string, string?][] = [["overview", "Overview"], ["founders", "Founders", `${p.seats.filled}`], ["waitlist", "Waitlist", p.waitlist.waiting ? `${p.waitlist.waiting}` : undefined], ...(owner ? [["payouts", "Payouts", (t.owed ?? 0) >= 0.01 ? usd(t.owed ?? 0) : undefined] as [Tab, string, string?]] : []), ["team", "Team"], ["tools", "Tools"], ...(owner ? [["comp", "Competition"] as [Tab, string, string?]] : [])];
   const checks: [string, boolean, string][] = [
     ["Builder address", h.builder, h.builder ? "fees are being collected" : "not set: no fees, no earnings until it is"],
     ["Domain", !/vercel\.app|localhost/.test(h.appUrl), h.appUrl.replace(/^https?:\/\//, "")],
@@ -218,6 +219,8 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
 
         </>
       )}
+
+      {tab === "comp" && owner && <AdminCompetition call={call} />}
 
       {tab === "tools" && (
         <>

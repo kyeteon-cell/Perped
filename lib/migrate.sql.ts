@@ -343,4 +343,6 @@ create table if not exists market_oi (
   primary key (coin, at)
 );
 create index if not exists market_oi_at_idx on market_oi (at);
+-- Alpha competition: count everyone who has already faded (once; a later restart by the owner isn't undone).
+update app_settings set value = jsonb_set(value, '{startAt}', '"2026-01-01T00:00:00.000Z"') where key = 'competition' and (value->>'startAt') like '2026-11-02T18:%';
 `;
