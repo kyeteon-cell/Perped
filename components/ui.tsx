@@ -83,13 +83,18 @@ export function ticker(coin: string, withMult = false) {
  * Avatar. Pass `url` (string or null) when the caller has the profile; leave it undefined and the picture is
  * looked up by handle (one small request per handle, cached), so system cards and suggestions get photos too.
  */
-export function Avatar({ handle, size = 40, url, link = true }: { handle: string; size?: number; url?: string | null; link?: boolean }) {
+export function Avatar({ handle, size = 40, url, link = true, xp }: { handle: string; size?: number; url?: string | null; link?: boolean; xp?: number | null }) {
   const idx = [...handle].reduce((a, c) => a + c.charCodeAt(0), 0) % 6;
   const { data } = useSWR<{ url: string | null }>(url === undefined && handle && handle !== "?" ? `/api/avatar?handle=${encodeURIComponent(handle)}` : null, { dedupingInterval: 300_000, revalidateOnFocus: false });
   const src = url ?? data?.url ?? null;
-  const pic = src
+  let pic = src
     ? <img src={src} alt="" className="av" loading="lazy" decoding="async" width={size} height={size} style={{ width: size, height: size, objectFit: "cover" }} />
     : <span className={`av av-${idx}`} style={{ width: size, height: size, fontSize: Math.round(size / 3) }}>{handle.slice(0, 2).toUpperCase()}</span>;
+  // Pass `xp` to pin the rank emblem on the photo's corner (instead of a chip beside the name).
+  if (xp !== undefined) {
+    const r = rankFor(xp ?? 0), em = Math.max(16, Math.round(size * 0.44));
+    pic = <span className="av-wrap" style={{ width: size, height: size }}>{pic}<img src={small(`/api/share-bg/rank-${r.level}`, fit(em))} alt="" title={`${r.title} · ${r.xp} XP`} className="av-rank" loading="lazy" decoding="async" width={em} height={em} style={{ width: em, height: em }} /></span>;
+  }
   // Every profile picture is a link to that profile, unless the caller already sits inside a link.
   if (!link || !handle || handle === "?") return pic;
   return <Link href={`/u/${handle}`} className="avlink" aria-label={`${handle}'s profile`} onClick={(e) => e.stopPropagation()}>{pic}</Link>;
@@ -145,15 +150,17 @@ export function RankEmblem({ level, size = 72 }: { level: number; size?: number 
   return <img src={small(`/api/share-bg/rank-${level}`, fit(size))} alt="" className={`rank-big lv${level}`} loading="lazy" decoding="async" width={size} height={size} style={{ width: size, height: size }} />;
 }
 
-/** Admin and founder badges for a name. `seat` adds the founder's seat number (profile header). */
+/** Admin and founder badges for a name: small round icons (tap/hover for what they mean). `seat` adds the founder's seat number (profile header). */
 export function Badges({ u, seat = false }: { u: BadgeUser | null | undefined; seat?: boolean }) {
   if (!u) return null;
   const admin = isAdminBadge(u), founder = isFounderBadge(u);
   if (!admin && !founder) return null;
+  const seatNo = seat && u.founderSeat != null ? ` #${u.founderSeat}` : "";
   return (
-    <>
-      {admin && <span className="ubadge admin" title={BADGES.admin.title}><Icon d={I.shield} size={10} />{BADGES.admin.label}</span>}
-      {founder && <span className="ubadge founder" title={BADGES.founder.title}><Glyph n="crown" />{BADGES.founder.label}{seat && u.founderSeat != null ? ` #${u.founderSeat}` : ""}</span>}
-    </>
+    <span className="ubadges">
+      {admin && <span className="ubadge admin" title={BADGES.admin.title} aria-label={BADGES.admin.label}><Icon d={I.shield} size={11} /></span>}
+      {founder && <span className="ubadge founder" title={`${BADGES.founder.title}${seatNo}`} aria-label={`${BADGES.founder.label}${seatNo}`}><Glyph n="crown" /></span>}
+      {founder && seatNo && <span className="ubadge-seat">{seatNo.trim()}</span>}
+    </span>
   );
 }

@@ -7,4 +7,5 @@ export const BADGES = {
 
 export type BadgeUser = { role?: string | null; founderSeat?: number | null; founderStatus?: string | null };
 export const isAdminBadge = (u: BadgeUser) => u.role === "admin" || u.role === "owner";
-export const isFounderBadge = (u: BadgeUser) => u.founderSeat != null && u.founderStatus !== "expired";
+/** Founders, plus the owner (who founded it). */
+export const isFounderBadge = (u: BadgeUser) => u.role === "owner" || (u.founderSeat != null && u.founderStatus !== "expired");
