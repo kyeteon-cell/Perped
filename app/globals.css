@@ -1815,3 +1815,5 @@ a.inv-erow { color: inherit; }
 .mk-ruler .tick.liq { background: var(--text); }
 .mk-ruler span { position: absolute; top: 20px; font-size: 10px; font-weight: 700; color: var(--muted); white-space: nowrap; transform: translateX(-50%); }
 .mk-ruler span.end { transform: translateX(-100%); }
+/* Trade chart v2: the svg must fill the plot exactly so price tags (placed in % of the plot) sit on their lines. */
+.tchart-plot.v2 svg { inset: 0 !important; width: 100% !important; height: 100% !important; }
