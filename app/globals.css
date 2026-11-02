@@ -1752,7 +1752,7 @@ a.inv-erow { color: inherit; }
 /* Market stats: tiles under the chart, stats strip, detail sheets */
 .mk-tip { margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--muted); text-align: center; padding: 7px 10px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
 .mk-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.mk-tile { text-align: left; background: var(--surface); border-radius: 16px; padding: 10px 12px; box-shadow: inset 0 0 0 1px var(--line); min-width: 0; transition: transform .12s; }
+.mk-tile { border: 0; font: inherit; color: inherit; text-align: left; background: var(--surface); border-radius: 16px; padding: 10px 12px; box-shadow: inset 0 0 0 1px var(--line); min-width: 0; transition: transform .12s; }
 .mk-tile:active { transform: scale(.98); }
 .mk-tile small { display: flex; justify-content: space-between; gap: 6px; font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 .mk-tile small > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }

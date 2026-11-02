@@ -57,8 +57,8 @@ export function MarketStats({ coin, m }: { coin: string; m: MarketItem }) {
 
   const Tile = ({ k, right, value, sub, children }: { k: Kind; right?: React.ReactNode; value: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) => (
     <button className="mk-tile" onClick={() => tap(k)} aria-label={`${L[k][0]}: details`}>
-      <small><span>{L[k][0]}{beginner && <i className="mk-q" aria-hidden>?</i>}</span>{right && <em>{right}</em>}</small>
-      {L[k][1] && <span className="mk-term">{L[k][1]}</span>}
+      <small><span>{L[k][0]}{beginner && <i className="mk-q" aria-hidden>?</i>}</span>{right && !L[k][1] && <em>{right}</em>}</small>
+      {L[k][1] && <span className="mk-term">{L[k][1]}{right ? <> · {right}</> : null}</span>}
       <div className="v mono">{value}</div>
       {children}
       {sub && <div className="s">{sub}</div>}
@@ -76,8 +76,8 @@ export function MarketStats({ coin, m }: { coin: string; m: MarketItem }) {
           <div className="mk-bar"><b style={{ width: `${bidShare ?? 50}%` }} /><u style={{ width: `${100 - (bidShare ?? 50)}%` }} /></div>
         </Tile>
         <Tile k="premium" right="vs index" value={fmtPct(premium, 3)} sub={Math.abs(premium) < 0.01 ? "In line with spot" : premium > 0 ? "Perp trading above spot" : "Perp trading below spot"} />
-        <Tile k="typical" value={st ? `${st.typical.rangePct.toFixed(1)}%` : "…"} right="low to high"
-          sub={st ? `At ${st.liq.lev}× a ${st.liq.distPct.toFixed(1)}% move liquidates you` : "Reading 30 days of candles"} />
+        <Tile k="typical" value={st ? <>{st.typical.rangePct.toFixed(1)}% <span className="mk-unit">low to high</span></> : "…"}
+          sub={st ? `At ${st.liq.lev}×, a move of ${st.liq.distPct.toFixed(1)}% liquidates you` : "Reading 30 days of candles"} />
       </div>
       <div className="mk-strip">
         <div><small>Open interest</small><b className="mono">{fmtUsd(m.openInterest, { compact: true })}</b></div>
@@ -121,7 +121,7 @@ export function MarketStats({ coin, m }: { coin: string; m: MarketItem }) {
               <div className="mk-eyebrow">Liquidation vs a normal day</div>
               {[2, 5, 10, 20, st.maxLev].filter((x, i, a) => x <= st.maxLev && a.indexOf(x) === i).map((lev) => {
                 const dist = Math.max(0, (1 / lev - 1 / (2 * st.maxLev)) * 100), days = st.typical.downPct > 0 ? dist / st.typical.downPct : 0;
-                return <div key={lev} className="mk-rowl"><span>{lev}×</span><b className="mono">{dist.toFixed(1)}% away{days > 0 && <span className="muted" style={{ fontWeight: 500 }}> · {days < 1 ? "inside" : `${days.toFixed(1)}×`} a normal day</span>}</b></div>;
+                return <div key={lev} className="mk-rowl"><span>{lev}×</span><b className="mono">{dist.toFixed(1)}% away{days > 0 && <span className="muted" style={{ fontWeight: 500 }}> · {days < 1 ? "within a normal day's drop" : `${days.toFixed(1)}× a normal day's drop`}</span>}</b></div>;
               })}
               <Means>
                 {`If a normal day already moves ${coin} further than your liquidation distance, you can be wiped out by noise alone. Pick leverage where liquidation sits well outside a typical day, or use a stop loss.`}
@@ -155,12 +155,12 @@ function FundingSheet({ coin, m, st, beginner }: { coin: string; m: MarketItem; 
           <line x1="0" x2={h.length * 8} y1="40" y2="40" />
           {h.map((x, i) => { const hgt = (Math.abs(x.rate8h) / max) * (x.rate8h >= 0 ? 38 : 22); return <rect key={x.t} x={i * 8 + 1} y={x.rate8h >= 0 ? 40 - hgt : 40} width="6" height={Math.max(0.5, hgt)} rx="1" className={x.rate8h >= 0 ? "pos" : "neg"} />; })}
         </svg>
-        <div className="sub">Last 7 days{st?.funding.peak ? ` · peak ${pct(st.funding.peak.rate8h)} / 8h on ${new Date(st.funding.peak.t).toLocaleDateString(undefined, { weekday: "long" })}` : ""}</div>
+        <div className="sub">Last 7 days{st?.funding.peak ? ` · most extreme ${pct(st.funding.peak.rate8h)} / 8h on ${new Date(st.funding.peak.t).toLocaleDateString(undefined, { weekday: "long" })}` : ""}</div>
       </>}
       {others.length > 0 && <>
-        <div className="mk-eyebrow">Same coin, other exchanges · per 8h</div>
+        <div className="mk-eyebrow">Same coin, other exchanges · next payment, per 8h</div>
         <div className="mk-venue"><b>Hyperliquid</b><span className="mono">{pct(m.funding8h)}</span><span className="tag">here</span></div>
-        {others.map((v) => <div key={v.venue} className="mk-venue"><span>{v.venue}</span><span className="mono">{pct(v.rate8h)}</span><span className="tag mono">{(v.rate8h - m.funding8h >= 0 ? "+" : "") + (v.rate8h - m.funding8h).toFixed(3)}</span></div>)}
+        {others.map((v) => <div key={v.venue} className="mk-venue"><span>{v.venue}</span><span className="mono">{pct(v.rate8h, Math.abs(v.rate8h) < 0.001 ? 4 : 3)}</span><span className="tag mono">{(v.rate8h - m.funding8h >= 0 ? "+" : "") + (v.rate8h - m.funding8h).toFixed(3)}</span></div>)}
       </>}
       <Means>
         {m.funding8h >= 0.03 ? `Longs are paying a lot to stay in (${(m.funding8h * 3 * 365).toFixed(0)}% a year). Crowded longs are the classic setup for a fade, and holding a long here costs you every hour.` : m.funding8h < 0 ? "Shorts are paying longs. Shorts are crowded, so a squeeze up is more likely, and holding a long here actually earns you funding." : "Funding is at its normal resting rate. Holding a position costs very little; nobody is unusually crowded."}
