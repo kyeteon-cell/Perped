@@ -5,7 +5,7 @@ import { LiveSoonNote } from "@/components/ComingSoonSheet";
 import { BUILDER_FEE_STANDARD_TENTHS_BPS, BUILDER_FEE_REFERRED_TENTHS_BPS, BUILDER_FEE_TOP_TENTHS_BPS, BUILDER_MAX_FEE_TENTHS_BPS, TOP_TIER_RANK, REFERRAL_SHARE_PCT, REFERRAL_TOP_SHARE_PCT, REFERRAL_TOP_THRESHOLD, HL_NETWORK } from "@/lib/config";
 import { tenthsBpsToLabel } from "@/lib/fees";
 import { RANKS } from "@/lib/rank";
-import { CREATOR_FOUNDER_PCT, CREATOR_MIN_HOLD_S, CREATOR_PCT, CREATOR_RANKED_LEVEL, CREATOR_RANKED_PCT, FOUNDER_GRACE_DAYS, FOUNDER_L1_LATER_PCT, FOUNDER_L1_MONTHS, FOUNDER_L1_PCT, FOUNDER_L2_PCT, FOUNDER_SEATS, PAYOUT_CAP_PCT } from "@/lib/programme-rates";
+import { CREATOR_FOUNDER_PCT, CREATOR_MIN_HOLD_S, CREATOR_PCT, CREATOR_RANKED_LEVEL, CREATOR_RANKED_PCT, FOUNDER_GRACE_DAYS, FOUNDER_L1_PCT, FOUNDER_L2_PCT, FOUNDER_SEATS, PAYOUT_CAP_PCT } from "@/lib/programme-rates";
 
 export const metadata = { title: "How Perped works · where your money is, start to finish" };
 
@@ -168,7 +168,7 @@ export default function HowItWorks() {
           <li><b>Your friends pay less, forever.</b> Anyone who joins with a code pays {F(BUILDER_FEE_REFERRED_TENTHS_BPS)} per fill instead of {F(BUILDER_FEE_STANDARD_TENTHS_BPS)}, for as long as they trade on Perped.</li>
           <li><b>You earn from their trades.</b> {REFERRAL_SHARE_PCT}% of the Perped fee on every real fill they make, rising to {REFERRAL_TOP_SHARE_PCT}% once {REFERRAL_TOP_THRESHOLD} of your invitees traded in the last 30 days.</li>
           <li><b>You earn when people trade off your posts.</b> When someone copies or fades your trade, or trades straight from your call, you get {CREATOR_PCT}% of the fee on that fill ({CREATOR_RANKED_PCT}% from {RANKS.find((r) => r.level === CREATOR_RANKED_LEVEL)?.title} rank up). It counts when the position is held {CREATOR_MIN_HOLD_S / 60}+ minutes, and never for your own trades or accounts.</li>
-          <li><b><Glyph n="crown" tone="gold" /> Founders.</b> Up to {FOUNDER_SEATS} hand-picked traders, numbered seats. Founders earn {FOUNDER_L1_PCT}% of the fees from everyone they invite for the first {FOUNDER_L1_MONTHS} months, then {FOUNDER_L1_LATER_PCT}% for life; {FOUNDER_L2_PCT}% from the people their invitees bring in; and {CREATOR_FOUNDER_PCT}% when their trades or calls are copied, faded or traded. A founder who brings in no real-money trader within {FOUNDER_GRACE_DAYS} days gives the seat back and moves to regular rates.</li>
+          <li><b><Glyph n="crown" tone="gold" /> Founders.</b> Up to {FOUNDER_SEATS} hand-picked traders, numbered seats. Founders earn {FOUNDER_L1_PCT}% of the fees from everyone they invite for life; {FOUNDER_L2_PCT}% from the people their invitees bring in; and {CREATOR_FOUNDER_PCT}% when their trades or calls are copied, faded or traded. A founder who brings in no real-money trader within {FOUNDER_GRACE_DAYS} days gives the seat back and moves to regular rates.</li>
         </ul>
         <p className="mt-2"><b>The rules.</b> Earnings are counted once a day from the builder fees Perped actually collected on Hyperliquid, and paid weekly in USDC to your Perped wallet. They start when someone trades with real money; demo sign-ups don&rsquo;t count. No more than {PAYOUT_CAP_PCT}% of any trader&rsquo;s fees is ever paid out in total. Rates can change for new sign-ups, never retroactively for earnings already counted. Accounts that game the system (self-referral, wash trading, fake accounts) lose their earnings. You&rsquo;re responsible for any tax on what you earn.</p>
       </section>

@@ -21,7 +21,7 @@ type Est = {
 type InviteRes = {
   mode: "real" | "demo"; staff: boolean; as: string | null; est: Est; daily: { day: string; earned: number }[];
   handle: string; link: string; canGoLive: boolean; onWaitlist: boolean; nextRelease: string; invitedBy: string | null; canRedeem: boolean;
-  founder: null | { seat: number; wave: number; seats: number; since: string; l1Pct: number; l1LaterPct: number; l1TopPct: number; l1Ends: string | null; l2Pct: number; graceDays: number; graceLeft: number; gracePaused?: boolean; secured: boolean };
+  founder: null | { seat: number; wave: number; seats: number; since: string; l1Pct: number; l1TopPct: number; l1Ends: string | null; l2Pct: number; graceDays: number; graceLeft: number; gracePaused?: boolean; secured: boolean };
   rates: { invitePct: number; baseInvitePct: number; topInvitePct: number; topThreshold: number; activeInvites: number; creatorPct: number; creatorBasePct: number; creatorRankedPct: number; creatorRankTitle: string; xpToRanked: number };
   counts: { joined: number; live: number };
   earnings: { owed: number; total: number; paid: number; week: number; invite: Src; invite2: Src; creator: Src };
@@ -135,7 +135,7 @@ export default function InvitePage() {
         <section className="inv-card">
           <div className="flex items-center justify-between"><span className="eyebrow">{f ? "Your founder rates" : "Your rates"}</span>{f && <span className="when">locked in</span>}</div>
           <div className="inv-rates">
-            <div><b className={`mono ${f ? "gold" : "green"}`}>{r.invitePct}%</b><div><strong>Everyone you invite</strong><span>{f ? `of their fees · ${f.l1LaterPct}% for life after month 12` : r.invitePct < r.topInvitePct ? `of their fees · ${r.topInvitePct}% at ${r.topThreshold} active friends` : "of their fees, top rate"}</span></div></div>
+            <div><b className={`mono ${f ? "gold" : "green"}`}>{r.invitePct}%</b><div><strong>Everyone you invite</strong><span>{f ? "of their fees, for life" : r.invitePct < r.topInvitePct ? `of their fees · ${r.topInvitePct}% at ${r.topThreshold} active friends` : "of their fees, top rate"}</span></div></div>
             {f && <div><b className="mono">{f.l2Pct}%</b><div><strong>Everyone they invite</strong><span>of their fees, on top of what your invitee earns</span></div></div>}
             <div><b className={`mono ${f ? "gold" : "green"}`}>{r.creatorPct}%</b><div><strong>Your trades &amp; calls</strong><span>{f ? "of the fees on every copy, fade or call trade, from anyone" : r.creatorPct < r.creatorRankedPct ? `when someone copies, fades or trades your call · ${r.creatorRankedPct}% at ${r.creatorRankTitle}` : "when someone copies, fades or trades your call"}</span></div></div>
           </div>

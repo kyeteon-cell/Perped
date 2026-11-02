@@ -1,7 +1,7 @@
 // Ranks, XP penalties and founder rates: what people see on their profile and what founders get paid.
 import { describe, expect, it } from "vitest";
 import { RANKS, lossPenalty, rankFor } from "@/lib/rank";
-import { FOUNDER_L1_LATER_PCT, FOUNDER_L1_PCT, founderL1Pct, isFounder, isStaff } from "@/lib/programme-rates";
+import { FOUNDER_L1_PCT, founderL1Pct, isFounder, isStaff } from "@/lib/programme-rates";
 import { isAdminBadge, isFounderBadge } from "@/lib/badges";
 
 describe("Ranks", () => {
@@ -26,10 +26,10 @@ describe("Ranks", () => {
 });
 
 describe("Founders and staff", () => {
-  it("founders get the higher rate for the first year, then the later rate", () => {
+  it("founders keep the same invite rate for life", () => {
     expect(founderL1Pct(new Date())).toBe(FOUNDER_L1_PCT);
-    const old = new Date(); old.setFullYear(old.getFullYear() - 2);
-    expect(founderL1Pct(old)).toBe(FOUNDER_L1_LATER_PCT);
+    const old = new Date(); old.setFullYear(old.getFullYear() - 5);
+    expect(founderL1Pct(old)).toBe(FOUNDER_L1_PCT);
   });
   it("an expired seat is not a founder", () => {
     expect(isFounder({ founderSeat: 3, founderStatus: "active" })).toBe(true);

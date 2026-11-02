@@ -5,7 +5,7 @@ import { APP_URL, REFERRAL_SHARE_PCT, REFERRAL_TOP_SHARE_PCT, REFERRAL_TOP_THRES
 import { normaliseReferralCode, referralLink } from "@/lib/fees";
 import { countActiveReferees } from "@/lib/referrals";
 import { byHandle, canGoLive, nextRelease } from "@/lib/programme";
-import { CREATOR_FOUNDER_PCT, CREATOR_PCT, CREATOR_RANKED_LEVEL, CREATOR_RANKED_PCT, FOUNDER_L1_LATER_PCT, FOUNDER_L1_PCT, FOUNDER_L2_PCT, FOUNDER_SEATS, FOUNDER_WAVE, FOUNDER_GRACE_DAYS, founderL1Ends, founderL1Pct, isFounder } from "@/lib/programme-rates";
+import { CREATOR_FOUNDER_PCT, CREATOR_PCT, CREATOR_RANKED_LEVEL, CREATOR_RANKED_PCT, FOUNDER_L1_PCT, FOUNDER_L2_PCT, FOUNDER_SEATS, FOUNDER_WAVE, FOUNDER_GRACE_DAYS, founderL1Pct, isFounder } from "@/lib/programme-rates";
 import { RANKS, rankFor } from "@/lib/rank";
 import { notify } from "@/lib/feed";
 import { getLiveSettings } from "@/lib/live";
@@ -78,8 +78,8 @@ export async function GET(req: Request) {
     invitedBy: (inviter as { handle: string }[])[0]?.handle ?? null,
     canRedeem: !me.referredBy && me.isDemo,
     founder: founder ? {
-      seat: me.founderSeat ?? 0, wave: FOUNDER_WAVE, seats: FOUNDER_SEATS, since: fSince, l1Pct: founderL1Pct(fSince), l1LaterPct: FOUNDER_L1_LATER_PCT, l1TopPct: FOUNDER_L1_PCT,
-      l1Ends: founderL1Ends(fSince).toISOString(), l2Pct: FOUNDER_L2_PCT, graceDays: FOUNDER_GRACE_DAYS,
+      seat: me.founderSeat ?? 0, wave: FOUNDER_WAVE, seats: FOUNDER_SEATS, since: fSince, l1Pct: founderL1Pct(fSince), l1TopPct: FOUNDER_L1_PCT,
+      l1Ends: null, l2Pct: FOUNDER_L2_PCT, graceDays: FOUNDER_GRACE_DAYS,
       graceLeft: Math.max(0, FOUNDER_GRACE_DAYS - Math.floor((Date.now() - graceStart) / 86_400_000)), gracePaused: !live.open,
       secured: !!(c as Record<string, unknown>).secured,
     } : null,
