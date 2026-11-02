@@ -1,5 +1,6 @@
 "use client";
 
+import { siteOrigin } from "@/lib/config";
 import { small } from "@/lib/img";
 import { useEffect, useState } from "react";
 import { Sheet } from "./Sheet";
@@ -111,7 +112,7 @@ async function draw(d: ProfileShareData, st: CardStats, range: CardRange, bgKey:
   const logo = await img("/api/share-bg/logo-wordmark");
   if (logo) { const lh = 60, lw2 = (logo.width / logo.height) * lh; g.drawImage(logo, 56, H - 56 - lh, lw2, lh); }
   // Their invite: code + link, so the card brings people in on their code.
-  const inv = referralLink(new URL(d.url).origin, d.handle).replace(/^https?:\/\//, "");
+  const inv = referralLink(siteOrigin(), d.handle).replace(/^https?:\/\//, "");
   g.font = `800 26px ${sans}`; g.fillStyle = "rgba(255,255,255,.65)"; const cl = "JOIN WITH CODE"; const cw = g.measureText(cl).width;
   g.font = `900 34px ${mono}`; const code = d.handle.toUpperCase(); const kw = g.measureText(code).width;
   const bx = W - 56 - (cw + 16 + kw + 32);
@@ -129,7 +130,7 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
   const [msg, setMsg] = useState<string | null>(null);
   const [frozen] = useState(data);
   const { authedFetch } = useSession();
-  const invite = referralLink(new URL(data.url).origin, data.handle);
+  const invite = referralLink(siteOrigin(), data.handle);
   const [range, setRange] = useState<CardRange>(() => { try { return (localStorage.getItem("perped:profile-range") as CardRange) || "all"; } catch { return "all"; } });
   // Stats for the chosen period, fetched once per period and kept while the sheet is open.
   const [stats, setStats] = useState<Partial<Record<CardRange, CardStats>>>({});

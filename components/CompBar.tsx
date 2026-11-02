@@ -1,5 +1,6 @@
 "use client";
 
+import { siteOrigin } from "@/lib/config";
 import { useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -42,7 +43,7 @@ export function CompSheet({ d, onClose }: { d: Data; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const left = Math.max(0, d.goal - d.count);
   const pct = Math.min(100, (d.count / d.goal) * 100);
-  const link = profile && typeof window !== "undefined" ? `${window.location.origin}/?ref=${profile.handle}` : null;
+  const link = profile && typeof window !== "undefined" ? `${siteOrigin()}/?ref=${profile.handle}` : null;
   const copy = async () => { if (!link) return; try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch {} };
 
   const me = d.me;
