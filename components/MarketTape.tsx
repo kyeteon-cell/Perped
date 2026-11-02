@@ -84,8 +84,8 @@ export function MarketTape({ coin, traders, lens, setLens, followingAny, mid, se
               </div>
               {selected === String(t.postId) && t.status === "open" && !t.mine && (
                 <div className="trow-acts">
-                  <Link href={`/trade?copy=${t.postId}`} className="copy">Copy</Link>
-                  <Link href={`/trade?fade=${t.postId}`} className="fade">Fade</Link>
+                  <Link href={`/trade?copy=${t.postId}`} className={`copy side ${t.side}`}>Copy · {t.side === "long" ? "Long" : "Short"}</Link>
+                  <Link href={`/trade?fade=${t.postId}`} className={`fade side ${t.side === "long" ? "short" : "long"}`}>Fade · {t.side === "long" ? "Short" : "Long"}</Link>
                   <Link href={`/post/${t.postId}`} className="chip">Thread</Link>
                   {t.fadedFromId && <Link href={`/battle/${t.postId}`} className="chip">Fade</Link>}
                 </div>
