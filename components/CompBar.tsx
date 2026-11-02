@@ -15,7 +15,9 @@ const fmtDay = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day:
 
 /** Site-wide XP-style bar advertising the alpha competition: fills as linked accounts open their first fade. */
 export function CompBar() {
-  const { data } = useSWR<Data>("/api/competition", { refreshInterval: 60_000, revalidateOnFocus: false });
+  // Signed-in fetch, so "your status" works for wallet / X / email logins too (not only guest cookies).
+  const { authedFetch, profile } = useSession();
+  const { data } = useSWR<Data>(["/api/competition", profile?.id ?? ""], async () => (await authedFetch("/api/competition")).json(), { refreshInterval: 60_000, revalidateOnFocus: false });
   const [open, setOpen] = useState(false);
   if (!data || data.hidden || !data.goal) return null;
   const pct = Math.min(100, (data.count / data.goal) * 100);
