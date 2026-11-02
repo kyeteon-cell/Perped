@@ -1,5 +1,6 @@
 "use client";
 
+import { siteOrigin } from "@/lib/config";
 import { small } from "@/lib/img";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -151,7 +152,7 @@ export function TrophyShare({ t, row, handle, onClose }: { t: Trophy; row: Troph
   const [png, setPng] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://perped.pro";
+  const origin = siteOrigin();
   const invite = referralLink(origin, handle);
   useEffect(() => {
     let off = false; setPng(null);

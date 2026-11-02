@@ -1,5 +1,6 @@
 "use client";
 
+import { publicUrl } from "@/lib/config";
 import { small } from "@/lib/img";
 import dynamic from "next/dynamic";
 import { Glyph } from "@/components/Glyph";
@@ -48,7 +49,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const [shared, setShared] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const shareWin = async (opp: string) => {
-    const url = window.location.href, text = `I just perped @${opp} on Perped`;
+    const url = publicUrl(window.location.href), text = `I just perped @${opp} on Perped`;
     try {
       if (navigator.share) { await navigator.share({ title: "Perped", text, url }); return; }
       await navigator.clipboard.writeText(`${text} ${url}`); setShared("Link copied ✓");
@@ -131,7 +132,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
           box: chasing ? { title: "Bank and chase", headline: `${banker} banked`, headlineValue: { text: fmtPct(bank, 1), good: bank >= 0 }, line: `${chaser} needs better than ${fmtPct(bank, 1)} · now ${fmtPct(now, 1)} · ${now > bank ? "on course to win" : "behind"}` }
             : settledBox ? { title: "Verdict", headline: winnerHandle ? `${winnerHandle} perped ${winnerHandle === fader.user.handle ? tu.user.handle : fader.user.handle}` : "Too close to call", line: `${fader.user.handle} ${fmtPct(Number(battle!.faderRoi), 1)} · ${tu.user.handle} ${fmtPct(Number(battle!.targetRoi), 1)}` }
             : null,
-          gap: Math.abs(a.roi - b.roi), leaderHandle: (aLead ? fader.user : tu.user).handle, share, url: window.location.href.split("?")[0],
+          gap: Math.abs(a.roi - b.roi), leaderHandle: (aLead ? fader.user : tu.user).handle, share, url: publicUrl(window.location.href.split("?")[0]),
         }} />;
       })()}
       {shared && <div className="share-toast">{shared}</div>}

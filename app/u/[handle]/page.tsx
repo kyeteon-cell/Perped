@@ -1,5 +1,6 @@
 "use client";
 
+import { siteOrigin } from "@/lib/config";
 import { Glyph } from "@/components/Glyph";
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
@@ -149,7 +150,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
       {sharing && <ProfileShare onClose={() => setSharing(false)} data={{
         handle: user.handle, avatarUrl: user.avatarUrl ?? null, verified: !!user.verified, demo: !!user.isDemo, xp: user.xp ?? 0,
-        url: `${typeof window !== "undefined" ? window.location.origin : "https://perped.pro"}/u/${user.handle}`,
+        url: `${siteOrigin()}/u/${user.handle}`,
       }} />}
       {tab === "me" && <ActivityFeed handle={handle} me={{ handle: user.handle, avatarUrl: user.avatarUrl ?? null }} />}
 

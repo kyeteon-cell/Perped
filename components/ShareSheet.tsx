@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Sheet } from "./Sheet";
 import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtUsd, fmtPrice, pnlForPosition } from "@/lib/format";
-import { APP_URL } from "@/lib/config";
+import { siteOrigin } from "@/lib/config";
 import { ticker } from "./ui";
 import { SHARE_BACKGROUNDS } from "@/lib/share-backgrounds";
 import { useSession } from "@/lib/hooks/useSession";
@@ -32,7 +32,7 @@ type CardData = { kind: string; title: string; headline: string; sub: string; li
 function cardData(item: FeedRow, mid?: number, shareUrl?: string): CardData {
   const { post, author } = item;
   const handle = author?.handle ?? "Perped";
-  const origin = typeof window !== "undefined" && /localhost/.test(APP_URL) ? window.location.origin : APP_URL;
+  const origin = siteOrigin();
   const url = shareUrl ?? `${origin}/post/${post.id}`;
   const tag = author?.isDemo || post.paper ? "DEMO" : "REAL";
   if (post.kind === "trade") {
@@ -158,7 +158,7 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
   const { profile } = useSession();
   // Open trades and calls share as a challenge: the link lands on /c/:id, takes the other side in one tap,
   // and carries the sharer's referral so they earn on everything the newcomer trades.
-  const origin = typeof window !== "undefined" ? window.location.origin : APP_URL;
+  const origin = siteOrigin();
   const challengeable = (item.post.kind === "trade" && item.post.status === "open") || (item.post.kind === "call" && item.post.callStatus === "open");
   const refQ = profile ? `?ref=${profile.handle}` : "";
   const challengeUrl = challengeable ? `${origin}/c/${item.post.id}${refQ}` : undefined;

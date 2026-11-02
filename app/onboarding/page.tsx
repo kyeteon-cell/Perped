@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/hooks/useSession";
 import { makeExchangeClient, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
-import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, BUILDER_MAX_FEE_TENTHS_BPS, DEMO_ENABLED, HL_NETWORK, REFERRAL_SHARE_PCT } from "@/lib/config";
+import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE, BUILDER_MAX_FEE_TENTHS_BPS, DEMO_ENABLED, HL_NETWORK, REFERRAL_SHARE_PCT, siteOrigin } from "@/lib/config";
 import { normaliseReferralCode, referralLink } from "@/lib/fees";
 import { Icon, I } from "@/components/ui";
 import { SignInOptions } from "@/components/SignInOptions";
@@ -159,7 +159,7 @@ export default function OnboardingPage() {
                 {linkError && <p className="red mt-2 text-sm">{linkError}</p>}
               </>
             )}
-            {profile && <div className="card mt-2.5 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>Your referral code</div><div className="mt-1.5 flex items-center justify-between"><b className="mono text-lg uppercase">{profile.handle}</b><button className="chip" onClick={async () => { try { await navigator.clipboard.writeText(referralLink(window.location.origin, profile.handle)); } catch {} }}>Copy link</button></div><p className="muted mt-1.5 text-[13px]">Friends who join with it pay a lower fee. You earn {REFERRAL_SHARE_PCT}% of the Perped fee on every trade they make, for life.</p></div>}
+            {profile && <div className="card mt-2.5 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>Your referral code</div><div className="mt-1.5 flex items-center justify-between"><b className="mono text-lg uppercase">{profile.handle}</b><button className="chip" onClick={async () => { try { await navigator.clipboard.writeText(referralLink(siteOrigin(), profile.handle)); } catch {} }}>Copy link</button></div><p className="muted mt-1.5 text-[13px]">Friends who join with it pay a lower fee. You earn {REFERRAL_SHARE_PCT}% of the Perped fee on every trade they make, for life.</p></div>}
           </div>
           <div className="px-6 pb-8"><button className="btn ink" onClick={() => router.push("/")}>Go to the feed</button></div>
         </>

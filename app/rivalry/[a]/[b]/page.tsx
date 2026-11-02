@@ -1,5 +1,6 @@
 "use client";
 
+import { siteOrigin } from "@/lib/config";
 import { small } from "@/lib/img";
 import dynamic from "next/dynamic";
 import { Glyph } from "@/components/Glyph";
@@ -33,7 +34,7 @@ export default function RivalryPage({ params }: { params: Promise<{ a: string; b
     mutate();
   };
   const share = async () => {
-    const url = typeof window !== "undefined" ? `${window.location.origin}/rivalry/${A.handle}/${B.handle}${profile ? `?ref=${profile.handle}` : ""}` : "";
+    const url = typeof window !== "undefined" ? `${siteOrigin()}/rivalry/${A.handle}/${B.handle}${profile ? `?ref=${profile.handle}` : ""}` : "";
     const text = `${A.handle} vs ${B.handle} on Perped · ${data.aWins}–${data.bWins}${lead ? `, ${lead} leads` : ""}`;
     try { if (navigator.share) await navigator.share({ text, url }); else { await navigator.clipboard.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1500); } } catch {}
   };

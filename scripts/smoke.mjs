@@ -3,7 +3,7 @@
 import { chromium, devices } from "playwright";
 import { mkdirSync } from "node:fs";
 
-const BASE = process.env.BASE_URL ?? "https://perped-final.vercel.app";
+const BASE = process.env.BASE_URL ?? "https://perped.pro";
 try {
 mkdirSync("smoke-out", { recursive: true });
 

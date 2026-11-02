@@ -17,7 +17,27 @@ function useSessionState() {
   // Guest demo: a signed token in localStorage, no third-party login.
   const [guestToken, setGuestToken] = useState<string | null>(null);
   const [guestReady, setGuestReady] = useState(false);
-  useEffect(() => { try { setGuestToken(localStorage.getItem("perped:guest")); } catch {} setGuestReady(true); }, []);
+  useEffect(() => {
+    // Arriving from the old address with a demo account: the key comes in the #fragment. Restore it here
+    // (sets this site's cookie too), then wipe it from the address bar so it's never shared by accident.
+    let handoff: string | null = null;
+    try {
+      const m = /[#&]gk=([^&]+)/.exec(window.location.hash);
+      if (m) { handoff = decodeURIComponent(m[1]); window.history.replaceState(null, "", window.location.pathname + window.location.search); }
+    } catch {}
+    let saved: string | null = null;
+    try { saved = localStorage.getItem("perped:guest"); } catch {}
+    if (handoff && !saved) {
+      fetch("/api/guest", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: handoff }) })
+        .then((r) => r.json()).catch(() => null)
+        .then((j) => {
+          if (j?.token) { try { localStorage.setItem("perped:guest", j.token); localStorage.setItem("perped:guest-prev", j.token); if (j.profile?.handle) localStorage.setItem("perped:guest-prev-handle", j.profile.handle); } catch {} setGuestToken(j.token); }
+          setGuestReady(true);
+        });
+      return;
+    }
+    setGuestToken(saved); setGuestReady(true);
+  }, []);
   // A guest is signed in if the browser still has the token, or if the server recognises the guest cookie.
   const { data: cookieMe } = useSWR<{ profile: User | null; guest?: boolean; address?: string | null; guestKey?: string }>(
     guestReady && privyReady && !privyAuthed && !guestToken ? "/api/me?via=cookie" : null,

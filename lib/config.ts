@@ -4,6 +4,16 @@ export type HlNetwork = "testnet" | "mainnet";
 
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "Perped";
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+/** The public address for anything people share or copy: always perped.pro in production, whatever host the page was opened on. */
+export const PUBLIC_HOST = "perped.pro";
+export function siteOrigin(): string {
+  if (/localhost|127\.0\.0\.1/.test(APP_URL)) return typeof window !== "undefined" ? window.location.origin : APP_URL;
+  return APP_URL.replace(/\/$/, "");
+}
+/** Swap whatever host a URL was built on for the public one (keeps path and query). */
+export function publicUrl(u: string): string {
+  try { const x = new URL(u); const o = new URL(siteOrigin()); x.protocol = o.protocol; x.host = o.host; return x.toString(); } catch { return u; }
+}
 
 export const HL_NETWORK: HlNetwork =
   (process.env.NEXT_PUBLIC_HL_NETWORK as HlNetwork) === "mainnet" ? "mainnet" : "testnet";
