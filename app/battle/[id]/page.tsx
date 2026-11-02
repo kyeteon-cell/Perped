@@ -77,7 +77,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const fighter = (u: U, p: Post, r: { roi: number }): Fighter => ({
     handle: u.handle, avatarUrl: u.avatarUrl, side: p.side as "long" | "short", lev: p.leverage ?? 1, entry: Number(p.entryPx),
     tp: p.tpPx ? Number(p.tpPx) : null, sl: p.slPx ? Number(p.slPx) : null, openedAt: p.createdAt,
-    margin: p.notionalUsd ? Number(p.notionalUsd) / (p.leverage ?? 1) : null, roi: r.roi,
+    margin: p.notionalUsd ? Number(p.notionalUsd) / (p.leverage ?? 1) : null, roi: r.roi, closed: p.status !== "open",
   });
   const fs = fader.stats, ts = tu.stats;
   const n = (v: unknown) => Number(v ?? 0);

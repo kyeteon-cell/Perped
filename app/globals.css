@@ -1776,3 +1776,6 @@ a.inv-erow { color: inherit; }
 .tro.locked .emblem { filter: grayscale(1) opacity(.35); }
 .tro-status { font-size: 10.5px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--text) 8%, transparent); }
 .tro-status.got { color: #2a1c00; background: linear-gradient(180deg, #ffe08a, #f2b63a); }
+/* Battle page: who's-ahead labels sit on the even line, above and below it. */
+.ar-zone.up.at { transform: translateY(calc(-100% - 4px)); }
+.ar-zone.down.at { transform: translateY(4px); }

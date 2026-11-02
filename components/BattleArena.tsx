@@ -38,6 +38,19 @@ export function healthOf(f: Fighter, live: number) {
   const h = f.side === "long" ? (live - p) / (f.entry - p) : (p - live) / (p - f.entry);
   return Math.max(0, Math.min(1, h));
 }
+/**
+ * Who's ahead at a given price: one line where both ROIs are level (leverage included). If one side has already
+ * closed, their ROI is banked and the line is where the open side's ROI matches it. Above the line the long side
+ * is ahead, below it the short side.
+ */
+export function evenLine(a: Fighter, b: Fighter) {
+  const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
+  if (!L || !S || L === S) return null;
+  const p = L.closed && !S.closed ? S.entry * (1 - L.roi / 100 / S.lev)
+    : S.closed && !L.closed ? L.entry * (1 + S.roi / 100 / L.lev)
+    : (L.lev + S.lev) / (L.lev / L.entry + S.lev / S.entry);
+  return Number.isFinite(p) && p > 0 ? { L, S, p } : null;
+}
 const sideCol = (f: Fighter) => (f.side === "long" ? GREEN : RED);
 const ts = (d?: string | Date | null) => (d ? new Date(d).getTime() : Date.now());
 
@@ -97,7 +110,9 @@ function Hp({ f, live, right }: { f: Fighter; live: number; right?: boolean }) {
 
 function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fighter; b: Fighter }) {
   const [iv, pick] = useIv();
-  const candles = useCandles(coin, iv, 36);
+  const raw = useCandles(coin, iv, 36);
+  // While either side is still in, the newest candle forms live from the price feed.
+  const candles = !(a.closed && b.closed) ? withLive(raw, live, IVS[iv]) : raw;
   const px = live || candles[candles.length - 1]?.c || a.entry;
   // Candles fill the left 70%; the right 30% is open space for the next move, split into who wins where.
   const W = 300, H = 220, PAD = 10, CA = 210;
@@ -132,8 +147,8 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
   const zx = Math.max(0, xOf(start) - cw / 2);
 
   // Who wins where: the long side wins above its entry, the short side below its entry.
-  const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
-  const zones = L && S && L !== S ? { upper: Math.max(L.entry, S.entry), lower: Math.min(L.entry, S.entry), bothWin: S.entry > L.entry, L, S } : null;
+  const ev = evenLine(a, b);
+  const zones = ev ? { L: ev.L, S: ev.S, yb: Math.max(2, Math.min(H - 2, y(ev.p))) } : null;
 
   return (
     <div className="ar-chart">
@@ -142,9 +157,8 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
           {/* the future: open space after the last candle, coloured by who wins if price goes there */}
           {zones ? (
             <>
-              <rect x={zx} y="0" width={W - zx} height={y(zones.upper)} fill="var(--green)" opacity=".13" />
-              <rect x={zx} y={y(zones.upper)} width={W - zx} height={Math.max(0, y(zones.lower) - y(zones.upper))} fill={zones.bothWin ? "var(--gold)" : "var(--text)"} opacity={zones.bothWin ? 0.1 : 0.05} />
-              <rect x={zx} y={y(zones.lower)} width={W - zx} height={Math.max(0, H - y(zones.lower))} fill="var(--red)" opacity=".13" />
+              <rect x={zx} y="0" width={W - zx} height={zones.yb} fill="var(--green)" opacity=".13" />
+              <rect x={zx} y={zones.yb} width={W - zx} height={Math.max(0, H - zones.yb)} fill="var(--red)" opacity=".13" />
             </>
           ) : <rect x={zx} y="0" width={W - zx} height={H} fill="var(--text)" opacity=".03" />}
           <line x1={CA} x2={CA} y1="0" y2={H} stroke="var(--text)" strokeDasharray="2 3" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".35" />
@@ -169,9 +183,8 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
 
       {candles.length > 0 && (
         <div className="ar-ov">
-          {zones && <span className="ar-zone up" style={{ left: pctX(CA + 6) }}><Avatar handle={zones.L.handle} url={zones.L.avatarUrl} size={14} link={false} />{zones.L.handle} wins ↑</span>}
-          {zones && <span className="ar-zone down" style={{ left: pctX(CA + 6) }}><Avatar handle={zones.S.handle} url={zones.S.avatarUrl} size={14} link={false} />{zones.S.handle} wins ↓</span>}
-          {zones && y(zones.lower) - y(zones.upper) > 26 && <span className="ar-zone mid" style={{ left: pctX(CA + 6), top: pctY((zones.upper + zones.lower) / 2) }}>{zones.bothWin ? "both in profit" : "both losing"}</span>}
+          {zones && <span className="ar-zone up at" style={{ left: pctX(CA + 6), top: `${(zones.yb / H) * 100}%` }}><Avatar handle={zones.L.handle} url={zones.L.avatarUrl} size={14} link={false} />{zones.L.handle} ahead ↑</span>}
+          {zones && <span className="ar-zone down at" style={{ left: pctX(CA + 6), top: `${(zones.yb / H) * 100}%` }}><Avatar handle={zones.S.handle} url={zones.S.avatarUrl} size={14} link={false} />{zones.S.handle} ahead ↓</span>}
           {inLv.map((l) => (
             <span key={l.key} className={`ar-lv ${l.kind === "LIQ" ? "liq" : l.f.side}`} style={{ top: pctY(l.p) }}>
               <Avatar handle={l.f.handle} url={l.f.avatarUrl} size={12} link={false} />{l.kind}
@@ -323,15 +336,9 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
   const xOf = (i: number) => G + (i + 0.5) * slotW;
   const bwOf = (_i: number) => Math.max(1, slotW * 0.56);
   const nowX = G + n * slotW;
-  // Who wins where: one line, the price at which both ROIs are equal (leverage included). Above it the long side
-  // is ahead, below it the short side. No gap in the middle, whatever the two entries are.
-  const L = a.side === "long" ? a : b.side === "long" ? b : null, S = a.side === "short" ? a : b.side === "short" ? b : null;
-  // If one side has already closed, their ROI is banked: the line is where the open side's ROI matches it.
-  const even = !(L && S && L !== S) ? null
-    : L.closed && !S.closed ? S.entry * (1 - L.roi / 100 / S.lev)
-    : S.closed && !L.closed ? L.entry * (1 + S.roi / 100 / L.lev)
-    : (L.lev + S.lev) / (L.lev / L.entry + S.lev / S.entry);
-  const zones = L && S && even ? { up: L, down: S, yb: Math.max(2, Math.min(H - 2, y(even))) } : null;
+  // Who's ahead where: see evenLine (handles a side that has already banked).
+  const ev = evenLine(a, b);
+  const zones = ev ? { up: ev.L, down: ev.S, yb: Math.max(2, Math.min(H - 2, y(ev.p))) } : null;
   // Pins in the gutter: nudge apart when the two entries are close so both avatars stay readable.
   const pinY = [y(a.entry), y(b.entry)];
   if (Math.abs(pinY[0] - pinY[1]) < 24) { const mid = (pinY[0] + pinY[1]) / 2, up = pinY[0] <= pinY[1] ? 0 : 1; pinY[up] = mid - 12; pinY[1 - up] = mid + 12; }
