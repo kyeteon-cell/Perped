@@ -83,7 +83,7 @@ export default function HomePage() {
           {authenticated && (
             <Link href="/notifications" className="iconbtn glass" aria-label="Notifications"><Icon d={I.bell} />{unread > 0 && <span className="badge">{unread}</span>}</Link>
           )}
-          <Link href="/markets" className="iconbtn glass" aria-label="Search"><Icon d={I.search} /></Link>
+          <Link href="/search" className="iconbtn glass" aria-label="Search"><Icon d={I.search} /></Link>
         </div>
         </div>
       </header>

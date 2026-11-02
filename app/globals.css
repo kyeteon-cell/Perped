@@ -1826,3 +1826,40 @@ a.inv-erow { color: inherit; }
 .lbl.wl { background: var(--surface); color: var(--muted); border: 1px solid var(--line); }
 .lbl.wl.win { background: var(--text); color: var(--bg); border-color: var(--text); }
 .h2h-row .win { color: var(--text); font-weight: 900; }
+/* Search: coins and traders together */
+.search { min-height: 100dvh; padding-top: max(10px, env(safe-area-inset-top)); }
+.s-top { display: flex; align-items: center; gap: 10px; padding: 4px 14px 10px; position: sticky; top: 0; z-index: 5; background: var(--bg); }
+.s-box { flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); padding: 0 10px 0 12px; }
+.s-box svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+.s-box input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 16px; font-weight: 600; color: var(--text); }
+.s-box input::placeholder { color: var(--muted); font-weight: 500; }
+.s-clear { width: 22px; height: 22px; border-radius: 50%; border: 0; background: var(--line); color: var(--muted); font-size: 15px; line-height: 1; cursor: pointer; flex: none; }
+.s-cancel { border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.s-segs { display: flex; gap: 6px; padding: 0 14px 4px; }
+.s-segs button { border: 0; font: inherit; font-size: 12.5px; font-weight: 700; padding: 7px 12px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); cursor: pointer; }
+.s-segs button.on { background: var(--text); color: var(--bg); box-shadow: none; }
+.s-sec { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 16px 6px; }
+.s-sec b { font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.s-sec span, .s-sec button { font-size: 12px; color: var(--muted); font-weight: 600; border: 0; background: none; font-family: inherit; cursor: pointer; padding: 0; }
+.s-recent { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px; }
+.s-recent button { display: inline-flex; align-items: center; gap: 6px; border: 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--text); padding: 5px 10px 5px 5px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; }
+.s-movers { display: flex; gap: 8px; padding: 0 16px 2px; overflow-x: auto; scrollbar-width: none; }
+.s-movers::-webkit-scrollbar { display: none; }
+.s-mover { flex: none; width: 104px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; border: 0; font: inherit; color: var(--text); background: var(--surface); border-radius: 16px; padding: 10px; box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; }
+.s-mover b { font-size: 14px; margin-top: 3px; } .s-mover small { font-size: 12px; font-weight: 700; }
+.s-mover em { font-style: normal; font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.s-row { display: flex; align-items: center; gap: 10px; padding: 9px 16px; width: 100%; }
+button.s-row { border: 0; background: none; font: inherit; color: var(--text); text-align: left; cursor: pointer; }
+.s-main { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; border: 0; background: none; font: inherit; color: var(--text); text-align: left; cursor: pointer; padding: 0; }
+.s-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.s-nm { display: flex; align-items: center; gap: 5px; font-weight: 700; font-size: 15px; min-width: 0; }
+.s-nm .ubadges { margin-left: 0; }
+.s-sub { font-size: 12.5px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s-px { text-align: right; flex: none; } .s-px b { display: block; font-size: 14px; } .s-px small { font-size: 12px; font-weight: 700; }
+.s-hl { background: color-mix(in srgb, var(--gold) 32%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+.s-top1 { margin: 6px 12px 2px; border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); padding-bottom: 2px; }
+.s-top1 .s-row { padding-left: 14px; padding-right: 14px; }
+.s-tag { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 10px 14px 0; }
+.s-more { border: 0; background: none; font: inherit; font-size: 13px; font-weight: 700; color: var(--muted); padding: 6px 16px; cursor: pointer; }
+.s-hint { font-size: 12px; color: var(--muted); padding: 14px 16px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
