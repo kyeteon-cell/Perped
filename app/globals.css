@@ -1807,8 +1807,8 @@ a.inv-erow { color: inherit; }
 .mk-scale { position: relative; height: 6px; border-radius: 9px; margin: 10px 2px 2px; background: linear-gradient(90deg, color-mix(in srgb, var(--muted) 55%, transparent), var(--line) 35%, var(--line) 65%, color-mix(in srgb, var(--muted) 55%, transparent)); }
 .mk-scale i { position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%; background: var(--text); transform: translate(-50%, -50%); box-shadow: 0 0 0 3px var(--surface); }
 .mk-ruler { position: relative; height: 32px; margin-top: 8px; }
-.mk-ruler .track, .mk-ruler .norm, .mk-ruler .today { position: absolute; left: 0; top: 6px; height: 8px; border-radius: 4px; }
-.mk-ruler .track { right: 0; background: var(--line); }
+.mk-ruler .rt, .mk-ruler .norm, .mk-ruler .today { position: absolute; left: 0; top: 6px; height: 8px; border-radius: 4px; }
+.mk-ruler .rt { right: 0; background: var(--line); }
 .mk-ruler .norm { background: color-mix(in srgb, var(--muted) 45%, transparent); }
 .mk-ruler .today { background: var(--text); min-width: 4px; }
 .mk-ruler .tick { position: absolute; top: 2px; width: 2px; height: 16px; margin-left: -1px; background: var(--muted); border-radius: 1px; }

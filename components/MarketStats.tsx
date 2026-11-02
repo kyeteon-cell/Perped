@@ -89,7 +89,7 @@ export function MarketStats({ coin, m }: { coin: string; m: MarketItem }) {
         <Tile k="premium" open="premium" verdict={premiumVerdict(premium)} sub={<><span className="mono">{pct(Math.abs(premium))}</span> {premium >= 0 ? "above" : "below"} spot</>} />
         <Tile k="typical" open="typical" wide verdict={st ? <>Moved {st.typical.todayPct.toFixed(1)}% of a usual {st.typical.rangePct.toFixed(1)}%</> : "…"}>
           {st && <div className="mk-ruler">
-            <div className="track" />
+            <div className="rt" />
             <div className="norm" style={{ width: at(st.typical.rangePct) }} />
             <div className="today" style={{ width: at(st.typical.todayPct) }} />
             <div className="tick" style={{ left: at(st.typical.rangePct) }} />
