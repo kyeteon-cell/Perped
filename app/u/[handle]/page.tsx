@@ -1,5 +1,6 @@
 "use client";
 
+import { BestFight } from "@/components/BestFight";
 import { siteOrigin } from "@/lib/config";
 import { Glyph } from "@/components/Glyph";
 import { use, useEffect, useState } from "react";
@@ -203,6 +204,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
 
       {tab === "trades" && (
         <>
+          <BestFight handle={user.handle} avatarUrl={user.avatarUrl ?? null} xp={user.xp ?? 0} isMe={isMe} />
           {(pins.length > 0 || isMe) && (
           <section className="block pb-3">
             <div className="flex items-center justify-between">

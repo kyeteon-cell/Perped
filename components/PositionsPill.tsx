@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { Sheet } from "./Sheet";
 import { MiniHp, type Fighter } from "./BattleArena";
 import { Roll } from "./Roll";
+import { ArenaIntro } from "./ArenaIntro";
 import { toMarkers, useMarketTraders } from "./MarketTape";
 import type { ChartMarker } from "./PriceChart";
 import { Avatar, CoinMark, ticker } from "./ui";
@@ -117,6 +118,7 @@ export function PositionsPill() {
               <button type="button" role="tab" aria-selected={tab === "positions"} className={tab === "positions" ? "on" : ""} onClick={() => setTab("positions")}>Positions <span className="mono">{rows.length}</span></button>
               <button type="button" role="tab" aria-selected={tab === "arena"} className={tab === "arena" ? "on" : ""} onClick={() => setTab("arena")}>Live arena <span className="mono">{wins}–{losses}</span></button>
             </div>
+            {tab === "arena" && <ArenaIntro />}
             {tab === "arena" ? (
               fades.length ? <>
                 {unbeaten ? (

@@ -1,5 +1,6 @@
 "use client";
 
+import { PickWinner } from "@/components/PickWinner";
 import { publicUrl } from "@/lib/config";
 import { small } from "@/lib/img";
 import dynamic from "next/dynamic";
@@ -48,6 +49,8 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const [sideWith, setSide] = useState<null | { p: Post; u: U }>(null);
   const [shared, setShared] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  // Opened from a profile's "Share" on a best fight: go straight to the share card.
+  useEffect(() => { try { if (new URLSearchParams(window.location.search).get("share") === "1") setSharing(true); } catch {} }, []);
   const shareWin = async (opp: string) => {
     const url = publicUrl(window.location.href), text = `I just perped @${opp} on Perped`;
     try {
@@ -206,6 +209,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
       </section>
 
       {(live || mid > 0) && <BattleArena coin={coin} live={mid || Number(fade.exitPx ?? fade.entryPx)} a={fighter(fader.user, fade, a)} b={fighter(tu.user, target, b)} />}
+      <PickWinner fightId={fade.id} targetHandle={tu.user.handle} faderHandle={fader.user.handle} big />
 
       <div className="px-5 py-2 text-right"><Link href="/how-it-works#battles" className="when underline">How a fade is won →</Link></div>
 

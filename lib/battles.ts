@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { payPicks } from "./picks";
 import { DAILY_BONUS_XP, isDailyTarget } from "./daily";
 import { checkSoon } from "./achievements";
 import { db, schema } from "./db";
@@ -111,6 +112,7 @@ export async function settleBattles(mids: Record<string, string | number>) {
       .where(and(eq(schema.battles.id, b.id), eq(schema.battles.status, "open"))).returning({ id: schema.battles.id });
     if (!claimed) continue; // another cron run got here first
     await restampPosts([b.faderPostId, b.targetPostId]);
+    await payPicks({ id: b.id, faderId: b.faderId, targetId: b.targetId, winnerId, coin: b.coin, faderPostId: b.faderPostId }).catch(() => 0);
     await recordFight(b.faderId, b.targetId, winnerId, new Date(), { coin: b.coin, href: `/battle/${b.faderPostId}` }).catch(() => null);
     await awardXp(b.faderId, xpF, winnerId ? (winnerId === b.faderId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);
     await awardXp(b.targetId, xpT, winnerId ? (winnerId === b.targetId ? "battle_win" : "battle_loss") : "battle_draw", `battle:${b.id}`);

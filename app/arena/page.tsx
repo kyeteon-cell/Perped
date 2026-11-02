@@ -1,5 +1,6 @@
 "use client";
 
+import { ArenaIntro } from "@/components/ArenaIntro";
 import { small } from "@/lib/img";
 import dynamic from "next/dynamic";
 import { Glyph } from "@/components/Glyph";
@@ -463,6 +464,7 @@ export default function ArenaPage() {
 
   return (
     <div className="fade-in pb-8" data-tint="gold">
+      <ArenaIntro />
       <div className={`arena-sticky ${stuck ? "on" : ""}`} aria-hidden={!stuck}>
         <b className="text-[15px] font-extrabold">Arena</b>
         {me && <span className="mono text-[13px] font-bold"><span>{me.won}</span><span className="muted">–</span><span className="muted">{me.lost}</span></span>}
