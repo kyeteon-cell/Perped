@@ -5,7 +5,7 @@ import { getCompSettings, setCompSettings } from "@/lib/competition";
 
 export const dynamic = "force-dynamic";
 
-/** GET → stored settings (incl. unpublished details). Owner only. */
+/** GET → stored settings (incl. unpublished details). Owner only (your account, or the server key). */
 export async function GET(req: Request) {
   await ensureSchema();
   const s = await staffFrom(req);
@@ -18,6 +18,8 @@ const Body = z.object({
   details: z.string().max(2000).nullable().optional(),
   detailsUrl: z.string().url().max(500).nullable().optional(),
   hidden: z.boolean().optional(),
+  /** Count fades from this moment (e.g. launch, so everyone who has already faded counts). */
+  startAt: z.string().datetime().optional(),
   /** Restart the count from now. */
   restart: z.boolean().optional(),
 });
