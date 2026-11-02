@@ -53,5 +53,6 @@ export async function GET(req: Request, ctx: { params: Promise<{ handle: string 
     closedTrades: n(t.closed), tradesWon: n(t.won), pnl: showUsd ? n(t.pnl) : null,
     callsHit: n(c.hit), callsResolved: n(c.resolved), copied: n(o.copied), faded: n(o.faded), xp: n(rows(xp)[0]?.xp),
   };
-  return Response.json(out, { headers: { "cache-control": "public, s-maxage=30" } });
+  // What's included depends on who is looking (owner sees their own dollar P&L), so only anonymous answers are shared-cached.
+  return Response.json(out, { headers: { "cache-control": viewer ? "private, no-store" : "public, s-maxage=30" } });
 }

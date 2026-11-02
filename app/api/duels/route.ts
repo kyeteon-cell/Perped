@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (!auth) return unauthorized();
   const me = await getProfile(auth.privyId);
   if (!me) return Response.json({ error: "pick a handle first" }, { status: 400 });
-  const parsed = Create.safeParse(await req.json());
+  const parsed = Create.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const b = parsed.data;
   const [opp] = await db.select().from(schema.users).where(eq(schema.users.handle, b.opponent.toLowerCase())).limit(1);
@@ -52,7 +52,7 @@ const Act = z.object({ id: z.number().int(), action: z.enum(["accept", "decline"
 export async function PATCH(req: Request) {
   const auth = await getAuth(req);
   if (!auth) return unauthorized();
-  const parsed = Act.safeParse(await req.json());
+  const parsed = Act.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "invalid" }, { status: 400 });
   const [d] = await db.select().from(schema.duels).where(eq(schema.duels.id, parsed.data.id)).limit(1);
   if (!d) return Response.json({ error: "not found" }, { status: 404 });

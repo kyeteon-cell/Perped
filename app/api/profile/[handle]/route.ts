@@ -39,7 +39,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ handle: string 
   }
   // Settings are private: strip them unless it's the viewer's own profile.
   const isMe = auth?.privyId === row.user.id;
-  const user = isMe ? row.user : { ...row.user, showLiquidations: undefined, showSizes: undefined, allowCopy: row.user.allowCopy, allowFade: row.user.allowFade, showBottomBoard: undefined, acceptDuels: row.user.acceptDuels, defaultLeverage: undefined, pnlDisplay: undefined, xHandle: row.user.xHandle };
+  // Private fields never leave the server for anyone but the owner (IP, referral links, waitlist and go-live flags).
+  const user = isMe ? row.user : { ...row.user, showLiquidations: undefined, showSizes: undefined, allowCopy: row.user.allowCopy, allowFade: row.user.allowFade, showBottomBoard: undefined, acceptDuels: row.user.acceptDuels, defaultLeverage: undefined, pnlDisplay: undefined, xHandle: row.user.xHandle,
+    signupIp: undefined, referredBy: undefined, referredAt: undefined, waitlistAt: undefined, canGoLive: undefined, founderSince: undefined };
 
   let positions: unknown[] = [];
   let accountValue: number | null = null;

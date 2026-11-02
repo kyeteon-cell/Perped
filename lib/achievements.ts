@@ -15,7 +15,8 @@ export type Metrics = Record<string, number>;
 
 /** Everything the trophies measure, for one player. A handful of indexed queries. */
 export async function metricsFor(userId: string): Promise<Metrics> {
-  const roi = sql`((exit_px::float - entry_px::float) / nullif(entry_px::float, 0) * 100 * coalesce(leverage, 1) * (case when side = 'long' then 1 else -1 end))`;
+  // Whole-trade ROI: realised P&L over the starting margin (size now plus any partial slices), so partial closes count.
+  const roi = sql`(coalesce(realized_pnl::float, 0) / nullif((size::float + coalesce((select sum((x->>'size')::float) from jsonb_array_elements(case when jsonb_typeof(meta->'partials') = 'array' then meta->'partials' else '[]'::jsonb end) x), 0)) * entry_px::float / coalesce(nullif(leverage, 0), 1), 0) * 100)`;
   const [trades, closed, fights, rival, social, calls, recruits, low] = await Promise.all([
     db.execute(sql`select count(*)::int as trades,
         count(*) filter (where faded_from_id is not null)::int as fades,
@@ -144,5 +145,7 @@ export function rarity() {
     return Object.fromEntries(by.map((r) => [String(r.key), Math.round((n(r.n) / total) * 1000) / 10]));
   })();
   rarityCache = { at: Date.now(), v };
+  // A failed query mustn't stick for 5 minutes.
+  v.catch(() => { if (rarityCache?.v === v) rarityCache = null; });
   return v;
 }

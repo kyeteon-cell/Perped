@@ -50,7 +50,9 @@ export async function GET(req: Request) {
   const q = Object.fromEntries(url.searchParams);
   const limit = Math.min(50, Math.max(1, Math.floor(Number(q.limit) || 30)));
   // Cursor is the createdAt (ms) of the last row seen, so paging follows the chronological order.
-  const cursor = Number(q.cursor ?? 0);
+  // Bounded so a junk cursor can't make an invalid date (which would throw before the query).
+  const cursorRaw = Number(q.cursor ?? 0);
+  const cursor = Number.isFinite(cursorRaw) && cursorRaw > 0 && cursorRaw < 8.64e15 ? cursorRaw : 0;
   const auth = await getAuth(req).catch(() => null);
 
   const conds = [
@@ -149,7 +151,7 @@ export async function POST(req: Request) {
   if (!profile) return Response.json({ error: "pick a handle first" }, { status: 400 });
   const limited = await rateLimit("post", profile);
   if (limited) return limited;
-  const parsed = Body.safeParse(await req.json());
+  const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "invalid" }, { status: 400 });
   const b = parsed.data;
   if (b.kind === "poll" && !profile.verified) return Response.json({ error: "polls are for verified traders (10+ closed trades and a linked X account)" }, { status: 403 });
@@ -182,6 +184,14 @@ export async function POST(req: Request) {
     }
   }
   const values: typeof schema.posts.$inferInsert = { userId: profile.id, kind: b.kind, body: "body" in b ? b.body : undefined };
+  // Stops and targets must sit on the right side of where the trade starts (checked before any balance moves).
+  const badLevels = (at: number) => {
+    if (b.kind !== "trade" || !(at > 0)) return null;
+    const up = b.side === "long";
+    if (b.tpPx && (up ? b.tpPx <= at : b.tpPx >= at)) return `Take profit must be ${up ? "above" : "below"} the entry price`;
+    if (b.slPx && (up ? b.slPx >= at : b.slPx <= at)) return `Stop loss must be ${up ? "below" : "above"} the entry price`;
+    return null;
+  };
   if (b.kind === "trade" && !(b.paper || profile.isDemo) && !liveAllowed((await getLiveSettings()).open, profile)) {
     return Response.json({ error: "live_closed", message: "Real-money trading opens soon. Trades are demo only for now." }, { status: 403 });
   }
@@ -195,6 +205,8 @@ export async function POST(req: Request) {
     if (margin > Number(profile.demoBalance)) return Response.json({ error: `demo balance is $${Number(profile.demoBalance).toFixed(2)}` }, { status: 400 });
     b.entryPx = mid;
     b.size = b.notionalUsd / mid;
+    const lvErr = badLevels(mid);
+    if (lvErr) return Response.json({ error: lvErr }, { status: 400 });
     values.paper = true;
     // Deduct atomically: fails if a parallel request already spent the balance.
     const [paid] = await db.update(schema.users).set({ demoBalance: sql`${schema.users.demoBalance} - ${margin.toFixed(2)}` })
@@ -205,6 +217,9 @@ export async function POST(req: Request) {
     // Real money: entry and size come from the actual fills on Hyperliquid, looked up by order id.
     if (!auth.address) return Response.json({ error: "connect your wallet to post a live trade" }, { status: 400 });
     if (!b.oid) return Response.json({ error: "missing Hyperliquid order id" }, { status: 400 });
+    // One post per order: the same fill can't be posted (and settled, and earn XP) twice.
+    const [dupe] = await db.select({ id: schema.posts.id }).from(schema.posts).where(and(eq(schema.posts.userId, profile.id), eq(schema.posts.oid, b.oid))).limit(1);
+    if (dupe) return Response.json({ error: "that order is already posted", postId: dupe.id }, { status: 409 });
     let fills = await fillsForOrder(auth.address, b.oid, normCoin(b.coin)).catch(() => null);
     if (fills && !fills.length) { await new Promise((r) => setTimeout(r, 1500)); fills = await fillsForOrder(auth.address, b.oid, normCoin(b.coin)).catch(() => null); } // fills can lag the order by a moment
     if (fills && fills.length) {
@@ -212,10 +227,13 @@ export async function POST(req: Request) {
       const bought = fills[0].side === "B";
       if ((b.side === "long") !== bought) return Response.json({ error: "that order was on the other side" }, { status: 400 });
       b.entryPx = v.px; b.size = v.sz; b.notionalUsd = v.px * v.sz;
+      // The order already exists on Hyperliquid, so don't refuse the post: just drop levels that sit on the wrong side.
+      if (badLevels(v.px)) { b.tpPx = undefined; b.slPx = undefined; }
     } else if (fills) {
       const resting = await getFrontendOpenOrders(auth.address).then((o) => o.some((x) => x.oid === b.oid)).catch(() => false);
       if (!resting) return Response.json({ error: "we couldn't find that order on Hyperliquid" }, { status: 400 });
-      values.meta = { ...(values.meta ?? {}), pendingFill: true };
+      // Never post numbers we haven't seen filled: a resting limit order goes in the feed once it fills.
+      return Response.json({ error: "Your limit order is waiting on Hyperliquid. Post it once it fills." }, { status: 409 });
     } else {
       // Hyperliquid didn't answer, so the trade can't be verified: don't post unverified numbers. The order itself is on Hyperliquid.
       return Response.json({ error: "Your order went through on Hyperliquid, but we couldn't confirm the fill yet. It will show on your profile in a moment; post it again if you want it in the feed." }, { status: 503 });

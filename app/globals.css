@@ -1817,3 +1817,6 @@ a.inv-erow { color: inherit; }
 .mk-ruler span.end { transform: translateX(-100%); }
 /* Trade chart v2: the svg must fill the plot exactly so price tags (placed in % of the plot) sit on their lines. */
 .tchart-plot.v2 svg { inset: 0 !important; width: 100% !important; height: 100% !important; }
+/* Sheets sit above every overlay (including the welcome flow), so sign-in from inside it is visible. */
+.sheet-bg { z-index: 90; } .sheet { z-index: 91; }
+.welcome-err { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 85; width: min(420px, calc(100% - 32px)); padding: 10px 14px; border-radius: 14px; background: var(--text); color: var(--bg); font-size: 13.5px; font-weight: 600; text-align: center; box-shadow: 0 10px 30px -12px rgba(0,0,0,.5); }

@@ -2,7 +2,7 @@ import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { checkSoon } from "./achievements";
 import { db, schema } from "./db";
 import { notify, systemPost } from "./feed";
-import { pnlForPosition } from "./format";
+import { tradeRoiPct } from "./format";
 import { lossPenalty, rankFor, XP } from "./rank";
 import { awardXp } from "./xp";
 import { recordFight } from "./rivalries";
@@ -35,11 +35,9 @@ export async function backfillBattles(limit = 200) {
 
 type P = typeof schema.posts.$inferSelect;
 function roiOf(p: P, mid: number) {
-  const entry = Number(p.entryPx), lev = p.leverage ?? 1;
-  const mark = p.status === "closed" ? Number(p.exitPx ?? entry) : mid || entry;
-  const pct = pnlForPosition(p.side as "long" | "short", entry, mark, Number(p.size)).pct;
   const liq = p.status === "closed" && (p.meta as { closeReason?: string } | null)?.closeReason === "liquidation";
-  return { roi: liq ? -100 : pct * lev, liq };
+  // Whole-trade ROI (partial closes included), so closing most of a loser and banking a tiny bounce can't flip a fade.
+  return { roi: liq ? -100 : tradeRoiPct(p, mid), liq };
 }
 
 /**
