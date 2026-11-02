@@ -19,7 +19,7 @@ function connectionUrl() {
 function getSql() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
   if (!globalForDb.__perpedSql) {
-    globalForDb.__perpedSql = postgres(connectionUrl(), { max: 3, prepare: false, idle_timeout: 20, connect_timeout: 10 });
+    globalForDb.__perpedSql = postgres(connectionUrl(), { max: 3, prepare: false, idle_timeout: 20, connect_timeout: 10, onnotice: () => {} });
   }
   return globalForDb.__perpedSql;
 }
