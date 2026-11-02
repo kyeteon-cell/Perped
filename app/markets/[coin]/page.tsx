@@ -67,7 +67,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
         <div className="mt-3"><PriceChart coin={coin} livePx={px || undefined} markers={markers} onMarkerClick={(id) => setSelected(id)} guides={guides} /></div>
         <MarketTape coin={coin} traders={traders} lens={lens} setLens={setLens} followingAny={followingAny} mid={px} selected={selected} onSelect={setSelected} meId={profile?.id} />
         {m && <div className="mt-3.5"><MarketStats coin={coin} m={m} /></div>}
-        <div className="mt-3.5"><CoinAbout coin={coin} /></div>
+        {coinName(coin) && <div className="mt-3.5"><CoinAbout coin={coin} /></div>}
         {live.length > 0 && <div className="mt-3.5 flex items-center justify-between text-sm"><span className="muted">{live.length} Perped trader{live.length === 1 ? "" : "s"} live</span><span className={`font-bold ${longs >= live.length / 2 ? "green" : "red"}`}>{Math.round((longs / live.length) * 100)}% long</span></div>}
       </section>
 
