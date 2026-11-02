@@ -1711,7 +1711,7 @@ a.inv-erow { color: inherit; }
 
 /* Buttons: same glass pill with the light running across it. Green/red only when the button opens a long/short;
    everything else is chrome glass. */
-.btn.brand, .copy, .fade, .hub-btn { border: 0; color: var(--chrome-fg); background: linear-gradient(180deg, var(--chrome-hi) 0%, var(--chrome) 55%, var(--chrome-lo) 100%); box-shadow: 0 10px 24px -12px rgba(15,16,18,.55), inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(0,0,0,.1); }
+.btn.brand, .copy, .fade, .hub-btn { border: 0; color: #12161b; background: linear-gradient(180deg, #ffffff 0%, #e6eaef 50%, #b9c1cb 100%); box-shadow: 0 10px 24px -12px rgba(15,16,18,.55), inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(0,0,0,.1); }
 .hub-btn { position: relative; overflow: hidden; isolation: isolate; }
 .copy.side.long, .fade.side.long, .hub-btn.side.long, .bb-acts .side.long { color: #04130d !important; background: linear-gradient(180deg, #2ff0a8 0%, #05e091 45%, #03c47e 100%) !important; box-shadow: 0 10px 24px -12px rgba(5,224,145,.8), inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.08) !important; border-color: transparent !important; }
 .copy.side.short, .fade.side.short, .hub-btn.side.short, .bb-acts .side.short { color: #fff !important; background: linear-gradient(180deg, #ff8a8e 0%, #fd6267 45%, #e5484d 100%) !important; box-shadow: 0 10px 24px -12px rgba(253,98,103,.85), inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 0 rgba(0,0,0,.1) !important; border-color: transparent !important; }
