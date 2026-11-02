@@ -7,10 +7,7 @@ export function CoinAbout({ coin }: { coin: string }) {
   if (!a?.about) return null;
   return (
     <section className="coin-about">
-      <div className="coin-about-head">
-        <small>About</small>
-        <b>{a.name}</b>
-      </div>
+      <small className="coin-about-head">About {a.name}</small>
       <p>{a.about}</p>
       {a.url && (
         <a className="coin-about-link" href={a.url} target="_blank" rel="noopener noreferrer nofollow">

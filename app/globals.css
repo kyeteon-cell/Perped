@@ -1866,9 +1866,7 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 
 /* Market page: what the coin is */
 .coin-about { background: var(--surface); border-radius: 16px; padding: 14px 16px 15px; box-shadow: inset 0 0 0 1px var(--line); }
-.coin-about-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.coin-about-head small { font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
-.coin-about-head b { font-size: 13px; font-weight: 700; color: var(--muted); text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.coin-about-head { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 .coin-about p { margin: 8px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--text); }
 .coin-about-link { margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: var(--tint-soft, var(--blue-soft)); color: var(--tint, var(--blue)); font-size: 13px; font-weight: 700; text-decoration: none; }
 .coin-about-link:active { transform: scale(.98); }
