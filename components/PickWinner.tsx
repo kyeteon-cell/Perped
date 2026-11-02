@@ -43,8 +43,9 @@ export function PickWinner({ fightId, targetHandle, faderHandle, big = false }: 
   };
 
   if (!data) return <div ref={box} className={`pick ${big ? "big" : ""} loading`} />;
-  if (data.inIt && !total) return <div ref={box} />;
   const canPick = data.open && !data.inIt && !data.mine;
+  // Nothing to show: nobody picked and you can't (you're in it, or picks have closed).
+  if (!canPick && !total) return <div ref={box} />;
   const name = (s: "fader" | "target") => (s === "fader" ? faderHandle : targetHandle);
   const result = data.settled && data.mine ? (data.winner === data.mine ? "won" : data.winner ? "lost" : "draw") : null;
   return (
