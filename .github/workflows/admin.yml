@@ -17,7 +17,7 @@ jobs:
           BODY: ${{ github.event.inputs.body }}
         run: |
           if [ -z "$KEY" ]; then echo "::error::Add the CRON_SECRET repo secret (same value as Vercel)"; exit 1; fi
-          out=$(curl -sS -X POST "https://perped-final.vercel.app/api/admin/programme" -H "content-type: application/json" -H "x-admin-key: $KEY" --data "$BODY")
+          out=$(curl -sS -X POST "https://perped.pro/api/admin/programme" -H "content-type: application/json" -H "x-admin-key: $KEY" --data "$BODY")
           echo "$out"
           echo "::notice title=result::$out"
           echo "$out" | grep -q '"error"' && exit 1 || exit 0

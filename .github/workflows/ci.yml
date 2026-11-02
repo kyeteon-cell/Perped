@@ -47,7 +47,7 @@ jobs:
       - run: npm install --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
       - run: node scripts/smoke.mjs
         env:
-          BASE_URL: https://perped-final.vercel.app
+          BASE_URL: https://perped.pro
       - uses: actions/upload-artifact@v4
         if: always()
         with:

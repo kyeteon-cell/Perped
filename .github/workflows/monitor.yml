@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Every key endpoint answers 200 in under 1s
         run: |
-          base=https://perped-final.vercel.app
+          base=https://perped.pro
           fail=0
           for p in / /arena /markets "/api/posts?tab=foryou" /api/arena /api/markets /api/leaderboard /api/health; do
             # warm once, then measure the best of three
