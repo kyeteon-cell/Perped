@@ -39,7 +39,7 @@ export async function setCompSettings(patch: Partial<CompSettings>) {
 const counted = (startAt: string) => sql`
   select distinct p.user_id from posts p join users u on u.id = p.user_id
   where p.kind = 'trade' and p.faded_from_id is not null and p.created_at >= ${startAt}::timestamptz
-    and u.is_bot = false
+    and u.is_bot = false and u.id not like 'bot:%' -- demo bots never count, flagged or not
     and (u.id not like 'guest:%' or exists (select 1 from account_links l where l.user_id = u.id))`;
 
 export type CompBoard = { goal: number; count: number; startAt: string; unlocked: boolean; details: string | null; detailsUrl: string | null; hidden: boolean; recruiters: { handle: string; avatarUrl: string | null; n: number }[] };
@@ -59,7 +59,7 @@ async function readBoard(): Promise<CompBoard> {
     db.execute(sql`select count(*)::int as n from (${counted(s.startAt)}) q`).then(rows),
     db.execute(sql`select r.handle, r.avatar_url as "avatarUrl", count(*)::int as n
       from (${counted(s.startAt)}) q join users u on u.id = q.user_id join users r on r.id = u.referred_by
-      where r.is_bot = false group by r.id order by n desc, r.handle asc limit 5`).then(rows),
+      where r.is_bot = false and r.id not like 'bot:%' group by r.id order by n desc, r.handle asc limit 5`).then(rows),
   ]);
   const count = Number(c[0]?.n ?? 0);
   const unlocked = count >= s.goal;
