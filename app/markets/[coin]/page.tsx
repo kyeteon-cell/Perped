@@ -12,6 +12,7 @@ import { fmtPct, fmtPrice } from "@/lib/format";
 import { useMids } from "@/lib/hooks/useMids";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
+import { CoinAbout, coinName } from "@/components/CoinAbout";
 import { MarketStats, useCoinStats, useFundingCountdown, type MarketItem } from "@/components/MarketStats";
 
 export default function MarketPage({ params }: { params: Promise<{ coin: string }> }) {
@@ -58,6 +59,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2.5"><CoinMark coin={coin} /><div className="text-[30px] font-bold leading-none tracking-tight">{ticker(coin, true)}</div></div>
+            {coinName(coin) && <div className="mk-name">{coinName(coin)}</div>}
             <div className="mono mt-2.5 text-[22px] font-semibold">{px ? fmtPrice(px) : "…"}{m && <span className={`ml-2 text-sm font-semibold ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</span>}</div>
           </div>
         </div>
@@ -65,6 +67,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
         <div className="mt-3"><PriceChart coin={coin} livePx={px || undefined} markers={markers} onMarkerClick={(id) => setSelected(id)} guides={guides} /></div>
         <MarketTape coin={coin} traders={traders} lens={lens} setLens={setLens} followingAny={followingAny} mid={px} selected={selected} onSelect={setSelected} meId={profile?.id} />
         {m && <div className="mt-3.5"><MarketStats coin={coin} m={m} /></div>}
+        {coinName(coin) && <div className="mt-3.5"><CoinAbout coin={coin} /></div>}
         {live.length > 0 && <div className="mt-3.5 flex items-center justify-between text-sm"><span className="muted">{live.length} Perped trader{live.length === 1 ? "" : "s"} live</span><span className={`font-bold ${longs >= live.length / 2 ? "green" : "red"}`}>{Math.round((longs / live.length) * 100)}% long</span></div>}
       </section>
 

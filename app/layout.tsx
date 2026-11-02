@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Nav } from "@/components/Nav";
 import { Ticker } from "@/components/Ticker";
+import { CompBar } from "@/components/CompBar";
 import { APP_NAME, APP_URL } from "@/lib/config";
 
 const sans = Nunito({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col pb-32">
             <Ticker />
+            <CompBar />
             {children}
           </div>
           <Nav />
