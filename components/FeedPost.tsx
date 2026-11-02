@@ -323,8 +323,8 @@ function TradePost({ item, mid, onChanged, full, autoQuick }: Props) {
       <Acts item={item} onChanged={onChanged} mid={mid} challenge={isOpen && !!author && author.id === profile?.id} manage={isOpen && !!author && author.id === profile?.id}>
         {canAct && (
           <>
-            {canFade ? <button className="fade ml-auto" onClick={() => setQuick("fade")}><span className="gl"><Glyph n="bolt" />Quick fade</span></button> : item.noFade ? <span className="when ml-auto text-[11px]">already in a fade</span> : null}
-            {canCopy && <button className={canFade || item.noFade ? "copy" : "copy ml-auto"} onClick={() => setQuick("copy")}>Copy</button>}
+            {canFade ? <button className={`fade side ${post.side === "long" ? "short" : "long"} ml-auto`} onClick={() => setQuick("fade")}><span className="gl"><Glyph n="bolt" />Fade · {post.side === "long" ? "Short" : "Long"}</span></button> : item.noFade ? <span className="when ml-auto text-[11px]">already in a fade</span> : null}
+            {canCopy && <button className={`copy side ${post.side} ${canFade || item.noFade ? "" : "ml-auto"}`} onClick={() => setQuick("copy")}>Copy · {post.side === "long" ? "Long" : "Short"}</button>}
           </>
         )}
       </Acts>
@@ -458,7 +458,7 @@ function CallPost({ item, mid, onChanged }: Props) {
       <div className="track"><b style={{ width: `${open ? progress : 100}%`, background: open ? "var(--text)" : post.callStatus === "hit" ? "var(--green)" : "var(--red)" }} /></div>
       {post.body && !quick && <RichText text={post.body} />}
       <Acts item={item} onChanged={onChanged} challenge={open && !!item.author && item.author.id === profile?.id}>
-        {open && item.author?.id !== profile?.id && <Link href={`/trade?coin=${post.coin}&side=${post.side}`} className="copy ml-auto">Trade it</Link>}
+        {open && item.author?.id !== profile?.id && <Link href={`/trade?coin=${post.coin}&side=${post.side}`} className={`copy side ${post.side} ml-auto`}>Trade it · {post.side === "long" ? "Long" : "Short"}</Link>}
       </Acts>
     </article>
   );

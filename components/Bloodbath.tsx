@@ -53,7 +53,7 @@ export function FinishSave({ b, winner, loser, quiet, compact }: { b: ArenaBattl
     const u = wOpen ? winner : loser, fin = wOpen;
     return (
       <>
-        <button className={`hub-btn ${fin ? "fin" : ""}`} onClick={() => pick(u, fin ? "Finish them · back" : "Save them · back")}><span className="gl"><Glyph n={fin ? "dagger" : "buoy"} />{fin ? "Finish them" : "Save them"}</span></button>
+        <button className={`hub-btn side ${legOf(b, u).side}`} onClick={() => pick(u, fin ? "Finish them · back" : "Save them · back")}><span className="gl"><Glyph n={fin ? "dagger" : "buoy"} />{fin ? "Finish them" : "Save them"}</span></button>
         {open && <QuickTrade item={open.item} mode="copy" lock title={open.title} onClose={() => setOpen(null)} />}
       </>
     );
@@ -72,8 +72,8 @@ export function FinishSave({ b, winner, loser, quiet, compact }: { b: ArenaBattl
   return (
     <>
       <div className="bb-acts" style={wOpen && lOpen ? undefined : { gridTemplateColumns: "1fr" }}>
-        {wOpen && <button className="bb-finish" onClick={() => pick(winner, "Finish them · back")}><span className="gl"><Glyph n="dagger" />Finish them</span><small>back {winner.handle}</small></button>}
-        {lOpen && <button className="bb-save" onClick={() => pick(loser, "Save them · back")}><span className="gl"><Glyph n="buoy" />Save them</span><small>back {loser.handle}</small></button>}
+        {wOpen && <button className={`bb-finish side ${legOf(b, winner).side}`} onClick={() => pick(winner, "Finish them · back")}><span className="gl"><Glyph n="dagger" />Finish them</span><small>back {winner.handle}</small></button>}
+        {lOpen && <button className={`bb-save side ${legOf(b, loser).side}`} onClick={() => pick(loser, "Save them · back")}><span className="gl"><Glyph n="buoy" />Save them</span><small>back {loser.handle}</small></button>}
       </div>
       {open && <QuickTrade item={open.item} mode="copy" lock title={open.title} onClose={() => setOpen(null)} />}
     </>
@@ -108,12 +108,12 @@ export function RevengeButton({ handle, label = <span className="gl"><Glyph n="d
 }
 
 
-/** Kill feed: liquidations as they happen. */
+/** Eliminations: liquidations as they happen. */
 export function KillFeed({ kills }: { kills: ArenaBattle[] }) {
   if (!kills.length) return null;
   return (
     <div className="bb-kills">
-      <div className="eyebrow">Kill feed</div>
+      <div className="eyebrow">Eliminations</div>
       {kills.filter((k) => k.winnerId).slice(0, 6).map((b) => {
         const w = b.winnerId === b.fader.id ? b.fader : b.target, l = w.id === b.fader.id ? b.target : b.fader;
         const ll = legOf(b, l);

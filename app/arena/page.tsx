@@ -228,14 +228,14 @@ function AllHub({ rows, nem, high, mine, list }: { rows: Row[]; nem: Row[]; high
   );
 }
 
-/** Slim kill ticker along the top of the Arena: who got liquidated by whom, scrolling. */
+/** Slim eliminations ticker along the top of the Arena: who got liquidated by whom, scrolling. */
 function KillTicker({ kills }: { kills: ArenaBattle[] }) {
   if (!kills.some((k) => k.winnerId)) return null;
   const items = kills.filter((k) => k.winnerId).slice(0, 8).map((b) => {
     const w = b.winnerId === b.fader.id ? b.fader : b.target, l = w.id === b.fader.id ? b.target : b.fader;
     return <Link key={b.id} href={`/battle/${b.faderPostId}`} className="kt-item"><Glyph n="skull" tone="blood" /><b>{w.handle}</b> perped <b>{l.handle}</b><span className="when">{ticker(b.coin)} · {timeAgo(b.settledAt ?? b.createdAt)}</span></Link>;
   });
-  return <div className="kticker" aria-label="Recent liquidations"><div className="kt-track">{items}{items.map((it, i) => <span key={`d${i}`} aria-hidden>{it}</span>)}</div></div>;
+  return <div className="kticker" aria-label="Eliminations"><div className="kt-track">{items}{items.map((it, i) => <span key={`d${i}`} aria-hidden>{it}</span>)}</div></div>;
 }
 
 /** The Bloodbath as a hub: numbers up top, the Pit beside Last standing, then swipeable rails. */
@@ -408,7 +408,7 @@ function ArenaHow({ onClose }: { onClose: () => void }) {
             <li><b>The Pit:</b> the most one-sided fight right now.</li>
             <li><b>Last standing:</b> one side is out (stopped, liquidated or banked) and the other is still in. Newest first; each stays 24 hours. <b>Winning</b> means they&rsquo;re beating the number the other side finished on; <b>Chasing</b> means they&rsquo;re not, yet.</li>
             <li><b>Getting perped:</b> the rest of the one-sided fights, to swipe through.</li>
-            <li><b>Graveyard and kill feed:</b> recent liquidations. <b>Body count:</b> this week&rsquo;s Butcher (most people perped) and Most rekt.</li>
+            <li><b>Graveyard and eliminations:</b> recent liquidations. <b>Body count:</b> this week&rsquo;s Butcher (most people perped) and Most rekt.</li>
           </ul>
         </S>
 
