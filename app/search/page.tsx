@@ -94,7 +94,7 @@ export default function SearchPage() {
   const CoinRow = ({ c }: { c: MarketItem }) => (
     <button type="button" className="s-row s-main" onClick={() => goCoin(c.name)}>
       <CoinMark coin={c.name} />
-      <span className="s-mid"><span className="s-nm"><Hl text={ticker(c.name)} q={term} /></span><span className="s-sub">Volume {fmtUsd(c.volume24h, { compact: true })} · {c.maxLeverage}× max</span></span>
+      <span className="s-mid"><span className="s-nm"><span className="truncate"><Hl text={ticker(c.name)} q={term} /></span></span><span className="s-sub">Volume {fmtUsd(c.volume24h, { compact: true })} · {c.maxLeverage}× max</span></span>
       <span className="s-px"><b className="mono">{fmtPrice(c.mid)}</b><small className={`mono ${c.change24h >= 0 ? "green" : "red"}`}>{fmtPct(c.change24h, 1)}</small></span>
     </button>
   );
