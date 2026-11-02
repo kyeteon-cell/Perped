@@ -16,6 +16,7 @@ import { FollowButton } from "./FollowButton";
 import { RichText } from "./RichText";
 import { BattleSummary, battlesOf } from "./BattleSummary";
 import { BattleCardChart, MiniHp, type Fighter } from "./BattleArena";
+import { PickWinner } from "./PickWinner";
 import { HL_NETWORK } from "@/lib/config";
 const TrophyPost = dynamic(() => import("./Trophies").then((m) => m.TrophyPost), { ssr: false });
 
@@ -366,6 +367,7 @@ function FadeCard({ item, a, b, mark, mid, onChanged, quick, setQuick, canAct, c
       <div className="fc-row">{side(a, false, src?.xp)}<span className="fc-vs">vs</span>{side(b, true, author?.xp)}</div>
       <BattleCardChart coin={post.coin!} live={mark} a={a} b={b} tick={post.status === "open"} />
       {post.body && <div className="fc-quote"><b>{b.handle}:</b> <RichText text={post.body} /></div>}
+      {post.status === "open" && <PickWinner fightId={post.id} targetHandle={a.handle} faderHandle={b.handle} />}
       {canAct && (canFade || canCopy) && (
         <div className="fc-backs">
           {canFade && <button className="fc-back" onClick={() => setQuick("fade")}><span>Back</span><b>{a.handle}</b></button>}

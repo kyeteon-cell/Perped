@@ -348,4 +348,22 @@ update app_settings set value = jsonb_set(value, '{startAt}', '"2026-01-01T00:00
 -- Live fades: who's ahead, for lead-change alerts.
 alter table battles add column if not exists leader text;
 alter table battles add column if not exists leader_at timestamptz;
+-- Spectators pick who wins a fade; a right pick pays XP when it settles.
+create table if not exists battle_picks (
+  id serial primary key,
+  battle_id integer not null references battles(id),
+  user_id text not null references users(id),
+  pick text not null,
+  paid boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (battle_id, user_id)
+);
+create index if not exists battle_picks_battle_idx on battle_picks (battle_id) where not paid;
+create index if not exists battle_picks_user_idx on battle_picks (user_id, created_at);
+-- Which alerts reach your phone (in-app notifications always arrive).
+create table if not exists alert_prefs (
+  user_id text primary key references users(id),
+  prefs jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
 `;

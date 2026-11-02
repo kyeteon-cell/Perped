@@ -1,24 +1,17 @@
 "use client";
 
 import { small } from "@/lib/img";
-import { PushPrompt } from "@/components/PushPrompt";
-import { FirstBattle } from "@/components/FirstBattle";
-import { FightNightHome } from "@/components/FightNightHome";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
 import { WelcomeGate as WelcomeOnce } from "@/components/WelcomeGate";
-import { Pulse } from "@/components/Pulse";
-import { QuickCall } from "@/components/QuickCall";
 import { QuickPost } from "@/components/QuickPost";
 import { FollowButton } from "@/components/FollowButton";
 import { FeedFilters, EMPTY_FILTER, activeCount, filterQuery, filterSummary, type FeedFilter } from "@/components/FeedFilters";
-import { Banked } from "@/components/Banked";
-import { DailyFade } from "@/components/DailyFade";
-import { WeekRecap } from "@/components/WeekRecap";
 import { PullRefresh } from "@/components/PullRefresh";
+import { LazyMount } from "@/components/LazyMount";
 import dynamic from "next/dynamic";
 import { Avatar, Icon, I, SkeletonList } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
@@ -26,6 +19,14 @@ import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
 import { fmtUsd, fmtPct } from "@/lib/format";
 import { useLive } from "@/lib/hooks/useLive";
+const PushPrompt = dynamic(() => import("@/components/PushPrompt").then((m) => m.PushPrompt), { ssr: false });
+const FirstBattle = dynamic(() => import("@/components/FirstBattle").then((m) => m.FirstBattle), { ssr: false });
+const FightNightHome = dynamic(() => import("@/components/FightNightHome").then((m) => m.FightNightHome), { ssr: false });
+const Pulse = dynamic(() => import("@/components/Pulse").then((m) => m.Pulse), { ssr: false });
+const QuickCall = dynamic(() => import("@/components/QuickCall").then((m) => m.QuickCall), { ssr: false });
+const Banked = dynamic(() => import("@/components/Banked").then((m) => m.Banked), { ssr: false });
+const DailyFade = dynamic(() => import("@/components/DailyFade").then((m) => m.DailyFade), { ssr: false });
+const WeekRecap = dynamic(() => import("@/components/WeekRecap").then((m) => m.WeekRecap), { ssr: false });
 const DepositSheet = dynamic(() => import("@/components/DepositSheet").then((m) => m.DepositSheet), { ssr: false });
 
 type Tab = "foryou" | "following" | "live";
@@ -131,8 +132,8 @@ export default function HomePage() {
       {tab === "foryou" && <PushPrompt />}
       {tab === "foryou" && <QuickCall mids={mids} />}
       {tab !== "live" && <QuickPost onPosted={() => mutate()} />}
-      {tab !== "following" && <Pulse mids={mids} />}
-      {tab === "foryou" && <Banked />}
+      {tab !== "following" && <LazyMount minHeight={160}><Pulse mids={mids} /></LazyMount>}
+      {tab === "foryou" && <LazyMount minHeight={100}><Banked /></LazyMount>}
 
       <div className="realness">
         {(["all", "real", "demo"] as const).map((v) => v === "real" && !liveOk
