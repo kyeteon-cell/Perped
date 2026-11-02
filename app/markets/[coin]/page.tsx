@@ -8,17 +8,20 @@ import { MarketTape, SentimentRibbon, useMarketTraders, pick, toMarkers, type Le
 import { TradeTicket } from "@/components/TradeTicket";
 import { FeedPost } from "@/components/FeedPost";
 import { CoinMark, Icon, I, ticker } from "@/components/ui";
-import { fmtPct, fmtUsd, fmtPrice } from "@/lib/format";
-import type { MarketRow } from "@/lib/hl-info";
+import { fmtPct, fmtPrice } from "@/lib/format";
 import { useMids } from "@/lib/hooks/useMids";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
+import { MarketStats, useCoinStats, useFundingCountdown, type MarketItem } from "@/components/MarketStats";
 
 export default function MarketPage({ params }: { params: Promise<{ coin: string }> }) {
   const { coin: raw } = use(params);
   const coin = raw.toUpperCase();
   const { profile } = useSession();
-  const { data } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 60_000 });
+  const { data } = useSWR<{ markets: MarketItem[] }>("/api/markets", { refreshInterval: 60_000 });
+  const { data: cs } = useCoinStats(coin);
+  const countdown = useFundingCountdown();
+  const guides = useMemo(() => (cs ? [{ price: cs.typical.high, label: "Typical high" }, { price: cs.typical.low, label: "Typical low" }] : []), [cs]);
   const { data: feed, mutate } = useSWR<{ posts: FeedRow[] }>(`/api/posts?coin=${coin}&limit=20`, { refreshInterval: 20_000 });
   const { data: me } = useSWR<{ stats: { closedTrades: number } | null }>(profile ? `/api/profile/${profile.handle}` : null);
   const { mids } = useMids();
@@ -41,7 +44,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
     <div data-tint="blue" className="fade-in">
       <header className="flex items-center justify-between px-4 py-3">
         <Link href="/markets" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link>
-        <span className="mono when">{m ? `Funding ${fmtPct(m.funding8h, 3)} / 8h` : ""}</span>
+        <span className="mono when">Next funding {countdown}</span>
       </header>
 
       <section className="px-5">
@@ -52,15 +55,9 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
           </div>
         </div>
         <div className="mt-3"><SentimentRibbon traders={traders} followingAny={followingAny} /></div>
-        <div className="mt-3"><PriceChart coin={coin} livePx={px || undefined} markers={markers} onMarkerClick={(id) => setSelected(id)} /></div>
+        <div className="mt-3"><PriceChart coin={coin} livePx={px || undefined} markers={markers} onMarkerClick={(id) => setSelected(id)} guides={guides} /></div>
         <MarketTape coin={coin} traders={traders} lens={lens} setLens={setLens} followingAny={followingAny} mid={px} selected={selected} onSelect={setSelected} meId={profile?.id} />
-        {m && (
-          <div className="mt-3.5 grid grid-cols-3 gap-2.5">
-            <div className="stat"><small>24h volume</small><div className="v mono">{fmtUsd(m.volume24h, { compact: true })}</div></div>
-            <div className="stat"><small>Open interest</small><div className="v mono">{fmtUsd(m.openInterest, { compact: true })}</div></div>
-            <div className="stat"><small>Max leverage</small><div className="v mono">{m.maxLeverage}×</div></div>
-          </div>
-        )}
+        {m && <div className="mt-3.5"><MarketStats coin={coin} m={m} /></div>}
         {live.length > 0 && <div className="mt-3.5 flex items-center justify-between text-sm"><span className="muted">{live.length} Perped trader{live.length === 1 ? "" : "s"} live</span><span className={`font-bold ${longs >= live.length / 2 ? "green" : "red"}`}>{Math.round((longs / live.length) * 100)}% long</span></div>}
       </section>
 

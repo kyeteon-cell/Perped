@@ -5,12 +5,12 @@ import Link from "next/link";
 import useSWR from "swr";
 import { Sparkline } from "@/components/Sparkline";
 import { CoinMark, Icon, I, ticker, SkeletonList } from "@/components/ui";
-import { fmtPct, fmtUsd, fmtPrice } from "@/lib/format";
-import type { MarketRow } from "@/lib/hl-info";
+import { fmtPct, fmtUsd, fmtPrice, crowdLabel } from "@/lib/format";
+import type { MarketItem as MarketRow } from "@/components/MarketStats";
 import { useMids } from "@/lib/hooks/useMids";
 import type { FeedRow } from "@/lib/feed";
 
-type Sort = "volume" | "gainers" | "losers" | "oi" | "funding" | "hot";
+type Sort = "volume" | "gainers" | "losers" | "oi" | "oirise" | "crowded" | "hot";
 
 export default function MarketsPage() {
   const { data } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 60_000 });
@@ -36,7 +36,8 @@ export default function MarketsPage() {
     if (q) list = list.filter((m) => m.name.toLowerCase().includes(q.toLowerCase()));
     const by: Record<Sort, (a: MarketRow, b: MarketRow) => number> = {
       volume: (a, b) => b.volume24h - a.volume24h, gainers: (a, b) => b.change24h - a.change24h, losers: (a, b) => a.change24h - b.change24h,
-      oi: (a, b) => b.openInterest - a.openInterest, funding: (a, b) => Math.abs(b.funding8h) - Math.abs(a.funding8h), hot: (a, b) => (liveByCoin[b.name]?.n ?? 0) - (liveByCoin[a.name]?.n ?? 0),
+      oi: (a, b) => b.openInterest - a.openInterest, oirise: (a, b) => (b.oiChange24h ?? -Infinity) - (a.oiChange24h ?? -Infinity) || b.volume24h - a.volume24h,
+      crowded: (a, b) => Math.abs(b.funding8h - 0.01) - Math.abs(a.funding8h - 0.01), hot: (a, b) => (liveByCoin[b.name]?.n ?? 0) - (liveByCoin[a.name]?.n ?? 0),
     };
     return [...list].sort(by[sort]).slice(0, 80);
   }, [all, q, sort, liveByCoin]);
@@ -68,34 +69,34 @@ export default function MarketsPage() {
       </div>
 
       <div className="seg px-5 pt-4 pb-2.5">
-        {([["volume", "Volume"], ["gainers", "Gainers"], ["losers", "Losers"], ["oi", "Open interest"], ["funding", "Funding"], ["hot", "Hot on Perped"]] as [Sort, string][]).map(([k, l]) => (
+        {([["volume", "Volume"], ["gainers", "Gainers"], ["losers", "Losers"], ["oi", "Open interest"], ["oirise", "OI rising"], ["crowded", "Crowded"], ["hot", "Hot on Perped"]] as [Sort, string][]).map(([k, l]) => (
           <button key={k} className={`chip ${sort === k ? "on" : ""}`} onClick={() => setSort(k)}>{l}</button>
         ))}
       </div>
 
-      <div className="faint grid grid-cols-[1fr_96px_52px] gap-3 px-5 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider"><span>Market</span><span className="text-right">Price · 24h</span><span className="text-right">Fund.</span></div>
+      <div className="faint grid grid-cols-[1fr_96px_64px] gap-3 px-5 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider"><span>Market</span><span className="text-right">Price · 24h</span><span className="text-right">Fund./yr</span></div>
       {!data && <SkeletonList n={6} card={false} />}
       {rows.map((m) => {
         const px = mids[m.name] ?? m.mid, up = m.change24h >= 0, lv = liveByCoin[m.name];
         return (
           <Link key={m.name} href={`/markets/${m.name}`} className="hairline block px-5 py-3.5">
-            <div className="grid grid-cols-[1fr_56px_auto_48px] items-center gap-3">
+            <div className="grid grid-cols-[1fr_56px_auto_64px] items-center gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <CoinMark coin={m.name} />
                 <div className="min-w-0">
                   <div className="name flex items-center gap-1.5">{ticker(m.name, true)} <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.maxLeverage}×</span></div>
-                  <div className="when truncate text-xs">Vol {fmtUsd(m.volume24h, { compact: true })} · OI {fmtUsd(m.openInterest, { compact: true })}</div>
+                  <div className="when truncate text-xs">Vol {fmtUsd(m.volume24h, { compact: true })} · OI {fmtUsd(m.openInterest, { compact: true })}{m.oiChange24h != null && <span className="mono"> {fmtPct(m.oiChange24h, 1)}</span>}</div>
                 </div>
               </div>
               <Sparkline coin={m.name} up={up} />
               <div className="text-right"><div className="mono font-semibold">{fmtPrice(px)}</div><div className={`mono text-[13px] ${up ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</div></div>
-              <div className={`mono text-right text-[13px] font-semibold ${m.funding8h >= 0 ? "green" : "red"}`}>{fmtPct(m.funding8h, 3)}</div>
+              <div className="text-right"><div className="mono text-[13px] font-semibold">{(m.funding8h * 3 * 365).toFixed(1)}%</div>{crowdLabel(m.funding8h) && <div className="when text-[10.5px] leading-tight">{crowdLabel(m.funding8h)}</div>}</div>
             </div>
             {lv && <div className="when mt-2 flex gap-3.5 text-xs"><span>Perped <b style={{ color: "var(--text)" }}>{lv.n} live</b></span><span>L/S <b className="mono" style={{ color: "var(--text)" }}>{Math.round((lv.longs / lv.n) * 100)}/{100 - Math.round((lv.longs / lv.n) * 100)}</b></span></div>}
           </Link>
         );
       })}
-      <p className="muted px-5 py-4 text-xs leading-relaxed">Prices and funding from Hyperliquid, updating live. L/S is the long/short split of open Perped positions on that market.</p>
+      <p className="muted px-5 py-4 text-xs leading-relaxed">Prices and funding from Hyperliquid, updating live. Funding is shown per year (Hyperliquid pays it hourly). OI change compares open interest with 24 hours ago. L/S is the long/short split of open Perped positions on that market.</p>
     </div>
   );
 }

@@ -135,6 +135,16 @@ export default function HowItWorks() {
         </ol>
       </section>
 
+      <section id="market" className="hw mt-7">
+        <h2 className="text-lg font-bold">Reading the market</h2>
+        <p className="mt-2">Every coin page shows four tiles under the chart. All of it comes straight from Hyperliquid&rsquo;s public data, nothing is estimated. Tap a tile for the detail.</p>
+        <p className="mt-2"><b>Funding (cost to hold).</b> Perps stay close to the real price by making one side pay the other every hour. Positive funding means longs pay shorts. We show it per 8 hours, like most exchanges, and per year so you can feel the cost. Hyperliquid&rsquo;s resting rate is 0.01% per 8h (about 11% a year); well above that means longs are crowded, below zero means shorts are. The detail also compares Hyperliquid with Binance and Bybit.</p>
+        <p className="mt-2"><b>Depth (liquidity).</b> How much money is waiting to buy and sell within 2% of the price, and the split between buyers and sellers. The detail shows the spread and what a $1k, $10k or $100k market order would actually cost you in slippage, worked out from the live order book.</p>
+        <p className="mt-2"><b>Premium (price vs spot).</b> How far the perp price is from the spot index Hyperliquid tracks. A big gap usually means higher funding is coming and tends to close back toward zero.</p>
+        <p className="mt-2"><b>Typical day.</b> The median high-to-low move over the last 30 full days, and how far a move would liquidate you at different leverage. If a normal day moves further than your liquidation distance, noise alone can wipe you out. The dashed lines on the chart are the typical high and low from today&rsquo;s open.</p>
+        <p className="mt-2"><b>Open interest.</b> The total value of open positions. Rising open interest with a rising price means new money is backing the move; we record it every 10 minutes to show the 24-hour change.</p>
+      </section>
+
       <section id="fees" className="hw mt-7">
         <h2 className="text-lg font-bold">Fees</h2>
         <p className="mt-2">Perped earns a <b>builder fee</b>: a small percentage of each real fill, added to Hyperliquid&rsquo;s own trading fee and collected by Hyperliquid, which pays Perped. We never invoice you and never hold a balance of yours. We earn the same on a winning trade as a losing one.</p>

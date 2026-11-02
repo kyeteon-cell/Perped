@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
-import { createChart, ColorType, CrosshairMode, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
+import { createChart, ColorType, CrosshairMode, LineStyle, type IPriceLine, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
 import type { Candle } from "@/lib/hl-info";
 import Link from "next/link";
 import { Avatar } from "./ui";
@@ -24,7 +24,7 @@ function cssVar(name: string, fallback: string) {
  * Trading-grade chart (TradingView lightweight-charts): candles or line, volume, six intervals,
  * pinch-zoom and drag to pan, crosshair with OHLC, live last candle from the WebSocket mid.
  */
-export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin: string; livePx?: number; markers?: ChartMarker[]; onMarkerClick?: (id: string) => void }) {
+export function PriceChart({ coin, livePx, markers = [], onMarkerClick, guides = [] }: { coin: string; livePx?: number; markers?: ChartMarker[]; onMarkerClick?: (id: string) => void; guides?: { price: number; label: string }[] }) {
   const [interval, setInterval_] = useState<Interval>("15m");
   const [mode, setMode] = useState<Mode>("candles");
   const [legend, setLegend] = useState<Candle | null>(null);
@@ -102,6 +102,16 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick }: { coin
     lastRef.current = candles[candles.length - 1];
     setLegend((l) => l ?? lastRef.current);
   }, [candles, mode, up]);
+
+  // Dashed reference lines (e.g. typical day high / low), neutral colour.
+  const guideKey = guides.map((g) => `${g.label}:${g.price}`).join("|");
+  useEffect(() => {
+    const s = main.current; if (!s || !guides.length) return;
+    const col = cssVar("--muted", "#888");
+    const made: IPriceLine[] = guides.filter((g) => g.price > 0).map((g) => s.createPriceLine({ price: g.price, color: col, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: false, title: g.label }));
+    return () => { for (const l of made) { try { s.removePriceLine(l); } catch {} } };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guideKey, mode]);
 
   // Trade pins: snap each to the candle it happened in, sort by time (the library requires it).
   /** Position avatar bubbles at (entry time, entry price) in pixel space; re-run on pan/zoom. */

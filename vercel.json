@@ -26,6 +26,10 @@
     {
       "path": "/api/cron/trophies",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/markets",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
