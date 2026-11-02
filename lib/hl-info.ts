@@ -220,7 +220,8 @@ async function loadMarkets(): Promise<MarketRow[]> {
         change24h: prev > 0 ? ((mark - prev) / prev) * 100 : 0,
         volume24h: Number(c?.dayNtlVlm ?? 0),
         openInterest: Number(c?.openInterest ?? 0) * mark,
-        funding8h: Number(c?.funding ?? 0) * 100,
+        // Hyperliquid quotes funding per hour (paid hourly); show it per 8h like other venues.
+        funding8h: Number(c?.funding ?? 0) * 100 * 8,
       };
     })
     .filter((m) => !m.isDelisted && m.mark > 0);
