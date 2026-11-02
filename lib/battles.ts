@@ -129,7 +129,10 @@ export async function settleBattles(mids: Record<string, string | number>) {
         await notify(winnerId, "battle", `Bounty claimed: you broke ${lh}'s ${broke}-win streak`, `+${bonus} XP on top of the win`, `/battle/${b.faderPostId}`);
       }
       // Daily Fade: beating the day's target pays a bonus on top of the win.
-      if (winnerId === b.faderId && !winnerId.startsWith("bot:") && await isDailyTarget(b.targetPostId).catch(() => false)) {
+      // Paid once per fight, even if the fight is reopened and settles again.
+      const paidDaily = async () => ((await db.execute(sql`select 1 from xp_log where reason = 'daily_fade' and ref = ${`battle:${b.id}`} limit 1`)) as unknown as { length?: number; rows?: unknown[] });
+      const already = async () => { const r = await paidDaily(); return ((r.rows ?? (r as unknown as unknown[])) as unknown[]).length > 0; };
+      if (winnerId === b.faderId && !winnerId.startsWith("bot:") && await isDailyTarget(b.targetPostId).catch(() => false) && !(await already().catch(() => true))) {
         await awardXp(winnerId, DAILY_BONUS_XP, "daily_fade", `battle:${b.id}`).catch(() => null);
         await notify(winnerId, "battle", `Daily Fade won: +${DAILY_BONUS_XP} XP bonus`, `You beat the day's target on ${b.coin}`, `/battle/${b.faderPostId}`).catch(() => null);
       }

@@ -25,7 +25,8 @@ export function WeekRecap() {
   useEffect(() => { if (r) setWk(r.start.slice(0, 10)); }, [r]);
   const [gone, setGone] = useState(false);
   useEffect(() => { if (wk) try { setGone(localStorage.getItem("perped:recap-hide") === wk); } catch {} }, [wk]);
-  if (!profile || !show || !r || gone) return null;
+  const hiddenNow = gone || (() => { try { return !!r && localStorage.getItem("perped:recap-hide") === r.start.slice(0, 10); } catch { return false; } })();
+  if (!profile || !show || !r || hiddenNow) return null;
   const hide = () => { setGone(true); try { localStorage.setItem("perped:recap-hide", wk); } catch {} };
   const range = `${new Date(r.start).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${new Date(new Date(r.end).getTime() - 1).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
   const fights = r.fades.w + r.fades.l + r.fades.d;
