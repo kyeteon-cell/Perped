@@ -21,7 +21,7 @@ process.on("unhandledRejection", (e) => { console.log(`::error title=SMOKE CRASH
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ ...devices["iPhone 13"] });
 // Don't let the first-visit intro overlay cover every page.
-await ctx.addInitScript(() => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} });
+await ctx.addInitScript(() => { try { localStorage.setItem("perped:intro-seen", "1"); localStorage.setItem("perped:arena-intro", "1"); } catch {} });
 let failed = 0;
 // Results also go out as annotations so they show on the commit without opening the logs.
 const note = (ok, msg) => console.log(`::${ok ? "notice" : "error"} title=${ok ? "PASS" : "FAIL"}::${msg.replace(/\n/g, " ")}`);
