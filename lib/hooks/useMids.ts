@@ -48,9 +48,23 @@ function connect() {
     ws = null;
     connected = false;
     emit();
-    if (subs.size) reconnect = setTimeout(connect, Math.min(10_000, 500 * 2 ** retry++));
+    if (subs.size && !(typeof document !== "undefined" && document.visibilityState === "hidden")) reconnect = setTimeout(connect, Math.min(10_000, 500 * 2 ** retry++));
   };
   sock.onerror = () => sock.close();
+}
+
+// Save battery and data: a tab left in the background for 30s drops the socket; it reconnects (and catches up
+// in one message) the moment you come back.
+let hiddenTimer: ReturnType<typeof setTimeout> | null = null;
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      hiddenTimer ??= setTimeout(() => { hiddenTimer = null; const w = ws; ws = null; connected = false; w?.close(); }, 30_000);
+    } else {
+      if (hiddenTimer) { clearTimeout(hiddenTimer); hiddenTimer = null; }
+      if (subs.size && !ws) { if (reconnect) { clearTimeout(reconnect); reconnect = null; } retry = 0; connect(); }
+    }
+  });
 }
 
 function subscribe(cb: () => void) {

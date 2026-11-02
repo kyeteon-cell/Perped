@@ -6,6 +6,7 @@ import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { Sheet } from "./Sheet";
 import { MiniHp, type Fighter } from "./BattleArena";
+import { Roll } from "./Roll";
 import { toMarkers, useMarketTraders } from "./MarketTape";
 import type { ChartMarker } from "./PriceChart";
 import { Avatar, CoinMark, ticker } from "./ui";
@@ -103,7 +104,7 @@ export function PositionsPill() {
       <button type="button" className={`pos-pill ${unbeaten ? "gold" : ""}`} onClick={() => { setTab(rows.length ? "positions" : "arena"); setChartFor(rows[0]?.post.id ?? null); setOpen(true); }} aria-label={`${rows.length} open trades, ${fmtUsd(total, { sign: true })}`}>
         {unbeaten && <span className="pos-dot" aria-hidden />}
         <span className="pos-stack">{coins.map((c) => <CoinMark key={c} coin={c} size="xs" />)}</span>
-        {rows.length > 0 && <><span>{rows.length} open</span><b className={`mono ${total >= 0 ? "green" : "red"}`}>{fmtUsd(total, { sign: true })}</b></>}
+        {rows.length > 0 && <><span>{rows.length} open</span><b className={`mono ${total >= 0 ? "green" : "red"}`}><Roll v={total} fmt={(x) => fmtUsd(x, { sign: true })} /></b></>}
         {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>{unbeaten ? "Unbeaten" : "Fades"} <b className="mono">{wins}–{losses}</b></span>}
         <span className="pos-go" aria-hidden>›</span>
       </button>
@@ -156,7 +157,7 @@ export function PositionsPill() {
               </> : <p className="pos-sub" style={{ padding: "20px 0", textAlign: "center" }}>No live fades. Find a trade to fade on the home feed.</p>
             ) : <>
             <div className="pos-tot">
-              <div><small>Open P&amp;L</small><b className={`mono ${total >= 0 ? "green" : "red"}`}>{fmtUsd(total, { sign: true })}</b></div>
+              <div><small>Open P&amp;L</small><b className={`mono ${total >= 0 ? "green" : "red"}`}><Roll v={total} fmt={(x) => fmtUsd(x, { sign: true })} /></b></div>
               <div><small>In margin</small><b className="mono">{fmtUsd(margin)}</b></div>
               {profile.isDemo && <div><small>Balance</small><b className="mono">{fmtUsd(Number(profile.demoBalance ?? 0))}</b></div>}
             </div>
@@ -165,7 +166,7 @@ export function PositionsPill() {
               const side = post.side as "long" | "short", lev = post.leverage ?? 1;
               const liq = demoLiqPx(side, Number(post.entryPx), lev);
               return (
-                <div key={post.id} className="pos-card">
+                <div key={post.id} className={`pos-card ${post.paper && lev > 1 && Math.abs(px - liq) / Math.abs(Number(post.entryPx) - liq) < 0.3 ? "liq-near" : ""}`}>
                   <div className="pos-r1">
                     <CoinMark coin={post.coin!} size="sm" />
                     <div className="pos-mid">

@@ -122,7 +122,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
   }
 
   return (
-    <div ref={box} role="link" tabIndex={0} className="tchart" aria-label={`${coin} chart`}
+    <div ref={box} role="link" tabIndex={0} className={`tchart ${liq && Math.abs(live - liq) / Math.abs(entry - liq) < 0.3 ? "liq-near" : ""}`} aria-label={`${coin} chart`}
       onClick={(e) => { e.stopPropagation(); router.push(`/markets/${coin}`); }}
       onKeyDown={(e) => { if (e.key === "Enter") router.push(`/markets/${coin}`); }}>
       <div className="tchart-plot v2">

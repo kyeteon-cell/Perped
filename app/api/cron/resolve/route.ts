@@ -11,6 +11,7 @@ import { awardXp } from "@/lib/xp";
 import { rebuildRivalries, recordFight } from "@/lib/rivalries";
 import { lossPenalty, rankFor, XP } from "@/lib/rank";
 import { demoLiqPx } from "@/lib/format";
+import { lastWeek, weekRecap } from "@/lib/recap";
 
 /**
  * GET /api/cron/resolve → every 5 min: resolve calls (hit / missed / invalidated), close polls, settle duels,
@@ -133,6 +134,7 @@ export async function GET(req: Request) {
   const bloodbath = await alertBloodbath(mids).catch(() => 0);
   const fightNight = await fightNightKickoff().catch(() => 0);
   const summaries = await dailyFadeSummary(now).catch(() => 0);
+  await weeklyRecaps(now).catch(() => 0);
 
   return Response.json({ hit, missed, polls, duelsSettled, demoClosed, realSynced, reopened, battles, bloodbath, fightNight, summaries, at: now.toISOString() });
 }
@@ -162,4 +164,31 @@ async function dailyFadeSummary(now: Date) {
     await notify(x.uid, "fade_summary", `Your ${x.n} live fade${x.n === 1 ? "" : "s"}: ${x.w} winning, ${behind} behind`, behind ? "Check in before someone banks it." : "Bank one or let them run.", "/arena").catch(() => null);
   }
   return rows.length;
+}
+
+/**
+ * Monday 02:00 UTC (9am Thailand): everyone who played last week gets a one-line recap that opens their recap
+ * card. Claimed per week in app_settings so overlapping runs can't send it twice; capped per run.
+ */
+async function weeklyRecaps(now: Date) {
+  if (now.getUTCDay() !== 1 || now.getUTCHours() !== 2) return 0;
+  const { start, end } = lastWeek(now);
+  const wk = start.toISOString().slice(0, 10);
+  const claimed = await db.execute(sql`insert into app_settings (key, value) values ('weekly_recap', ${JSON.stringify({ wk })}::jsonb)
+    on conflict (key) do update set value = excluded.value, updated_at = now() where app_settings.value->>'wk' is distinct from ${wk} returning key`);
+  if (!((claimed as unknown as { rows?: unknown[] }).rows ?? (claimed as unknown as unknown[])).length) return 0;
+  const r = await db.execute(sql`select distinct uid from (
+      select user_id as uid from posts where kind = 'trade' and closed_at >= ${start.toISOString()}::timestamptz and closed_at < ${end.toISOString()}::timestamptz
+      union select fader_id from battles where settled_at >= ${start.toISOString()}::timestamptz and settled_at < ${end.toISOString()}::timestamptz
+      union select target_id from battles where settled_at >= ${start.toISOString()}::timestamptz and settled_at < ${end.toISOString()}::timestamptz
+    ) x where uid not like 'bot:%' limit 400`);
+  const ids = (((r as unknown as { rows?: unknown[] }).rows ?? (r as unknown as unknown[])) as { uid: string }[]).map((x) => x.uid);
+  for (const uid of ids) {
+    const w = await weekRecap(uid, start, end).catch(() => null);
+    if (!w) continue;
+    const fades = w.fades.w + w.fades.l + w.fades.d ? `${w.fades.w}–${w.fades.l} in fades` : `${w.trades.n} trade${w.trades.n === 1 ? "" : "s"}`;
+    const pnl = `${w.trades.pnl >= 0 ? "+" : "−"}$${Math.abs(w.trades.pnl).toFixed(2)}`;
+    await notify(uid, "recap", `Your week: ${fades}, ${pnl}`, `${w.xp >= 0 ? "+" : ""}${w.xp} XP${w.best ? ` · best trade ${w.best.coin} ${w.best.roi >= 0 ? "+" : ""}${w.best.roi.toFixed(1)}%` : ""} · tap for your recap card`, "/?recap=1").catch(() => null);
+  }
+  return ids.length;
 }

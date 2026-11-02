@@ -4,7 +4,7 @@ import { small } from "@/lib/img";
 import { PushPrompt } from "@/components/PushPrompt";
 import { FirstBattle } from "@/components/FirstBattle";
 import { FightNightHome } from "@/components/FightNightHome";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { FeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
@@ -16,6 +16,9 @@ import { QuickPost } from "@/components/QuickPost";
 import { FollowButton } from "@/components/FollowButton";
 import { FeedFilters, EMPTY_FILTER, activeCount, filterQuery, filterSummary, type FeedFilter } from "@/components/FeedFilters";
 import { Banked } from "@/components/Banked";
+import { DailyFade } from "@/components/DailyFade";
+import { WeekRecap } from "@/components/WeekRecap";
+import { PullRefresh } from "@/components/PullRefresh";
 import dynamic from "next/dynamic";
 import { Avatar, Icon, I, SkeletonList } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
@@ -65,12 +68,36 @@ export default function HomePage() {
   const allPosts = data?.posts ?? [];
   const shown = realness === "real" && !liveOk ? "all" : realness;
   const posts = shown === "all" ? allPosts : allPosts.filter((p) => p.post.kind !== "trade" || (shown === "demo") === isDemoPost(p));
+  // New posts arriving on a refresh slide in; if you're scrolled down, a "N new" chip takes you to them.
+  const seen = useRef<Set<number> | null>(null);
+  const [fresh, setFresh] = useState<Set<number>>(new Set());
+  const [newCount, setNewCount] = useState(0);
+  const idSig = posts.map((p) => p.post.id).join(",");
+  useEffect(() => { seen.current = null; setNewCount(0); }, [key]);
+  useEffect(() => {
+    const ids = posts.map((p) => p.post.id);
+    if (!ids.length) return;
+    if (!seen.current) { seen.current = new Set(ids); return; }
+    const n = ids.filter((id) => !seen.current!.has(id));
+    if (!n.length) return;
+    n.forEach((id) => seen.current!.add(id));
+    setFresh(new Set(n));
+    if (window.scrollY > 400) setNewCount((c) => c + n.length);
+  }, [idSig]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!newCount) return;
+    const f = () => { if (window.scrollY < 200) setNewCount(0); };
+    window.addEventListener("scroll", f, { passive: true });
+    return () => window.removeEventListener("scroll", f);
+  }, [newCount]);
   const { data: board } = useSWR<{ rows: { handle: string; pnl: number; winRate: string; avatarUrl?: string | null }[] }>("/api/leaderboard?period=7d");
   const suggested = (board?.rows ?? []).filter((r) => r.handle !== profile?.handle).slice(0, 5);
 
   return (
     <div data-tint="brand" className="fade-in">
       <WelcomeOnce />
+      <PullRefresh onRefresh={() => mutate()} />
+      {newCount > 0 && <button type="button" className="feed-newchip" onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setNewCount(0); }}>↑ {newCount} new</button>}
       <header className="home-banner">
         <img src={small("/api/share-bg/banner-mercury", 1080)} alt="" className="home-banner-img" decoding="async" fetchPriority="high" />
         <div className="home-banner-shade" />
@@ -97,7 +124,9 @@ export default function HomePage() {
       </div>
 
       {tab === "foryou" && <Hero onDeposit={() => setDeposit(true)} />}
+      {tab === "foryou" && <WeekRecap />}
       {tab === "foryou" && <FightNightHome />}
+      {tab === "foryou" && <DailyFade />}
       {tab === "foryou" && <FirstBattle rows={allPosts} />}
       {tab === "foryou" && <PushPrompt />}
       {tab === "foryou" && <QuickCall mids={mids} />}
@@ -126,7 +155,7 @@ export default function HomePage() {
       {!isLoading && posts.length === 0 && tab === "following" && suggested.length > 0 && <Suggested rows={suggested} />}
 
       {groupFeed(posts).map((g, i) => (
-        <div key={g.kind === "strip" ? `strip-${g.items[0].post.id}` : g.item.post.id}>
+        <div key={g.kind === "strip" ? `strip-${g.items[0].post.id}` : g.item.post.id} className={g.kind === "one" && fresh.has(g.item.post.id) ? "feed-new" : undefined}>
           {g.kind === "strip" ? <RankStrip items={g.items} /> : <FeedPost item={g.item} mid={liveMid(g.item)} onChanged={mutate} />}
           {i === 4 && suggested.length > 0 && <Suggested rows={suggested} />}
         </div>

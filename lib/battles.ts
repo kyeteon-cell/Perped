@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { DAILY_BONUS_XP, isDailyTarget } from "./daily";
 import { checkSoon } from "./achievements";
 import { db, schema } from "./db";
 import { notify, systemPost } from "./feed";
@@ -126,6 +127,11 @@ export async function settleBattles(mids: Record<string, string | number>) {
         const wh = winnerId === b.faderId ? fu?.handle : tu?.handle, lh = winnerId === b.faderId ? tu?.handle : fu?.handle;
         await systemPost("bounty", `${wh} broke ${lh}'s ${broke}-win streak on ${b.coin} and claimed the bounty: +${bonus} XP.`, { handle: wh, loser: lh, streak: broke, bonus, battleId: b.id, faderPostId: b.faderPostId }, b.coin);
         await notify(winnerId, "battle", `Bounty claimed: you broke ${lh}'s ${broke}-win streak`, `+${bonus} XP on top of the win`, `/battle/${b.faderPostId}`);
+      }
+      // Daily Fade: beating the day's target pays a bonus on top of the win.
+      if (winnerId === b.faderId && !winnerId.startsWith("bot:") && await isDailyTarget(b.targetPostId).catch(() => false)) {
+        await awardXp(winnerId, DAILY_BONUS_XP, "daily_fade", `battle:${b.id}`).catch(() => null);
+        await notify(winnerId, "battle", `Daily Fade won: +${DAILY_BONUS_XP} XP bonus`, `You beat the day's target on ${b.coin}`, `/battle/${b.faderPostId}`).catch(() => null);
       }
       await db.update(schema.stats).set({ battlesWon: sql`${schema.stats.battlesWon} + 1` }).where(eq(schema.stats.userId, winnerId));
       await db.update(schema.stats).set({ battlesLost: sql`${schema.stats.battlesLost} + 1` }).where(eq(schema.stats.userId, loserId));

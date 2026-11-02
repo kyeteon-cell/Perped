@@ -396,7 +396,7 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
 export function MiniHp({ f, live, right, big }: { f: Fighter; live: number; right?: boolean; big?: boolean }) {
   const h = healthOf(f, live), low = h < 0.35;
   return (
-    <span className={`mhp ${big ? "big" : ""} ${right ? "r" : ""} ${low ? "low" : ""}`} title={`${Math.round(h * 100)}% health`}>
+    <span className={`mhp ${big ? "big" : ""} ${right ? "r" : ""} ${low ? "low" : ""} ${h <= 0.001 ? "cracked" : ""}`} title={`${Math.round(h * 100)}% health`}>
       <i className={f.side} style={{ width: `${Math.max(4, h * 100)}%` }} />
     </span>
   );
