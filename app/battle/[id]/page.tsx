@@ -3,9 +3,10 @@
 import { small } from "@/lib/img";
 import dynamic from "next/dynamic";
 import { Glyph } from "@/components/Glyph";
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
+import { LinkNudge } from "@/components/LinkNudge";
 import { useMids } from "@/lib/hooks/useMids";
 import { useSession } from "@/lib/hooks/useSession";
 import { ManageTrade } from "@/components/ManageTrade";
@@ -57,6 +58,13 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const [pinBusy, setPinBusy] = useState(false);
   const { mids } = useMids();
   const { profile, authedFetch } = useSession();
+  // Won it? Open the share card once, straight away: every win is a free advert.
+  const wonId = data?.battle?.status === "settled" && profile && data.battle.winnerId === profile.id ? data.battle.id : null;
+  useEffect(() => {
+    if (!wonId) return;
+    try { const k = `perped:won-shared:${wonId}`; if (localStorage.getItem(k)) return; localStorage.setItem(k, "1"); } catch { return; }
+    setSharing(true);
+  }, [wonId]);
   if (!data) return error ? <LoadFail retry={() => mutate()} /> : <SkeletonList n={2} />;
   if (data.error) return <LoadFail gone what="fade" />;
   const { fade, target, fader, targetUser: tu, history, record, camps, battle, nemesis } = data;
@@ -109,6 +117,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   return (
     <div className="fade-in pb-8" data-tint="violet">
       <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">{nemesis ? "Vendetta" : "Fade"}</div><button className="iconbtn" aria-label="Share this fade" onClick={() => setSharing(true)}><Icon d={I.share} /></button></header>
+      {profile && (profile.id === fader.user.id || profile.id === tu.user.id) && <LinkNudge />}
       {sharing && (() => {
         const fBank = fade.status === "closed", bank = fBank ? a.roi : b.roi, now = fBank ? b.roi : a.roi;
         const banker = fBank ? fader.user.handle : tu.user.handle, chaser = fBank ? tu.user.handle : fader.user.handle;

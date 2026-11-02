@@ -69,7 +69,10 @@ export async function settleBattles(mids: Record<string, string | number>) {
     const timedOut = !bothClosed && mid > 0 && stale;
     void firstClose;
     const liquidated = fr.liq || tr.liq;
-    if (!bothClosed && !timedOut && !liquidated) continue;
+    if (!bothClosed && !timedOut && !liquidated) {
+      await leadAlert(b, fr.roi, tr.roi, fMid > 0 && tMid > 0).catch(() => null);
+      continue;
+    }
     const reason = liquidated ? "liquidation" : bothClosed ? "both_closed" : "timeout";
 
     const gap = fr.roi - tr.roi;
@@ -219,4 +222,29 @@ export async function reopenPrematureBattles(limit = 100) {
     n++;
   }
   return n;
+}
+
+
+/**
+ * Lead changes in a live fade: "You're winning against @x" / "@x just overtook you". Only on a real flip
+ * (a clear 1-point ROI gap), at most once every 20 minutes per fade, and never to bots.
+ */
+async function leadAlert(b: typeof schema.battles.$inferSelect, fRoi: number, tRoi: number, priced: boolean) {
+  if (!priced || Math.abs(fRoi - tRoi) < 1) return;
+  const leader = fRoi > tRoi ? b.faderId : b.targetId;
+  if (leader === b.leader) return;
+  const first = b.leader == null;
+  const recent = b.leaderAt && Date.now() - new Date(b.leaderAt).getTime() < 20 * 60_000;
+  // Record the new leader every time; only alert on a genuine change of lead that isn't flapping.
+  const [won] = await db.update(schema.battles).set({ leader, leaderAt: recent ? b.leaderAt : new Date() })
+    .where(and(eq(schema.battles.id, b.id), b.leader == null ? isNull(schema.battles.leader) : eq(schema.battles.leader, b.leader))).returning({ id: schema.battles.id });
+  if (!won || first || recent) return;
+  const trailer = leader === b.faderId ? b.targetId : b.faderId;
+  const [lu, tu] = await Promise.all([
+    db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, leader)).limit(1).then((r) => r[0]),
+    db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, trailer)).limit(1).then((r) => r[0]),
+  ]);
+  const href = `/battle/${b.faderPostId}`;
+  if (!leader.startsWith("bot:")) await notify(leader, "lead", `You're now winning against @${tu?.handle ?? "them"}`, `${b.coin} fade · you took the lead`, href);
+  if (!trailer.startsWith("bot:")) await notify(trailer, "lead", `@${lu?.handle ?? "They"} just overtook you`, `${b.coin} fade · still time to turn it around`, href);
 }

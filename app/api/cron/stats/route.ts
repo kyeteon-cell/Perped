@@ -15,12 +15,21 @@ export async function GET(req: Request) {
   await ensureSchema();
   const secret = process.env.CRON_SECRET;
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const users = await db.select({ id: schema.users.id, address: schema.users.address, xHandle: schema.users.xHandle, isDemo: schema.users.isDemo }).from(schema.users);
+  const started = Date.now();
+  // Rank first, so the top-fee tier stays right even if the per-user refresh below runs out of time.
+  await rankReal();
+  // Only people who've done something, stalest first: each run picks up where the last one stopped.
+  const users = (await db.execute(sql`
+    select u.id, u.address, u.x_handle as "xHandle", u.is_demo as "isDemo" from users u left join stats s on s.user_id = u.id
+    where exists (select 1 from posts p where p.user_id = u.id) or exists (select 1 from votes v where v.user_id = u.id)
+    order by s.updated_at asc nulls first`) as unknown as { rows?: unknown[] }).rows as { id: string; address: string; xHandle: string | null; isDemo: boolean }[]
+    ?? ([] as { id: string; address: string; xHandle: string | null; isDemo: boolean }[]);
   const now = Date.now();
   const DAY = 86_400_000;
   let updated = 0;
 
   for (const u of users) {
+    if (Date.now() - started > 45_000) break; // stay inside the 60s limit; the rest go first next run
     try {
       let all, d30, d7, liquidations = 0;
       if (u.isDemo) {
@@ -79,7 +88,12 @@ export async function GET(req: Request) {
       /* skip this user this run */
     }
   }
-  // Rank real traders on 30-day PnL (bots and demo accounts excluded); drives the top fee tier.
+  await rankReal();
+  return Response.json({ users: users.length, updated, ms: Date.now() - started });
+}
+
+/** Rank real traders on 30-day PnL (bots and demo accounts excluded); drives the top fee tier. */
+async function rankReal() {
   await db.execute(sql`
     with ranked as (
       select s.user_id, row_number() over (order by s.realized_pnl_30d desc, s.closed_trades desc) as rk
@@ -89,5 +103,4 @@ export async function GET(req: Request) {
     update stats set rank_30d = ranked.rk from ranked where stats.user_id = ranked.user_id
   `);
   await db.execute(sql`update stats set rank_30d = null where user_id in (select id from users where is_demo or is_bot) or closed_trades = 0`);
-  return Response.json({ users: users.length, updated });
 }

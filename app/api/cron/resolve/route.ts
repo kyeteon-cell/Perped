@@ -132,9 +132,34 @@ export async function GET(req: Request) {
   await backfillBattleStamps().catch(() => 0);
   const bloodbath = await alertBloodbath(mids).catch(() => 0);
   const fightNight = await fightNightKickoff().catch(() => 0);
+  const summaries = await dailyFadeSummary(now).catch(() => 0);
 
-  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, realSynced, reopened, battles, bloodbath, fightNight, at: now.toISOString() });
+  return Response.json({ hit, missed, polls, duelsSettled, demoClosed, realSynced, reopened, battles, bloodbath, fightNight, summaries, at: now.toISOString() });
 }
 
 // keep isNull imported for future invalidation-by-candle checks
 void isNull;
+
+
+/**
+ * Once a day (12:00 UTC, 7pm in Thailand): everyone with live fades gets one line on how they're doing.
+ * Claimed per day in app_settings so overlapping runs can't send it twice.
+ */
+async function dailyFadeSummary(now: Date) {
+  if (now.getUTCHours() !== 12) return 0;
+  const day = now.toISOString().slice(0, 10);
+  const claimed = await db.execute(sql`insert into app_settings (key, value) values ('fade_summary', ${JSON.stringify({ day })}::jsonb)
+    on conflict (key) do update set value = excluded.value, updated_at = now() where app_settings.value->>'day' is distinct from ${day} returning key`);
+  if (!((claimed as unknown as { rows?: unknown[] }).rows ?? (claimed as unknown as unknown[])).length) return 0;
+  const r = await db.execute(sql`
+    select uid, count(*)::int as n, count(*) filter (where leader = uid)::int as w from (
+      select fader_id as uid, leader from battles where status = 'open'
+      union all select target_id, leader from battles where status = 'open'
+    ) x where uid not like 'bot:%' group by uid`);
+  const rows = ((r as unknown as { rows?: unknown[] }).rows ?? (r as unknown as unknown[])) as { uid: string; n: number; w: number }[];
+  for (const x of rows) {
+    const behind = x.n - x.w;
+    await notify(x.uid, "fade_summary", `Your ${x.n} live fade${x.n === 1 ? "" : "s"}: ${x.w} winning, ${behind} behind`, behind ? "Check in before someone banks it." : "Bank one or let them run.", "/arena").catch(() => null);
+  }
+  return rows.length;
+}

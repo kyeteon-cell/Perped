@@ -34,10 +34,22 @@ export async function GET(req: Request) {
   const start = Date.parse(`${day}T00:00:00Z`);
   const end = start + 86_400_000;
 
+  // Resumable: runs hourly; each run carries on from where the last one stopped for this day, and stops
+  // before the 60s limit. Credits are idempotent per (trader, day, earner, kind), so a re-run is harmless.
+  const started = Date.now();
+  const curKey = "referrals_cursor";
+  const [cur] = await db.select().from(schema.appSettings).where(sql`${schema.appSettings.key} = ${curKey}`).limit(1);
+  const cv = (cur?.value ?? {}) as { day?: string; after?: string; done?: boolean };
+  if (!dayParam && cv.day === day && cv.done) return Response.json({ ok: true, day, done: true });
+  const after = !dayParam && cv.day === day ? cv.after ?? "" : "";
   const users = await db
     .select({ id: schema.users.id, address: schema.users.address, referredBy: schema.users.referredBy })
     .from(schema.users)
-    .where(sql`${schema.users.isDemo} = false and ${schema.users.isBot} = false`);
+    .where(sql`${schema.users.isDemo} = false and ${schema.users.isBot} = false and ${schema.users.id} > ${after}`)
+    .orderBy(schema.users.id);
+  const saveCursor = (v: { day: string; after?: string; done?: boolean }) =>
+    db.insert(schema.appSettings).values({ key: curKey, value: v }).onConflictDoUpdate({ target: schema.appSettings.key, set: { value: v, updatedAt: new Date() } });
+  let last = after, finished = true;
   type Earner = { id: string; address: string; referredBy: string | null; founderSeat: number | null; founderStatus: string | null; founderSince: Date | null; xp: number };
   const earnerCache = new Map<string, Earner | null>();
   const earner = async (id: string) => {
@@ -57,6 +69,8 @@ export async function GET(req: Request) {
 
   let traders = 0, totalFeeUsd = 0, totalShareUsd = 0;
   for (const u of users) {
+    if (Date.now() - started > 45_000) { finished = false; break; }
+    last = u.id;
     try {
       const fills = (await getUserFillsByTime(u.address, start, end)).filter((f) => Number(f.builderFee ?? 0) > 0);
       // Their copied/faded positions that were open during the day, with the source post's author.
@@ -108,5 +122,6 @@ export async function GET(req: Request) {
       /* skip this trader this run */
     }
   }
-  return Response.json({ ok: true, day, traders: users.length, credited: traders, builderFeeUsd: Number(totalFeeUsd.toFixed(4)), paidOutUsd: Number(totalShareUsd.toFixed(4)) });
+  if (!dayParam) await saveCursor(finished ? { day, done: true } : { day, after: last });
+  return Response.json({ ok: true, day, finished, traders: users.length, credited: traders, builderFeeUsd: Number(totalFeeUsd.toFixed(4)), paidOutUsd: Number(totalShareUsd.toFixed(4)) });
 }

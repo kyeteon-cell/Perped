@@ -17,7 +17,7 @@
     },
     {
       "path": "/api/cron/referrals",
-      "schedule": "40 0 * * *"
+      "schedule": "40 * * * *"
     },
     {
       "path": "/api/cron/programme",
