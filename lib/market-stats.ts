@@ -66,7 +66,7 @@ type Predicted = [string, [string, { fundingRate: string; nextFundingTime?: numb
 
 export type BookStats = {
   mid: number; spread: number; spreadPct: number;
-  depth: { pct: number; bids: number; asks: number; full: boolean; exact: boolean }[];
+  depth: { pct: number; bids: number; asks: number; full: boolean; exact: boolean; sig: number | null }[];
   slip: { usd: number; buy: number | null; sell: number | null }[];
   /** The book that reaches ±2%, for the depth picture. */
   levels: Book;
@@ -79,6 +79,7 @@ export async function bookStats(coin: string): Promise<BookStats> {
   const bb = fine.bids[0]?.px ?? 0, ba = fine.asks[0]?.px ?? 0;
   const mid = bb && ba ? (bb + ba) / 2 : bb || ba;
   const ladders: Book[] = [fine];
+  const sigOf = new Map<Book, number | null>([[fine, null]]);
   const sigs = [4, 3, 2];
   let next = 0;
   const reach = async (ok: (b: Book) => boolean) => {
@@ -86,7 +87,7 @@ export async function bookStats(coin: string): Promise<BookStats> {
     while (next < sigs.length) {
       const b = await book(coin, sigs[next++]).catch(() => null);
       if (!b) continue;
-      ladders.push(b);
+      ladders.push(b); sigOf.set(b, sigs[next - 1]);
       if (ok(b)) return b;
     }
     return ladders[ladders.length - 1];
@@ -95,7 +96,7 @@ export async function bookStats(coin: string): Promise<BookStats> {
   let wide = fine;
   for (const pct of [0.5, 2]) {
     const b = await reach((x) => depthWithin(x, mid, pct).full);
-    depth.push({ pct, ...depthWithin(b, mid, pct), exact: b === fine });
+    depth.push({ pct, ...depthWithin(b, mid, pct), exact: b === fine, sig: sigOf.get(b) ?? null });
     if (pct === 2) wide = b;
   }
   const slip = [];
