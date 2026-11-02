@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { mutate as globalMutate } from "swr";
 import { Sheet } from "./Sheet";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
@@ -53,6 +54,8 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
     const j = await r.json();
     if (!r.ok) return fail(j.error ?? "Couldn't record the close");
     setBusy(null); onChanged?.();
+    // Everything that shows your open trades or live fades refreshes now, not on its next poll.
+    void globalMutate((k) => typeof k === "string" && (k === "/api/me/fades" || (k.startsWith("/api/posts?") && k.includes("status=open"))));
     if (fraction >= 1) onClose(); else setDone(`Closed ${Math.round(fraction * 100)}% at ${fmtPrice(exitPx)}`);
   };
 
