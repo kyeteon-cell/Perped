@@ -208,7 +208,7 @@ function DepthSheet({ coin, bk, beginner }: { coin: string; bk?: BookStats; begi
       </div>
       <div className="mk-axis mono"><span>{fmtPrice(lo)}</span><span>{fmtPrice(bk.mid)}</span><span>{fmtPrice(hi)}</span></div>
       <div className="mk-rowl"><span>Spread</span><b className="mono">{fmtPrice(bk.spread)} · {pct(bk.spreadPct)}</b></div>
-      <div className="mk-rowl"><span>Within 0.5%</span><b className="mono">{fmtUsd(d05.bids, { compact: true })} bids · {fmtUsd(d05.asks, { compact: true })} asks</b></div>
+      <div className="mk-rowl"><span>Within 0.5%</span><b className="mono">{d05.exact ? "" : "≈ "}{fmtUsd(d05.bids, { compact: true })} bids · {fmtUsd(d05.asks, { compact: true })} asks</b></div>
       <div className="mk-rowl"><span>Within 2%</span><b className="mono">{d2.exact ? "" : "≈ "}{fmtUsd(d2.bids, { compact: true })} bids · {fmtUsd(d2.asks, { compact: true })} asks</b></div>
       <div className="mk-eyebrow">Cost of a market order (vs mid)</div>
       <div className="mk-slip">{bk.slip.map((x) => <div key={x.usd}><small>{fmtUsd(x.usd, { compact: true })}</small><b className="mono">{s(x.buy)}</b><span className="muted mono">sell {s(x.sell)}</span></div>)}</div>
