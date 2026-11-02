@@ -1731,6 +1731,6 @@ a.inv-erow { color: inherit; }
 .ubadge-seat { font-size: 12px; font-weight: 800; color: #b07d12; }
 .av-wrap { position: relative; display: inline-block; flex: none; line-height: 0; }
 .av-wrap .av { display: inline-grid; }
-.av-rank { position: absolute; right: -3px; bottom: -3px; border-radius: 50%; box-shadow: 0 0 0 2px var(--surface); background: var(--surface); }
+.av-rank { position: absolute; right: -3px; bottom: -3px; border-radius: 50%; background: #111; box-shadow: 0 0 0 1.5px #d9dee5, 0 0 0 3px var(--surface); }
 .demo-word { color: #b07d12; font-weight: 700; }
 [data-theme="dark"] .demo-word, [data-theme="dark"] .ubadge-seat { color: #e2b04a; }
