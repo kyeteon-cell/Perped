@@ -6,6 +6,7 @@ import { Nav } from "@/components/Nav";
 import { Ticker } from "@/components/Ticker";
 import { CompBar } from "@/components/CompBar";
 import { PositionsPill } from "@/components/PositionsPill";
+import { Moments } from "@/components/Moments";
 import { APP_NAME, APP_URL } from "@/lib/config";
 
 const sans = Nunito({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </div>
           <PositionsPill />
+          <Moments />
           <Nav />
         </Providers>
       </body>

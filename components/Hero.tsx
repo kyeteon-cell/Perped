@@ -1,5 +1,6 @@
 "use client";
 
+import { Roll } from "./Roll";
 import { small } from "@/lib/img";
 import { Glyph } from "./Glyph";
 import Link from "next/link";
@@ -40,12 +41,12 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
   return (
     <div className="hero photo" style={{ backgroundImage: `url(${small("/api/share-bg/hero-chrome", 1080)})` }}>
       <div className="k">{greet}, {profile.handle}{profile.isDemo ? " · demo" : ""}</div>
-      <div className="big mono">{fmtUsd(bal)}</div>
+      <div className="big mono"><Roll v={bal} fmt={(x) => fmtUsd(x)} /></div>
       {profile.isDemo && demo.openCount > 0 && (
         <div className="mt-1 flex flex-wrap gap-x-4 text-[12px] opacity-90">
           <span>Available <b className="mono">{fmtUsd(demo.cash)}</b></span>
           <span>In trades <b className="mono">{fmtUsd(demo.margin)}</b></span>
-          <span>Unrealised <b className={`mono ${demo.upnl >= 0 ? "" : ""}`}>{fmtUsd(demo.upnl, { sign: true })}</b></span>
+          <span>Unrealised <b className="mono"><Roll v={demo.upnl} fmt={(x) => fmtUsd(x, { sign: true })} /></b></span>
         </div>
       )}
       <div className="mt-2.5 flex gap-4 text-[13px] opacity-95">

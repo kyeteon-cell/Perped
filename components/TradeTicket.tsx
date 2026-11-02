@@ -129,6 +129,8 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
 
   /** Where to go once the trade is posted: the battle for a quick fade, otherwise close the sheet / go home. */
   const finish = async (r: Response) => {
+    // The "order filled" stamp plays over whatever screen comes next (it lives in the layout, so it survives the move).
+    try { window.dispatchEvent(new CustomEvent("perped:stamp", { detail: { side, lev, coin, fade: isFade ? seed.handle ?? null : null } })); } catch {}
     // Balance and open positions update straight away (not on the next 30s poll).
     void Promise.resolve(refreshMe?.()).catch(() => null);
     swrMutate((k) => typeof k === "string" && (k.startsWith("/api/posts") || k.startsWith("/api/profile") || k.startsWith("/api/me")));
