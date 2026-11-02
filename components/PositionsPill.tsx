@@ -10,7 +10,7 @@ import { Sparkline } from "./Sparkline";
 import { CoinMark, ticker } from "./ui";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
-import { demoLiqPx, fmtPct, fmtPrice, fmtUsd, pnlForPosition } from "@/lib/format";
+import { demoLiqPx, fmtPct, fmtPrice, fmtUsd, pnlForPosition, tradeRoiPct } from "@/lib/format";
 import type { FeedRow } from "@/lib/feed";
 
 const ManageTrade = dynamic(() => import("./ManageTrade").then((m) => m.ManageTrade), { ssr: false });
@@ -25,13 +25,25 @@ export function PositionsPill() {
   const { mids } = useMids();
   const key = profile ? `/api/posts?handle=${profile.handle}&kind=trade&status=open&limit=50` : null;
   const { data, mutate } = useSWR<{ posts: FeedRow[] }>(key, { refreshInterval: 30_000 });
+  type Leg = { id: number; side: string; entryPx: string; exitPx: string | null; size: string; leverage: number | null; status: string; realizedPnl: string | null; meta: unknown; coin: string };
+  type Fade = { battleId: number; iFade: boolean; opp: string; oppAvatar: string | null; fader: Leg; target: Leg };
+  const { data: fd, mutate: mutateF } = useSWR<{ fades: Fade[] }>(profile ? "/api/me/fades" : null, async (u: string) => (await authedFetch(u)).json(), { refreshInterval: 30_000 });
   const [open, setOpen] = useState(false);
   const [manage, setManage] = useState<FeedRow["post"] | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const rows = (data?.posts ?? []).filter((r) => r.post.kind === "trade" && r.post.status === "open");
-  if (!profile || !rows.length || HIDE.some((r) => r.test(path))) return null;
+  // Live fades, scored at live prices (banked legs use their banked result): ahead or behind, by how much.
+  const fades = (fd?.fades ?? []).map((f) => {
+    const mine = f.iFade ? f.fader : f.target, theirs = f.iFade ? f.target : f.fader;
+    const roi = (l: Leg) => tradeRoiPct(l, Number(mids[l.coin] ?? 0) || undefined);
+    const gap = roi(mine) - roi(theirs);
+    return { ...f, myPostId: mine.id, gap, ahead: gap > 0 };
+  });
+  const wins = fades.filter((f) => f.ahead).length, losses = fades.length - wins;
+  const fadeOf = (postId: number) => fades.find((f) => f.myPostId === postId);
+  if (!profile || (!rows.length && !fades.length) || HIDE.some((r) => r.test(path))) return null;
 
   const live = rows.map(({ post }) => {
     const entry = Number(post.entryPx), size = Number(post.size), lev = post.leverage ?? 1;
@@ -41,7 +53,7 @@ export function PositionsPill() {
   });
   const total = live.reduce((a, x) => a + x.pnl, 0), margin = live.reduce((a, x) => a + x.margin, 0);
   const coins = [...new Set(live.map((x) => x.post.coin!))].slice(0, 3);
-  const refresh = () => { mutate(); void Promise.resolve(refreshMe?.()).catch(() => null); };
+  const refresh = () => { mutate(); mutateF(); void Promise.resolve(refreshMe?.()).catch(() => null); };
 
   // Demo trades close right here at the live price; real ones go through Manage (they need your wallet).
   const quickClose = async (id: number, fraction: number) => {
@@ -59,6 +71,7 @@ export function PositionsPill() {
         <span className="pos-stack">{coins.map((c) => <CoinMark key={c} coin={c} size="xs" />)}</span>
         <span>{rows.length} open</span>
         <b className={`mono ${total >= 0 ? "green" : "red"}`}>{fmtUsd(total, { sign: true })}</b>
+        {fades.length > 0 && <span className="pos-wl">Fades <b className="mono">{wins}–{losses}</b></span>}
         <span className="pos-go" aria-hidden>›</span>
       </button>
 
@@ -71,6 +84,7 @@ export function PositionsPill() {
               <div><small>In margin</small><b className="mono">{fmtUsd(margin)}</b></div>
               {profile.isDemo && <div><small>Balance</small><b className="mono">{fmtUsd(Number(profile.demoBalance ?? 0))}</b></div>}
             </div>
+            {fades.length > 0 && <div className="pos-fades">Live fades <b className="mono">{wins}–{losses}</b><span>{wins} ahead · {losses} behind</span></div>}
             {err && <p className="pos-err">{err}</p>}
             {live.map(({ post, px, pnl, roi }) => {
               const side = post.side as "long" | "short", lev = post.leverage ?? 1;
@@ -85,6 +99,10 @@ export function PositionsPill() {
                     </div>
                     <div className="pos-pnl"><b className={`mono ${pnl >= 0 ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</b><small className={`mono ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 1)}</small></div>
                   </div>
+                  {(() => { const f = fadeOf(post.id); return f ? (
+                    <Link href={`/battle/${f.battleId}`} className={`pos-vs ${f.ahead ? "ahead" : "behind"}`} onClick={() => setOpen(false)}>
+                      <span>Fade vs <b>@{f.opp}</b></span><span>{f.ahead ? "You're ahead" : "You're behind"} by <b className="mono">{Math.abs(f.gap).toFixed(1)}%</b> ›</span>
+                    </Link>) : null; })()}
                   <div className="pos-spark"><Sparkline coin={post.coin!} up={pnl >= 0} wide /></div>
                   <div className="pos-acts">
                     <Link href={`/markets/${post.coin}`} onClick={() => setOpen(false)}>Chart</Link>
