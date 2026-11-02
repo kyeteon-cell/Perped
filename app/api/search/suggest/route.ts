@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       from rivalries r join users u on u.id = case when r.user_a = ${me} then r.user_b else r.user_a end
       where r.user_a = ${me} or r.user_b = ${me} order by (r.a_wins + r.b_wins) desc limit 2`).then(rows).catch(() => []) : Promise.resolve([]),
     db.execute(sql`select ${cols}, sum(x.delta)::int as gained from xp_log x join users u on u.id = x.user_id
-      where x.created_at > now() - interval '7 days' and u.handle is not null ${me ? sql`and u.id <> ${me}` : sql``} group by u.id having sum(x.delta) > 0 order by gained desc limit 4`).then(rows).catch(() => []),
+      where x.created_at > now() - interval '7 days' and u.handle is not null ${me ? sql`and u.id <> ${me}` : sql``} group by u.id having sum(x.delta) > 0 order by u.is_bot asc, gained desc limit 4`).then(rows).catch(() => []),
     db.execute(sql`select ${cols} from users u where u.founder_seat is not null and coalesce(u.founder_status, '') <> 'expired'
       and u.founder_since > now() - interval '14 days' ${me ? sql`and u.id <> ${me}` : sql``} order by u.founder_since desc limit 2`).then(rows).catch(() => []),
   ]);
