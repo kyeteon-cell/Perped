@@ -1942,3 +1942,19 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 .pos-fmid { flex: 1; min-width: 0; display: flex; flex-direction: column; } .pos-fmid b { font-size: 15px; } .pos-fmid span { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pos-gap { flex: none; text-align: right; display: flex; flex-direction: column; } .pos-gap b { font-size: 15px; } .pos-gap small { font-size: 11px; color: var(--muted); font-weight: 700; }
 .pos-gap.behind b { color: var(--muted); }
+
+/* positions sheet: arena as fight cards, inline position chart */
+.pos-fcard { display: block; width: 100%; text-align: left; margin-top: 10px; padding: 12px 14px 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--card, var(--bg)); color: var(--text); cursor: pointer; }
+.pos-fcard:active { transform: scale(.99); }
+.pos-fcard .fc-row { margin-top: 8px; }
+.pos-fcard .fc-hp { margin-top: 10px; }
+.pos-lead { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.pos-lead.up { color: var(--text); }
+.pos-lead b { font-weight: 800; }
+.pos-banked { color: var(--muted); font-weight: 700; }
+.pos-fwatch { margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; font-weight: 700; color: var(--muted); }
+.pos-chart { margin: 10px -4px 2px; }
+.pos-chart-load { height: 262px; border-radius: 12px; background: color-mix(in srgb, var(--text) 5%, transparent); }
+.pos-chart-note { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11.5px; color: var(--muted); }
+.pos-chart-note button { font-weight: 800; color: var(--text); white-space: nowrap; }
+.pos-acts button.on { background: var(--text); color: var(--bg); }

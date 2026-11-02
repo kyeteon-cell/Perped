@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   const auth = await getAuth(req);
   if (!auth) return unauthorized();
   const me = auth.privyId;
-  const leg = (a: string) => sql.raw(`json_build_object('id', ${a}.id, 'side', ${a}.side, 'entryPx', ${a}.entry_px, 'exitPx', ${a}.exit_px, 'size', ${a}.size, 'leverage', ${a}.leverage, 'status', ${a}.status, 'realizedPnl', ${a}.realized_pnl, 'meta', ${a}.meta, 'coin', ${a}.coin)`);
+  const leg = (a: string) => sql.raw(`json_build_object('id', ${a}.id, 'side', ${a}.side, 'entryPx', ${a}.entry_px, 'exitPx', ${a}.exit_px, 'size', ${a}.size, 'leverage', ${a}.leverage, 'status', ${a}.status, 'realizedPnl', ${a}.realized_pnl, 'meta', ${a}.meta, 'coin', ${a}.coin, 'slPx', ${a}.sl_px, 'tpPx', ${a}.tp_px, 'createdAt', ${a}.created_at)`);
   const r = rows(await db.execute(sql`
     select b.fader_post_id as "battleId", (b.fader_id = ${me}) as "iFade",
       ou.handle as "opp", ou.avatar_url as "oppAvatar",

@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { Sheet } from "./Sheet";
-import { Sparkline } from "./Sparkline";
+import { MiniHp, type Fighter } from "./BattleArena";
+import { toMarkers, useMarketTraders } from "./MarketTape";
+import type { ChartMarker } from "./PriceChart";
 import { Avatar, CoinMark, ticker } from "./ui";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMids } from "@/lib/hooks/useMids";
 import { demoLiqPx, fmtPct, fmtPrice, fmtUsd, pnlForPosition, tradeRoiPct } from "@/lib/format";
 import type { FeedRow } from "@/lib/feed";
 
+const PriceChart = dynamic(() => import("./PriceChart").then((m) => m.PriceChart), { ssr: false, loading: () => <div className="pos-chart-load" /> });
 const ManageTrade = dynamic(() => import("./ManageTrade").then((m) => m.ManageTrade), { ssr: false });
 
 // Pages with their own bottom bar (comment box, trade ticket, search) don't get the pill on top of it.
@@ -24,7 +27,7 @@ export function PositionsPill() {
   const { mids } = useMids();
   const key = profile ? `/api/posts?handle=${profile.handle}&kind=trade&status=open&limit=50` : null;
   const { data, mutate } = useSWR<{ posts: FeedRow[] }>(key, { refreshInterval: 30_000 });
-  type Leg = { id: number; side: string; entryPx: string; exitPx: string | null; size: string; leverage: number | null; status: string; realizedPnl: string | null; meta: unknown; coin: string };
+  type Leg = { id: number; side: string; entryPx: string; exitPx: string | null; size: string; leverage: number | null; status: string; realizedPnl: string | null; meta: unknown; coin: string; slPx?: string | null; tpPx?: string | null; createdAt?: string };
   type Fade = { battleId: number; iFade: boolean; opp: string; oppAvatar: string | null; fader: Leg; target: Leg };
   const { data: fd, mutate: mutateF } = useSWR<{ fades: Fade[] }>(profile ? "/api/me/fades" : null, async (u: string) => (await authedFetch(u)).json(), { refreshInterval: 30_000 });
   const [open, setOpen] = useState(false);
@@ -32,6 +35,7 @@ export function PositionsPill() {
   const router = useRouter();
   // Close the sheet first, then navigate (navigating from inside a closing sheet could be swallowed).
   const go = (href: string) => { setOpen(false); setTimeout(() => router.push(href), 0); };
+  const [chartFor, setChartFor] = useState<number | null>(null);
   const [manage, setManage] = useState<FeedRow["post"] | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -45,6 +49,11 @@ export function PositionsPill() {
     return { ...f, myPostId: mine.id, gap, ahead: gap > 0 };
   });
   const wins = fades.filter((f) => f.ahead).length, losses = fades.length - wins;
+  // A trade opened or closed anywhere in the app changes this list: refresh the fades with it, so the
+  // arena never shows a leg as still running after you've closed it.
+  const openSig = rows.map((r) => `${r.post.id}:${r.post.size}`).join(",");
+  useEffect(() => { if (profile) void mutateF(); }, [openSig]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (open) { void mutate(); void mutateF(); } }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!profile || (!rows.length && !fades.length) || HIDE.some((r) => r.test(path))) return null;
 
   const live = rows.map(({ post }) => {
@@ -69,7 +78,7 @@ export function PositionsPill() {
 
   return (
     <>
-      <button type="button" className="pos-pill" onClick={() => { setTab(rows.length ? "positions" : "arena"); setOpen(true); }} aria-label={`${rows.length} open trades, ${fmtUsd(total, { sign: true })}`}>
+      <button type="button" className="pos-pill" onClick={() => { setTab(rows.length ? "positions" : "arena"); setChartFor(rows[0]?.post.id ?? null); setOpen(true); }} aria-label={`${rows.length} open trades, ${fmtUsd(total, { sign: true })}`}>
         <span className="pos-stack">{coins.map((c) => <CoinMark key={c} coin={c} size="xs" />)}</span>
         {rows.length > 0 && <><span>{rows.length} open</span><b className={`mono ${total >= 0 ? "green" : "red"}`}>{fmtUsd(total, { sign: true })}</b></>}
         {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>Fades <b className="mono">{wins}–{losses}</b></span>}
@@ -88,15 +97,28 @@ export function PositionsPill() {
               fades.length ? <>
                 <p className="pos-sub">{wins} ahead · {losses} behind · scored at live prices</p>
                 {[...fades].sort((a, b) => b.gap - a.gap).map((f) => {
-                  const mine = f.iFade ? f.fader : f.target;
+                  const mine = f.iFade ? f.fader : f.target, theirs = f.iFade ? f.target : f.fader;
+                  const mark = Number(mids[mine.coin] ?? 0) || Number(mine.entryPx);
+                  const me = fighter(mine, profile.handle, profile.avatarUrl ?? null, mark), them = fighter(theirs, f.opp, f.oppAvatar, mark);
+                  const side = (x: Fighter, leg: Leg, right?: boolean) => (
+                    <div className={`fc-f ${right ? "r" : ""} ${(x === me) === f.ahead ? "lead" : ""}`}>
+                      <span className={`fc-av ${x.side}`}><Avatar handle={x.handle} url={x.avatarUrl} size={34} link={false} /></span>
+                      <div className="min-w-0">
+                        <div className="fc-name"><span className="truncate">{x === me ? "You" : x.handle}</span></div>
+                        <div className={`fc-pos ${x.side}`}>{x.side === "long" ? "Long" : "Short"} {x.lev}×{leg.status !== "open" ? <span className="pos-banked"> · banked</span> : null}</div>
+                        <div className={`mono fc-roi ${x.roi >= 0 ? "green" : "red"}`}>{fmtPct(x.roi, 1)}</div>
+                      </div>
+                    </div>
+                  );
                   return (
-                    <button key={f.battleId} type="button" className="pos-fight" onClick={() => go(`/battle/${f.battleId}`)}>
-                      <Avatar handle={f.opp} url={f.oppAvatar} size={36} link={false} />
-                      <span className="pos-fmid">
-                        <b>vs @{f.opp}</b>
-                        <span>{ticker(mine.coin)} · you're {mine.side} {mine.leverage ?? 1}×{mine.status === "closed" ? " · banked" : ""}{f.iFade ? " · you faded them" : " · they faded you"}</span>
-                      </span>
-                      <span className={`pos-gap ${f.ahead ? "ahead" : "behind"}`}><b className="mono">{f.ahead ? "+" : "−"}{Math.abs(f.gap).toFixed(1)}%</b><small>{f.ahead ? "ahead" : "behind"}</small></span>
+                    <button key={f.battleId} type="button" className="pos-fcard" onClick={() => go(`/battle/${f.battleId}`)}>
+                      <div className="fc-top">
+                        <span className="fc-tag">Fade · {ticker(mine.coin)}</span>
+                        <span className={`pos-lead ${f.ahead ? "up" : ""}`}>{f.ahead ? "You lead" : "You trail"} by <b className="mono">{Math.abs(f.gap).toFixed(1)}%</b></span>
+                      </div>
+                      <div className="fc-hp"><MiniHp f={me} live={mark} big /><span>HP</span><MiniHp f={them} live={mark} big right /></div>
+                      <div className="fc-row">{side(me, mine)}<span className="fc-vs">vs</span>{side(them, theirs, true)}</div>
+                      <div className="pos-fwatch">{f.iFade ? `You faded @${f.opp}` : `@${f.opp} faded you`} · watch the fight ›</div>
                     </button>
                   );
                 })}
@@ -121,9 +143,9 @@ export function PositionsPill() {
                     </div>
                     <div className="pos-pnl"><b className={`mono ${pnl >= 0 ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</b><small className={`mono ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 1)}</small></div>
                   </div>
-                  <div className="pos-spark"><Sparkline coin={post.coin!} up={pnl >= 0} wide /></div>
+                  {chartFor === post.id && <PosChart post={post} liq={post.paper && lev > 1 ? liq : null} onGo={go} />}
                   <div className="pos-acts">
-                    <button type="button" onClick={() => go(`/markets/${post.coin}`)}>Chart</button>
+                    <button type="button" className={chartFor === post.id ? "on" : ""} onClick={() => setChartFor(chartFor === post.id ? null : post.id)}>{chartFor === post.id ? "Hide chart" : "Chart"}</button>
                     <button type="button" onClick={() => setManage(post)}>Stop / target</button>
                     {post.paper ? <>
                       <button type="button" disabled={busy === post.id} onClick={() => quickClose(post.id, 0.5)}>Close half</button>
@@ -140,5 +162,40 @@ export function PositionsPill() {
       )}
       {manage && <ManageTrade post={manage} mid={Number(mids[manage.coin ?? ""] ?? 0) || undefined} onChanged={refresh} onClose={() => setManage(null)} />}
     </>
+  );
+}
+
+/** A fade leg as a fighter (live ROI from the shared scorer, banked once closed). */
+function fighter(l: { side: string; entryPx: string; leverage: number | null; slPx?: string | null; tpPx?: string | null; createdAt?: string; status: string; coin: string } & Parameters<typeof tradeRoiPct>[0], handle: string, avatarUrl: string | null, mark: number): Fighter {
+  return {
+    handle, avatarUrl, side: l.side === "short" ? "short" : "long", lev: l.leverage ?? 1, entry: Number(l.entryPx),
+    sl: l.slPx ? Number(l.slPx) : null, tp: l.tpPx ? Number(l.tpPx) : null, openedAt: l.createdAt ?? null,
+    roi: tradeRoiPct(l, mark || undefined), closed: l.status !== "open",
+  };
+}
+
+/** Full chart for one open position, inline: candles or line (same switch as the market page), your entry,
+ *  liquidation and stop/target as lines, and pins where everyone else in this market got in. */
+function PosChart({ post, liq, onGo }: { post: FeedRow["post"]; liq: number | null; onGo: (href: string) => void }) {
+  const coin = post.coin!;
+  const { mids } = useMids();
+  const { traders } = useMarketTraders(coin);
+  const { profile } = useSession();
+  const markers = useMemo<ChartMarker[]>(() => {
+    const ms = toMarkers(traders);
+    if (!ms.some((m) => m.id === String(post.id))) ms.push({ id: String(post.id), t: new Date(post.createdAt).getTime(), side: post.side as "long" | "short", label: `You · ${post.side} ${post.leverage ?? 1}× at ${post.entryPx}`, price: Number(post.entryPx), avatarUrl: profile?.avatarUrl ?? null, handle: profile?.handle, href: `/post/${post.id}` });
+    return ms;
+  }, [traders, post, profile?.avatarUrl, profile?.handle]);
+  const guides = [
+    { price: Number(post.entryPx), label: "Your entry" },
+    ...(liq ? [{ price: liq, label: "Liq" }] : []),
+    ...(post.tpPx ? [{ price: Number(post.tpPx), label: "Target" }] : []),
+    ...(post.slPx ? [{ price: Number(post.slPx), label: "Stop" }] : []),
+  ];
+  return (
+    <div className="pos-chart">
+      <PriceChart coin={coin} livePx={Number(mids[coin] ?? 0) || undefined} markers={markers} guides={guides} height={230} />
+      <p className="pos-chart-note">Faces mark where traders in {ticker(coin)} got in. <button type="button" onClick={() => onGo(`/markets/${coin}`)}>Full market ›</button></p>
+    </div>
   );
 }
