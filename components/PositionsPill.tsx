@@ -38,6 +38,9 @@ export function PositionsPill() {
   // Close the sheet first, then navigate (navigating from inside a closing sheet could be swallowed).
   const go = (href: string) => { setOpen(false); setTimeout(() => router.push(href), 0); };
   const [chartFor, setChartFor] = useState<number | null>(null);
+  const [armed, setArmed] = useState<"win" | "lose" | "all" | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  useEffect(() => { if (!armed) return; const t = setTimeout(() => setArmed(null), 3500); return () => clearTimeout(t); }, [armed]);
   const [manage, setManage] = useState<FeedRow["post"] | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -97,6 +100,19 @@ export function PositionsPill() {
     const j = r ? await r.json().catch(() => ({})) : { error: "Couldn't reach Perped" };
     setBusy(null);
     if (!r?.ok) return setErr(j.error ?? "Couldn't close that trade");
+    refresh();
+  };
+
+  // Close a group in one go (demo trades; real ones need your wallet, one at a time). First tap arms it, second tap closes.
+  const groups = { win: live.filter((x) => x.post.paper && x.pnl > 0), lose: live.filter((x) => x.post.paper && x.pnl < 0), all: live.filter((x) => x.post.paper) };
+  const bulk = async (k: "win" | "lose" | "all") => {
+    if (armed !== k) { setArmed(k); return; }
+    setArmed(null); setBulkBusy(true); setErr(null);
+    const res = await Promise.all(groups[k].map((x) => authedFetch(`/api/posts/${x.post.id}/close`, { method: "POST", body: JSON.stringify({ fraction: 1 }) }).then((r) => r.ok).catch(() => false)));
+    setBulkBusy(false);
+    const failed = res.filter((ok) => !ok).length;
+    if (failed) setErr(`${failed} trade${failed === 1 ? "" : "s"} didn't close. Try again.`);
+    try { navigator.vibrate?.(30); } catch {}
     refresh();
   };
 
@@ -166,6 +182,21 @@ export function PositionsPill() {
               <div><small>In margin</small><b className="mono">{fmtUsd(margin)}</b></div>
               {profile.isDemo && <div><small>Balance</small><b className="mono">{fmtUsd(Number(profile.demoBalance ?? 0))}</b></div>}
             </div>
+            {groups.all.length > 1 && (
+              <div className="pos-bulk">
+                {(["win", "lose", "all"] as const).map((k) => {
+                  const n = groups[k].length, sum = groups[k].reduce((a, x) => a + x.pnl, 0);
+                  const label = k === "win" ? "Close winning" : k === "lose" ? "Close losing" : "Close all";
+                  return (
+                    <button key={k} type="button" disabled={!n || bulkBusy} className={`${k} ${armed === k ? "armed" : ""}`} onClick={() => bulk(k)}>
+                      <span>{armed === k ? `Tap to close ${n}` : `${label} · ${n}`}</span>
+                      {n > 0 && <b className={`mono ${sum >= 0 ? "green" : "red"}`}>{fmtUsd(sum, { sign: true })}</b>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {live.some((x) => !x.post.paper) && groups.all.length > 1 && <p className="pos-sub">Real-money trades close one at a time (each needs your wallet).</p>}
             {err && <p className="pos-err">{err}</p>}
             {live.map(({ post, px, pnl, roi }) => {
               const side = post.side as "long" | "short", lev = post.leverage ?? 1;

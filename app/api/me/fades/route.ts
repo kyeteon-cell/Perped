@@ -22,6 +22,7 @@ export async function GET(req: Request) {
       join posts fp on fp.id = b.fader_post_id join posts tp on tp.id = b.target_post_id
       join users ou on ou.id = case when b.fader_id = ${me} then b.target_id else b.fader_id end
     where b.status = 'open' and (b.fader_id = ${me} or b.target_id = ${me})
+      and not (fp.status = 'closed' and tp.status = 'closed') -- both closed: decided, it's settling
     order by b.id desc limit 30`));
   return Response.json({ fades: r }, { headers: { "cache-control": "private, no-store" } });
 }

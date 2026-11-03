@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { payPicks } from "./picks";
 import { DAILY_BONUS_XP, isDailyTarget } from "./daily";
 import { checkSoon } from "./achievements";
@@ -50,9 +50,13 @@ function roiOf(p: P, mid: number) {
  *    in has to beat it when they close. Nobody is marked early, except the 7-day safety limit.
  * A gap under 0.5% ROI is a draw.
  */
-export async function settleBattles(mids: Record<string, string | number>) {
+export async function settleBattles(mids: Record<string, string | number>, opts: { postIds?: number[] } = {}) {
   const trophyQueue: string[] = [];
-  const open = await db.select().from(schema.battles).where(eq(schema.battles.status, "open")).orderBy(schema.battles.id).limit(300);
+  // `postIds`: settle just the fights these trades are in (straight after a close), instead of the whole board.
+  const only = opts.postIds?.length ? or(inArray(schema.battles.faderPostId, opts.postIds), inArray(schema.battles.targetPostId, opts.postIds)) : undefined;
+  const open = await db.select().from(schema.battles).where(only ? and(eq(schema.battles.status, "open"), only) : eq(schema.battles.status, "open"))
+    // Decided fights first (both sides closed), so they settle on time however many are still running; then oldest first.
+    .orderBy(sql`(select count(*) from posts p where p.id in (${schema.battles.faderPostId}, ${schema.battles.targetPostId}) and p.status = 'closed') desc`, schema.battles.id).limit(400);
   if (!open.length) return 0;
   const ids = [...new Set(open.flatMap((b) => [b.faderPostId, b.targetPostId]))];
   const P = new Map((await db.select().from(schema.posts).where(inArray(schema.posts.id, ids))).map((p) => [p.id, p]));
