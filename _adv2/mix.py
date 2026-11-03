@@ -158,9 +158,9 @@ while x < b_end - 0.01:
 
 
 # ---------- clip audio ----------
-def load(path, ss=0.0, dur=None):
+def load(path, ss=0.0, dur=None, af=None):
     tmp = "/tmp/_a.wav"
-    cmd = ["ffmpeg", "-v", "error", "-y", "-ss", str(ss), "-i", path] + (["-t", str(dur)] if dur else []) + ["-ac", "1", "-ar", str(SR), tmp]
+    cmd = ["ffmpeg", "-v", "error", "-y", "-ss", str(ss), "-i", path] + (["-t", str(dur)] if dur else []) + (["-af", af] if af else []) + ["-ac", "1", "-ar", str(SR), tmp]
     if subprocess.run(cmd).returncode: return np.zeros(1)
     w = wave.open(tmp); a = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16) / 32768.0
     return a
@@ -185,7 +185,7 @@ if vo_on:
     prev_end = 0.0
     narr = np.zeros(N)
     for i, (k, off) in enumerate(VO_PLAN):
-        x = load(os.path.join(SRC, f"vo{i}.wav"))
+        x = load(os.path.join(SRC, f"vo{i}.wav"), af=f"atempo={os.environ.get('VO_TEMPO', '1.22')}")
         # trim leading/trailing silence so timing is tight
         nz = np.where(np.abs(x) > 0.02)[0]
         if len(nz): x = x[max(0, nz[0] - 1200): nz[-1] + 2400]
