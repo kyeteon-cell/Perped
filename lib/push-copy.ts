@@ -14,8 +14,15 @@ const LABEL: Record<string, string> = {
   referral: "New invite", earnings: "Earnings", founder: "Founder", admin: "Perped", account: "Account", waitlist: "Real money",
 };
 
+/** One sentence per line, so the lock screen never wraps in the middle of one ("you lead / 3–2"). */
+export const lines = (t?: string | null) => (t ?? "").replace(/\s+·\s+/g, "\n").replace(/([.!?])\s+(?=\S)/g, "$1\n").trim();
+
 /** Fit a headline: keep it if it fits, otherwise use the alert's short label and move the full line into the body. */
 export function fitPush(type: string, title: string, body?: string | null, custom?: PushCopy): PushCopy {
+  const p = fitRaw(type, title, body, custom);
+  return { title: p.title, body: p.body ? lines(p.body) || undefined : undefined };
+}
+function fitRaw(type: string, title: string, body?: string | null, custom?: PushCopy): PushCopy {
   if (custom) {
     if (custom.title.length <= PUSH_TITLE_MAX) return { title: custom.title, body: custom.body ?? body ?? undefined };
     // Too long (a long handle): keep the part before ":" or "·" as the headline and lead the body with the rest.
