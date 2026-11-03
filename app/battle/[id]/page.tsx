@@ -109,7 +109,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const Side = ({ u, p, r, left }: { u: U; p: Post; r: { pnl: number; roi: number }; left: boolean }) => (
     <div className={`bside ${left ? "l" : "r"}`}>
       <Link href={`/u/${u.handle}`}><div className={`avring ${(left ? faderLeads : !faderLeads) && (live || chasing) ? "lead" : live || chasing ? "losing" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={64} link={false} xp={u.xp} /></div></Link>
-      <div className="name mt-2 truncate">{u.handle}{u.verified && <span className="vbadge" title="Verified" aria-label="Verified">✓</span>}<Badges u={u} /></div>
+      <div className="nrow name mt-2 justify-center"><span className="truncate">{u.handle}</span>{u.verified && <span className="vbadge" title="Verified" aria-label="Verified">✓</span>}<Badges u={u} /></div>
       {u.isDemo ? <div className="mt-1 flex items-center justify-center"><span className="demo-word text-[12px]">Demo</span></div> : null}
       <span className={`lbl ${p.side} mt-2`}><i />{p.side === "long" ? "Long" : "Short"} {p.leverage}×</span>
       <div className={`mono mt-2 text-[30px] font-bold leading-none ${r.roi >= 0 ? "green" : "red"}`}>{fmtPct(r.roi, 1)}</div>

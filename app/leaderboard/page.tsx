@@ -63,7 +63,7 @@ export default function LeaderboardPage() {
           <span className="rank">{i + 1}</span>
           <Avatar handle={r.handle} url={r.avatarUrl} size={44} link={false} xp={r.xp} />
           <div className="min-w-0 flex-1">
-            <div className="name">{r.handle}<Badges u={r} /></div>
+            <div className="nrow name justify-center"><span className="truncate">{r.handle}</span><Badges u={r} /></div>
             <div className="when truncate">{mode === "ranks" || mode === "season" ? `${rankFor(r.xp ?? 0).title} · fades ${r.battlesWon ?? 0}–${r.battlesLost ?? 0} · ${fmtPct(Number(r.winRate), 0)} win` : mode === "trades" ? `${r.closedTrades} trades · ${fmtPct(Number(r.winRate), 0)} win · ${fmtUsd(Number(r.volume30d), { compact: true })} volume` : `${r.callsResolved} calls · ${r.callsHit} hit · avg ${fmtPct(Number(r.callAvgMove), 1)}${r.callStreak > 1 ? ` · ${r.callStreak} in a row` : ""} · trades ${fmtPct(Number(r.winRate), 0)} win`}</div>
           </div>
           {mode === "ranks" || mode === "season" ? <div className="text-right"><div className="mono text-[17px] font-bold">{(mode === "season" ? r.seasonXp ?? 0 : r.xp ?? 0).toLocaleString()}</div><div className="when">{mode === "season" ? "season XP" : "XP"}</div></div> : mode === "trades" ? <div className={`mono text-[17px] font-bold ${(r.pnl ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div> : <div className="text-right"><div className="mono text-[17px] font-bold">{Math.round(r.hitRate ?? 0)}%</div><div className="when">hit rate</div></div>}
@@ -77,7 +77,7 @@ export default function LeaderboardPage() {
             <Link key={r.handle} href={`/u/${r.handle}`} className="lb">
               <span className="rank">↓{i + 1}</span>
               <Avatar handle={r.handle} url={r.avatarUrl} size={44} link={false} />
-              <div className="min-w-0 flex-1"><div className="name">{r.handle}<Badges u={r} /></div><div className="when truncate">{r.closedTrades} trades · {fmtPct(Number(r.winRate), 0)} win{r.liquidations ? ` · ${r.liquidations} liquidation${r.liquidations === 1 ? "" : "s"}` : ""}{r.fadedCount ? ` · faded ${r.fadedCount}×` : ""}</div></div>
+              <div className="min-w-0 flex-1"><div className="nrow name"><span className="truncate">{r.handle}</span><Badges u={r} /></div><div className="when truncate">{r.closedTrades} trades · {fmtPct(Number(r.winRate), 0)} win{r.liquidations ? ` · ${r.liquidations} liquidation${r.liquidations === 1 ? "" : "s"}` : ""}{r.fadedCount ? ` · faded ${r.fadedCount}×` : ""}</div></div>
               <div className="mono red text-[17px] font-bold">{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div>
             </Link>
           ))}
