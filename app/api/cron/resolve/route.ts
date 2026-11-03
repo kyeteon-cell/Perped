@@ -161,7 +161,8 @@ async function dailyFadeSummary(now: Date) {
   const rows = ((r as unknown as { rows?: unknown[] }).rows ?? (r as unknown as unknown[])) as { uid: string; n: number; w: number }[];
   for (const x of rows) {
     const behind = x.n - x.w;
-    await notify(x.uid, "fade_summary", `Your ${x.n} live fade${x.n === 1 ? "" : "s"}: ${x.w} winning, ${behind} behind`, behind ? "Check in before someone banks it." : "Bank one or let them run.", "/arena").catch(() => null);
+    await notify(x.uid, "fade_summary", `Your ${x.n} live fade${x.n === 1 ? "" : "s"}: ${x.w} winning, ${behind} behind`, behind ? "Check in before someone banks it." : "Bank one or let them run.", "/arena",
+      { title: behind ? `Live fades: ${x.w} up, ${behind} down` : `Unbeaten in ${x.n} live fade${x.n === 1 ? "" : "s"}`, body: behind ? `${x.n} fights running. Check in before someone banks one on you.` : "Winning every fight you're in. Bank one or let them run." }).catch(() => null);
   }
   return rows.length;
 }

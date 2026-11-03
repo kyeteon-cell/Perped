@@ -1,4 +1,5 @@
 import { and, asc, eq, or, sql } from "drizzle-orm";
+import { seriesLine } from "./push-copy";
 import { db, schema } from "./db";
 import { notify, systemPost } from "./feed";
 import { awardXp } from "./xp";
@@ -66,14 +67,17 @@ export async function recordFight(u1: string, u2: string, winnerId: string | nul
     for (const [me, them] of [[A, B], [B, A]] as const) {
       if (me.isBot) continue;
       const lead = newLead === me.id ? "you lead" : newLead === them.id ? "they lead" : "all square";
-      await notify(me.id, "rival", `${them.handle} is now your rival`, `${fights} fights · ${lead} ${score(me.id)}. You'll hear when they trade.`, href);
+      await notify(me.id, "rival", `${them.handle} is now your rival`, `${fights} fights · ${lead} ${score(me.id)}. You'll hear when they trade.`, href,
+        { title: `New rival: @${them.handle}`, body: `${fights} fights, ${lead} ${score(me.id)}. You'll get an alert every time they trade.` });
     }
   }
   if (active && winnerId && newLead === winnerId && prevLead !== winnerId) {
     const w = winnerId === A.id ? A : B, l = winnerId === A.id ? B : A;
     if (prevLead) await awardXp(w.id, 25, "rival_lead", `rivalry:${r.id}`);
-    if (!w.isBot) await notify(w.id, "rival", `You ${prevLead ? "took back" : "took"} the lead over ${l.handle}`, `Series ${score(w.id)}${prevLead ? " · +25 XP" : ""}`, href);
-    if (!l.isBot) await notify(l.id, "rival", `${w.handle} ${prevLead ? "took back" : "took"} the lead`, `Series ${score(l.id)}. Run it back?`, href);
+    if (!w.isBot) await notify(w.id, "rival", `You ${prevLead ? "took back" : "took"} the lead over ${l.handle}`, `Series ${score(w.id)}${prevLead ? " · +25 XP" : ""}`, href,
+      { title: `You lead @${l.handle} ${score(w.id)}`, body: `You ${prevLead ? "took back" : "took"} the lead in your rivalry${prevLead ? ". +25 XP" : ""}.` });
+    if (!l.isBot) await notify(l.id, "rival", `${w.handle} ${prevLead ? "took back" : "took"} the lead`, `Series ${score(l.id)}. Run it back?`, href,
+      { title: `@${w.handle} leads you ${score(w.id)}`, body: `They ${prevLead ? "took back" : "took"} the lead in your rivalry. Run it back?` });
     if (human) await systemPost("rivalry", `${w.handle} ${prevLead ? "takes back" : "takes"} the lead over ${l.handle}, ${score(w.id)}.`, { kind: "lead", winner: w.handle, loser: l.handle, score: score(w.id), href }, opts.coin);
   }
   if (winnerId && runHolder === winnerId && runLen === 5) {
@@ -124,7 +128,9 @@ export async function alertRivals(traderId: string, post: { id: number; coin: st
     const last = otherIsA ? r.lastAlertA : r.lastAlertB;
     if (last && now - last.getTime() < ALERT_GAP_MS) continue;
     const mine = otherIsA ? r.aWins : r.bWins, theirs = otherIsA ? r.bWins : r.aWins;
-    await notify(other, "rival", `Your rival ${T.handle} just went ${post.side} ${post.coin} ${post.leverage ?? 1}×`, `Series ${mine}–${theirs}. Tap to quick fade.`, `/post/${post.id}?fade=1`);
+    const sideW = post.side === "short" ? "Short" : "Long";
+    await notify(other, "rival", `Your rival ${T.handle} just went ${post.side} ${post.coin} ${post.leverage ?? 1}×`, `Series ${mine}–${theirs}. Tap to quick fade.`, `/post/${post.id}?fade=1`,
+      { title: `@${T.handle}: ${sideW} ${post.coin} ${post.leverage ?? 1}×`, body: `Your rival just opened a trade. Series: ${seriesLine(mine, theirs)}. Tap to fade it.` });
     await db.update(schema.rivalries).set(otherIsA ? { lastAlertA: new Date() } : { lastAlertB: new Date() }).where(eq(schema.rivalries.id, r.id));
     sent++;
   }

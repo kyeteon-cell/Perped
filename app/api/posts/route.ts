@@ -273,7 +273,8 @@ export async function POST(req: Request) {
     const [src] = await db.select({ userId: schema.posts.userId, coin: schema.posts.coin }).from(schema.posts).where(eq(schema.posts.id, srcId)).limit(1);
     if (src?.userId && src.userId !== profile.id) {
       const verb = b.copiedFromId ? "copied" : "faded";
-      await notify(src.userId, verb, `${profile.handle} ${verb} your ${src.coin} trade`, `$${Math.round(b.notionalUsd)} at ${b.entryPx}`, `/post/${srcId}`);
+      await notify(src.userId, verb, `${profile.handle} ${verb} your ${src.coin} trade`, `$${Math.round(b.notionalUsd)} at ${b.entryPx}`, `/post/${srcId}`,
+        { title: `@${profile.handle} ${verb} your ${src.coin}`, body: verb === "faded" ? `They took the other side: $${Math.round(b.notionalUsd)} at ${b.entryPx}. Best ROI wins. Tap to watch the fight.` : `They copied you: $${Math.round(b.notionalUsd)} at ${b.entryPx}.` });
     }
   }
   // Trophies (first trade, first fade, …) unlock right after the response goes out.

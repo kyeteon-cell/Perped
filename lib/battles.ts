@@ -146,12 +146,15 @@ export async function settleBattles(mids: Record<string, string | number>) {
     const fmt = (r: number) => `${r >= 0 ? "+" : "−"}${Math.abs(r).toFixed(1)}%`;
     const line = `${fu?.handle} ${fmt(fr.roi)} vs ${tu?.handle} ${fmt(tr.roi)}${fn ? " · Fight Night 2× XP" : ""}`;
     if (!winnerId) {
-      for (const id of [b.faderId, b.targetId]) await notify(id, "battle", `Fade drawn on ${b.coin}`, `${line} · +${XP.battleDraw} XP`, href);
+      for (const id of [b.faderId, b.targetId]) await notify(id, "battle", `Fade drawn on ${b.coin}`, `${line} · +${XP.battleDraw} XP`, href, { title: `Fade drawn · +${XP.battleDraw} XP`, body: `${b.coin}: ${line}.` });
     } else {
       const wh = winnerId === b.faderId ? fu?.handle : tu?.handle, lh = winnerId === b.faderId ? tu?.handle : fu?.handle;
       const wx = winnerId === b.faderId ? xpF : xpT, lx = winnerId === b.faderId ? xpT : xpF;
-      await notify(winnerId, "battle", `You won the fade vs ${lh}`, `${b.coin} · ${line} · +${wx} XP${reason === "liquidation" ? " · they got liquidated" : ""} · tap to pin it to your profile`, href);
-      await notify(loserId!, "battle", `You got perped by ${wh}`, `${b.coin} · ${line}${lx > 0 ? ` · +${lx} XP for showing up` : lx < 0 ? ` · ${lx} XP (losses cost at your rank)` : " · liquidated, no XP"}`, href);
+      const wRoi = winnerId === b.faderId ? fr.roi : tr.roi, lRoi = winnerId === b.faderId ? tr.roi : fr.roi;
+      await notify(winnerId, "battle", `You won the fade vs ${lh}`, `${b.coin} · ${line} · +${wx} XP${reason === "liquidation" ? " · they got liquidated" : ""} · tap to pin it to your profile`, href,
+        { title: `Won vs @${lh} · +${wx} XP`, body: `${b.coin} fade: you ${fmt(wRoi)}, them ${fmt(lRoi)}${reason === "liquidation" ? ". They got liquidated" : ""}${fn ? ". Fight Night 2× XP" : ""}. Tap to pin it to your profile.` });
+      await notify(loserId!, "battle", `You got perped by ${wh}`, `${b.coin} · ${line}${lx > 0 ? ` · +${lx} XP for showing up` : lx < 0 ? ` · ${lx} XP (losses cost at your rank)` : " · liquidated, no XP"}`, href,
+        { title: `Perped by @${wh}`, body: `${b.coin} fade: you ${fmt(lRoi)}, them ${fmt(wRoi)}. ${lx > 0 ? `+${lx} XP for showing up.` : lx < 0 ? `${lx} XP (losses cost at your rank).` : "Liquidated, no XP."} Run it back?` });
       const lastClose = Math.max(...[f.closedAt, t.closedAt].filter(Boolean).map((d) => new Date(d as Date).getTime()), 0);
       const fresh = reason === "timeout" || Date.now() - lastClose < 6 * 60 * 60 * 1000;
       if (fresh) await systemPost("battle_settled", `${wh} perped ${lh} on ${b.coin}. ${line}.`, { battleId: b.id, faderPostId: b.faderPostId, winner: wh, loser: lh, coin: b.coin, winnerRoi: winnerId === b.faderId ? fr.roi : tr.roi, loserRoi: winnerId === b.faderId ? tr.roi : fr.roi, reason }, b.coin);
@@ -256,6 +259,6 @@ async function leadAlert(b: typeof schema.battles.$inferSelect, fRoi: number, tR
     db.select({ handle: schema.users.handle }).from(schema.users).where(eq(schema.users.id, trailer)).limit(1).then((r) => r[0]),
   ]);
   const href = `/battle/${b.faderPostId}`;
-  if (!leader.startsWith("bot:")) await notify(leader, "lead", `You're now winning against @${tu?.handle ?? "them"}`, `${b.coin} fade · you took the lead`, href);
-  if (!trailer.startsWith("bot:")) await notify(trailer, "lead", `@${lu?.handle ?? "They"} just overtook you`, `${b.coin} fade · still time to turn it around`, href);
+  if (!leader.startsWith("bot:")) await notify(leader, "lead", `You're now winning against @${tu?.handle ?? "them"}`, `${b.coin} fade · you took the lead`, href, { title: `Winning vs @${tu?.handle ?? "them"}`, body: `You just took the lead in your ${b.coin} fade. Bank it or let it run.` });
+  if (!trailer.startsWith("bot:")) await notify(trailer, "lead", `@${lu?.handle ?? "They"} just overtook you`, `${b.coin} fade · still time to turn it around`, href, { title: `@${lu?.handle ?? "They"} overtook you`, body: `They just took the lead in your ${b.coin} fade. Still time to turn it around.` });
 }
