@@ -908,7 +908,11 @@ body { letter-spacing: -.005em; }
 .ar-hpbar i.short { background: linear-gradient(180deg, #ff9a9d, #fd6267 50%, #d43b40); }
 .ar-hpbar i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,.65) 50%, transparent 75%); transform: translateX(-120%); animation: hpsheen 2.8s var(--ease) infinite; }
 @keyframes hpsheen { 0%, 45% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
-.ar-hpbar.bleed i, .ar-hpbar.bleed i.long { background: linear-gradient(180deg, #ff9a9d, #fd6267 45%, #a8232a); animation: hpbeat 1.1s ease-in-out infinite; }
+.ar-hpbar.bleed i { animation: hpbeat 1.1s ease-in-out infinite; }
+/* Colour rule: a low bar keeps its side colour (long green, short red); only the pulse and drips say it is low. */
+.ar-hpbar.bleed i.long { background: linear-gradient(180deg, #4af3b7, #05e091 45%, #027a4f); animation-name: hpbeatg; }
+.ar-hpbar.bleed i.short { background: linear-gradient(180deg, #ff9a9d, #fd6267 45%, #a8232a); }
+@keyframes hpbeatg { 0%, 100% { filter: none; } 15% { filter: brightness(1.3) drop-shadow(0 0 4px rgba(5,224,145,.9)); } 30% { filter: none; } 45% { filter: brightness(1.15); } }
 .ar-hpbar.bleed i::after { animation-duration: 1.4s; }
 @keyframes hpbeat { 0%, 100% { filter: none; } 15% { filter: brightness(1.35) drop-shadow(0 0 4px rgba(253,98,103,.9)); } 30% { filter: none; } 45% { filter: brightness(1.2); } }
 .ar-drips { position: absolute; top: 4px; left: 0; height: 0; pointer-events: none; z-index: 2; }
@@ -2218,3 +2222,8 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 
 /* iOS 26 fixed-position drift: bottom bars follow the real visible bottom (see ViewportFix). `translate` composes with any transform. */
 .nav, .pos-rail, .sheet { translate: 0 var(--vv-bottom, 0px); }
+
+/* Drips follow the side colour too */
+.ar-drips.long b::before { background: radial-gradient(circle at 70% 70%, #c9ffe9 0, #05e091 40%, #02643f 100%); box-shadow: 0 1px 2px rgba(2,100,63,.45); }
+.mhp.low i.long { background: var(--green); }
+.mhp.low i.short { background: var(--red); }

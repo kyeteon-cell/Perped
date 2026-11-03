@@ -24,10 +24,10 @@ function Bar({ f, live, right }: { f: Fighter; live: number; right?: boolean }) 
   const h = healthOf(f, live), w = `${Math.max(3, h * 100)}%`, bleed = h < 0.4;
   return (
     <div className={`ar-hpbox ${right ? "r" : ""}`}>
-      <div className="ar-hphead"><span>Margin/SL health</span><b style={{ color: bleed ? "var(--red)" : f.side === "long" ? "var(--green)" : "var(--red)" }}>{Math.round(h * 100)}%</b></div>
+      <div className="ar-hphead"><span>Margin/SL health</span><b style={{ color: f.side === "long" ? "var(--green)" : "var(--red)" }}>{Math.round(h * 100)}%</b></div>
       <div className={`ar-hpbar ${bleed ? "bleed" : ""}`}>
         <div className="ar-hptrack"><i className={f.side} style={{ width: w }} /></div>
-        {bleed && <div className="ar-drips" style={{ width: w }} aria-hidden="true"><b /><b /><b /></div>}
+        {bleed && <div className={`ar-drips ${f.side}`} style={{ width: w }} aria-hidden="true"><b /><b /><b /></div>}
       </div>
     </div>
   );
