@@ -55,4 +55,6 @@ export const BOT_AVATARS = [
   { key: "bot-bull_barry", url: "https://d2ol7oe51mr4n9.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/1d9df532-f0ad-4bac-abc9-6cd6d39a0baf.png" },
   { key: "bot-bear_bianca", url: "https://d2ol7oe51mr4n9.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/896a31e4-8004-4d7c-bb1b-b6962d1560e1.png" },
   { key: "bot-mooncat", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261030_184942_096b37ee-54f5-4be4-8bde-706242548c1f_min.webp" },
+  { key: "bot-wallst_wes", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261103_221424_112adc66-fe81-431d-b9e0-a09d909f0e1d_min.webp" },
+  { key: "bot-tendies_tina", url: "https://d8j0ntlcm91z4.cloudfront.net/user_3G3E1dWNGO7jgh3VdrYffCUeywr/hf_20261103_221424_49ff97ef-fdba-4c6e-9449-7523594243cb_min.webp" },
 ];
