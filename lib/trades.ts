@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { pnlForPosition } from "./format";
 import { systemPost, notify } from "./feed";
+import { crewBroadcast } from "./crews";
 import { getMids } from "./hl-info";
 import { closingFills } from "./hlfills";
 import { awardXp } from "./xp";
@@ -108,5 +109,6 @@ export async function closeTradePost(postId: number, userId: string, opts: { exi
     for (const f of faders) if (f.userId) await notify(f.userId, "settled", `${me?.handle}'s ${post.coin} trade settled`, `${pct >= 0 ? "They won" : "You won"} · ${pct >= 0 ? "+" : "−"}${Math.abs(roi).toFixed(1)}%`, `/post/${post.id}`,
       { title: `@${me?.handle} closed ${post.coin}`, body: `The trade you faded closed at ${pct >= 0 ? "+" : "−"}${Math.abs(roi).toFixed(1)}%. ${pct >= 0 ? "They came out ahead on it." : "You called it."}` });
   }
+  crewBroadcast(post.id, "close");
   return { post: updated } as const;
 }

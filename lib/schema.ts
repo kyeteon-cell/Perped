@@ -383,3 +383,37 @@ export const events = pgTable(
   },
   (t) => [index("events_name_time").on(t.name, t.createdAt)],
 );
+
+/** A crew: a trader's group on Perped. One crew per member; the owner runs it and its Telegram hookup. */
+export const crews = pgTable("crews", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  tag: text("tag").notNull(),
+  bio: text("bio"),
+  ownerId: text("owner_id").notNull().unique().references(() => users.id),
+  tgChatId: text("tg_chat_id"),
+  tgChatTitle: text("tg_chat_title"),
+  tgLinkCode: text("tg_link_code"),
+  tgMembers: boolean("tg_members").default(false).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+export const crewMembers = pgTable(
+  "crew_members",
+  {
+    userId: text("user_id").primaryKey().references(() => users.id),
+    crewId: integer("crew_id").notNull().references(() => crews.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("crew_members_crew_idx").on(t.crewId)],
+);
+export type Crew = typeof crews.$inferSelect;
+
+/** Verified Hyperliquid history imported from a wallet the trader signed for. `summary` is an HlRecord. */
+export const hlImports = pgTable("hl_imports", {
+  userId: text("user_id").primaryKey().references(() => users.id),
+  address: text("address").notNull(),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }).defaultNow().notNull(),
+  refreshedAt: timestamp("refreshed_at", { withTimezone: true }).defaultNow().notNull(),
+  summary: jsonb("summary").$type<Record<string, unknown>>().notNull(),
+});

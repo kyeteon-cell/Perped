@@ -16,6 +16,8 @@ import { RankCard, RecordLine } from "@/components/RankCard";
 import { useDemoEquity } from "@/lib/hooks/useDemoEquity";
 import { FollowButton } from "@/components/FollowButton";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { HlRecordCard } from "@/components/HlRecord";
+import type { HlRecord } from "@/lib/hl-link";
 
 import { PinCard } from "@/components/PinCard";
 import type { RivalRow } from "@/app/api/rivalries/route";
@@ -34,7 +36,7 @@ const ChallengeSheet = dynamic(() => import("@/components/ChallengeSheet").then(
 const TrophyCase = dynamic(() => import("@/components/Trophies").then((m) => m.TrophyCase), { ssr: false });
 const ProfileShare = dynamic(() => import("@/components/ProfileShare").then((m) => m.ProfileShare), { ssr: false });
 
-type ProfileRes = { form?: { r: "W" | "L" | "D"; href: string }[]; vendetta?: null | { handle: string; avatarUrl: string | null; mine: number; theirs: number; draws: number; fights: number }; battleStreak?: number; bestStreak?: number; user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
+type ProfileRes = { crew?: { slug: string; name: string; tag: string; isOwner: boolean } | null; hlRecord?: (HlRecord & { verifiedAt?: string }) | null; form?: { r: "W" | "L" | "D"; href: string }[]; vendetta?: null | { handle: string; avatarUrl: string | null; mine: number; theirs: number; draws: number; fights: number }; battleStreak?: number; bestStreak?: number; user: User; stats: Stats | null; followers: number; following: number; rivalries: { opponent: string; wins: number; losses: number }[]; isFollowing: boolean; isMe: boolean; positions: AssetPosition[]; accountValue: number | null; withdrawable: number | null; xpRecent?: { delta: number; reason: string; ref: string | null; createdAt: string }[] };
 type Tab = "me" | "fades" | "trades" | "stats" | "people";
 type People = "followers" | "following";
 
@@ -124,6 +126,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           <div className="min-w-0 flex-1 pt-[46px]">
             <div className="nrow pname text-[22px] font-extrabold tracking-tight">{user.handle}{user.verified && <span className="vbadge ml-1" title="Verified" aria-label="Verified">✓</span>}<Badges u={user} seat />{user.isDemo && <span className="lbl done ml-2" style={{ padding: "2px 8px", fontSize: 11 }}>Demo</span>}</div>
             <div className="mono when text-xs">{user.isDemo ? "practice account · simulated fills" : `${user.address.slice(0, 6)}…${user.address.slice(-4)} · verified on-chain`}</div>
+            {data.crew && <Link href={`/crew/${data.crew.slug}`} className="crew-chip"><span className="crew-tag">{data.crew.tag}</span>{data.crew.isOwner ? "Runs" : "In"} {data.crew.name}</Link>}
             <div className="mt-2.5 flex gap-4 text-sm">
               <button className="muted" onClick={() => { setPeopleDir("followers"); setTab("people"); }}><b style={{ color: "var(--text)" }}>{data.followers}</b> followers</button>
               <button className="muted" onClick={() => { setPeopleDir("following"); setTab("people"); }}><b style={{ color: "var(--text)" }}>{data.following}</b> following</button>
@@ -135,6 +138,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
         </div>
         {user.bio && <p className="mt-3.5">{user.bio}</p>}
         <RecordLine xp={user.xp ?? 0} won={s?.battlesWon ?? 0} lost={s?.battlesLost ?? 0} onOpen={() => { setLadder(true); setTab("stats"); requestAnimationFrame(() => document.getElementById("pf-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" })); }} />
+        {data.hlRecord ? <HlRecordCard r={data.hlRecord} /> : isMe && !user.isBot && <Link href="/settings#hl" className="hlr-cta"><b>Bring your Hyperliquid record</b><span>Show your all-time PnL and win rate here, verified on-chain</span><span aria-hidden>›</span></Link>}
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           {isMe ? <Link href="/compose" className="btn brand" style={{ padding: 12, fontSize: 14 }}>Write a post</Link> : <FollowButton handle={user.handle} />}
           {isMe ? <Link href="/settings" className="btn" style={{ padding: 12, fontSize: 14 }}>Edit profile</Link> : <button className="btn" style={{ padding: 12, fontSize: 14 }} onClick={() => (authenticated ? setChallenge(true) : login())}><span className="gl"><Glyph n="swords" />Challenge</span></button>}
