@@ -102,6 +102,8 @@ export function PositionsPill() {
 
   return (
     <>
+      {/* A full-width rail centres the pill with flexbox, so nothing (animations, width changes) can push it off centre. */}
+      <div className="pos-rail">
       <button type="button" className={`pos-pill ${unbeaten ? "gold" : ""}`} onClick={() => { setTab(rows.length ? "positions" : "arena"); setChartFor(rows[0]?.post.id ?? null); setOpen(true); }} aria-label={`${rows.length} open trades, ${fmtUsd(total, { sign: true })}`}>
         {unbeaten && <span className="pos-dot" aria-hidden />}
         <span className="pos-stack">{coins.map((c) => <CoinMark key={c} coin={c} size="xs" />)}</span>
@@ -109,6 +111,7 @@ export function PositionsPill() {
         {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>{unbeaten ? "Unbeaten" : "Fades"} <b className="mono">{wins}–{losses}</b></span>}
         <span className="pos-go" aria-hidden>›</span>
       </button>
+      </div>
 
       {open && (
         <Sheet label="Your trades" onClose={() => setOpen(false)}>

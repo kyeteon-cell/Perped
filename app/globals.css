@@ -2191,3 +2191,7 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 .pos-pill { left: 0 !important; right: 0; margin: 0 auto; width: max-content; max-width: calc(100vw - 24px); transform: none !important; overflow: hidden; }
 .pos-pill .pos-wl { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .pos-pill.gold { gap: 7px; padding-left: 6px; }
+
+/* positions pill rail: fixed full-width row, pill centred inside it by flexbox */
+.pos-rail { position: fixed; left: 0; right: 0; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); z-index: 39; display: flex; justify-content: center; padding: 0 12px; pointer-events: none; }
+.pos-rail .pos-pill { position: static !important; left: auto !important; right: auto !important; bottom: auto !important; margin: 0; max-width: 100%; pointer-events: auto; transform: none !important; }
