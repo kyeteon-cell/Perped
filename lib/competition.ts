@@ -38,7 +38,7 @@ export async function setCompSettings(patch: Partial<CompSettings>) {
 const counted = (startAt: string) => sql`
   select distinct p.user_id from posts p join users u on u.id = p.user_id
   where p.kind = 'trade' and p.created_at >= ${startAt}::timestamptz
-    and u.is_bot = false and u.id not like 'bot:%' -- demo bots never count, flagged or not`;
+    and u.is_bot = false and u.id not like 'bot:%'`; // demo bots never count, flagged or not (no SQL comment: this is wrapped in other queries)
 
 export type CompBoard = { goal: number; count: number; startAt: string; unlocked: boolean; details: string | null; detailsUrl: string | null; hidden: boolean; recruiters: { handle: string; avatarUrl: string | null; n: number }[] };
 
