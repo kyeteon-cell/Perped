@@ -105,8 +105,8 @@ def caption(name, s, size=118, y=CAP_Y, maxw=960):
 
 # ---------- captions ----------
 CAPS = {
-    "cap_ansem": "APES *$ANSEM* 50×",
-    "cap_cate": "APES *$CATE* 20×",
+    "cap_ansem": "APES *$ANSEM*",
+    "cap_cate": "APES *$CATE*",
     "cap_topup": "TOPS UP.",
     "cap_again": "AGAIN. AND AGAIN.",
     "cap_cashed": "*@100x_chad* CASHED OUT.",

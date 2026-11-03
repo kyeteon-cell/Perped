@@ -176,7 +176,29 @@ put(vox, st("08_yacht"), yacht * fade, 0.55)
 duck = np.ones(N)
 a, b = int(st("01_kol") * SR), int((st("01_kol") + seg["01_kol"]["dur"]) * SR)
 duck[a:b] = 0.35
-mix = mus * duck + sfx + vox
+
+# optional narrator: VO=1 places src/vo0..6.wav on their scenes, never overlapping, and ducks music + sfx under them
+VO_PLAN = [("10_feed", 0.5), ("11_revenge", 0.45), ("12_btc", 0.35), ("13_tsla", 0.45), ("14_banked", 0.3), ("16_pent", 0.9), ("17_end", 0.55)]
+vo_on = os.environ.get("VO") == "1"
+sduck = np.ones(N)
+if vo_on:
+    prev_end = 0.0
+    narr = np.zeros(N)
+    for i, (k, off) in enumerate(VO_PLAN):
+        x = load(os.path.join(SRC, f"vo{i}.wav"))
+        # trim leading/trailing silence so timing is tight
+        nz = np.where(np.abs(x) > 0.02)[0]
+        if len(nz): x = x[max(0, nz[0] - 1200): nz[-1] + 2400]
+        at = max(st(k) + off, prev_end + 0.12)
+        put(narr, at, x / (np.max(np.abs(x)) + 1e-9) * 0.9, 1.0)
+        prev_end = at + len(x) / SR
+        print(f"vo{i} {k} at {at:.2f}s len {len(x)/SR:.2f}s")
+    # smooth duck envelope from the narration level
+    env_ = np.convolve(np.abs(narr), np.ones(int(0.25 * SR)) / int(0.25 * SR), mode="same")
+    m = np.clip(env_ / 0.05, 0, 1)
+    duck = duck * (1 - 0.6 * m); sduck = 1 - 0.45 * m
+    vox = vox + narr * 1.15
+mix = mus * duck + sfx * sduck + vox
 mix[int(T * SR):] = 0
 mix = mix[: int(T * SR)]
 # end fade
@@ -185,7 +207,7 @@ mix = np.tanh(mix * 1.1) / np.tanh(1.1)
 st_ = np.stack([mix, mix], 1)
 pcm = (np.clip(st_, -1, 1) * 32767).astype(np.int16)
 w = wave.open(os.path.join(ROOT, "mix.wav"), "wb"); w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(pcm.tobytes()); w.close()
-out = os.path.join(ROOT, "perped_ad_v2.mp4")
+out = os.path.join(ROOT, os.environ.get("OUT", "perped_ad_v2.mp4"))
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", os.path.join(ROOT, "video.mp4"), "-i", os.path.join(ROOT, "mix.wav"),
                 "-af", "loudnorm=I=-14:TP=-1.0:LRA=11", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-shortest", "-movflags", "+faststart", out], check=True)
 print("->", out, round(T, 2))
