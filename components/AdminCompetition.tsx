@@ -35,7 +35,7 @@ export function AdminCompetition({ call }: { call: (url: string, init?: RequestI
       <section className="inv-card">
         <div className="flex items-center justify-between"><span className="eyebrow">Alpha competition</span><span className={`adm-st ${s.hidden ? "warn" : "ok"}`}>{s.hidden ? "HIDDEN" : "LIVE"}</span></div>
         <p className="mt-1 text-[14px]"><b className="mono">{b?.count ?? "…"}</b><span className="muted"> / {s.goal} counted</span> · <span className="muted">{sinceLaunch ? "every fade since launch" : `fades since ${new Date(s.startAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}</span></p>
-        <p className="when mt-1">Counts each real person once: a linked account (X, Google, email or wallet) that has opened a fade. Bots and unlinked guests never count.</p>
+        <p className="when mt-1">Counts each real person once who has placed a trade (any account, guests included). Demo bots never count.</p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button className="btn" style={{ padding: 10, fontSize: 13 }} disabled={sinceLaunch} onClick={() => save({ startAt: LAUNCH }, "Now counting everyone who has ever faded")}>Count since launch</button>
           <button className="btn" style={{ padding: 10, fontSize: 13 }} onClick={() => confirm("Restart the count from zero, now?") && save({ restart: true }, "Count restarted from now")}>Restart from now</button>
