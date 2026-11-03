@@ -4,6 +4,7 @@ import { PushPrompt } from "@/components/PushPrompt";
 import { AlertSettings } from "@/components/AlertSettings";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { HlImportSettings } from "@/components/HlRecord";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { useSession } from "@/lib/hooks/useSession";
 import { useMarkets } from "@/lib/hooks/useMarkets";
@@ -122,6 +123,9 @@ export default function SettingsPage() {
           <Link href="/admin" className="srow" style={{ color: "var(--brand)" }}><span><b>Admin</b><span className="when ml-1.5">founders, waitlist, admins{profile.role === "owner" ? ", payouts, rename" : ""}</span></span><span>→</span></Link>
         </>
       )}
+      <div id="hl" className="eyebrow px-5 pb-1.5 pt-4" style={{ scrollMarginTop: 12 }}>Track record</div>
+      <HlImportSettings />
+      <Link href="/crews" className="srow" style={{ color: "var(--brand)" }}><span><b>Crews</b><span className="when ml-1.5">start one for your group, or find one to join</span></span><span>→</span></Link>
       <div className="eyebrow px-5 pb-1.5 pt-4">Referrals</div>
       {(profile.founderSeat != null || profile.role === "admin" || profile.role === "owner") && <Link href="/founder" className="srow" style={{ color: "var(--brand)" }}><span><b>Founder dashboard</b><span className="when ml-1.5">your network, activity and earnings</span></span><span>→</span></Link>}
       <Link href="/invite" className="srow" style={{ color: "var(--brand)" }}><span><b>Invite &amp; earn</b><span className="when ml-1.5">your link, rates, earnings and people</span></span><span>→</span></Link>

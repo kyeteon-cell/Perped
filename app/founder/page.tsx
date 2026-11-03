@@ -1,5 +1,6 @@
 "use client";
 
+import { EarningsCalc } from "@/components/EarningsCalc";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -85,6 +86,8 @@ export default function FounderDashboard() {
         <div><small>Earned</small><b className="mono">{usd(e.total)}</b><span>{usd(e.paid)} paid</span></div>
         <div><small>Owed</small><b className="mono">{usd(e.owed)}</b><span>paid Mondays</span></div>
       </div>
+
+      {f && <EarningsCalc sharePct={f.l1Pct} title="What your network could earn you" defaultPeople={5} />}
 
       {f && (
         <section className="inv-card mt-3">

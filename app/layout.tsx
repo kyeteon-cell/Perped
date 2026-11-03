@@ -8,6 +8,7 @@ import { CompBar } from "@/components/CompBar";
 import { PositionsPill } from "@/components/PositionsPill";
 import { Moments } from "@/components/Moments";
 import { ViewportFix } from "@/components/ViewportFix";
+import { RefCapture } from "@/components/RefCapture";
 import { APP_NAME, APP_URL } from "@/lib/config";
 
 const sans = Nunito({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PositionsPill />
           <Moments />
           <ViewportFix />
+          <RefCapture />
           <Nav />
         </Providers>
       </body>

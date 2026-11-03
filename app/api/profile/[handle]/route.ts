@@ -2,6 +2,8 @@ import { and, desc, eq, or, sql } from "drizzle-orm";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { getClearinghouseState } from "@/lib/hl-info";
+import { after } from "next/server";
+import { readHlRecord } from "@/lib/hl-import";
 
 /** GET /api/profile/:handle → profile, stats, follow counts, whether the viewer follows, live positions + account value. */
 export const dynamic = "force-dynamic";
@@ -72,5 +74,17 @@ export async function GET(req: Request, ctx: { params: Promise<{ handle: string 
     if (o) vendetta = { handle: o.handle, avatarUrl: o.avatarUrl, mine: rv.userA === user.id ? rv.aWins : rv.bWins, theirs: rv.userA === user.id ? rv.bWins : rv.aWins, draws: rv.draws, fights: rv.fights };
   }
   const xpRecent = await db.select({ delta: schema.xpLog.delta, reason: schema.xpLog.reason, ref: schema.xpLog.ref, createdAt: schema.xpLog.createdAt }).from(schema.xpLog).where(eq(schema.xpLog.userId, user.id)).orderBy(desc(schema.xpLog.createdAt)).limit(8);
-  return Response.json({ user, stats: row.stats, followers: row.followers, following: row.following, rivalries: row.rivalries, isFollowing, isMe, positions, accountValue, withdrawable, xpRecent, battleStreak, bestStreak, form, vendetta });
+  // Their crew, and their verified Hyperliquid record (refreshed in the background once a day).
+  const [crewRow] = await db.select({ slug: schema.crews.slug, name: schema.crews.name, tag: schema.crews.tag, ownerId: schema.crews.ownerId })
+    .from(schema.crewMembers).innerJoin(schema.crews, eq(schema.crews.id, schema.crewMembers.crewId)).where(eq(schema.crewMembers.userId, user.id)).limit(1).catch(() => []);
+  const crew = crewRow ? { slug: crewRow.slug, name: crewRow.name, tag: crewRow.tag, isOwner: crewRow.ownerId === user.id } : null;
+  const [imp] = await db.select().from(schema.hlImports).where(eq(schema.hlImports.userId, user.id)).limit(1).catch(() => []);
+  if (imp && Date.now() - new Date(imp.refreshedAt).getTime() > 24 * 3600_000) {
+    after(async () => {
+      const rec = await readHlRecord(imp.address).catch(() => null);
+      if (rec) await db.update(schema.hlImports).set({ summary: rec, refreshedAt: new Date() }).where(eq(schema.hlImports.userId, imp.userId));
+    });
+  }
+  const hlRecord = imp ? { ...imp.summary, verifiedAt: imp.verifiedAt } : null;
+  return Response.json({ crew, hlRecord, user, stats: row.stats, followers: row.followers, following: row.following, rivalries: row.rivalries, isFollowing, isMe, positions, accountValue, withdrawable, xpRecent, battleStreak, bestStreak, form, vendetta });
 }

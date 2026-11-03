@@ -14,6 +14,7 @@ import { getFrontendOpenOrders, getMids, getPerpAssets } from "@/lib/hl-info";
 import { fillsForOrder, vwap } from "@/lib/hlfills";
 import { normCoin } from "@/lib/format";
 import { rateLimit } from "@/lib/ratelimit";
+import { crewBroadcast } from "@/lib/crews";
 
 /**
  * Keep the For-you feed mixed: system cards (battle / duel results, milestones, settlements, market stories)
@@ -57,6 +58,7 @@ export async function GET(req: Request) {
 
   const conds = [
     q.handle ? eq(schema.users.handle, q.handle.toLowerCase()) : undefined,
+    q.crew ? sql`${schema.posts.userId} in (select m.user_id from crew_members m join crews c on c.id = m.crew_id where c.slug = ${q.crew.toLowerCase()})` : undefined,
     q.coin ? eq(schema.posts.coin, normCoin(q.coin)) : undefined,
     q.kind ? eq(schema.posts.kind, q.kind as "trade") : undefined,
     q.status === "open" || q.status === "closed" ? eq(schema.posts.status, q.status) : undefined,
@@ -281,6 +283,7 @@ export async function POST(req: Request) {
     }
   }
   // Trophies (first trade, first fade, …) unlock right after the response goes out.
+  if (b.kind === "trade" || b.kind === "call") crewBroadcast(post.id, b.kind === "trade" ? "open" : "call");
   after(() => checkSoon(profile.id));
   return Response.json({ post });
 }

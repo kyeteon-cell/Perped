@@ -366,4 +366,32 @@ create table if not exists alert_prefs (
   prefs jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
+-- Crews: a trader's group on Perped. One crew per member; the owner's invite link brings people in.
+create table if not exists crews (
+  id serial primary key,
+  slug text not null unique,
+  name text not null,
+  tag text not null,
+  bio text,
+  owner_id text not null unique references users(id),
+  tg_chat_id text,
+  tg_chat_title text,
+  tg_link_code text,
+  tg_members boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create table if not exists crew_members (
+  user_id text primary key references users(id),
+  crew_id integer not null references crews(id) on delete cascade,
+  joined_at timestamptz not null default now()
+);
+create index if not exists crew_members_crew_idx on crew_members (crew_id);
+-- A trader's verified Hyperliquid history from a wallet they proved they own (signed message).
+create table if not exists hl_imports (
+  user_id text primary key references users(id),
+  address text not null,
+  verified_at timestamptz not null default now(),
+  refreshed_at timestamptz not null default now(),
+  summary jsonb not null default '{}'::jsonb
+);
 `;

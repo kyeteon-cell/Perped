@@ -1,5 +1,6 @@
 "use client";
 
+import { CrewTag } from "./CrewTag";
 import { Glyph } from "./Glyph";
 import Link from "next/link";
 import { useSWRConfig } from "swr";
@@ -71,7 +72,7 @@ function Who({ item, right }: { item: FeedRow; right?: React.ReactNode }) {
         <div className="flex items-center gap-3">
           <Link href={`/u/${author.handle}`} onClick={(e) => e.stopPropagation()}><Avatar handle={author.handle} url={author.avatarUrl} link={false} xp={author.xp} /></Link>
           <div>
-            <Link href={`/u/${author.handle}`} className="name nrow" onClick={(e) => e.stopPropagation()}><span className="truncate">{author.handle}</span>{author.verified && <span className="vbadge" title="Verified" aria-label="Verified">✓</span>}<Badges u={author} />{item.rival ? <span className={`rival-chip ${item.rival.mine > item.rival.theirs ? "lead" : ""}`}><Glyph n="swords" /> {item.rival.mine}–{item.rival.theirs}</span> : null}</Link>
+            <Link href={`/u/${author.handle}`} className="name nrow" onClick={(e) => e.stopPropagation()}><span className="truncate">{author.handle}</span>{author.verified && <span className="vbadge" title="Verified" aria-label="Verified">✓</span>}<Badges u={author} /><CrewTag crew={author.crew} />{item.rival ? <span className={`rival-chip ${item.rival.mine > item.rival.theirs ? "lead" : ""}`}><Glyph n="swords" /> {item.rival.mine}–{item.rival.theirs}</span> : null}</Link>
             <div className="when">{isDemoPost(item) ? <><span className="demo-word">Demo</span> · </> : null}{timeAgo(post.createdAt)} ago{post.kind === "trade" && (
               post.copiedFromId ? <> · copied {item.src ? <Link href={`/u/${item.src.handle}`} className="srcname" onClick={(e) => e.stopPropagation()}>@{item.src.handle}</Link> : "a trade"}</>
               : post.fadedFromId ? <> · faded {item.src ? <Link href={`/u/${item.src.handle}`} className="srcname" onClick={(e) => e.stopPropagation()}>@{item.src.handle}</Link> : "a trade"}</>

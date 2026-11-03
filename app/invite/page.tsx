@@ -1,5 +1,6 @@
 "use client";
 
+import { EarningsCalc } from "@/components/EarningsCalc";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -102,6 +103,7 @@ export default function InvitePage() {
           <div className="inv-code"><span className="mono">{data.link.replace(/^https?:\/\//, "")}</span><button onClick={copy}>Copy</button></div>
           <div className="inv-share"><button onClick={tweet}>Post on X</button><button onClick={share}>Share</button></div>
         </section>
+        <EarningsCalc sharePct={r.invitePct} />
 
         {data.canRedeem && (
           <section className="inv-card">

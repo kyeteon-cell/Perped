@@ -8,31 +8,41 @@ import Link from "next/link";
 import { Avatar, Badges, SkeletonList, RankChip, RankEmblem } from "@/components/ui";
 import { rankFor } from "@/lib/rank";
 import { fmtUsd, fmtPct } from "@/lib/format";
+import { CrewBoard } from "@/components/CrewBoard";
+import type { CrewCard } from "@/lib/crews";
 
 type Row = { handle: string; avatarUrl: string | null; pnl?: number; winRate: string; closedTrades: number; volume30d: string; liquidations: number; fadedCount: number; callsResolved: number; callsHit: number; callAvgMove: string; callStreak: number; hitRate?: number; xp?: number; seasonXp?: number; battlesWon?: number; battlesLost?: number; role?: string | null; founderSeat?: number | null; founderStatus?: string | null };
 
 const seasonLeft = (iso: string) => { const ms = new Date(iso).getTime() - Date.now(); const d = Math.floor(ms / 86_400_000), h = Math.floor((ms % 86_400_000) / 3_600_000); return d > 0 ? `${d}d ${h}h` : `${Math.max(0, h)}h`; };
 
 export default function LeaderboardPage() {
-  const [mode, setMode] = useState<"trades" | "calls" | "ranks" | "season">("trades");
+  const [mode, setMode] = useState<"trades" | "calls" | "ranks" | "season" | "crews">("trades");
   const [period, setPeriod] = useState<"7d" | "30d" | "all">("7d");
   const [demo, setDemo] = useState(false);
-  const { data, isLoading, error } = useSWR<{ rows: Row[]; bottom?: Row[]; fellBack?: boolean; error?: string; season?: { name: string; endsAt: string } }>(`/api/leaderboard?mode=${mode}&period=${period}&demo=${demo ? 1 : 0}`);
+  const { data, isLoading, error } = useSWR<{ rows: Row[]; bottom?: Row[]; fellBack?: boolean; error?: string; season?: { name: string; endsAt: string } }>(mode === "crews" ? null : `/api/leaderboard?mode=${mode}&period=${period}&demo=${demo ? 1 : 0}`);
+  const { data: crews } = useSWR<{ board: CrewCard[]; mine: { slug: string } | null }>(mode === "crews" ? "/api/crews" : null);
   const rows = data?.rows ?? [];
   const podium = mode !== "calls" ? rows.slice(0, 3) : [];
 
   return (
     <div data-tint="gold" className="fade-in">
-      <header className="lb-hero" style={{ backgroundImage: `url(${small("/api/share-bg/arena", 1080)})` }}><h1 className="h1" style={{ color: "#fff" }}>Leaders</h1><div className="text-[12px]" style={{ color: "rgba(255,255,255,.8)" }}>{mode === "trades" ? "Realised PnL from Hyperliquid fills" : mode === "calls" ? "Public predictions, scored against the chart" : "XP from fades, duels, calls and trades"}</div></header>
+      <header className="lb-hero" style={{ backgroundImage: `url(${small("/api/share-bg/arena", 1080)})` }}><h1 className="h1" style={{ color: "#fff" }}>Leaders</h1><div className="text-[12px]" style={{ color: "rgba(255,255,255,.8)" }}>{mode === "crews" ? "This week's crew war: fades won minus fades lost" : mode === "trades" ? "Realised PnL from Hyperliquid fills" : mode === "calls" ? "Public predictions, scored against the chart" : "XP from fades, duels, calls and trades"}</div></header>
       <div className="px-5 pb-3 pt-4">
-        <div className="modes"><button className={mode === "trades" ? "on" : ""} onClick={() => setMode("trades")}>Trades</button><button className={mode === "calls" ? "on" : ""} onClick={() => setMode("calls")}>Calls</button><button className={mode === "ranks" ? "on" : ""} onClick={() => setMode("ranks")}>Ranks</button><button className={mode === "season" ? "on" : ""} onClick={() => setMode("season")}>Season</button></div>
+        <div className="modes"><button className={mode === "trades" ? "on" : ""} onClick={() => setMode("trades")}>Trades</button><button className={mode === "calls" ? "on" : ""} onClick={() => setMode("calls")}>Calls</button><button className={mode === "ranks" ? "on" : ""} onClick={() => setMode("ranks")}>Ranks</button><button className={mode === "season" ? "on" : ""} onClick={() => setMode("season")}>Season</button><button className={mode === "crews" ? "on" : ""} onClick={() => setMode("crews")}>Crews</button></div>
         {mode === "season" && data?.season && <div className="season-bar mt-3"><b className="gl"><Glyph n="trophy" tone="gold" />{data.season.name}</b><span>{seasonLeft(data.season.endsAt)} left · XP earned this month only</span></div>}
-        <div className="seg mt-3">
+        {mode !== "crews" && <div className="seg mt-3">
           {mode === "trades" && (["7d", "30d", "all"] as const).map((p) => <button key={p} className={`chip ${p === period ? "on" : ""}`} onClick={() => setPeriod(p)}>{p === "all" ? "All time" : p === "7d" ? "7 days" : "30 days"}</button>)}
           <button className={`chip ${demo ? "on" : ""}`} style={{ marginLeft: "auto" }} onClick={() => setDemo((v) => !v)}>{demo ? "Demo accounts" : "Real accounts"}</button>
-        </div>
+        </div>}
       </div>
 
+      {mode === "crews" && (
+        <>
+          {!crews ? <SkeletonList n={4} card={false} /> : <CrewBoard board={crews.board} mine={crews.mine?.slug} />}
+          <Link href="/crews" className="srow" style={{ color: "var(--brand)" }}><span><b>{crews?.mine ? "All crews" : "Start a crew"}</b><span className="when ml-1.5">how the war works</span></span><span>→</span></Link>
+        </>
+      )}
+      {mode !== "crews" && <>
       {data?.fellBack && !demo && <p className="when px-5 pb-2 text-[12px]">No real-money traders ranked yet — showing demo accounts.</p>}
       {(error || data?.error) && <div className="block text-center red text-sm">Leaderboard failed to load: {String(data?.error ?? error?.message ?? error)}</div>}
       {isLoading && rows.length === 0 && <SkeletonList n={5} card={false} />}
@@ -85,6 +95,7 @@ export default function LeaderboardPage() {
         </>
       )}
       <p className="muted px-5 py-3.5 text-xs leading-relaxed">{mode === "trades" ? "Only trades placed through Perped count, so every number is verifiable on-chain." : "A call is a public prediction: coin, direction, target, deadline. Perped checks it against Hyperliquid prices. Minimum 5 resolved calls to rank."}</p>
+      </>}
     </div>
   );
 }
