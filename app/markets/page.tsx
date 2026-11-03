@@ -10,6 +10,8 @@ import type { MarketItem as MarketRow } from "@/components/MarketStats";
 import { useMids } from "@/lib/hooks/useMids";
 import type { FeedRow } from "@/lib/feed";
 
+type Group = "all" | "crypto" | "stocks";
+const isStock = (m: { kind?: string }) => m.kind === "stock" || m.kind === "index";
 type Sort = "volume" | "gainers" | "losers" | "oi" | "oirise" | "crowded" | "hot";
 
 export default function MarketsPage() {
@@ -17,6 +19,7 @@ export default function MarketsPage() {
   const { data: live } = useSWR<{ posts: FeedRow[] }>("/api/posts?tab=live&limit=50", { refreshInterval: 30_000 });
   const { mids } = useMids();
   const [sort, setSort] = useState<Sort>("volume");
+  const [group, setGroup] = useState<Group>("all");
 
   const liveByCoin = useMemo(() => {
     const m: Record<string, { n: number; longs: number }> = {};
@@ -26,7 +29,9 @@ export default function MarketsPage() {
   const totalLive = Object.values(liveByCoin).reduce((a, b) => a + b.n, 0);
   const totalLongs = Object.values(liveByCoin).reduce((a, b) => a + b.longs, 0);
 
-  const all = data?.markets ?? [];
+  const every = data?.markets ?? [];
+  const stockCount = useMemo(() => every.filter(isStock).length, [every]);
+  const all = useMemo(() => group === "all" ? every : every.filter((m) => (group === "stocks") === isStock(m)), [every, group]);
   const totals = useMemo(() => ({ vol: all.reduce((a, m) => a + m.volume24h, 0), oi: all.reduce((a, m) => a + m.openInterest, 0) }), [all]);
   const movers = useMemo(() => [...all].sort((a, b) => Math.abs(b.change24h) - Math.abs(a.change24h)).slice(0, 8), [all]);
   const rows = useMemo(() => {
@@ -42,7 +47,7 @@ export default function MarketsPage() {
   return (
     <div data-tint="blue" className="fade-in">
       <header className="flex items-center justify-between px-5 pt-4">
-        <div><h1 className="h1 dot">Markets</h1><div className="when">{all.length || "…"} perps · Hyperliquid</div></div>
+        <div><h1 className="h1 dot">Markets</h1><div className="when">{every.length || "…"} perps{stockCount ? ` · ${stockCount} stocks` : ""} · Hyperliquid</div></div>
         <Link href="/search" className="iconbtn" aria-label="Search"><Icon d={I.search} /></Link>
       </header>
 
@@ -64,7 +69,12 @@ export default function MarketsPage() {
         ))}
       </div>
 
-      <div className="seg px-5 pt-4 pb-2.5">
+      <div className="seg px-5 pt-4">
+        {([["all", "All"], ["crypto", "Crypto"], ["stocks", "Stocks"]] as [Group, string][]).map(([k, l]) => (
+          <button key={k} className={`chip ${group === k ? "info" : ""}`} onClick={() => setGroup(k)}>{l}</button>
+        ))}
+      </div>
+      <div className="seg px-5 pt-2.5 pb-2.5">
         {([["volume", "Volume"], ["gainers", "Gainers"], ["losers", "Losers"], ["oi", "Open interest"], ["oirise", "OI rising"], ["crowded", "Crowded"], ["hot", "Hot on Perped"]] as [Sort, string][]).map(([k, l]) => (
           <button key={k} className={`chip ${sort === k ? "on" : ""}`} onClick={() => setSort(k)}>{l}</button>
         ))}
@@ -80,7 +90,7 @@ export default function MarketsPage() {
               <div className="flex min-w-0 items-center gap-3">
                 <CoinMark coin={m.name} />
                 <div className="min-w-0">
-                  <div className="name flex items-center gap-1.5">{ticker(m.name, true)} <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.maxLeverage}×</span></div>
+                  <div className="name flex items-center gap-1.5">{ticker(m.name, true)} <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.maxLeverage}×</span>{isStock(m) && <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.kind === "index" ? "Index" : "Stock"}</span>}</div>
                   <div className="when truncate text-xs">Vol {fmtUsd(m.volume24h, { compact: true })} · OI {fmtUsd(m.openInterest, { compact: true })}{m.oiChange24h != null && <span className="mono"> {fmtPct(m.oiChange24h, 1)}</span>}</div>
                 </div>
               </div>
@@ -92,7 +102,7 @@ export default function MarketsPage() {
           </Link>
         );
       })}
-      <p className="muted px-5 py-4 text-xs leading-relaxed">Prices and funding from Hyperliquid, updating live. Funding is shown per year (Hyperliquid pays it hourly). OI change compares open interest with 24 hours ago. L/S is the long/short split of open Perped positions on that market.</p>
+      <p className="muted px-5 py-4 text-xs leading-relaxed">Prices and funding from Hyperliquid, updating live. Stocks are perps that track the share price, listed on Hyperliquid by builders such as TradeXYZ (HIP-3): they trade 24/7 with isolated margin, and give no shares, dividends or votes. Funding is shown per year (Hyperliquid pays it hourly). OI change compares open interest with 24 hours ago. L/S is the long/short split of open Perped positions on that market.</p>
     </div>
   );
 }

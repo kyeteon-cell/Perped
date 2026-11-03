@@ -163,8 +163,11 @@ export async function POST(req: Request) {
     }
     // Leverage cap = Hyperliquid's own max for this market.
     const assets = await getPerpAssets().catch(() => []);
-    const cap = assets.find((a) => a.name === normCoin(b.coin))?.maxLeverage ?? 50;
+    const asset = assets.find((a) => a.name === normCoin(b.coin));
+    const cap = asset?.maxLeverage ?? 50;
     if (b.leverage > cap) return Response.json({ error: `Hyperliquid allows up to ${cap}× on ${normCoin(b.coin)}` }, { status: 400 });
+    // Stock perps (HIP-3) are demo-only until real-money routing to builder dexes is wired up.
+    if ((asset?.kind === "stock" || asset?.kind === "index") && !(b.paper || profile.isDemo)) return Response.json({ error: "Stock perps are demo-only for now." }, { status: 403 });
   }
 
   if (b.kind === "trade" && (b.fadedFromId || b.copiedFromId)) {

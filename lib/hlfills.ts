@@ -10,13 +10,13 @@ export function vwap(fills: Fill[]) {
 /** The fills of one order on Hyperliquid, looked up by order id (last 15 minutes). */
 export async function fillsForOrder(address: string, oid: number, coin: string) {
   const fills = await getUserFillsByTime(address, Date.now() - 15 * 60_000);
-  return fills.filter((f) => f.oid === oid && f.coin === coin);
+  return fills.filter((f) => f.oid === oid && sameCoin(f.coin, coin));
 }
 
 /** The most recent closing fills for a coin since a time: what a position actually closed at on Hyperliquid. */
 export async function closingFills(address: string, coin: string, since: number) {
   const fills = await getUserFillsByTime(address, since);
-  const closes = fills.filter((f) => f.coin === coin && /close|liquidat/i.test(f.dir)).sort((a, b) => b.time - a.time);
+  const closes = fills.filter((f) => sameCoin(f.coin, coin) && /close|liquidat/i.test(f.dir)).sort((a, b) => b.time - a.time);
   if (!closes.length) return null;
   // The last close and everything within 60s before it (one market close can fill in several pieces).
   const last = closes[0].time;
@@ -24,3 +24,6 @@ export async function closingFills(address: string, coin: string, since: number)
   const v = vwap(batch);
   return v ? { ...v, liquidated: batch.some((f) => /liquidat/i.test(f.dir)), at: last } : null;
 }
+
+/** Fills name stock perps the Hyperliquid way ("xyz:NVDA"); posts use the plain ticker. */
+function sameCoin(fill: string, coin: string) { return fill === coin || fill.slice(fill.indexOf(":") + 1) === coin; }
