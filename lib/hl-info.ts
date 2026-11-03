@@ -293,13 +293,15 @@ const NOT_STOCK = new Set([
   "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD", "CNH", "CNY", "MXN", "KRW", "INR", "SGD", "HKD", "BRL", "TRY", "ZAR", "SEK", "NOK", "DXY", "USDX",
   "US10Y", "US2Y", "US5Y", "US30Y", "TNX", "BOND", "BONDS", "VIX", "VVIX", "MOVE", "VOL", "BVIV", "EVIV",
   "GPU", "H100", "H200", "B200", "A100", "COMPUTE", "ELECTRICITY", "POWER", "FUNDING", "BTCD", "ETHD", "TOTAL", "TOTAL2", "TOTAL3", "OTHERS",
-  "USDT", "USDC", "USDH", "USDE", "BTC", "ETH", "SOL",
+  "USDT", "USDC", "USDH", "USDE", "BTC", "ETH", "SOL", "BRENTOIL", "WTIOIL", "CRUDE", "CRUDEOIL", "PURRDAT", "ANSEM",
 ]);
 const FX = ["EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD", "CNH", "CNY", "MXN", "USD", "SGD", "HKD", "KRW", "INR"];
 /** Equity indices and index funds, shown as "index" rather than single stocks. */
 const INDEX = new Set([
   "SP500", "US500", "SPX", "SPY", "XYZ100", "NDX", "NAS100", "US100", "USTECH", "USTECH100", "QQQ", "DJI", "DJIA", "US30", "DOW", "RUT", "RUSSELL", "US2000", "IWM", "DIA",
   "MAG7", "NIKKEI", "JP225", "N225", "DAX", "DE40", "GER40", "FTSE", "UK100", "HSI", "HK50", "KOSPI", "CHINA50", "CN50", "STOXX50", "EU50", "CAC40", "FR40", "ASX200", "AUS200", "NIFTY", "SMH", "SOXX",
+  // Index funds (ETFs): country, sector, leveraged and bond funds.
+  "SOXL", "EWY", "EWZ", "EWJ", "EWT", "KORU", "TLT", "MAGS", "XLE", "URNM", "GDX", "IGV", "XBI", "DRV", "KR200",
 ]);
 
 function classify(base: string, nativeNames: Set<string>): Exclude<MarketKind, "crypto"> | null {
