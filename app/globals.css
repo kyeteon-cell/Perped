@@ -2186,3 +2186,8 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 .aint-acts button { border: 0; padding: 13px; border-radius: 14px; font: inherit; font-size: 15px; font-weight: 800; background: rgba(255,255,255,.08); color: #fff; cursor: pointer; }
 .aint-acts button.go { background: linear-gradient(135deg, #ffe39a, #f2b63a 50%, #c98a05); color: #1a1300; }
 @media (prefers-reduced-motion: reduce) { .aint-art i { animation: none !important; } }
+
+/* positions pill: centred without transform (the entrance animation owns transform), and never wider than the screen */
+.pos-pill { left: 0 !important; right: 0; margin: 0 auto; width: max-content; max-width: calc(100vw - 24px); transform: none !important; overflow: hidden; }
+.pos-pill .pos-wl { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pos-pill.gold { gap: 7px; padding-left: 6px; }
