@@ -46,6 +46,11 @@ export const BUILDER_MAX_FEE_TENTHS_BPS = clampInt(Number(process.env.NEXT_PUBLI
 export const BUILDER_FEE_STANDARD_TENTHS_BPS = clampInt(Number(process.env.NEXT_PUBLIC_BUILDER_FEE_TENTHS_BPS ?? 50), 0, BUILDER_MAX_FEE_TENTHS_BPS);
 export const BUILDER_FEE_REFERRED_TENTHS_BPS = clampInt(Number(process.env.NEXT_PUBLIC_BUILDER_FEE_REFERRED_TENTHS_BPS ?? 35), 0, BUILDER_MAX_FEE_TENTHS_BPS);
 export const BUILDER_FEE_TOP_TENTHS_BPS = clampInt(Number(process.env.NEXT_PUBLIC_BUILDER_FEE_TOP_TENTHS_BPS ?? 25), 0, BUILDER_MAX_FEE_TENTHS_BPS);
+// Stock perps (HIP-3) carry a lower Perped fee: Hyperliquid's own fee on many of them is tiny (growth mode), so
+// the crypto rate would make Perped several times the cost of trading them elsewhere. Same three tiers.
+export const STOCK_FEE_STANDARD_TENTHS_BPS = clampInt(Number(process.env.NEXT_PUBLIC_STOCK_FEE_TENTHS_BPS ?? 20), 0, BUILDER_MAX_FEE_TENTHS_BPS);
+export const STOCK_FEE_REFERRED_TENTHS_BPS = clampInt(Number(process.env.NEXT_PUBLIC_STOCK_FEE_REFERRED_TENTHS_BPS ?? 15), 0, BUILDER_MAX_FEE_TENTHS_BPS);
+export const STOCK_FEE_TOP_TENTHS_BPS = clampInt(Number(process.env.NEXT_PUBLIC_STOCK_FEE_TOP_TENTHS_BPS ?? 10), 0, BUILDER_MAX_FEE_TENTHS_BPS);
 /** Leaderboard rank (30-day PnL) at or above which a trader gets the top tier. */
 export const TOP_TIER_RANK = clampInt(Number(process.env.NEXT_PUBLIC_TOP_TIER_RANK ?? 100), 1, 10_000);
 

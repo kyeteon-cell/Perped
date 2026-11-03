@@ -2,7 +2,7 @@ import Link from "next/link";
 import { small } from "@/lib/img";
 import { Glyph } from "@/components/Glyph";
 import { LiveSoonNote } from "@/components/ComingSoonSheet";
-import { BUILDER_FEE_STANDARD_TENTHS_BPS, BUILDER_FEE_REFERRED_TENTHS_BPS, BUILDER_FEE_TOP_TENTHS_BPS, BUILDER_MAX_FEE_TENTHS_BPS, TOP_TIER_RANK, REFERRAL_SHARE_PCT, REFERRAL_TOP_SHARE_PCT, REFERRAL_TOP_THRESHOLD, HL_NETWORK } from "@/lib/config";
+import { BUILDER_FEE_STANDARD_TENTHS_BPS, BUILDER_FEE_REFERRED_TENTHS_BPS, BUILDER_FEE_TOP_TENTHS_BPS, BUILDER_MAX_FEE_TENTHS_BPS, TOP_TIER_RANK, STOCK_FEE_STANDARD_TENTHS_BPS, STOCK_FEE_REFERRED_TENTHS_BPS, STOCK_FEE_TOP_TENTHS_BPS, REFERRAL_SHARE_PCT, REFERRAL_TOP_SHARE_PCT, REFERRAL_TOP_THRESHOLD, HL_NETWORK } from "@/lib/config";
 import { tenthsBpsToLabel } from "@/lib/fees";
 import { RANKS } from "@/lib/rank";
 import { CREATOR_FOUNDER_PCT, CREATOR_MIN_HOLD_S, CREATOR_PCT, CREATOR_RANKED_LEVEL, CREATOR_RANKED_PCT, FOUNDER_GRACE_DAYS, FOUNDER_L1_PCT, FOUNDER_L2_PCT, FOUNDER_SEATS, PAYOUT_CAP_PCT } from "@/lib/programme-rates";
@@ -153,10 +153,11 @@ export default function HowItWorks() {
             <tr><td>Standard</td><td className="mono">{F(BUILDER_FEE_STANDARD_TENTHS_BPS)}</td><td>of notional, per fill, shown on the ticket</td></tr>
             <tr><td>Joined through an invite</td><td className="mono">{F(BUILDER_FEE_REFERRED_TENTHS_BPS)}</td><td>for life</td></tr>
             <tr><td>Top {TOP_TIER_RANK} on the leaderboard</td><td className="mono">{F(BUILDER_FEE_TOP_TENTHS_BPS)}</td><td>while ranked</td></tr>
+            <tr><td>Stock perps (NVDA, TSLA, indices)</td><td className="mono">{F(STOCK_FEE_STANDARD_TENTHS_BPS)}</td><td>{F(STOCK_FEE_REFERRED_TENTHS_BPS)} with an invite, {F(STOCK_FEE_TOP_TENTHS_BPS)} for the top {TOP_TIER_RANK}</td></tr>
             <tr><td>Cap you approve once</td><td className="mono">{F(BUILDER_MAX_FEE_TENTHS_BPS)}</td><td>enforced by Hyperliquid, not by us</td></tr>
           </tbody>
         </table>
-        <p className="mt-3">Example: $250 margin at 40× is $10,000 of notional. At {F(BUILDER_FEE_STANDARD_TENTHS_BPS)} the Perped fee is <span className="mono">${((10000 * BUILDER_FEE_STANDARD_TENTHS_BPS) / 100000).toFixed(2)}</span> to open and the same to close. Hyperliquid&rsquo;s own fee applies on top and is published on their site.</p>
+        <p className="mt-3">Example: $250 margin at 40× is $10,000 of notional. At {F(BUILDER_FEE_STANDARD_TENTHS_BPS)} the Perped fee is <span className="mono">${((10000 * BUILDER_FEE_STANDARD_TENTHS_BPS) / 100000).toFixed(2)}</span> to open and the same to close. Hyperliquid&rsquo;s own fee applies on top and is published on their site. Stock perps are listed by builders on Hyperliquid (HIP-3); their exchange fee is often much lower than on crypto, so Perped charges less on them too.</p>
         <p className="mt-2"><b>Invites.</b> Share a challenge or invite link and anyone who joins through it pays the reduced rate. You receive {REFERRAL_SHARE_PCT}% of the Perped fee on everything they trade ({REFERRAL_TOP_SHARE_PCT}% once {REFERRAL_TOP_THRESHOLD} of your invitees are active), paid in USDC and shown in Settings. It comes out of the fee, never out of anyone&rsquo;s trading balance.</p>
         <p className="mt-2">Demo trading is free, because there is no fill to charge on.</p>
       </section>

@@ -12,13 +12,19 @@ export const BOTS = [
   { id: "bot:degenmaxi", handle: "degenmaxi", bio: "Max leverage or nothing. Here for a good time, not a long time.", coins: ["SOL", "DOGE", "WIF", "HYPE"], lev: [20, 50], style: "degen" as const, bias: 0.5, winSkew: 0.42, chatty: 0.9, calls: 0.1, holdH: [1, 8] },
   { id: "bot:fundingfarmer", handle: "fundingfarmer", bio: "I trade the funding rate, not the chart. Calls > trades.", coins: ["BTC", "ETH", "HYPE", "XRP"], lev: [2, 5], style: "low" as const, bias: 0.5, winSkew: 0.58, chatty: 0.4, calls: 0.6, holdH: [12, 72] },
   { id: "bot:wickhunter", handle: "wickhunter", bio: "Liquidity grabs and failed breakouts. Stops always on.", coins: ["SOL", "ETH", "SUI", "LINK"], lev: [10, 25], style: "high" as const, bias: 0.45, winSkew: 0.6, chatty: 0.5, calls: 0.3, holdH: [2, 24] },
-  { id: "bot:contrarian_kate", handle: "contrarian_kate", bio: "If everyone's long, I'm short. Fading is a lifestyle.", coins: ["BTC", "SOL", "DOGE"], lev: [5, 20], style: "mid" as const, bias: 0.3, winSkew: 0.52, chatty: 0.7, calls: 0.2, holdH: [4, 36], fader: true },
-  { id: "bot:bull_barry", handle: "bull_barry", bio: "Permabull. Every dip is a gift. bear_bianca has been wrong since 2017.", coins: ["BTC", "ETH", "SOL", "HYPE"], lev: [10, 30], style: "high" as const, bias: 0.85, winSkew: 0.5, chatty: 0.85, calls: 0.25, holdH: [2, 20], nemesis: "bot:bear_bianca" },
-  { id: "bot:bear_bianca", handle: "bear_bianca", bio: "Permabear. Gravity always wins. Fading bull_barry is my cardio.", coins: ["BTC", "ETH", "SOL", "HYPE"], lev: [10, 30], style: "high" as const, bias: 0.15, winSkew: 0.5, chatty: 0.85, calls: 0.25, holdH: [2, 20], nemesis: "bot:bull_barry" },
+  { id: "bot:contrarian_kate", handle: "contrarian_kate", bio: "If everyone's long, I'm short. Fading is a lifestyle.", coins: ["BTC", "SOL", "DOGE", "TSLA", "NVDA"], lev: [5, 20], style: "mid" as const, bias: 0.3, winSkew: 0.52, chatty: 0.7, calls: 0.2, holdH: [4, 36], fader: true },
+  { id: "bot:bull_barry", handle: "bull_barry", bio: "Permabull. Every dip is a gift. bear_bianca has been wrong since 2017.", coins: ["BTC", "ETH", "SOL", "HYPE", "NVDA"], lev: [10, 30], style: "high" as const, bias: 0.85, winSkew: 0.5, chatty: 0.85, calls: 0.25, holdH: [2, 20], nemesis: "bot:bear_bianca" },
+  { id: "bot:bear_bianca", handle: "bear_bianca", bio: "Permabear. Gravity always wins. Fading bull_barry is my cardio.", coins: ["BTC", "ETH", "SOL", "HYPE", "NVDA"], lev: [10, 30], style: "high" as const, bias: 0.15, winSkew: 0.5, chatty: 0.85, calls: 0.25, holdH: [2, 20], nemesis: "bot:bull_barry" },
+  // Stock-perp traders (HIP-3 markets). Tickers that aren't listed right now are simply skipped.
+  { id: "bot:wallst_wes", handle: "wallst_wes", bio: "Ex-desk. Trades megacaps around earnings and the open. 24/7 stocks are a cheat code.", coins: ["NVDA", "AAPL", "MSFT", "META", "AMZN", "GOOGL", "XYZ100"], lev: [3, 10], style: "mid" as const, bias: 0.6, winSkew: 0.6, chatty: 0.6, calls: 0.35, holdH: [6, 72] },
+  { id: "bot:tendies_tina", handle: "tendies_tina", bio: "Meme stocks at max leverage. TSLA weekend sends. Sir, this is a Wendy's.", coins: ["TSLA", "NVDA", "COIN", "HOOD", "MSTR", "PLTR"], lev: [10, 20], style: "degen" as const, bias: 0.7, winSkew: 0.45, chatty: 0.9, calls: 0.1, holdH: [1, 12] },
   { id: "bot:mooncat", handle: "mooncat", bio: "New here. Learning in public. Be nice.", coins: ["DOGE", "WIF", "SOL"], lev: [10, 50], style: "degen" as const, bias: 0.7, winSkew: 0.4, chatty: 0.8, calls: 0.05, holdH: [1, 12] },
 ];
 
 const NOTES_OPEN = ["Clean break of the range. Stop below the wick.", "Funding flipped, taking the other side.", "Scalp, not a marriage.", "Daily close above resistance. Sizing small.", "Reclaimed the level. Let's see.", "Mean reversion play. Tight stop.", "No thesis, vibes. Don't copy this.", "Second attempt at this level, first one got perped.", "HTF trend is up, buying the dip.", "Weekend liquidity is thin, careful."];
+const NOTES_STOCK = ["Earnings run-up, sizing small.", "Gap fill from Friday's close.", "Weekend trade on a stock. The future is weird.", "Bought the open, stop under the premarket low.", "Rotation out of tech, fading the bounce.", "Index is ripping, this one's lagging. Catch-up trade.", "Analyst day next week. Positioning early.", "Short the hype, long the chart."];
+const STOCKISH = new Set(["NVDA", "TSLA", "AAPL", "MSFT", "META", "AMZN", "GOOGL", "XYZ100", "COIN", "HOOD", "MSTR", "PLTR"]);
+const noteFor = (coin: string) => pick(STOCKISH.has(coin) && Math.random() < 0.7 ? NOTES_STOCK : NOTES_OPEN);
 const NOTES_CLOSE_WIN = ["Banked. Never going broke taking a win.", "Target hit. Next.", "Half off here, letting the rest run.", "That'll do.", "Paid for lunch."];
 const NOTES_CLOSE_LOSS = ["Got perped. Stop did its job.", "Wrong. Small loss, moving on.", "Chopped. Should've waited for the close.", "Taking the L before it becomes a bigger L.", "Invalidation hit, out."];
 const COMMENTS = ["Same setup I'm watching.", "Stop's too tight imo", "copied at your entry, pray for me", "This aged well", "fading this", "size?", "Funding says otherwise", "Nice one", "Why 5×", "respect for posting the loss", "calling it now: this reverses at the daily open"];
@@ -102,7 +108,7 @@ export async function seedHistory() {
       const margin = pick([100, 250, 500, 750, 1000, 2000]);
       const notional = margin * lev, size = notional / entry;
       const pnl = (side === "long" ? exit - entry : entry - exit) * size;
-      const [p] = await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(size), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "closed", exitPx: String(exit), realizedPnl: pnl.toFixed(4), closedAt: new Date(openedAt + hold), paper: true, body: pick(NOTES_OPEN), createdAt: new Date(openedAt), meta: { closeReason: !win && lev >= 4 && Math.random() < 0.3 ? "liquidation" : "manual" } }).returning({ id: schema.posts.id });
+      const [p] = await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(size), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "closed", exitPx: String(exit), realizedPnl: pnl.toFixed(4), closedAt: new Date(openedAt + hold), paper: true, body: noteFor(coin), createdAt: new Date(openedAt), meta: { closeReason: !win && lev >= 4 && Math.random() < 0.3 ? "liquidation" : "manual" } }).returning({ id: schema.posts.id });
       created.push(p.id);
     }
     // one or two open trades
@@ -114,7 +120,7 @@ export async function seedHistory() {
       const entry = mid * (1 + rnd(-0.02, 0.02));
       const margin = pick([100, 250, 500, 1000]);
       const notional = margin * lev;
-      const [p] = await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(notional / entry), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "open", paper: true, body: Math.random() < b.chatty ? pick(NOTES_OPEN) : null, createdAt: new Date(now - hours(rnd(0.2, 10))), slPx: String(side === "long" ? entry * 0.95 : entry * 1.05) }).returning({ id: schema.posts.id });
+      const [p] = await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(notional / entry), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "open", paper: true, body: Math.random() < b.chatty ? noteFor(coin) : null, createdAt: new Date(now - hours(rnd(0.2, 10))), slPx: String(side === "long" ? entry * 0.95 : entry * 1.05) }).returning({ id: schema.posts.id });
       created.push(p.id);
     }
     // calls
@@ -225,12 +231,12 @@ export async function botTick() {
     // More of their own trades: up to 2 new positions a run, up to 8 open at once.
     const tries = openCount === 0 ? 3 : openCount < 4 ? 2 : 1;
     for (let k = 0; k < tries; k++) if (openCount + k < 6 && Math.random() < (openCount === 0 ? 0.95 : 0.8)) {
-      const coin = Math.random() < 0.75 ? pick(b.coins) : pick(["BTC", "ETH", "SOL", "HYPE", "XRP", "DOGE", "SUI", "WIF"]), mid = Number(mids[coin] ?? 0);
+      const coin = Math.random() < 0.75 ? pick(b.coins) : pick(["BTC", "ETH", "SOL", "HYPE", "XRP", "DOGE", "SUI", "WIF", "NVDA", "TSLA", "AAPL"]), mid = Number(mids[coin] ?? 0);
       if (mid && Number(me.demoBalance) > 30) {
         const side = Math.random() < b.bias ? "long" : "short";
         const lev = pickLev(b, coin, maxMap);
         const margin = Math.min(pick([100, 250, 250, 500, 750, 1000, 2000]), Number(me.demoBalance) * 0.3);
-        await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, body: Math.random() < b.chatty ? pick(NOTES_OPEN) : null, slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
+        await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String((margin * lev) / mid), notionalUsd: String(margin * lev), leverage: lev, entryPx: String(mid), status: "open", paper: true, body: Math.random() < b.chatty ? noteFor(coin) : null, slPx: String(side === "long" ? mid * (1 - 0.06 / lev) : mid * (1 + 0.06 / lev)) });
         me.demoBalance = (Number(me.demoBalance) - margin).toFixed(2);
         await db.update(schema.users).set({ demoBalance: me.demoBalance }).where(eq(schema.users.id, b.id));
         const [justOpened] = await db.select({ id: schema.posts.id, coin: schema.posts.coin, side: schema.posts.side, leverage: schema.posts.leverage }).from(schema.posts).where(eq(schema.posts.userId, b.id)).orderBy(desc(schema.posts.id)).limit(1);
@@ -436,7 +442,7 @@ export async function boostHistory(target = 40) {
       const notional = margin * lev, size = notional / entry;
       const liq = !win && Math.random() < 0.08;
       const pnl = liq ? -margin : (side === "long" ? exit - entry : entry - exit) * size;
-      await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(size), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "closed", exitPx: String(liq ? (side === "long" ? entry * (1 - 1 / lev) : entry * (1 + 1 / lev)) : exit), realizedPnl: pnl.toFixed(4), closedAt: new Date(Math.min(now - 60_000, openedAt + hold)), paper: true, body: Math.random() < b.chatty * 0.5 ? pick(NOTES_OPEN) : null, createdAt: new Date(openedAt), meta: { closeReason: liq ? "liquidation" : "manual" } });
+      await db.insert(schema.posts).values({ userId: b.id, kind: "trade", coin, side, size: String(size), notionalUsd: String(notional), leverage: lev, entryPx: String(entry), status: "closed", exitPx: String(liq ? (side === "long" ? entry * (1 - 1 / lev) : entry * (1 + 1 / lev)) : exit), realizedPnl: pnl.toFixed(4), closedAt: new Date(Math.min(now - 60_000, openedAt + hold)), paper: true, body: Math.random() < b.chatty * 0.5 ? noteFor(coin) : null, createdAt: new Date(openedAt), meta: { closeReason: liq ? "liquidation" : "manual" } });
       added++;
     }
   }

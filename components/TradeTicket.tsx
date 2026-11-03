@@ -14,6 +14,7 @@ import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice, autoStopDist, demoLiqPx }
 import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE } from "@/lib/config";
 import { CoinMark, ticker } from "./ui";
 import { useLive } from "@/lib/hooks/useLive";
+import { feeForMarket } from "@/lib/fees";
 import dynamic from "next/dynamic";
 const PriceChart = dynamic(() => import("./PriceChart").then((m) => m.PriceChart), { ssr: false, loading: () => <div className="skel" style={{ height: 200, borderRadius: 14 }} /> });
 
@@ -71,10 +72,16 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
   const [err, setErr] = useState<string | null>(null);
   const [approved, setApproved] = useState<boolean | null>(null);
   const [search, setSearch] = useState("");
+  const [group, setGroup] = useState<"crypto" | "stocks">("crypto");
 
   const market: Market | undefined = useMemo(() => markets.find((m) => m.name === coin), [markets, coin]);
   const mid = mids[coin] ?? market?.mid ?? 0;
   const maxLev = market?.maxLeverage ?? 100;
+  const isStock = market?.kind === "stock" || market?.kind === "index";
+  // Stock perps settle on builder dexes with their own collateral; real-money routing there isn't wired yet.
+  const stockLiveBlocked = isStock && !isDemo;
+  const mFee = useMemo(() => feeForMarket(fee, market?.kind), [fee, market?.kind]);
+  useEffect(() => { if (market?.kind === "stock" || market?.kind === "index") setGroup("stocks"); }, [market?.kind]);
   useEffect(() => { if (lev > maxLev) setLev(maxLev); }, [maxLev, lev]);
   useEffect(() => {
     if (isDemo || !address || !BUILDER_CONFIGURED) return setApproved(true);
@@ -96,9 +103,11 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
 
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
+    if (q) return markets.filter((m) => m.name.includes(q)).sort((a, b) => Number(b.name === q) - Number(a.name === q) || b.volume24h - a.volume24h).slice(0, 12);
+    if (group === "stocks") return markets.filter((m) => m.kind === "stock" || m.kind === "index").sort((a, b) => b.volume24h - a.volume24h).slice(0, 16);
     const top = ["BTC", "ETH", "SOL", "HYPE", "XRP", "DOGE", "SUI", "LINK"];
-    return (q ? markets.filter((m) => m.name.includes(q)) : markets.filter((m) => top.includes(m.name)).sort((a, b) => top.indexOf(a.name) - top.indexOf(b.name))).slice(0, 12);
-  }, [markets, search]);
+    return markets.filter((m) => top.includes(m.name)).sort((a, b) => top.indexOf(a.name) - top.indexOf(b.name));
+  }, [markets, search, group]);
 
   const approve = async () => {
     if (!walletClient) return;
@@ -173,6 +182,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       if (!r.ok) return setErr((await r.json()).error ?? "Couldn't place demo trade");
       return finish(r);
     }
+    if (stockLiveBlocked) return setErr("Stock perps are demo-only for now. Real-money stock trading is coming soon.");
     if (!walletClient || !address) return setErr("Wallet still loading, try again in a second.");
     setBusy("Signing order…");
     const res = await placeMarketOrder(makeExchangeClient(walletClient), {
@@ -180,7 +190,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       limitPx: orderType === "limit" ? Number(limitPx) : undefined,
       takeProfitPx: tpslOn && Number(tp) > 0 ? Number(tp) : undefined,
       stopLossPx: tpslOn && Number(sl) > 0 ? Number(sl) : undefined,
-      feeTenthsBps: fee.tenthsBps,
+      feeTenthsBps: mFee.tenthsBps,
     });
     if (!res.ok) { setBusy(null); return setErr(res.error ?? "Order failed"); }
     setBusy("Posting to feed…");
@@ -214,6 +224,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       {!compact && !quick && !seed.duelId && (
         <div className="block">
           <input className="field mb-2.5" placeholder="Search markets" value={search} onChange={(e) => setSearch(e.target.value)} />
+          {!search.trim() && <div className="seg mb-2">{(["crypto", "stocks"] as const).map((g) => <button key={g} className={`chip ${group === g ? "info" : ""}`} onClick={() => setGroup(g)}>{g === "crypto" ? "Crypto" : "Stocks"}</button>)}</div>}
           <div className="seg">{filtered.map((m) => <button key={m.name} className={`chip ${m.name === coin ? "on" : ""}`} onClick={() => setCoin(m.name)}><CoinMark coin={m.name} size="xs" />{ticker(m.name)}</button>)}</div>
           <div className="mt-3.5 flex items-baseline justify-between"><span className="text-[22px] font-bold tracking-tight">{ticker(coin, true)}</span><span className="mono text-lg">{mid ? fmtPrice(mid) : "…"}</span></div>
         </div>
@@ -243,7 +254,8 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
           <div className="stat"><small>Size</small><div className="v mono">{market ? fmtSize(size, market.szDecimals) : "—"}</div></div>
           <div className="stat"><small>Liq. at</small><div className="v mono">{estLiq ? fmtPrice(estLiq) : "—"}</div></div>
         </div>
-        {!isDemo && <div className="when mt-2.5 flex items-center justify-between"><span><Link href="/how-it-works#fees" className="underline">Perped fee</Link> {fee.label}{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? "Top trader" : "Referral"}</span>}</span><span className="mono">{fmtUsd((notional * fee.tenthsBps) / 100000)}</span></div>}
+        {!isDemo && <div className="when mt-2.5 flex items-center justify-between"><span><Link href="/how-it-works#fees" className="underline">Perped fee</Link> {mFee.label}{isStock && <span className="when ml-1">stock rate</span>}{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? "Top trader" : "Referral"}</span>}</span><span className="mono">{fmtUsd((notional * mFee.tenthsBps) / 100000)}</span></div>}
+        {isStock && <div className="when mt-2.5 text-xs leading-relaxed">Stock perp on Hyperliquid (HIP-3): trades 24/7 against the share price, isolated margin. No shares, dividends or voting rights.{stockLiveBlocked ? " Demo only for now." : ""}</div>}
       </div>
 
       {!quick && <div className="block">
@@ -263,7 +275,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
         {isFade && !quick && <div className="warn mb-3.5">Fading is a {isDemo ? "demo" : "real"} {side}{isDemo ? "" : " on Hyperliquid"} at your size. If they're right, you're the one who gets perped, publicly: your name goes on their post.</div>}
         {!quick && <input className="field mb-3.5" placeholder="Add a note for the feed" value={note} maxLength={280} onChange={(e) => setNote(e.target.value)} />}
         {err && <p className="red mb-3 text-sm">{err}</p>}
-        <button onClick={submit} disabled={!!busy || !market || size <= 0 || (!isDemo && approved === false)} className={`btn ${side}`}>{busy ?? (authenticated ? (isDemo ? `Demo · ${cta}` : cta) : "Log in to trade")}</button>
+        <button onClick={submit} disabled={!!busy || !market || size <= 0 || stockLiveBlocked || (!isDemo && approved === false)} className={`btn ${side}`}>{busy ?? (authenticated ? (isDemo ? `Demo · ${cta}` : cta) : "Log in to trade")}</button>
         <p className="faint mt-3 text-center text-xs leading-relaxed">{isDemo ? "Simulated fill at the live price." : "Filled on Hyperliquid."} {orderType === "market" ? "Market order, up to 3% slippage." : "Limit order rests until filled or cancelled."} You can lose your margin. Not financial advice.</p>
       </div>
     </div>

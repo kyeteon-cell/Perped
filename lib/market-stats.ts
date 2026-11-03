@@ -1,6 +1,6 @@
 // Market metrics for the coin page, all from Hyperliquid's public info API (no estimates).
 // Pure maths is exported separately so it can be unit tested.
-import { info, memo, getCandles, getMarkets } from "./hl-info";
+import { info, memo, getCandles, getMarkets, hlName } from "./hl-info";
 
 export type Lvl = { px: number; sz: number };
 export type Book = { bids: Lvl[]; asks: Lvl[] };
@@ -59,7 +59,7 @@ const toBook = (r: RawBook): Book => ({
 });
 /** Hyperliquid returns 20 levels a side; fewer significant figures = wider buckets that reach further. */
 function book(coin: string, nSigFigs?: number) {
-  return memo(`bk:${coin}:${nSigFigs ?? 0}`, 2_500, async () => toBook(await info<RawBook>(nSigFigs ? { type: "l2Book", coin, nSigFigs } : { type: "l2Book", coin })));
+  return memo(`bk:${coin}:${nSigFigs ?? 0}`, 2_500, async () => { const c = await hlName(coin); return toBook(await info<RawBook>(nSigFigs ? { type: "l2Book", coin: c, nSigFigs } : { type: "l2Book", coin: c })); });
 }
 
 const VENUE: Record<string, { name: string; hours: number }> = { HlPerp: { name: "Hyperliquid", hours: 1 }, BinPerp: { name: "Binance", hours: 8 }, BybitPerp: { name: "Bybit", hours: 8 } };
@@ -121,8 +121,9 @@ type FundRow = { fundingRate: string; time: number };
 async function funding30(coin: string, start: number): Promise<FundRow[]> {
   const out: FundRow[] = [];
   let from = start;
+  const hl = await hlName(coin);
   for (let i = 0; i < 3; i++) {
-    const page = await info<FundRow[]>({ type: "fundingHistory", coin, startTime: from }).catch(() => [] as FundRow[]);
+    const page = await info<FundRow[]>({ type: "fundingHistory", coin: hl, startTime: from }).catch(() => [] as FundRow[]);
     out.push(...page);
     if (page.length < 500) break;
     from = page[page.length - 1].time + 1;

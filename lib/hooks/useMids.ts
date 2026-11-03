@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { HL_DATA_WS_URL } from "@/lib/config";
+import { loadStockMap, stockMapNow } from "@/lib/stocks-client";
 
 /**
  * Live mid prices for every coin via the Hyperliquid WebSocket `allMids` feed.
@@ -16,6 +17,8 @@ let flush: ReturnType<typeof setTimeout> | null = null;
 let reconnect: ReturnType<typeof setTimeout> | null = null;
 let retry = 0;
 const subs = new Set<() => void>();
+// Stock perps (HIP-3) stream on their own dex channels with Hyperliquid names ("xyz:NVDA"); we key them by ticker.
+
 const emit = () => subs.forEach((f) => f());
 
 function connect() {
@@ -27,13 +30,23 @@ function connect() {
     connected = true;
     emit();
     sock.send(JSON.stringify({ method: "subscribe", subscription: { type: "allMids" } }));
+    void loadStockMap().then(({ dexes }) => {
+      if (ws !== sock || sock.readyState !== 1) return;
+      for (const dex of dexes) sock.send(JSON.stringify({ method: "subscribe", subscription: { type: "allMids", dex } }));
+    });
   };
   sock.onmessage = (ev) => {
     try {
       const msg = JSON.parse(ev.data as string);
       if (msg.channel === "allMids" && msg.data?.mids) {
-        const next: Record<string, number> = {};
-        for (const [k, v] of Object.entries(msg.data.mids as Record<string, string>)) next[k] = Number(v);
+        const raw = msg.data.mids as Record<string, string>;
+        const dexMsg = !!msg.data.dex || Object.keys(raw).some((k) => k.includes(":"));
+        // Each channel (native, or one builder dex) carries only its own markets, so merge rather than replace.
+        const next: Record<string, number> = { ...(pending ?? mids) };
+        if (dexMsg) {
+          const map = stockMapNow(); // resolved before any dex subscription was sent
+          if (map) for (const [k, v] of Object.entries(raw)) { const t = map.map[k]; if (t) next[t] = Number(v); }
+        } else for (const [k, v] of Object.entries(raw)) next[k] = Number(v);
         const first = !Object.keys(mids).length;
         pending = next;
         if (first) { mids = next; pending = null; emit(); return; }

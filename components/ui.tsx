@@ -7,6 +7,7 @@ import useSWR from "swr";
 import { rankFor } from "@/lib/rank";
 import { BADGES, isAdminBadge, isFounderBadge, type BadgeUser } from "@/lib/badges";
 import { Glyph } from "./Glyph";
+import { stockHl } from "@/lib/stocks-client";
 
 /** Small shared pieces: icons, coin monograms, avatars, theme helpers. */
 
@@ -67,7 +68,19 @@ export function CoinMark({ coin, size }: { coin: string; size?: "xs" | "sm" | "l
         src={`https://app.hyperliquid.xyz/coins/${encodeURIComponent(coin)}.svg`}
         alt=""
         loading="lazy"
-        onError={(e) => { const img = e.currentTarget; img.style.display = "none"; (img.nextSibling as HTMLElement | null)?.removeAttribute("hidden"); }}
+        onError={(e) => {
+          const img = e.currentTarget;
+          const fail = () => { img.style.display = "none"; (img.nextSibling as HTMLElement | null)?.removeAttribute("hidden"); };
+          // Stock perps: Hyperliquid's icon under its dex name ("xyz:NVDA"), then the company logo, then letters.
+          const step = img.dataset.step ?? "";
+          if (step === "") {
+            img.dataset.step = "hl";
+            void stockHl(base).then((hl) => { if (hl) img.src = `https://app.hyperliquid.xyz/coins/${encodeURIComponent(hl)}.svg`; else fail(); });
+          } else if (step === "hl") {
+            img.dataset.step = "co";
+            img.src = `https://financialmodelingprep.com/image-stock/${encodeURIComponent(base)}.png`;
+          } else fail();
+        }}
       />
       <b hidden>{base.slice(0, 4)}</b>
     </span>

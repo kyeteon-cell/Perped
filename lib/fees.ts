@@ -12,6 +12,9 @@ import {
   REFERRAL_SHARE_PCT,
   REFERRAL_TOP_SHARE_PCT,
   REFERRAL_TOP_THRESHOLD,
+  STOCK_FEE_REFERRED_TENTHS_BPS,
+  STOCK_FEE_STANDARD_TENTHS_BPS,
+  STOCK_FEE_TOP_TENTHS_BPS,
   TOP_TIER_RANK,
 } from "./config";
 
@@ -36,6 +39,18 @@ export function tenthsBpsToLabel(t: number) {
 export function feeForTier(tier: FeeTier): number {
   const f = tier === "top" ? BUILDER_FEE_TOP_TENTHS_BPS : tier === "referred" ? BUILDER_FEE_REFERRED_TENTHS_BPS : BUILDER_FEE_STANDARD_TENTHS_BPS;
   return Math.min(f, BUILDER_MAX_FEE_TENTHS_BPS);
+}
+
+/** Perped fee on stock / index perps for a tier (lower than crypto; see config). */
+export function stockFeeForTier(tier: FeeTier): number {
+  const f = tier === "top" ? STOCK_FEE_TOP_TENTHS_BPS : tier === "referred" ? STOCK_FEE_REFERRED_TENTHS_BPS : STOCK_FEE_STANDARD_TENTHS_BPS;
+  return Math.min(f, BUILDER_MAX_FEE_TENTHS_BPS);
+}
+
+/** The fee that applies to one order: the tier's crypto rate, or its stock rate on stock / index markets. */
+export function feeForMarket(fee: Pick<FeeInfo, "tier" | "tenthsBps">, kind?: string | null): { tenthsBps: number; label: string } {
+  const t = kind === "stock" || kind === "index" ? stockFeeForTier(fee.tier) : fee.tenthsBps;
+  return { tenthsBps: t, label: tenthsBpsToLabel(t) };
 }
 
 /**
