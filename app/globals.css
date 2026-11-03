@@ -2218,4 +2218,3 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 
 /* iOS 26 fixed-position drift: bottom bars follow the real visible bottom (see ViewportFix). `translate` composes with any transform. */
 .nav, .pos-rail, .sheet { translate: 0 var(--vv-bottom, 0px); }
-.feed-newchip, .arena-sticky { translate: 0 var(--vv-top, 0px); }
