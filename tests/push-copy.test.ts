@@ -9,10 +9,13 @@ describe("Push copy", () => {
     expect(long.body).toContain("mooncat just went long SOL 10×");
   });
   it("uses the crafted headline, and splits it when a long handle pushes it over", () => {
-    expect(fitPush("rival", "x", "y", { title: "@mooncat: Long SOL 10×", body: "b" })).toEqual({ title: "@mooncat: Long SOL 10×", body: "b" });
+    expect(fitPush("rival", "x", "y", { title: "@mooncat: Long SOL 10×", body: "Your rival just opened a trade. Series: you lead 3–2. Tap to fade it." })).toEqual({ title: "@mooncat: Long SOL 10×", body: "Your rival just opened a trade.\nSeries: you lead 3–2.\nTap to fade it." });
     const r = fitPush("rival", "x", "y", { title: "@contrarian_kate_longname: Short DOGE 10×", body: "Your rival just opened." });
     expect(r.title).toBe("@contrarian_kate_longname");
-    expect(r.body).toBe("Short DOGE 10×. Your rival just opened.");
+    expect(r.body).toBe("Short DOGE 10×.\nYour rival just opened.");
+  });
+  it("never splits decimals or prices across lines", () => {
+    expect(fitPush("battle", "x", undefined, { title: "Won", body: "WIF fade: you +12.4%, them −3.1%. Tap to pin it." }).body).toBe("WIF fade: you +12.4%, them −3.1%.\nTap to pin it.");
   });
   it("describes a series from your side", () => {
     expect(seriesLine(3, 2)).toBe("you lead 3–2");
