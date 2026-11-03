@@ -108,7 +108,7 @@ export async function syncAchievements(userId: string, opts: { silent?: boolean 
 async function announce(u: { id: string; handle: string; isDemo: boolean }, keys: string[]) {
   const ts = keys.map((k) => TROPHY[k]).filter(Boolean).sort((a, b) => TIER_RANK[b.tier] - TIER_RANK[a.tier]);
   const href = `/u/${u.handle}?trophy=${ts[0].key}`;
-  for (const t of ts) await notify(u.id, "achievement", `Trophy unlocked: ${t.name}`, `${TIER_LABEL[t.tier]} · ${t.desc}`, `/u/${u.handle}?trophy=${t.key}`);
+  for (const t of ts) await notify(u.id, "achievement", `Trophy unlocked: ${t.name}`, `${TIER_LABEL[t.tier]} · ${t.desc}`, `/u/${u.handle}?trophy=${t.key}`, { title: `Trophy: ${t.name}`, body: `${TIER_LABEL[t.tier]} trophy unlocked. ${t.desc}` });
   const big = ts.filter((t) => TIER_RANK[t.tier] >= 3);
   if (big.length) {
     const fol = rows(await db.execute(sql`select follower_id from follows where followee_id = ${u.id} limit 500`)).map((r) => String(r.follower_id));

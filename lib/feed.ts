@@ -1,5 +1,7 @@
 import { and, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import { wantsPush, type AlertPrefs } from "./alerts";
+import { fitPush, seriesLine, type PushCopy } from "./push-copy";
+void seriesLine;
 import { db, schema } from "./db";
 import { pushTo } from "./push";
 
@@ -77,10 +79,12 @@ export async function systemPost(systemType: string, body: string, meta: Record<
   return p;
 }
 
-export async function notify(userId: string, type: string, title: string, body?: string, href?: string) {
+export async function notify(userId: string, type: string, title: string, body?: string, href?: string, push?: PushCopy) {
   await db.insert(schema.notifications).values({ userId, type, title, body, href });
   // Push respects the alert groups you've turned off in Settings (the in-app notification always arrives).
   const pr = await db.execute(sql`select prefs from alert_prefs where user_id = ${userId}`).catch(() => null);
   const prefs = (((pr as unknown as { rows?: unknown[] })?.rows ?? (pr as unknown as unknown[]) ?? []) as { prefs?: AlertPrefs }[])[0]?.prefs ?? null;
-  if (wantsPush(prefs, type)) await pushTo(userId, { title, body, href, tag: type });
+  // Lock-screen copy: a short headline that fits, the detail in the body. Tag per screen so different fights don't replace each other.
+  const p = fitPush(type, title, body, push);
+  if (wantsPush(prefs, type)) await pushTo(userId, { title: p.title, body: p.body, href, tag: `${type}:${href ?? ""}` });
 }

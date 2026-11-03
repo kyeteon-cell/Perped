@@ -105,7 +105,8 @@ export async function closeTradePost(postId: number, userId: string, opts: { exi
   ]);
   if (copiers.length + faders.length >= 3) {
     await systemPost("settled", `${me?.handle} ${post.coin} ${post.side} closed ${pct >= 0 ? "+" : "−"}${Math.abs(roi).toFixed(1)}%. ${copiers.length} copied, ${faders.length} faded.`, { handle: me?.handle, coin: post.coin, roi, copiers: copiers.length, faders: faders.length, postId: post.id }, post.coin ?? undefined);
-    for (const f of faders) if (f.userId) await notify(f.userId, "settled", `${me?.handle}'s ${post.coin} trade settled`, `${pct >= 0 ? "They won" : "You won"} · ${pct >= 0 ? "+" : "−"}${Math.abs(roi).toFixed(1)}%`, `/post/${post.id}`);
+    for (const f of faders) if (f.userId) await notify(f.userId, "settled", `${me?.handle}'s ${post.coin} trade settled`, `${pct >= 0 ? "They won" : "You won"} · ${pct >= 0 ? "+" : "−"}${Math.abs(roi).toFixed(1)}%`, `/post/${post.id}`,
+      { title: `@${me?.handle} closed ${post.coin}`, body: `The trade you faded closed at ${pct >= 0 ? "+" : "−"}${Math.abs(roi).toFixed(1)}%. ${pct >= 0 ? "They came out ahead on it." : "You called it."}` });
   }
   return { post: updated } as const;
 }
