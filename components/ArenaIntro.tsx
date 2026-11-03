@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const KEY = "perped:arena-intro";
 const CARDS = [
@@ -19,7 +20,8 @@ export function ArenaIntro({ force = false, onDone }: { force?: boolean; onDone?
   if (!show) return null;
   const close = () => { try { localStorage.setItem(KEY, "1"); } catch {} setShow(false); onDone?.(); };
   const go = (n: number) => { const el = track.current; if (!el) return; el.scrollTo({ left: n * el.clientWidth, behavior: "smooth" }); };
-  return (
+  // Rendered on the page body: inside a sheet (which slides with a transform) "fixed" would be relative to the sheet.
+  return createPortal(
     <div className="aint-bg" onClick={close}>
       <div className="aint" role="dialog" aria-label="How fades work" onClick={(e) => e.stopPropagation()}>
         <div className="aint-track" ref={track} onScroll={(e) => { const el = e.currentTarget; setI(Math.round(el.scrollLeft / Math.max(1, el.clientWidth))); }}>
@@ -36,6 +38,7 @@ export function ArenaIntro({ force = false, onDone }: { force?: boolean; onDone?
           <button type="button" className="go" onClick={() => (i < CARDS.length - 1 ? go(i + 1) : close())}>{i < CARDS.length - 1 ? "Next" : "Let's fight"}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
