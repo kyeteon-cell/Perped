@@ -324,8 +324,12 @@ export function stockUniverse(native?: PerpAsset[]): Promise<Universe> {
 
 async function loadStocks(nativeIn?: PerpAsset[]): Promise<Universe> {
   const dexes = await memo("perpDexs", 600_000, () => info<({ name: string } | null)[]>({ type: "perpDexs" }, 600));
-  const native = nativeIn ?? (await memo("nativeMeta", 300_000, () => info<{ universe: { name: string }[] }>({ type: "meta" }, 300)).then((m) => m.universe.map((u) => ({ name: u.name }) as PerpAsset)));
-  const nativeNames = new Set(native.map((a) => a.name));
+  let nativeNames: Set<string>;
+  if (nativeIn) nativeNames = new Set(nativeIn.map((a) => a.name));
+  else {
+    const meta = await memo("nativeMeta", 300_000, () => info<{ universe: { name: string }[] }>({ type: "meta" }, 300));
+    nativeNames = new Set(meta.universe.map((u) => u.name));
+  }
   const listed = dexes.map((d, idx) => (d?.name ? { name: d.name, idx } : null)).filter((d): d is { name: string; idx: number } => !!d && d.idx > 0);
   const per = await Promise.all(listed.map(async (d) => {
     try {
