@@ -1,4 +1,4 @@
-// The alpha competition countdown: a site-wide bar that fills as linked accounts open their first fade.
+// The alpha competition countdown: a site-wide bar that fills as people place their first trade.
 // At the goal the owner drops the competition details. Settings live in app_settings.competition.
 import { eq, sql } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -32,15 +32,13 @@ export async function setCompSettings(patch: Partial<CompSettings>) {
 }
 
 /**
- * Who counts: a real person (not a demo bot) on a linked account — signed in with X, Google, email or a wallet,
- * or an instant guest that has since linked one of those — who opened at least one fade since the start.
- * Each person counts once.
+ * Who counts: any real person (not a demo bot), guest accounts included, who has placed at least one trade
+ * (any trade: long, short, copy or fade) since the start. No linked account needed. Each person counts once.
  */
 const counted = (startAt: string) => sql`
   select distinct p.user_id from posts p join users u on u.id = p.user_id
-  where p.kind = 'trade' and p.faded_from_id is not null and p.created_at >= ${startAt}::timestamptz
-    and u.is_bot = false and u.id not like 'bot:%' -- demo bots never count, flagged or not
-    and (u.id not like 'guest:%' or exists (select 1 from account_links l where l.user_id = u.id))`;
+  where p.kind = 'trade' and p.created_at >= ${startAt}::timestamptz
+    and u.is_bot = false and u.id not like 'bot:%' -- demo bots never count, flagged or not`;
 
 export type CompBoard = { goal: number; count: number; startAt: string; unlocked: boolean; details: string | null; detailsUrl: string | null; hidden: boolean; recruiters: { handle: string; avatarUrl: string | null; n: number }[] };
 
