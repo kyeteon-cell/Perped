@@ -16,6 +16,8 @@ export function PullRefresh({ onRefresh }: { onRefresh: () => Promise<unknown> |
       if (start.current == null) return;
       const dy = e.touches[0].clientY - start.current;
       if (dy <= 0 || window.scrollY > 0) { if (pullRef.current) setPull(0); return; }
+      // Only while pulling down from the very top: stop the browser's own bounce/reload so ours takes over.
+      if (e.cancelable && dy > 6) e.preventDefault();
       setPull(Math.min(110, dy * 0.5));
     };
     const up = async () => {
@@ -29,14 +31,12 @@ export function PullRefresh({ onRefresh }: { onRefresh: () => Promise<unknown> |
       } else setPull(0);
     };
     window.addEventListener("touchstart", down, { passive: true });
-    window.addEventListener("touchmove", move, { passive: true });
+    window.addEventListener("touchmove", move, { passive: false });
     const cancel = () => { start.current = null; if (!busyRef.current) setPull(0); };
     window.addEventListener("touchend", up);
     window.addEventListener("touchcancel", cancel);
-    // The browser's own pull-to-refresh would reload the whole page on top of ours.
-    const html = document.documentElement, prevOb = html.style.overscrollBehaviorY;
-    html.style.overscrollBehaviorY = "contain";
-    return () => { window.removeEventListener("touchstart", down); window.removeEventListener("touchmove", move); window.removeEventListener("touchend", up); window.removeEventListener("touchcancel", cancel); html.style.overscrollBehaviorY = prevOb; };
+    // No overscroll-behavior on <html>: on iPhones it makes the fixed nav and pill drift with the page.
+    return () => { window.removeEventListener("touchstart", down); window.removeEventListener("touchmove", move); window.removeEventListener("touchend", up); window.removeEventListener("touchcancel", cancel); };
   }, []);
   if (!pull && !busy) return null;
   const k = Math.min(1, pull / 64);
