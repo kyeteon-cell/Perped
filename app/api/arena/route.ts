@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, or } from "drizzle-orm";
+import { fadeRecord } from "@/lib/record";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 
@@ -99,7 +100,9 @@ export async function GET(req: Request) {
     const fromIds = [...new Set(duels.map((d) => d.challengerId))];
     const from = fromIds.length ? await db.select({ id: schema.users.id, handle: schema.users.handle, avatarUrl: schema.users.avatarUrl, xp: schema.users.xp }).from(schema.users).where(or(...fromIds.map((id) => eq(schema.users.id, id)))) : [];
     const challenges = duels.map((d) => ({ id: d.id, coin: d.coin, side: d.challengerSide as "long" | "short", stakeUsd: Number(d.stakeUsd), hours: Math.max(1, Math.round((d.settlesAt.getTime() - d.createdAt.getTime()) / 3_600_000)), from: from.find((f) => f.id === d.challengerId) as Mini })).filter((c) => c.from);
-    me = { won, lost: mine.length - won - drawn, drawn, streak: streakOf(arr), best: bestOf(arr), rivals, challenges };
+    // Your record counts every fight you've had, not just the ones in the latest 600 the board loads.
+    const exact = await fadeRecord(auth.privyId).catch(() => null);
+    me = { won: exact?.won ?? won, lost: exact?.lost ?? mine.length - won - drawn, drawn: exact?.drawn ?? drawn, streak: streakOf(arr), best: bestOf(arr), rivals, challenges };
   }
   return Response.json({ live, rekt, kills, board, recent, streaks, me } satisfies ArenaRes);
 }
