@@ -2221,7 +2221,7 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 .pname .ubadge img, .pname .ubadge svg { width: 13px; height: 13px; }
 
 /* iOS 26 fixed-position drift: bottom bars follow the real visible bottom (see ViewportFix). `translate` composes with any transform. */
-.nav, .pos-rail, .sheet { translate: 0 var(--vv-bottom, 0px); }
+.nav, .pos-rail { translate: 0 var(--vv-bottom, 0px); }
 
 /* Drips follow the side colour too */
 .ar-drips.long b::before { background: radial-gradient(circle at 70% 70%, #c9ffe9 0, #05e091 40%, #02643f 100%); box-shadow: 0 1px 2px rgba(2,100,63,.45); }
@@ -2301,3 +2301,9 @@ html, body { overflow-x: clip; max-width: 100%; }
 .aint-track { width: 100%; overscroll-behavior-x: contain; touch-action: pan-x; }
 .aint-card { box-sizing: border-box; min-width: 0; }
 .aint-acts { box-sizing: border-box; }
+
+
+/* positions sheet: loading / failed states */
+.pos-load { display: grid; gap: 8px; margin-top: 10px; text-align: center; }
+.pos-load p { font-size: 14px; color: var(--muted); padding-top: 14px; }
+.pos-load button { justify-self: center; border: 0; padding: 9px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; }
