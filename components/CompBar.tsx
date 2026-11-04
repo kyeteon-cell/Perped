@@ -1,7 +1,7 @@
 "use client";
 
 import { siteOrigin } from "@/lib/config";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { Sheet } from "./Sheet";
@@ -18,7 +18,18 @@ const fmtDay = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day:
 export function CompBar() {
   // Signed-in fetch, so "your status" works for wallet / X / email logins too (not only guest cookies).
   const { authedFetch, profile } = useSession();
-  const { data } = useSWR<Data>(["/api/competition", profile?.id ?? ""], async () => (await authedFetch("/api/competition")).json(), { refreshInterval: 60_000, revalidateOnFocus: false });
+  // A failed load throws (so SWR retries instead of treating the error as an empty bar), and the last good bar
+  // is kept on the device so it shows instantly on every page, even before the network answers.
+  const [cached, setCached] = useState<Data | undefined>(undefined);
+  useEffect(() => { try { const j = localStorage.getItem("perped:comp"); if (j) setCached(JSON.parse(j)); } catch {} }, []);
+  const { data: fresh } = useSWR<Data>(["/api/competition", profile?.id ?? ""], async () => {
+    const r = await authedFetch("/api/competition");
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j || typeof j.goal !== "number") throw new Error("competition unavailable");
+    return j as Data;
+  }, { refreshInterval: 60_000, revalidateOnFocus: true, errorRetryCount: 6, errorRetryInterval: 2_000, keepPreviousData: true });
+  useEffect(() => { if (fresh) try { localStorage.setItem("perped:comp", JSON.stringify({ ...fresh, me: null })); } catch {} }, [fresh]);
+  const data = fresh ?? cached;
   const [open, setOpen] = useState(false);
   if (!data || data.hidden || !data.goal) return null;
   const pct = Math.min(100, (data.count / data.goal) * 100);

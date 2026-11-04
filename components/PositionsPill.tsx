@@ -28,10 +28,12 @@ export function PositionsPill() {
   const path = usePathname() ?? "/";
   const { mids } = useMids();
   const key = profile ? `/api/posts?handle=${profile.handle}&kind=trade&status=open&limit=50` : null;
-  const { data, mutate } = useSWR<{ posts: FeedRow[] }>(key, { refreshInterval: 30_000 });
+  // Loads that fail throw, so SWR retries (instead of an error looking like "no trades").
+  const strict = async (u: string) => { const r = await authedFetch(u); const j = await r.json().catch(() => null); if (!r.ok || !j) throw new Error(j?.error ?? "load failed"); return j; };
+  const { data, mutate, error: postsErr, isLoading: postsLoading } = useSWR<{ posts: FeedRow[] }>(key, strict, { refreshInterval: 30_000, errorRetryCount: 6, errorRetryInterval: 2_000, keepPreviousData: true });
   type Leg = { id: number; side: string; entryPx: string; exitPx: string | null; size: string; leverage: number | null; status: string; realizedPnl: string | null; meta: unknown; coin: string; slPx?: string | null; tpPx?: string | null; createdAt?: string };
   type Fade = { battleId: number; iFade: boolean; opp: string; oppAvatar: string | null; fader: Leg; target: Leg };
-  const { data: fd, mutate: mutateF } = useSWR<{ fades: Fade[] }>(profile ? "/api/me/fades" : null, async (u: string) => (await authedFetch(u)).json(), { refreshInterval: 30_000 });
+  const { data: fd, mutate: mutateF, error: fadesErr } = useSWR<{ fades: Fade[] }>(profile ? "/api/me/fades" : null, strict, { refreshInterval: 30_000, errorRetryCount: 6, errorRetryInterval: 2_000, keepPreviousData: true });
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"positions" | "arena">("positions");
   const router = useRouter();
@@ -139,7 +141,9 @@ export function PositionsPill() {
             </div>
             {tab === "arena" && <ArenaIntro />}
             {tab === "arena" ? (
-              fades.length ? <>
+              !fd && fadesErr ? <div className="pos-load"><p>Couldn&apos;t load your fights.</p><button type="button" onClick={() => void mutateF()}>Try again</button></div>
+              : !fd ? <div className="pos-load"><span className="skel" style={{ height: 150, borderRadius: 16 }} /></div>
+              : fades.length ? <>
                 {unbeaten ? (
                   <div className="pos-unb">
                     <small>Unbeaten</small><b className="mono">{wins}–0</b><p>Leading every fade you&apos;re in</p>
@@ -223,7 +227,9 @@ export function PositionsPill() {
                 </div>
               );
             })}
-            {!live.length && <p className="pos-sub" style={{ padding: "20px 0", textAlign: "center" }}>No open positions.</p>}
+            {!live.length && (postsErr && !data ? <div className="pos-load"><p>Couldn&apos;t load your trades.</p><button type="button" onClick={() => { void mutate(); void mutateF(); }}>Try again</button></div>
+              : postsLoading && !data ? <div className="pos-load"><span className="skel" style={{ height: 92, borderRadius: 16 }} /><span className="skel" style={{ height: 92, borderRadius: 16 }} /></div>
+              : <p className="pos-sub" style={{ padding: "20px 0", textAlign: "center" }}>No open positions.</p>)}
             </>}
           </div>
         </Sheet>

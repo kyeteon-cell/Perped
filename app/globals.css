@@ -2217,4 +2217,9 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 .pname .ubadge img, .pname .ubadge svg { width: 13px; height: 13px; }
 
 /* iOS 26 fixed-position drift: bottom bars follow the real visible bottom (see ViewportFix). `translate` composes with any transform. */
-.nav, .pos-rail, .sheet { translate: 0 var(--vv-bottom, 0px); }
+.nav, .pos-rail { translate: 0 var(--vv-bottom, 0px); }
+
+/* positions sheet: loading / failed states */
+.pos-load { display: grid; gap: 8px; margin-top: 10px; text-align: center; }
+.pos-load p { font-size: 14px; color: var(--muted); padding-top: 14px; }
+.pos-load button { justify-self: center; border: 0; padding: 9px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; }
