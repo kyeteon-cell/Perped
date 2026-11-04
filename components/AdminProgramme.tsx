@@ -21,6 +21,7 @@ type P = {
 };
 export type Metrics = {
   at: string;
+  allTime?: { users: number; traders: number; trades: number; faders: number; visitors: number };
   people: { total: number; today: number; week: number; guests: number };
   funnel: { cohort: number; traded: number; battled: number; returned: number };
   trades: { today: number; traders_today: number; week: number; traders_week: number; fades_week: number; copies_week: number };
@@ -99,6 +100,12 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
           </section>
           {m && (
             <>
+              {m.allTime && <div className="adm-grid">{([
+                ["People all time", String(m.allTime.users), `${m.people.guests} on instant demo`],
+                ["Placed a trade", String(m.allTime.traders), `${m.allTime.trades} trades total`],
+                ["Faded someone", String(m.allTime.faders), "at least once"],
+                ["Unique visitors", String(m.allTime.visitors), "since tracking began"],
+              ] as [string, string, string][]).map(([k, v, s2]) => <div key={k} className="adm-tile"><small>{k}</small><b className="mono">{v}</b><span>{s2}</span></div>)}</div>}
               <div className="adm-grid">{([
                 ["Trades / trader / day", String(m.perTraderPerDay), "the revenue number"],
                 ["Real volume today", usd(m.volume.real_today), `≈ ${usd(m.estFees.today)} fees`],
