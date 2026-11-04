@@ -40,7 +40,8 @@ export function CompBar() {
   const pct = Math.min(100, (data.count / data.goal) * 100);
   return (
     <>
-      <button className={`comp-bar ${data.unlocked ? "done" : ""}`} onClick={() => setOpen(true)} aria-label="Alpha competition: how it works">
+      {/* A div, not a <button>: iOS Safari was painting the button's background without its contents. */}
+      <div role="button" tabIndex={0} className={`comp-bar ${data.unlocked ? "done" : ""}`} onClick={() => setOpen(true)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(true); } }} aria-label="Alpha competition: how it works">
         <span className="comp-row">
           <Glyph n="trophy" size={15} tone="gold" />
           <b>{data.unlocked ? "Alpha competition unlocked" : "Alpha competition"}</b>
@@ -48,7 +49,7 @@ export function CompBar() {
           <span className="comp-go" aria-hidden>›</span>
         </span>
         <span className="comp-track"><span className="comp-fill" style={{ width: `${Math.max(pct, 2)}%` }} /></span>
-      </button>
+      </div>
       {open && <CompSheet d={mine && typeof mine.goal === "number" ? mine : data} onClose={() => setOpen(false)} />}
     </>
   );
