@@ -2307,3 +2307,7 @@ html, body { overflow-x: clip; max-width: 100%; }
 .pos-load { display: grid; gap: 8px; margin-top: 10px; text-align: center; }
 .pos-load p { font-size: 14px; color: var(--muted); padding-top: 14px; }
 .pos-load button { justify-self: center; border: 0; padding: 9px 18px; border-radius: 999px; background: var(--text); color: var(--bg); font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; }
+
+/* competition bar: always painted above the page's own header art */
+.comp-bar { position: relative; z-index: 26; -webkit-appearance: none; appearance: none; user-select: none; -webkit-user-select: none; }
+.comp-bar .comp-row, .comp-bar .comp-track { position: relative; }
