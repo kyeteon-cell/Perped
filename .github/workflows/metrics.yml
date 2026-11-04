@@ -1,0 +1,14 @@
+name: metrics
+# Owner numbers from the live app (users, traders, funnel, daily activity). Run from the Actions tab or chat.
+on:
+  workflow_dispatch:
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch /api/admin/metrics
+        env:
+          KEY: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$KEY" ]; then echo "::error::Add the CRON_SECRET repo secret (same value as Vercel)"; exit 1; fi
+          curl -sS "https://perped.pro/api/admin/metrics" -H "x-admin-key: $KEY" | tee metrics.json

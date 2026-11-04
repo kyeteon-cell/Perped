@@ -1,0 +1,34 @@
+name: probe
+# Debug: load a live page on an iPhone-sized browser and print what sits between the ticker and the page.
+on:
+  workflow_dispatch:
+    inputs:
+      path:
+        description: 'Page path'
+        default: '/'
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
+      - name: Probe
+        env: { P: "${{ github.event.inputs.path }}" }
+        run: |
+          cat > probe.mjs <<'JS'
+          import { chromium, devices } from "playwright";
+          const b = await chromium.launch(); const ctx = await b.newContext({ ...devices["iPhone 13"] });
+          await ctx.addInitScript(() => { try { localStorage.setItem("perped:intro-seen", "1"); localStorage.setItem("perped:arena-intro", "1"); } catch {} });
+          const p = await ctx.newPage(); const logs = [];
+          p.on("console", (m) => logs.push(m.type() + ": " + m.text())); p.on("requestfailed", (r) => logs.push("FAILED " + r.url()));
+          p.on("response", (r) => { if (r.url().includes("/api/competition")) logs.push("competition " + r.status()); });
+          await p.goto("https://perped.pro" + (process.env.P || "/"), { waitUntil: "networkidle" }); await p.waitForTimeout(4000);
+          const info = await p.evaluate(() => {
+            const wrap = document.querySelector(".ticker")?.parentElement; if (!wrap) return "no wrapper";
+            return [...wrap.children].slice(0, 4).map((el) => { const r = el.getBoundingClientRect(), cs = getComputedStyle(el); return { tag: el.tagName, cls: el.className, h: Math.round(r.height), top: Math.round(r.top), op: cs.opacity, vis: cs.visibility, color: cs.color, bg: cs.backgroundColor, text: (el.textContent || "").slice(0, 80), html: el.outerHTML.slice(0, 300) }; });
+          });
+          console.log(JSON.stringify(info, null, 1)); console.log(logs.slice(0, 40).join("\n"));
+          await b.close();
+          JS
+          node probe.mjs

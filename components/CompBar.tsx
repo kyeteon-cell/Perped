@@ -22,8 +22,10 @@ export function CompBar() {
   // is kept on the device so it shows instantly on every page, even before the network answers.
   const [cached, setCached] = useState<Data | undefined>(undefined);
   useEffect(() => { try { const j = localStorage.getItem("perped:comp"); if (j) setCached(JSON.parse(j)); } catch {} }, []);
-  const { data: fresh } = useSWR<Data>(["/api/competition", profile?.id ?? ""], async () => {
-    const r = await authedFetch("/api/competition");
+  // The bar itself is public: a plain fetch, so it never waits on a sign-in token. Your own status (in the sheet)
+  // is fetched signed-in separately, only when you open it.
+  const { data: fresh } = useSWR<Data>("/api/competition?bar=1", async () => {
+    const r = await fetch("/api/competition");
     const j = await r.json().catch(() => null);
     if (!r.ok || !j || typeof j.goal !== "number") throw new Error("competition unavailable");
     return j as Data;
@@ -31,7 +33,10 @@ export function CompBar() {
   useEffect(() => { if (fresh) try { localStorage.setItem("perped:comp", JSON.stringify({ ...fresh, me: null })); } catch {} }, [fresh]);
   const data = fresh ?? cached;
   const [open, setOpen] = useState(false);
-  if (!data || data.hidden || !data.goal) return null;
+  const { data: mine } = useSWR<Data>(open && profile ? ["/api/competition", profile.id] : null, async () => (await authedFetch("/api/competition")).json(), { revalidateOnFocus: false });
+  if (data?.hidden) return null;
+  // Never vanish while loading: an empty bar holds the space until the numbers arrive.
+  if (!data || !data.goal) return <div className="comp-bar comp-skel" aria-hidden><span className="comp-row"><Glyph n="trophy" size={15} tone="gold" /><b>Alpha competition</b></span><span className="comp-track"><span className="comp-fill" style={{ width: "2%" }} /></span></div>;
   const pct = Math.min(100, (data.count / data.goal) * 100);
   return (
     <>
@@ -44,7 +49,7 @@ export function CompBar() {
         </span>
         <span className="comp-track"><span className="comp-fill" style={{ width: `${Math.max(pct, 2)}%` }} /></span>
       </button>
-      {open && <CompSheet d={data} onClose={() => setOpen(false)} />}
+      {open && <CompSheet d={mine && typeof mine.goal === "number" ? mine : data} onClose={() => setOpen(false)} />}
     </>
   );
 }
