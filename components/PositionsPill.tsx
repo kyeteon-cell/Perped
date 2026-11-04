@@ -126,7 +126,7 @@ export function PositionsPill() {
         {unbeaten && <span className="pos-dot" aria-hidden />}
         <span className="pos-stack">{coins.map((c) => <CoinMark key={c} coin={c} size="xs" />)}</span>
         {rows.length > 0 && <><span>{rows.length} open</span><b className={`mono ${total >= 0 ? "green" : "red"}`}><Roll v={total} fmt={(x) => fmtUsd(x, { sign: true })} /></b></>}
-        {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>{unbeaten ? "Unbeaten" : "Fades"} <b className="mono">{wins}–{losses}</b></span>}
+        {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>{unbeaten ? "Unbeaten" : "Live"} <b className="mono">{wins}–{losses}</b></span>}
         <span className="pos-go" aria-hidden>›</span>
       </button>
       </div>

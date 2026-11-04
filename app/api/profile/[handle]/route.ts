@@ -1,4 +1,5 @@
 import { and, desc, eq, or, sql } from "drizzle-orm";
+import { fadeRecord } from "@/lib/record";
 import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { getClearinghouseState } from "@/lib/hl-info";
@@ -86,5 +87,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ handle: string 
     });
   }
   const hlRecord = imp ? { ...imp.summary, verifiedAt: imp.verifiedAt } : null;
-  return Response.json({ crew, hlRecord, user, stats: row.stats, followers: row.followers, following: row.following, rivalries: row.rivalries, isFollowing, isMe, positions, accountValue, withdrawable, xpRecent, battleStreak, bestStreak, form, vendetta });
+  // Exact W–L from the fights themselves (the stored counters could drift).
+  const rec = await fadeRecord(row.user.id).catch(() => null);
+  const stats = row.stats && rec ? { ...row.stats, battlesWon: rec.won, battlesLost: rec.lost } : row.stats;
+  return Response.json({ crew, hlRecord, user, stats, followers: row.followers, following: row.following, rivalries: row.rivalries, isFollowing, isMe, positions, accountValue, withdrawable, xpRecent, battleStreak, bestStreak, form, vendetta });
 }
