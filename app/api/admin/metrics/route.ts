@@ -10,6 +10,12 @@ export async function GET(req: Request) {
   await ensureSchema();
   if (!(await staffFrom(req))) return Response.json({ error: "unauthorized" }, { status: 401 });
   const one = async <T,>(q: SQL) => ((await db.execute(q)) as unknown as T[])[0];
+  const [allTime] = (await db.execute(sql`
+    select (select count(*) from users where not is_bot)::int as users,
+      (select count(distinct p.user_id) from posts p join users u on u.id = p.user_id where not u.is_bot and p.kind = 'trade')::int as traders,
+      (select count(*) from posts p join users u on u.id = p.user_id where not u.is_bot and p.kind = 'trade')::int as trades,
+      (select count(distinct p.user_id) from posts p join users u on u.id = p.user_id where not u.is_bot and p.kind = 'trade' and p.faded_from_id is not null)::int as faders,
+      (select count(distinct anon) from events where name = 'visit')::int as visitors`)) as unknown as Record<string, number>[];
   const [people, funnel, trades, volume, events, push, daily] = await Promise.all([
     one<{ total: number; today: number; week: number; guests: number }>(sql`
       select count(*)::int as total,
@@ -57,7 +63,7 @@ export async function GET(req: Request) {
   const feeRate = (BUILDER_FEE_STANDARD_TENTHS_BPS / 100000) * 2; // open + close
   return Response.json({
     at: new Date().toISOString(),
-    people, funnel, trades, volume, events, push,
+    allTime, people, funnel, trades, volume, events, push,
     perTraderPerDay: trades && trades.traders_week ? +(trades.week / trades.traders_week / 7).toFixed(2) : 0,
     estFees: { today: +((volume?.real_today ?? 0) * feeRate).toFixed(2), week: +((volume?.real_week ?? 0) * feeRate).toFixed(2) },
     daily: Array.from(daily as unknown as Iterable<{ day: string; signups: number; trades: number; traders: number }>),
