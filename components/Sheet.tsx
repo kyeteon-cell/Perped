@@ -12,13 +12,14 @@ export function Sheet({ label, onClose, className = "", children }: { label: str
   const el = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; dy: number; fromTop: boolean } | null>(null);
 
-  // Scroll lock: fix the body in place and restore the scroll position on close.
+  // Scroll lock without moving the page: overflow hidden on <html> (iOS 16+ honours it). The old trick of fixing
+  // <body> in place and scrolling back on close knocked iOS 26's viewport out of line, leaving the nav and the
+  // positions pill floating mid-screen after a sheet closed.
   useEffect(() => {
-    const y = window.scrollY;
-    const b = document.body.style;
-    const prev = { position: b.position, top: b.top, width: b.width, overflow: b.overflow };
-    b.position = "fixed"; b.top = `-${y}px`; b.width = "100%"; b.overflow = "hidden";
-    return () => { b.position = prev.position; b.top = prev.top; b.width = prev.width; b.overflow = prev.overflow; window.scrollTo(0, y); };
+    const h = document.documentElement.style, b = document.body.style;
+    const prev = { h: h.overflow, b: b.overflow };
+    h.overflow = "hidden"; b.overflow = "hidden";
+    return () => { h.overflow = prev.h; b.overflow = prev.b; };
   }, []);
 
   const onTouchStart = (e: React.TouchEvent) => {

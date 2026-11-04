@@ -33,7 +33,7 @@ export function ViewportFix() {
       // Ignore sub-pixel noise and pinch zoom (scale ≠ 1), which has its own behaviour. The drift bug is tens of
       // pixels; anything bigger is a keyboard or a viewport that hasn't settled yet, never something to chase.
       const ok = Math.abs(vv.scale - 1) < 0.01;
-      const sane = (v: number) => (ok && Math.abs(v) > 1 && Math.abs(v) < 160 ? v : 0);
+      const sane = (v: number) => (ok && Math.abs(v) > 1 && Math.abs(v) < 420 ? v : 0);
       set(sane(bottom), typing() ? 0 : sane(top));
       // A sideways pan (iOS can drift the visible area right while a sheet has the page locked) moves every
       // fixed element off-centre: put it back.
