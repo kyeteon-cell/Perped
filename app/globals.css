@@ -2292,3 +2292,12 @@ button.s-row { border: 0; background: none; font: inherit; color: var(--text); t
 .hli > .hli-acts { padding: 0 20px 6px; margin-top: 2px; }
 .hli-acts .btn { padding: 10px 14px; font-size: 13.5px; }
 .hli-acts .btn { width: auto; flex: 1 1 auto; }
+
+/* Nothing may widen the page sideways: on iPhones a few pixels of overflow make Safari widen the layout, and
+   fixed pop-ups (the fade tutorial, sheets) then sit off-centre and run off the right edge. */
+html, body { overflow-x: clip; max-width: 100%; }
+.aint-bg { left: 0; right: 0; width: 100%; overflow: hidden; place-items: end center; grid-template-columns: minmax(0, 1fr); }
+.aint { box-sizing: border-box; width: 100%; max-width: min(480px, 100%); overflow: hidden; }
+.aint-track { width: 100%; overscroll-behavior-x: contain; touch-action: pan-x; }
+.aint-card { box-sizing: border-box; min-width: 0; }
+.aint-acts { box-sizing: border-box; }

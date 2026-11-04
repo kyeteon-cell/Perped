@@ -35,6 +35,9 @@ export function ViewportFix() {
       const ok = Math.abs(vv.scale - 1) < 0.01;
       const sane = (v: number) => (ok && Math.abs(v) > 1 && Math.abs(v) < 160 ? v : 0);
       set(sane(bottom), typing() ? 0 : sane(top));
+      // A sideways pan (iOS can drift the visible area right while a sheet has the page locked) moves every
+      // fixed element off-centre: put it back.
+      if (ok && !typing() && Math.abs(vv.offsetLeft) > 1 && window.scrollX !== 0) window.scrollTo({ left: 0, top: window.scrollY });
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(apply); };
     // Re-measure a few times while the screen settles after a resume / rotation.
