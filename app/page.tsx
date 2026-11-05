@@ -1,5 +1,6 @@
 "use client";
 
+import { onPageScroll, scrollToTop, scrollTopNow } from "@/lib/scroller";
 import { small } from "@/lib/img";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -83,13 +84,12 @@ export default function HomePage() {
     if (!n.length) return;
     n.forEach((id) => seen.current!.add(id));
     setFresh(new Set(n));
-    if (window.scrollY > 400) setNewCount((c) => c + n.length);
+    if (scrollTopNow() > 400) setNewCount((c) => c + n.length);
   }, [idSig, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!newCount) return;
-    const f = () => { if (window.scrollY < 200) setNewCount(0); };
-    window.addEventListener("scroll", f, { passive: true });
-    return () => window.removeEventListener("scroll", f);
+    const f = () => { if (scrollTopNow() < 200) setNewCount(0); };
+    return onPageScroll(f);
   }, [newCount]);
   const { data: board } = useSWR<{ rows: { handle: string; pnl: number; winRate: string; avatarUrl?: string | null }[] }>("/api/leaderboard?period=7d");
   const suggested = (board?.rows ?? []).filter((r) => r.handle !== profile?.handle).slice(0, 5);
@@ -98,7 +98,7 @@ export default function HomePage() {
     <div data-tint="brand" className="fade-in">
       <WelcomeOnce />
       <PullRefresh onRefresh={() => mutate()} />
-      {newCount > 0 && <button type="button" className="feed-newchip" onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setNewCount(0); }}>↑ {newCount} new</button>}
+      {newCount > 0 && <button type="button" className="feed-newchip" onClick={() => { scrollToTop(); setNewCount(0); }}>↑ {newCount} new</button>}
       <header className="home-banner">
         <img src={small("/api/share-bg/banner-mercury", 1080)} alt="" className="home-banner-img" decoding="async" fetchPriority="high" />
         <div className="home-banner-shade" />

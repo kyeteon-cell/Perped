@@ -35,21 +35,6 @@ export function ViewportFix() {
       // pixels; anything bigger is a keyboard or a viewport that hasn't settled yet, never something to chase.
       const ok = Math.abs(vv.scale - 1) < 0.01;
       const sane = (v: number) => (ok && Math.abs(v) > 1 && Math.abs(v) < 420 ? v : 0);
-      // Installed app opened from a notification: iOS can start it with a layout viewport far shorter than the
-      // screen and never fix it, so everything pinned to the bottom sits mid-screen. In the installed app the page
-      // always fills the screen, so measure against the screen itself and pull the bars down to its real bottom.
-      const standalone = matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
-      if (ok && standalone && !typing()) {
-        const portrait = matchMedia("(orientation: portrait)").matches;
-        const screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-        const short = Math.round(screenH - Math.max(window.innerHeight, vv.offsetTop + vv.height));
-        if (short > 60 && short < screenH * 0.7) {
-          set(short, 0);
-          // Nudge iOS into re-measuring; if it does, the next reading drops back to 0 on its own.
-          if (!nudged) { nudged = true; const y = window.scrollY; window.scrollTo(0, y + 1); requestAnimationFrame(() => window.scrollTo(0, y)); }
-          return;
-        }
-      }
       set(sane(bottom), typing() ? 0 : sane(top));
       // A sideways pan (iOS can drift the visible area right while a sheet has the page locked) moves every
       // fixed element off-centre: put it back.

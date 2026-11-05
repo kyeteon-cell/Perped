@@ -2333,3 +2333,8 @@ button.srow.pn-row { width: 100%; border: 0; background: none; font: inherit; co
 .pn-sec ul { margin: 6px 0 0; padding-left: 18px; list-style: disc; }
 .pn-sec li { font-size: 13.5px; line-height: 1.45; }
 .pn-sec li + li { margin-top: 4px; }
+
+/* App shell: the window never scrolls; the page scrolls inside #scroller (see lib/scroller.ts). */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body.min-h-dvh { min-height: 0; }
+.app-scroll { height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }

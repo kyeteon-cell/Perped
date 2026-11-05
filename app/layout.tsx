@@ -8,6 +8,7 @@ import { CompBar } from "@/components/CompBar";
 import { PositionsPill } from "@/components/PositionsPill";
 import { Moments } from "@/components/Moments";
 import { ViewportFix } from "@/components/ViewportFix";
+import { ScrollMemory } from "@/components/ScrollMemory";
 import { RefCapture } from "@/components/RefCapture";
 import { APP_NAME, APP_URL } from "@/lib/config";
 
@@ -47,11 +48,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-dvh">
         <Providers>
-          <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col pb-32">
+          <div id="scroller" className="app-scroll">
+          <div className="mx-auto flex min-h-full w-full max-w-md flex-col pb-32">
             <Ticker />
             <CompBar />
             {children}
           </div>
+          </div>
+          <ScrollMemory />
           <PositionsPill />
           <Moments />
           <ViewportFix />
