@@ -13,6 +13,7 @@ type Interval = "1m" | "5m" | "15m" | "1h" | "4h" | "1d";
 /** A trade to pin on the chart. */
 export type ChartMarker = { id: string; t: number; side: "long" | "short"; label: string; hot?: boolean; muted?: boolean; price?: number; avatarUrl?: string | null; handle?: string; href?: string };
 type Mode = "candles" | "line";
+const EMPTY_CANDLES: Candle[] = [];
 const INTERVALS: Interval[] = ["1m", "5m", "15m", "1h", "4h", "1d"];
 
 function cssVar(name: string, fallback: string) {
@@ -24,7 +25,10 @@ function cssVar(name: string, fallback: string) {
  * Trading-grade chart (TradingView lightweight-charts): candles or line, volume, six intervals,
  * pinch-zoom and drag to pan, crosshair with OHLC, live last candle from the WebSocket mid.
  */
-export function PriceChart({ coin, livePx, markers = [], onMarkerClick, guides = [], height = 260 }: { coin: string; livePx?: number; markers?: ChartMarker[]; onMarkerClick?: (id: string) => void; guides?: { price: number; label: string }[]; height?: number }) {
+const NO_MARKERS: ChartMarker[] = [];
+const NO_GUIDES: { price: number; label: string }[] = [];
+
+export function PriceChart({ coin, livePx, markers = NO_MARKERS, onMarkerClick, guides = NO_GUIDES, height = 260 }: { coin: string; livePx?: number; markers?: ChartMarker[]; onMarkerClick?: (id: string) => void; guides?: { price: number; label: string }[]; height?: number }) {
   const [interval, setInterval_] = useState<Interval>("15m");
   const [mode, setMode] = useState<Mode>("candles");
   const [legend, setLegend] = useState<Candle | null>(null);
@@ -47,10 +51,15 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick, guides =
   const markersRef = useRef<ChartMarker[]>(markers); markersRef.current = markers;
   const candlesRef = useRef<Candle[]>([]);
 
-  const { data } = useSWR<{ candles: Candle[] }>(`/api/markets/${coin}/candles?interval=${interval}&limit=500`, {
+  const key = `/api/markets/${coin}/candles?interval=${interval}&limit=500`;
+  const { data } = useSWR<{ candles: Candle[] }>(key, {
     refreshInterval: interval === "1m" ? 15_000 : interval === "5m" ? 30_000 : 60_000,
+    // Never draw the previous coin's candles (or let the new coin's live price bend them) while the new ones load.
+    keepPreviousData: false,
   });
-  const candles = data?.candles ?? [];
+  const candles = data?.candles ?? EMPTY_CANDLES;
+  // Switching coin or interval: start the legend and the live candle fresh.
+  useEffect(() => { lastRef.current = null; setLegend(null); }, [coin, interval]);
   const up = candles.length > 1 ? candles[candles.length - 1].c >= candles[0].o : true;
 
   // Build the chart once per mode; data and theme are applied in the effects below.
@@ -90,7 +99,8 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick, guides =
 
   // Push data whenever candles or interval change.
   useEffect(() => {
-    const s = main.current, v = vol.current; if (!s || !v || !candles.length) return;
+    const s = main.current, v = vol.current; if (!s || !v) return;
+    if (!candles.length) { s.setData([]); v.setData([]); return; } // new coin loading: clear the old one
     const green = cssVar("--green", "#16a34a"), red = cssVar("--red", "#dc2626");
     if (mode === "candles") (s as ISeriesApi<"Candlestick">).setData(candles.map((c) => ({ time: (c.t / 1000) as UTCTimestamp, open: c.o, high: c.h, low: c.l, close: c.c })));
     else {
@@ -116,10 +126,10 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick, guides =
   // Trade pins: snap each to the candle it happened in, sort by time (the library requires it).
   /** Position avatar bubbles at (entry time, entry price) in pixel space; re-run on pan/zoom. */
   const placePins = () => {
-    const ch = chart.current, s = main.current, el = box.current; if (!ch || !s || !el) return setPins([]);
-    const times = candlesRef.current.map((c) => c.t); if (!times.length) return setPins([]);
+    const ch = chart.current, s = main.current, el = box.current; if (!ch || !s || !el) return setPins((p) => (p.length ? [] : p));
+    const times = candlesRef.current.map((c) => c.t); if (!times.length) return setPins((p) => (p.length ? [] : p));
     const snap = (t: number) => { let lo = times[0]; for (const x of times) { if (x <= t) lo = x; else break; } return lo; };
-    if (!showPinsRef.current) return setPins([]);
+    if (!showPinsRef.current) return setPins((p) => (p.length ? [] : p));
     // One pin per trader (their latest open trade), newest first; closed trades stay off the chart.
     const seen = new Set<string>();
     const rows = [...markersRef.current].filter((m) => !m.muted && m.t >= times[0] - 60_000).sort((a, b) => b.t - a.t).filter((m) => { const k = m.handle ?? m.id; if (seen.has(k)) return false; seen.add(k); return true; });
@@ -135,7 +145,7 @@ export function PriceChart({ coin, livePx, markers = [], onMarkerClick, guides =
       if (out.length >= 24) break;
       out.push({ id: m.id, x, y, n: 1, m });
     }
-    setPins(out);
+    setPins((prev) => (prev.length === out.length && prev.every((p, i) => p.id === out[i].id && p.n === out[i].n && Math.abs(p.x - out[i].x) < 0.5 && Math.abs(p.y - out[i].y) < 0.5) ? prev : out));
   };
   useEffect(() => {
     const s = main.current; if (!s || !candles.length) return;
