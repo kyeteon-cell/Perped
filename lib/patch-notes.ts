@@ -11,6 +11,7 @@ export const RELEASES: Release[] = [
       "Trade page no longer freezes when you switch coins or flip between Crypto and Stocks.",
       "Chart stats (open, high, low, close) always match the coin you're looking at; the old coin's candles no longer show while the new one loads.",
       "The /duels address now takes you to the Arena instead of a missing page.",
+      "Opening the app from a notification no longer leaves the nav bar and trades pill floating mid-screen on iPhone.",
     ],
     improved: [
       "New automated check of every page on a phone-sized browser for errors, freezes and dead links.",
