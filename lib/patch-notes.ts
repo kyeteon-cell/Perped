@@ -9,7 +9,8 @@ export const RELEASES: Release[] = [
     version: "0.9.5", date: "5 Nov 2026", title: "iPhone fixes",
     fixed: [
       "Opening the app from a notification no longer leaves the nav bar and trades pill floating mid-screen on iPhone.",
-      "If iOS starts the app at the wrong height, the bottom bars now snap to the real bottom of the screen and settle on their own.",
+      "Opening the app from your home screen no longer starts it half-scrolled with the nav bar mid-screen: pages now scroll inside the app, so iPhone can't knock the bottom bars out of place.",
+      "Going Back returns you to where you were on the page.",
     ],
   },
   {

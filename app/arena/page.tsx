@@ -1,5 +1,6 @@
 "use client";
 
+import { onPageScroll, scrollTopNow } from "@/lib/scroller";
 import { ArenaIntro } from "@/components/ArenaIntro";
 import { small } from "@/lib/img";
 import dynamic from "next/dynamic";
@@ -460,7 +461,7 @@ export default function ArenaPage() {
   const callOut = () => (authenticated ? setPicking(true) : login());
   // Slim bar that pins to the top once you scroll past the header: your record + Fight Night.
   const [stuck, setStuck] = useState(false);
-  useEffect(() => { const on = () => setStuck(window.scrollY > 240); on(); window.addEventListener("scroll", on, { passive: true }); return () => window.removeEventListener("scroll", on); }, []);
+  useEffect(() => { const on = () => setStuck(scrollTopNow() > 240); on(); return onPageScroll(on); }, []);
 
   return (
     <div className="fade-in pb-8" data-tint="gold">

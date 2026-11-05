@@ -1,5 +1,6 @@
 "use client";
 
+import { scrollTopNow } from "@/lib/scroller";
 import { useEffect, useRef, useState } from "react";
 
 /** Pull down at the top of the page to refresh: the Perped mark drops in, spins while it loads. Touch only. */
@@ -11,11 +12,11 @@ export function PullRefresh({ onRefresh }: { onRefresh: () => Promise<unknown> |
   const pullRef = useRef(0); pullRef.current = pull;
   const busyRef = useRef(false); busyRef.current = busy;
   useEffect(() => {
-    const down = (e: TouchEvent) => { start.current = window.scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null; };
+    const down = (e: TouchEvent) => { start.current = scrollTopNow() <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null; };
     const move = (e: TouchEvent) => {
       if (start.current == null) return;
       const dy = e.touches[0].clientY - start.current;
-      if (dy <= 0 || window.scrollY > 0) { if (pullRef.current) setPull(0); return; }
+      if (dy <= 0 || scrollTopNow() > 0) { if (pullRef.current) setPull(0); return; }
       // Only while pulling down from the very top: stop the browser's own bounce/reload so ours takes over.
       if (e.cancelable && dy > 6) e.preventDefault();
       setPull(Math.min(110, dy * 0.5));

@@ -16,10 +16,11 @@ export function Sheet({ label, onClose, className = "", children }: { label: str
   // <body> in place and scrolling back on close knocked iOS 26's viewport out of line, leaving the nav and the
   // positions pill floating mid-screen after a sheet closed.
   useEffect(() => {
-    const h = document.documentElement.style, b = document.body.style;
-    const prev = { h: h.overflow, b: b.overflow };
-    h.overflow = "hidden"; b.overflow = "hidden";
-    return () => { h.overflow = prev.h; b.overflow = prev.b; };
+    const sc = document.getElementById("scroller");
+    const h = document.documentElement.style, b = document.body.style, p = sc?.style;
+    const prev = { h: h.overflow, b: b.overflow, p: p?.overflow ?? "" };
+    h.overflow = "hidden"; b.overflow = "hidden"; if (p) p.overflow = "hidden";
+    return () => { h.overflow = prev.h; b.overflow = prev.b; if (p) p.overflow = prev.p; };
   }, []);
 
   const onTouchStart = (e: React.TouchEvent) => {
