@@ -19,8 +19,10 @@ export function useCoinStats(coin: string) {
 
 /** Minutes:seconds until the next hourly Hyperliquid funding payment. */
 export function useFundingCountdown() {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  // Starts empty and fills in after the page is on screen, so the server and the phone render the same first frame.
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => { setNow(Date.now()); const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  if (now == null) return "--:--";
   const left = 3_600_000 - (now % 3_600_000), m = Math.floor(left / 60_000), s = Math.floor((left % 60_000) / 1000);
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }

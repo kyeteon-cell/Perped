@@ -34,11 +34,13 @@ async function visit(path, act) {
   await page.waitForTimeout(5000);
   let acted = null;
   if (act) { try { acted = await act(page); } catch (e) { acted = "FAILED: " + String(e).slice(0, 160); } }
+  const tAct = Date.now();
   const long = await page.evaluate(() => window.__long ?? []).catch(() => []);
   const hrefs = await page.$$eval("a[href]", (as) => as.map((a) => a.getAttribute("href"))).catch(() => []);
   for (const h of hrefs) if (h && h.startsWith("/") && !h.startsWith("//")) links.add(h.split("#")[0]);
   const blank = await page.evaluate(() => (document.body?.innerText ?? "").trim().length < 40).catch(() => true);
-  report.pages.push({ path, status, ms: Date.now() - t0, blank, longTasks: long.filter((x) => x > 200), worstBlockMs: Math.max(0, ...long), errors: [...new Set(errs)].slice(0, 6), failed: [...new Set(failed)].slice(0, 6), bad: [...new Set(bad)].slice(0, 8), acted });
+  const tail = Date.now() - tAct;
+  report.pages.push({ path, status, ms: Date.now() - t0, tailMs: tail, blank, longTasks: long.filter((x) => x > 200), worstBlockMs: Math.max(0, ...long), errors: [...new Set(errs)].slice(0, 6), failed: [...new Set(failed)].slice(0, 6), bad: [...new Set(bad)].slice(0, 8), acted });
   await page.close();
 }
 

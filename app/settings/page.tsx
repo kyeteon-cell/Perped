@@ -2,6 +2,7 @@
 
 import { PushPrompt } from "@/components/PushPrompt";
 import { AlertSettings } from "@/components/AlertSettings";
+import { PatchNotesRow } from "@/components/PatchNotes";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { HlImportSettings } from "@/components/HlRecord";
@@ -57,7 +58,7 @@ export default function SettingsPage() {
     <div className="seg">{options.map(([v, l]) => <button key={v} className={`chip ${value === v ? "on" : ""}`} style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => onChange(v)}>{l}</button>)}</div>
   );
 
-  if (!profile) return <div className="p-5"><p className="muted text-sm">Log in to see your settings.</p></div>;
+  if (!profile) return <div className="p-5"><p className="muted text-sm">Log in to see your settings.</p><div className="mt-4"><PatchNotesRow /></div></div>;
 
   return (
     <div data-tint="violet" className="fade-in pb-6">
@@ -112,6 +113,7 @@ export default function SettingsPage() {
       <div className="srow"><span>Your Perped fee<span className="when ml-1.5">{fee.reason}</span></span><span className="mono font-bold">{fee.label}</span></div>
       <PushPrompt compact />
       <AlertSettings />
+      <PatchNotesRow />
       <Link href="/intro" className="srow"><span>Replay the 60-second tour</span><span>→</span></Link>
       <Link href="/how-it-works" className="srow" style={{ color: "var(--brand)" }}><span>How Perped works · where your money is · fees · risks</span><span>→</span></Link>
       <div className="srow"><span>Approved maximum</span><span className="chip" style={{ color: "var(--green)", background: "var(--green-soft)" }}>{BUILDER_MAX_FEE_RATE} max</span></div>

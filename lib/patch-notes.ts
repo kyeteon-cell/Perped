@@ -1,0 +1,96 @@
+/**
+ * Patch notes shown in Settings → What's new. Every release that changes something people will notice gets an
+ * entry here (newest first). Keep lines short and in plain words: what changed for the player, not how.
+ */
+export type Release = { version: string; date: string; title: string; new?: string[]; improved?: string[]; fixed?: string[] };
+
+export const RELEASES: Release[] = [
+  {
+    version: "0.9.4", date: "5 Nov 2026", title: "Stability update",
+    fixed: [
+      "Trade page no longer freezes when you switch coins or flip between Crypto and Stocks.",
+      "Chart stats (open, high, low, close) always match the coin you're looking at; the old coin's candles no longer show while the new one loads.",
+      "The /duels address now takes you to the Arena instead of a missing page.",
+    ],
+    improved: [
+      "Full automated check of every page on a phone-sized browser: errors, freezes and dead links, run on every update.",
+    ],
+  },
+  {
+    version: "0.9.3", date: "4 Nov 2026", title: "Crews and records",
+    new: [
+      "Crews: start or join a crew, crew pages with stats, and crew tags next to names.",
+      "Telegram crew bot for your group.",
+      "Bring your Hyperliquid record: show your all-time PnL and win rate on your profile, verified on-chain.",
+      "Earnings calculator on the invite page.",
+    ],
+    improved: [
+      "Your fade W–L is counted exactly from your finished fights everywhere: profile, Arena and leaderboard.",
+      "The trades pill shows Live for running fights (ahead–behind), or Unbeaten when you're ahead in all of them.",
+      "Health bars keep their side colour when low: green for longs, red for shorts.",
+      "Demo traders now trade stock perps as well as crypto.",
+    ],
+    fixed: [
+      "Trades sheet and competition bar retry if a load fails, with loading and Try again states instead of a blank screen.",
+      "iPhone (iOS 26): the nav bar and trades pill no longer float mid-screen after a sheet closes or the app resumes.",
+      "The competition bar now shows on every page on iPhone.",
+    ],
+  },
+  {
+    version: "0.9.2", date: "3 Nov 2026", title: "Stocks, picks and moments",
+    new: [
+      "Stock perps: every Hyperliquid stock and index market with live prices, charts and demo trading.",
+      "Pick the winner: back a side in any live fight for free and earn XP if you're right (double for calling the upset).",
+      "Daily Fade: one target a day, beat it for +50 XP.",
+      "Weekly recap card every Monday, with a share button.",
+      "Big moments: order-filled stamp, rank-up ceremony, trophy unlock, win confetti, and what a winning demo trade would have paid for real.",
+      "Trades pill and sheet: every open trade with live P&L, inline chart with your entry, stop and liquidation, plus Close winning / Close losing / Close all.",
+      "Live arena tab: fight cards with health bars, Unbeaten banner, Took the lead stamp and KO screen.",
+      "Arena explainer on your first visit.",
+      "Phone alert settings: choose which alerts buzz your phone.",
+      "Best fight at the top of every profile, with a share card.",
+    ],
+    improved: [
+      "Push alerts rewritten to fit the lock screen: short headline, one sentence per line, nothing cut off.",
+      "Fights settle the moment both sides close.",
+      "Founders now earn 50% of their invitees' fees for life.",
+      "The competition counts anyone who has placed a trade, demo accounts included.",
+      "Home loads faster: lower sections load as you scroll.",
+      "Rolling numbers, pull to refresh, new posts slide in, liquidation heartbeat on risky trades.",
+      "perped.pro is now the only address; old links redirect and keep your demo account.",
+    ],
+    fixed: [
+      "Names and badges line up on one line everywhere.",
+      "Trades pill stays centred, and the Arena top bar only appears once you scroll.",
+    ],
+  },
+  {
+    version: "0.9.1", date: "2 Nov 2026", title: "Markets and trophies",
+    new: [
+      "Market metrics: funding (8h and yearly, countdown, history, other exchanges), order book depth and slippage, premium and today versus a normal day, each with a plain-English read.",
+      "Search for coins and traders together, with suggestions.",
+      "29 trophies with drawn emblems, from bronze to obsidian.",
+      "Ranks on avatars with a metal rim by rank, plus admin and founder badges.",
+      "First-open welcome with a guided first trade and first fade.",
+      "Earnings page for founders and inviters, and share cards that carry your invite code.",
+      "Alpha competition bar and About cards on every market.",
+    ],
+    fixed: [
+      "Funding showed 1/8 of the real 8h rate.",
+      "Log out signed you straight back in.",
+      "Stops and targets now settle at the live price.",
+    ],
+  },
+  {
+    version: "0.9.0", date: "1 Nov 2026", title: "Season 0",
+    new: [
+      "The new Arena: Main event, Your fight, Vendettas, Bloodbath and the Pit.",
+      "Charts tick live every second, with win and lose zones on trades and fades.",
+      "Demo mode for Season 0, with early access to real money.",
+      "Link X to a demo account, founder dashboard.",
+    ],
+    improved: ["Faster start, lighter polling and spam limits."],
+  },
+];
+
+export const APP_VERSION = RELEASES[0].version;
