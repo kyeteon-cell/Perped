@@ -6,6 +6,15 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.7", date: "6 Nov 2026", title: "Stop losses fixed",
+    fixed: [
+      "Stop losses and take profits on demo trades now fill at the price you set, not wherever price had got to by the next check. Before, a stop could close well past your level (and lose a lot more than you planned).",
+      "A quick wick that touches your stop and bounces now counts, the same as a real stop order on Hyperliquid.",
+      "Stops, targets and liquidations trigger within seconds while you have Perped open, instead of waiting up to five minutes.",
+      "If price jumps straight past your level, the trade closes at the first price after the jump.",
+    ],
+  },
+  {
     version: "0.9.6", date: "6 Nov 2026", title: "Share card fix",
     fixed: [
       "Fade share cards: the logo, the lead number and \"Pick a side\" no longer overlap at the bottom. The footer has its own strip, and the lead row shrinks to fit long names.",

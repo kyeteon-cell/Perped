@@ -2,7 +2,7 @@ import { and, eq, isNull, lte, sql } from "drizzle-orm";
 import { db, schema, ensureSchema, unjam } from "@/lib/db";
 import { getMids } from "@/lib/hl-info";
 import { notify, systemPost } from "@/lib/feed";
-import { closeTradePost } from "@/lib/trades";
+import { enforceDemoStops } from "@/lib/demo-stops";
 import { backfillBattles, backfillBattleStamps, reopenPrematureBattles, settleBattles } from "@/lib/battles";
 import { alertBloodbath } from "@/lib/bloodbath";
 import { syncRealPositions } from "@/lib/realsync";
@@ -10,7 +10,6 @@ import { fightNightKickoff } from "@/lib/fightnight-server";
 import { awardXp } from "@/lib/xp";
 import { rebuildRivalries, recordFight } from "@/lib/rivalries";
 import { lossPenalty, rankFor, XP } from "@/lib/rank";
-import { demoLiqPx } from "@/lib/format";
 import { lastWeek, weekRecap } from "@/lib/recap";
 
 /**
@@ -31,22 +30,9 @@ export async function GET(req: Request) {
   const px = (coin: string | null) => (coin ? Number(mids[coin] ?? 0) : 0);
   let hit = 0, missed = 0, polls = 0, duelsSettled = 0, demoClosed = 0;
 
-  // Demo trades by people: take-profit, stop-loss and liquidation, checked against the live mid.
-  const openDemo = await db.select({ p: schema.posts, isBot: schema.users.isBot }).from(schema.posts).innerJoin(schema.users, eq(schema.users.id, schema.posts.userId))
-    .where(and(eq(schema.posts.kind, "trade"), eq(schema.posts.status, "open"), eq(schema.posts.paper, true), eq(schema.users.isBot, false)));
-  for (const { p: t } of openDemo) {
-    const mid = px(t.coin); if (!mid || !t.userId) continue;
-    const up = t.side === "long", entry = Number(t.entryPx), lev = t.leverage ?? 1;
-    const liq = demoLiqPx(t.side as "long" | "short", entry, lev);
-    let reason: "tp" | "sl" | "liquidation" | null = null;
-    if (up ? mid <= liq : mid >= liq) reason = "liquidation";
-    else if (t.slPx && (up ? mid <= Number(t.slPx) : mid >= Number(t.slPx))) reason = "sl";
-    else if (t.tpPx && (up ? mid >= Number(t.tpPx) : mid <= Number(t.tpPx))) reason = "tp";
-    if (!reason) continue;
-    // Stops and targets fill at the live price once triggered (like a market order), never at the number typed in.
-    await closeTradePost(t.id, t.userId, { exitPx: reason === "liquidation" ? liq : mid, reason, trusted: true });
-    demoClosed++;
-  }
+  // Demo trades by people: take-profit, stop-loss and liquidation, from the 1m candles since the last run
+  // (so wicks count) and filled at the level, not wherever price happens to be when the cron wakes up.
+  demoClosed = await enforceDemoStops().catch((e) => { console.error("[resolve] demo stops", e); return 0; });
 
   // Calls: hit when target printed (we check current mid each run; a 1m-candle check would be stricter), missed on invalidation or deadline.
   const openCalls = await db.select().from(schema.posts).where(and(eq(schema.posts.kind, "call"), eq(schema.posts.callStatus, "open")));

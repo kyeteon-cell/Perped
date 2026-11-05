@@ -83,6 +83,24 @@ export function PositionsPill() {
   const openSig = rows.map((r) => `${r.post.id}:${r.post.size}`).join(",");
   useEffect(() => { if (profile) void mutateF(); }, [openSig]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (open) { void mutate(); void mutateF(); } }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Stops shouldn't wait for the 5-minute cron: the moment a live price crosses a demo trade's stop, target or
+  // liquidation, ask the server to check (it decides from Hyperliquid's prices, not ours) and refresh.
+  const crossed = rows.filter(({ post: p }) => {
+    if (!p.paper) return false;
+    const m = Number(mids[p.coin ?? ""] ?? 0); if (!m) return false;
+    const up = p.side === "long", lev = p.leverage ?? 1;
+    const liq = lev > 1 ? demoLiqPx(up ? "long" : "short", Number(p.entryPx), lev) : 0;
+    const sl = Number(p.slPx ?? 0), tp = Number(p.tpPx ?? 0);
+    return (sl > 0 && (up ? m <= sl : m >= sl)) || (tp > 0 && (up ? m >= tp : m <= tp)) || (liq > 0 && (up ? m <= liq : m >= liq));
+  }).map((r) => r.post.id).join(",");
+  const stopCheckAt = useRef(0);
+  useEffect(() => {
+    if (!crossed || Date.now() - stopCheckAt.current < 4_000) return;
+    stopCheckAt.current = Date.now();
+    void authedFetch("/api/me/stops", { method: "POST" }).then((r) => r.json()).then((j: { closed?: number }) => {
+      if (j?.closed) { void mutate(); void mutateF(); void Promise.resolve(refreshMe?.()).catch(() => null); try { navigator.vibrate?.(40); } catch {} }
+    }).catch(() => null);
+  }, [crossed, mids]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!profile || (!rows.length && !fades.length) || HIDE.some((r) => r.test(path))) return null;
 
   const live = rows.map(({ post }) => {
