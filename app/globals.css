@@ -2311,3 +2311,25 @@ html, body { overflow-x: clip; max-width: 100%; }
 /* competition bar: always painted above the page's own header art */
 .comp-bar { position: relative; z-index: 26; -webkit-appearance: none; appearance: none; user-select: none; -webkit-user-select: none; }
 .comp-bar .comp-row, .comp-bar .comp-track { position: relative; }
+
+/* patch notes */
+button.srow.pn-row { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.pn-dot { display: inline-block; width: 8px; height: 8px; margin-left: 7px; border-radius: 50%; background: var(--gold); vertical-align: 2px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 25%, transparent); }
+.pn-top { display: flex; align-items: baseline; justify-content: space-between; padding: 4px 0 10px; }
+.pn-top b { font-size: 20px; font-weight: 900; }
+.pn-rel { margin-top: 8px; border-radius: 18px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.pn-rel.latest { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 55%, var(--line)); }
+.pn-head { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border: 0; background: none; font: inherit; color: var(--text); text-align: left; cursor: pointer; }
+.pn-head > span:first-child { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; min-width: 0; }
+.pn-head b { font-size: 15px; font-weight: 900; }
+.pn-head em { font-style: normal; font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; background: var(--gold-soft); color: var(--gold); }
+.pn-head small { width: 100%; font-size: 13px; font-weight: 700; color: var(--muted); }
+.pn-body { padding: 0 14px 12px; }
+.pn-sec + .pn-sec { margin-top: 10px; }
+.pn-tag { display: inline-block; font-size: 10.5px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+.pn-tag.new { background: var(--gold-soft); color: var(--gold); }
+.pn-tag.imp { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+.pn-tag.fix { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--muted); }
+.pn-sec ul { margin: 6px 0 0; padding-left: 18px; list-style: disc; }
+.pn-sec li { font-size: 13.5px; line-height: 1.45; }
+.pn-sec li + li { margin-top: 4px; }
