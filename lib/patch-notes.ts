@@ -13,6 +13,7 @@ export const RELEASES: Release[] = [
       "Health bar footers say how far away liquidation is in both cases (\"Liq 31.8% away\").",
       "The nav bar and trades pill no longer get stuck floating partway up the screen on iPhone after scrolling a fade.",
       "Head to head shows a dash for win rate when someone hasn't closed a trade yet, instead of 0%.",
+      "Leaders: the list under the podium now carries on from #4 instead of repeating 1–3, accounts with no closed trades in the period are no longer ranked at $0.00, and win rates read \"48% win\" without a plus sign.",
     ],
   },
   {

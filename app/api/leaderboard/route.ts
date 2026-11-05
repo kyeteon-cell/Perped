@@ -63,7 +63,7 @@ async function board(req: Request, forceDemo = false): Promise<{ mode: string; d
     return { mode, demo, rows, season: { name: `Week of ${start.toLocaleString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}`, endsAt: end.toISOString() } } as { mode: string; demo: boolean; rows: unknown[] };
   }
   if (mode === "ranks") {
-    const rows = await db.select(base).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(realOnly).orderBy(desc(schema.users.xp), desc(schema.stats.battlesWon)).limit(50);
+    const rows = await db.select(base).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(and(realOnly, sql`${schema.users.xp} > 0`)).orderBy(desc(schema.users.xp), desc(schema.stats.battlesWon)).limit(50);
     return { mode, demo, rows };
   }
   if (mode === "calls") {
@@ -79,7 +79,8 @@ async function board(req: Request, forceDemo = false): Promise<{ mode: string; d
   const col = period === "30d" ? schema.stats.realizedPnl30d : period === "all" ? schema.stats.realizedPnlAll : schema.stats.realizedPnl7d;
   const sel = { ...base, pnl: sql<number>`${col}`.mapWith(Number) };
   const [top, bottom] = await Promise.all([
-    db.select(sel).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(realOnly).orderBy(desc(col)).limit(50),
+    // Only people with a realised result in the window: 0-trade accounts at $0.00 aren't a ranking.
+    db.select(sel).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(and(realOnly, sql`${schema.stats.closedTrades} > 0`, sql`coalesce(${col}, 0) <> 0`)).orderBy(desc(col)).limit(50),
     db.select(sel).from(schema.stats).innerJoin(schema.users, eq(schema.users.id, schema.stats.userId)).where(and(eq(schema.users.showBottomBoard, true), realOnly)).orderBy(asc(col)).limit(5),
   ]);
   return { mode, demo, period, rows: top, bottom: bottom.filter((b) => b.pnl < 0) };
