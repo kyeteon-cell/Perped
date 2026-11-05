@@ -51,10 +51,13 @@ await visit("/trade", async (page) => {
   const price = async () => (await page.locator(".block .mono.text-lg").first().innerText().catch(() => ""));
   for (const step of ["Stocks", "chip:1", "chip:2", "Crypto", "chip:1", "Stocks", "chip:3"]) {
     const t = Date.now();
-    if (step.startsWith("chip:")) await page.locator(".seg").nth(1).locator("button").nth(Number(step.slice(5))).click({ timeout: 5000 });
+    if (step.startsWith("chip:")) await page.locator(".seg button:has(.cm)").nth(Number(step.slice(5))).click({ timeout: 5000 });
     else await page.getByRole("button", { name: step, exact: true }).first().click({ timeout: 5000 });
     await page.waitForTimeout(2500);
-    out.push({ step, ms: Date.now() - t, coin: (await page.locator(".block .text-\\[22px\\]").first().innerText().catch(() => "")), price: await price(), legend: await legend() });
+    // Is the page still responsive? Time a single frame, and count main-thread blocks since the click.
+    const frame = await page.evaluate(() => { const t = performance.now(); return new Promise((r) => requestAnimationFrame(() => r(Math.round(performance.now() - t)))); }).catch(() => -1);
+    const blocks = await page.evaluate(() => { const l = window.__long ?? []; window.__long = []; return l.filter((x) => x > 200); }).catch(() => []);
+    out.push({ step, ms: Date.now() - t, frame, blocks, coin: (await page.locator(".block .text-\\[22px\\]").first().innerText().catch(() => "")), price: await price(), legend: await legend() });
   }
   return out;
 });
