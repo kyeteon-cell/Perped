@@ -97,7 +97,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const fs = fader.stats, ts = tu.stats;
   const n = (v: unknown) => Number(v ?? 0);
   const rows: { k: string; a: string; b: string; win: -1 | 0 | 1; }[] = [
-    { k: "Win rate", a: `${Math.round(n(fs?.winRate))}%`, b: `${Math.round(n(ts?.winRate))}%`, win: Math.sign(n(fs?.winRate) - n(ts?.winRate)) as -1 | 0 | 1 },
+    { k: "Win rate", a: fs?.closedTrades ? `${Math.round(n(fs?.winRate))}%` : "—", b: ts?.closedTrades ? `${Math.round(n(ts?.winRate))}%` : "—", win: Math.sign(n(fs?.winRate) - n(ts?.winRate)) as -1 | 0 | 1 },
     { k: "30d P&L", a: fmtUsd(n(fs?.realizedPnl30d), { sign: true, compact: true }), b: fmtUsd(n(ts?.realizedPnl30d), { sign: true, compact: true }), win: Math.sign(n(fs?.realizedPnl30d) - n(ts?.realizedPnl30d)) as -1 | 0 | 1 },
     { k: "All time", a: fmtUsd(n(fs?.realizedPnlAll), { sign: true, compact: true }), b: fmtUsd(n(ts?.realizedPnlAll), { sign: true, compact: true }), win: Math.sign(n(fs?.realizedPnlAll) - n(ts?.realizedPnlAll)) as -1 | 0 | 1 },
     { k: "Trades", a: String(fs?.closedTrades ?? 0), b: String(ts?.closedTrades ?? 0), win: 0 },

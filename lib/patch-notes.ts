@@ -11,6 +11,8 @@ export const RELEASES: Release[] = [
       "A side that has closed now shows as Banked on its health bar, instead of a live health score worked out from a price it's no longer exposed to.",
       "The tug bar on fades now moves with the gap between the two ROIs: when both traders are up big, the leader's side visibly wins the bar instead of sitting near the middle.",
       "Health bar footers say how far away liquidation is in both cases (\"Liq 31.8% away\").",
+      "The nav bar and trades pill no longer get stuck floating partway up the screen on iPhone after scrolling a fade.",
+      "Head to head shows a dash for win rate when someone hasn't closed a trade yet, instead of 0%.",
     ],
   },
   {

@@ -34,7 +34,8 @@ export function ViewportFix() {
       // Ignore sub-pixel noise and pinch zoom (scale ≠ 1), which has its own behaviour. The drift bug is tens of
       // pixels; anything bigger is a keyboard or a viewport that hasn't settled yet, never something to chase.
       const ok = Math.abs(vv.scale - 1) < 0.01;
-      const sane = (v: number) => (ok && Math.abs(v) > 1 && Math.abs(v) < 420 ? v : 0);
+      // Capped at 120px: the real drift is small, and a bigger half-settled reading lifted the nav ~1/3 up the screen.
+      const sane = (v: number) => (ok && Math.abs(v) > 1 && Math.abs(v) <= 120 ? v : 0);
       set(sane(bottom), typing() ? 0 : sane(top));
       // A sideways pan (iOS can drift the visible area right while a sheet has the page locked) moves every
       // fixed element off-centre: put it back.
@@ -51,6 +52,11 @@ export function ViewportFix() {
     const vis = () => { if (document.visibilityState === "visible") settle(); };
     vv.addEventListener("resize", on); vv.addEventListener("scroll", on);
     window.addEventListener("scroll", on, { passive: true }); window.addEventListener("resize", on);
+    // The page scrolls inside #scroller, not the window, so window scroll never fires: re-measure on panel
+    // scrolls and touch ends too, so a stale offset can't stick while you scroll.
+    const panel = document.getElementById("scroller");
+    panel?.addEventListener("scroll", on, { passive: true });
+    document.addEventListener("touchend", on, { passive: true });
     window.addEventListener("pageshow", settle); window.addEventListener("focus", settle); window.addEventListener("orientationchange", settle);
     document.addEventListener("visibilitychange", vis);
     const out = () => setTimeout(on, 60);
@@ -60,6 +66,7 @@ export function ViewportFix() {
     return () => {
       vv.removeEventListener("resize", on); vv.removeEventListener("scroll", on);
       window.removeEventListener("scroll", on); window.removeEventListener("resize", on);
+      panel?.removeEventListener("scroll", on); document.removeEventListener("touchend", on);
       window.removeEventListener("pageshow", settle); window.removeEventListener("focus", settle); window.removeEventListener("orientationchange", settle);
       document.removeEventListener("visibilitychange", vis);
       document.removeEventListener("focusin", on); document.removeEventListener("focusout", out);
