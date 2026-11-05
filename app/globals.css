@@ -2343,3 +2343,6 @@ body.min-h-dvh { min-height: 0; }
 .ar-hpbar.done .ar-hptrack i, .mhp.done i { opacity: .55; animation: none !important; background-image: none !important; }
 .ar-hpbar.done .ar-hptrack i.long, .mhp.done i.long { background-color: var(--green); }
 .ar-hpbar.done .ar-hptrack i.short, .mhp.done i.short { background-color: var(--red); }
+
+/* "New version ready" chip */
+.upd-chip { position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 140; border: 0; padding: 9px 16px; border-radius: 999px; background: linear-gradient(135deg, #ffe39a, #f2b63a 50%, #c98a05); color: #1a1300; font: inherit; font-size: 13px; font-weight: 900; box-shadow: 0 10px 30px -10px rgba(0,0,0,.5); cursor: pointer; animation: chip-drop .35s cubic-bezier(.2,1.4,.4,1) both; white-space: nowrap; }

@@ -11,6 +11,9 @@ export const RELEASES: Release[] = [
       "Fade share cards: the logo, the lead number and \"Pick a side\" no longer overlap at the bottom. The footer has its own strip, and the lead row shrinks to fit long names.",
       "Settled fights on share cards say who won instead of who's ahead.",
     ],
+    improved: [
+      "The app updates itself: when a new version is live, it reloads as you come back to it, or shows a New version ready chip while you're using it. No more force-closing to get fixes.",
+    ],
   },
   {
     version: "0.9.6", date: "5 Nov 2026", title: "Fade scoring fixes",
