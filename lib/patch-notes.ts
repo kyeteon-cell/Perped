@@ -6,6 +6,13 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.6", date: "6 Nov 2026", title: "Share card fix",
+    fixed: [
+      "Fade share cards: the logo, the lead number and \"Pick a side\" no longer overlap at the bottom. The footer has its own strip, and the lead row shrinks to fit long names.",
+      "Settled fights on share cards say who won instead of who's ahead.",
+    ],
+  },
+  {
     version: "0.9.6", date: "5 Nov 2026", title: "Fade scoring fixes",
     fixed: [
       "A side that has closed now shows as Banked on its health bar, instead of a live health score worked out from a price it's no longer exposed to.",

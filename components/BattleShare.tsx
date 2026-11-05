@@ -79,17 +79,21 @@ async function draw(d: BattleShareData, bgKey: string) {
   g.font = `900 64px ${sans}`; g.fillStyle = "#fff"; center(g, "VS", W / 2, 300);
   g.font = `600 32px ${sans}`; g.fillStyle = "rgba(255,255,255,.75)"; center(g, `${d.faderHandle} faded`, W / 2, 352);
 
-  // Bank & chase / verdict box
-  let y = 912;
+  // Layout below the fighters is fixed so nothing can run into the footer:
+  //   box 900–1060 · tug bar 1090 · gap row baseline 1210 · footer 1246–1302.
+  let y = 900;
   if (d.box) {
-    g.fillStyle = "rgba(245,246,248,.94)"; rr(g, 56, y, W - 112, 196, 32); g.fill();
-    g.strokeStyle = GOLD; g.lineWidth = 3; rr(g, 56, y, W - 112, 196, 32); g.stroke();
-    g.fillStyle = "#6e727a"; g.font = `900 26px ${sans}`; g.fillText(d.box.title.toUpperCase(), 96, y + 52);
-    g.fillStyle = "#0f1012"; g.font = `800 42px ${sans}`; g.fillText(d.box.headline, 96, y + 112);
-    if (d.box.headlineValue) { const hw = g.measureText(d.box.headline + " ").width; g.fillStyle = d.box.headlineValue.good ? "#04b877" : "#e5484d"; g.font = `800 42px ${mono}`; g.fillText(d.box.headlineValue.text, 96 + hw, y + 112); }
-    g.fillStyle = "#33363c"; g.font = `600 30px ${sans}`; g.fillText(d.box.line.length > 58 ? d.box.line.slice(0, 57) + "…" : d.box.line, 96, y + 162);
-    y += 236;
-  } else y += 40;
+    const bh = 160;
+    g.fillStyle = "rgba(245,246,248,.94)"; rr(g, 56, y, W - 112, bh, 30); g.fill();
+    g.strokeStyle = GOLD; g.lineWidth = 3; rr(g, 56, y, W - 112, bh, 30); g.stroke();
+    g.fillStyle = "#6e727a"; g.font = `900 24px ${sans}`; g.fillText(d.box.title.toUpperCase(), 92, y + 42);
+    g.fillStyle = "#0f1012"; g.font = `800 40px ${sans}`; g.fillText(d.box.headline, 92, y + 92);
+    if (d.box.headlineValue) { const hw = g.measureText(d.box.headline + " ").width; g.fillStyle = d.box.headlineValue.good ? "#04b877" : "#e5484d"; g.font = `800 40px ${mono}`; g.fillText(d.box.headlineValue.text, 92 + hw, y + 92); }
+    g.fillStyle = "#33363c"; g.font = `600 28px ${sans}`;
+    let line = d.box.line; while (g.measureText(line).width > W - 184 && line.length > 4) line = line.slice(0, -2).trimEnd() + "…";
+    g.fillText(line, 92, y + 136);
+    y += bh + 30;
+  } else y = 1000;
 
   // Tug bar with bead
   const tx = 56, tw = W - 112, th = 22, split = tx + (tw * Math.max(4, Math.min(96, d.share))) / 100;
@@ -98,18 +102,20 @@ async function draw(d: BattleShareData, bgKey: string) {
   const bead = g.createRadialGradient(split - 6, y + th / 2 - 6, 2, split, y + th / 2, 22); bead.addColorStop(0, "#fff"); bead.addColorStop(.6, "#c9ccd1"); bead.addColorStop(1, "#858a92");
   g.fillStyle = bead; g.beginPath(); g.arc(split, y + th / 2, 22, 0, Math.PI * 2); g.fill();
 
-  // Gap
-  y += 140;
-  g.font = `800 120px ${mono}`; const gt = `${d.gap.toFixed(1)}%`, gw = g.measureText(gt).width;
-  g.font = `800 40px ${sans}`; const lt = `${d.leaderHandle} ahead`, lw = g.measureText(lt).width;
+  // Gap: the big number and who's ahead, centred on one row that always fits the card.
+  const gy = Math.min(y + th + 102, 1212);
+  const gt = `${d.gap.toFixed(1)}%`, lt = d.status === "SETTLED" ? `${d.leaderHandle} won` : `${d.leaderHandle} ahead`;
+  let gs = 100, gw = 0, lw = 0;
+  for (;;) { g.font = `800 ${gs}px ${mono}`; gw = g.measureText(gt).width; g.font = `800 ${Math.round(gs * 0.38)}px ${sans}`; lw = g.measureText(lt).width; if (gw + 24 + lw <= W - 140 || gs <= 56) break; gs -= 6; }
   const gx = (W - gw - 24 - lw) / 2;
-  g.save(); g.shadowColor = "rgba(242,182,58,.6)"; g.shadowBlur = 30; g.font = `800 120px ${mono}`; g.fillStyle = "#fff"; g.fillText(gt, gx, y); g.restore();
-  g.font = `800 40px ${sans}`; g.fillStyle = GOLD; g.fillText(lt, gx + gw + 24, y - 6);
+  g.save(); g.shadowColor = "rgba(242,182,58,.6)"; g.shadowBlur = 30; g.font = `800 ${gs}px ${mono}`; g.fillStyle = "#fff"; g.fillText(gt, gx, gy); g.restore();
+  g.font = `800 ${Math.round(gs * 0.38)}px ${sans}`; g.fillStyle = GOLD; g.fillText(lt, gx + gw + 24, gy - 6);
 
-  // Footer
+  // Footer: its own strip at the bottom, with a hairline above it.
+  g.fillStyle = "rgba(255,255,255,.14)"; g.fillRect(56, H - 124, W - 112, 2);
   const logo = await img("/api/share-bg/logo-wordmark");
-  if (logo) { const lh = 64, lw2 = (logo.width / logo.height) * lh; g.drawImage(logo, 56, H - 56 - lh, lw2, lh); }
-  g.font = `800 34px ${sans}`; g.fillStyle = "#fff"; const ft = "Pick a side · perped.pro"; g.fillText(ft, W - 56 - g.measureText(ft).width, H - 72);
+  if (logo) { const lh = 56, lw2 = (logo.width / logo.height) * lh; g.drawImage(logo, 56, H - 48 - lh, lw2, lh); }
+  g.font = `800 32px ${sans}`; g.fillStyle = "#fff"; const ft = "Pick a side · perped.pro"; g.fillText(ft, W - 56 - g.measureText(ft).width, H - 62);
   return c;
 }
 
