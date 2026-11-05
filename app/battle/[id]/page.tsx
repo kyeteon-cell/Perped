@@ -21,7 +21,7 @@ import { RevengeButton } from "@/components/Bloodbath";
 import { isFightNight } from "@/lib/fightnight";
 import { legItem } from "@/components/legItem";
 const QuickTrade = dynamic(() => import("@/components/QuickTrade").then((m) => m.QuickTrade), { ssr: false });
-import { Tug } from "@/components/Tug";
+import { Tug, tugShare } from "@/components/Tug";
 const BattleShare = dynamic(() => import("@/components/BattleShare").then((m) => m.BattleShare), { ssr: false });
 import type { Post, Stats } from "@/lib/schema";
 
@@ -88,7 +88,7 @@ export default function BattlePage({ params }: { params: Promise<{ id: string }>
   const chasing = !live && battle?.status !== "settled" && (fade.status === "open" || target.status === "open");
   const fBanked = fade.status === "closed";
   const faderLeads = a.roi > b.roi;
-  const share = Math.max(8, Math.min(92, 50 + ((a.roi - b.roi) / (Math.abs(a.roi) + Math.abs(b.roi) || 1)) * 50));
+  const share = tugShare(a.roi, b.roi);
   const fighter = (u: U, p: Post, r: { roi: number }): Fighter => ({
     handle: u.handle, avatarUrl: u.avatarUrl, side: p.side as "long" | "short", lev: p.leverage ?? 1, entry: Number(p.entryPx),
     tp: p.tpPx ? Number(p.tpPx) : null, sl: p.slPx ? Number(p.slPx) : null, openedAt: p.createdAt,

@@ -1,7 +1,7 @@
 "use client";
 
 import { Glyph } from "./Glyph";
-import { Tug } from "./Tug";
+import { Tug, tugShare } from "./Tug";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
@@ -48,8 +48,7 @@ function Side({ side }: { side: "long" | "short" }) {
 
 function DuelCard({ d, mids }: { d: PulseData["duels"][number]; mids: Record<string, number> }) {
   const a = live(d.a, mids, d.coin), b = live(d.b, mids, d.coin);
-  const total = Math.abs(a.roi) + Math.abs(b.roi) || 1;
-  const aShare = Math.max(8, Math.min(92, 50 + ((a.roi - b.roi) / total) * 50));
+  const aShare = tugShare(a.roi, b.roi);
   const left = Math.max(0, new Date(d.settlesAt).getTime() - Date.now());
   const leftTxt = left > 86_400_000 ? `${Math.round(left / 86_400_000)}d` : left > 3_600_000 ? `${Math.round(left / 3_600_000)}h` : `${Math.max(1, Math.round(left / 60_000))}m`;
   const leader = a.roi >= b.roi ? d.a : d.b;

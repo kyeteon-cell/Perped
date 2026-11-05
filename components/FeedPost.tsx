@@ -18,6 +18,7 @@ import { RichText } from "./RichText";
 import { BattleSummary, battlesOf } from "./BattleSummary";
 import { BattleCardChart, MiniHp, type Fighter } from "./BattleArena";
 import { PickWinner } from "./PickWinner";
+import { tugShare } from "./Tug";
 import { HL_NETWORK } from "@/lib/config";
 const TrophyPost = dynamic(() => import("./Trophies").then((m) => m.TrophyPost), { ssr: false });
 
@@ -391,7 +392,7 @@ function fightersOf(item: FeedRow, mark: number, myRoi: number): [Fighter, Fight
   const theirRoi = entry ? pnlForPosition(src.side, entry, theirMark, Number(src.size ?? 0)).pct * lev : 0;
   return [
     { handle: src.handle, avatarUrl: src.avatarUrl, side: src.side, lev, entry, sl: src.slPx ? Number(src.slPx) : null, openedAt: src.createdAt ?? null, roi: theirRoi, closed: src.status !== "open" },
-    { handle: author.handle, avatarUrl: author.avatarUrl, side: post.side as "long" | "short", lev: post.leverage ?? 1, entry: Number(post.entryPx), sl: post.slPx ? Number(post.slPx) : null, openedAt: post.createdAt, roi: myRoi },
+    { handle: author.handle, avatarUrl: author.avatarUrl, side: post.side as "long" | "short", lev: post.leverage ?? 1, entry: Number(post.entryPx), sl: post.slPx ? Number(post.slPx) : null, openedAt: post.createdAt, roi: myRoi, closed: post.status !== "open" },
   ];
 }
 
@@ -403,7 +404,7 @@ function BattleHead({ item, mark, myRoi }: { item: FeedRow; mark: number; myRoi:
   const theirMark = src.status === "open" ? mark : Number(src.exitPx ?? entry);
   const theirRoi = entry && src.side ? pnlForPosition(src.side, entry, theirMark, Number(src.size ?? 0)).pct * lev : 0;
   const meAhead = myRoi > theirRoi, even = Math.abs(myRoi - theirRoi) < 0.05;
-  const share = Math.max(10, Math.min(90, 50 + ((theirRoi - myRoi) / (Math.abs(theirRoi) + Math.abs(myRoi) || 1)) * 50));
+  const share = tugShare(theirRoi, myRoi, 10);
   const fx = fightersOf(item, mark, myRoi);
   return (
     <Link href={`/battle/${post.id}`} className="bhead" onClick={(e) => e.stopPropagation()}>

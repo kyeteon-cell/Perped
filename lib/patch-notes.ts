@@ -6,6 +6,14 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.6", date: "5 Nov 2026", title: "Fade scoring fixes",
+    fixed: [
+      "A side that has closed now shows as Banked on its health bar, instead of a live health score worked out from a price it's no longer exposed to.",
+      "The tug bar on fades now moves with the gap between the two ROIs: when both traders are up big, the leader's side visibly wins the bar instead of sitting near the middle.",
+      "Health bar footers say how far away liquidation is in both cases (\"Liq 31.8% away\").",
+    ],
+  },
+  {
     version: "0.9.5", date: "5 Nov 2026", title: "iPhone fixes",
     fixed: [
       "Opening the app from a notification no longer leaves the nav bar and trades pill floating mid-screen on iPhone.",

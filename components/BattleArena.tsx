@@ -34,6 +34,8 @@ export function stopOf(f: Fighter): { p: number | null; kind: "SL" | "LIQ" | "LO
 }
 /** Health: 100% at entry or better, 0% at the stop loss (or liquidation when there is no stop). */
 export function healthOf(f: Fighter, live: number) {
+  // A closed side is out of the fight with its ROI banked: nothing left to lose, so it's never scored at the live price.
+  if (f.closed) return 1;
   const { p, kind } = stopOf(f); if (!p || kind === "LOCKED") return 1;
   const h = f.side === "long" ? (live - p) / (f.entry - p) : (p - live) / (p - f.entry);
   return Math.max(0, Math.min(1, h));
@@ -91,14 +93,15 @@ function Hp({ f, live, right }: { f: Fighter; live: number; right?: boolean }) {
   const liqDist = liq ? Math.abs((live - liq) / live) * 100 : null;
   const slDist = f.sl ? Math.abs((live - f.sl) / live) * 100 : null;
   const bleed = h < 0.4;
-  const foot = stop.kind === "SL" ? `SL ${slDist!.toFixed(1)}% away${liqDist !== null ? ` · Liq ${liqDist.toFixed(1)}%` : ""}`
+  const foot = f.closed ? `Closed · ${fmtPct(f.roi, 1)} banked, out of danger`
+    : stop.kind === "SL" ? `SL ${slDist!.toFixed(1)}% away${liqDist !== null ? ` · Liq ${liqDist.toFixed(1)}% away` : ""}`
     : stop.kind === "LOCKED" ? `SL in profit at ${fmtPrice(f.sl!)}`
     : liqDist !== null ? `Liq ${liqDist.toFixed(1)}% away · no SL` : "No liquidation at 1× · no SL";
   const w = `${Math.max(3, h * 100)}%`;
   return (
     <div className={`ar-hpbox ${right ? "r" : ""}`}>
-      <div className="ar-hphead"><span>Margin/SL health</span><b style={{ color: sideCol(f) }}>{Math.round(h * 100)}%</b></div>
-      <div className={`ar-hpbar ${bleed ? "bleed" : ""}`}>
+      <div className="ar-hphead"><span>{f.closed ? "Banked" : "Margin/SL health"}</span><b style={{ color: sideCol(f) }}>{f.closed ? "Closed" : `${Math.round(h * 100)}%`}</b></div>
+      <div className={`ar-hpbar ${bleed ? "bleed" : ""} ${f.closed ? "done" : ""}`}>
         <div className="ar-hptrack"><i className={f.side} style={{ width: w }} /></div>
         {bleed && <div className={`ar-drips ${f.side}`} style={{ width: w }} aria-hidden="true"><b /><b /><b /><b /></div>}
       </div>
@@ -395,7 +398,7 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
 export function MiniHp({ f, live, right, big }: { f: Fighter; live: number; right?: boolean; big?: boolean }) {
   const h = healthOf(f, live), low = h < 0.35;
   return (
-    <span className={`mhp ${big ? "big" : ""} ${right ? "r" : ""} ${low ? "low" : ""} ${h <= 0.001 ? "cracked" : ""}`} title={`${Math.round(h * 100)}% health`}>
+    <span className={`mhp ${big ? "big" : ""} ${right ? "r" : ""} ${low ? "low" : ""} ${h <= 0.001 ? "cracked" : ""} ${f.closed ? "done" : ""}`} title={f.closed ? "Closed · banked" : `${Math.round(h * 100)}% health`}>
       <i className={f.side} style={{ width: `${Math.max(4, h * 100)}%` }} />
     </span>
   );

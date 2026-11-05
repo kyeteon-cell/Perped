@@ -2338,3 +2338,8 @@ button.srow.pn-row { width: 100%; border: 0; background: none; font: inherit; co
 html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 body.min-h-dvh { min-height: 0; }
 .app-scroll { height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
+
+/* A side that already closed: bar frozen full and calm (no shimmer), so it reads as banked, not as live health. */
+.ar-hpbar.done .ar-hptrack i, .mhp.done i { opacity: .55; animation: none !important; background-image: none !important; }
+.ar-hpbar.done .ar-hptrack i.long, .mhp.done i.long { background-color: var(--green); }
+.ar-hpbar.done .ar-hptrack i.short, .mhp.done i.short { background-color: var(--red); }

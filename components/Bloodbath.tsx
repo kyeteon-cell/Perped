@@ -17,15 +17,15 @@ type Mini = ArenaBattle["fader"];
 type Leg = ArenaBattle["faderLeg"];
 const legOf = (b: ArenaBattle, u: Mini): Leg => (u.id === b.fader.id ? b.faderLeg : b.targetLeg);
 // Same inputs as the battle page (stop loss included), so the Pit and the battle show the same health.
-const fighter = (u: Mini, l: Leg, roi: number): Fighter => ({ handle: u.handle, avatarUrl: u.avatarUrl, side: l.side, lev: l.leverage, entry: l.entryPx, sl: l.slPx, tp: l.tpPx, openedAt: l.openedAt, roi });
+const fighter = (u: Mini, l: Leg, roi: number): Fighter => ({ handle: u.handle, avatarUrl: u.avatarUrl, side: l.side, lev: l.leverage, entry: l.entryPx, sl: l.slPx, tp: l.tpPx, openedAt: l.openedAt, roi, closed: l.status !== "open" });
 
 /** A health bar for the Pit: same chrome bar as the battle page, bleeding under 40%. */
 function Bar({ f, live, right }: { f: Fighter; live: number; right?: boolean }) {
   const h = healthOf(f, live), w = `${Math.max(3, h * 100)}%`, bleed = h < 0.4;
   return (
     <div className={`ar-hpbox ${right ? "r" : ""}`}>
-      <div className="ar-hphead"><span>Margin/SL health</span><b style={{ color: f.side === "long" ? "var(--green)" : "var(--red)" }}>{Math.round(h * 100)}%</b></div>
-      <div className={`ar-hpbar ${bleed ? "bleed" : ""}`}>
+      <div className="ar-hphead"><span>{f.closed ? "Banked" : "Margin/SL health"}</span><b style={{ color: f.side === "long" ? "var(--green)" : "var(--red)" }}>{f.closed ? "Closed" : `${Math.round(h * 100)}%`}</b></div>
+      <div className={`ar-hpbar ${bleed ? "bleed" : ""} ${f.closed ? "done" : ""}`}>
         <div className="ar-hptrack"><i className={f.side} style={{ width: w }} /></div>
         {bleed && <div className={`ar-drips ${f.side}`} style={{ width: w }} aria-hidden="true"><b /><b /><b /></div>}
       </div>

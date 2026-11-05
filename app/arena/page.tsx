@@ -18,7 +18,7 @@ import { rankFor } from "@/lib/rank";
 import type { ArenaBattle, ArenaRes } from "@/app/api/arena/route";
 import { FollowButton, useFollowing } from "@/components/FollowButton";
 import { isFightNight } from "@/lib/fightnight";
-import { Tug } from "@/components/Tug";
+import { Tug, tugShare } from "@/components/Tug";
 import { BodyCount, FinishSave, KillFeed } from "@/components/Bloodbath";
 import type { ReactNode } from "react";
 
@@ -276,8 +276,7 @@ function BloodHub({ blood, knocked, rekt, data }: { blood: Row[]; knocked: Row[]
 function BattleRow({ b, mid, badge, noChase }: { b: ArenaBattle; mid: number; badge?: ReactNode; noChase?: boolean }) {
   const settled = b.status === "settled";
   const a = settled ? b.faderRoi ?? 0 : roiOf(b.faderLeg, mid), t = settled ? b.targetRoi ?? 0 : roiOf(b.targetLeg, mid);
-  const total = Math.abs(a) + Math.abs(t) || 1;
-  const share = Math.max(8, Math.min(92, 50 + ((a - t) / total) * 50));
+  const share = tugShare(a, t);
   const aWin = settled ? b.winnerId === b.fader.id : a > t, tWin = settled ? b.winnerId === b.target.id : t > a;
   // Lead change: flash the row gold for a moment.
   const leader = aWin ? "a" : tWin ? "t" : "";
