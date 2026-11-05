@@ -13,7 +13,7 @@ export const RELEASES: Release[] = [
       "The /duels address now takes you to the Arena instead of a missing page.",
     ],
     improved: [
-      "Full automated check of every page on a phone-sized browser: errors, freezes and dead links, run on every update.",
+      "New automated check of every page on a phone-sized browser for errors, freezes and dead links.",
     ],
   },
   {
