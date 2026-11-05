@@ -2,6 +2,13 @@ name: sweep
 # Full-site bug sweep on a phone-sized browser: page errors, failed requests, freezes, dead links.
 on:
   workflow_dispatch:
+    inputs:
+      base:
+        description: 'Site to check'
+        default: 'https://perped.pro'
+      share:
+        description: 'Vercel share token (preview deployments only)'
+        default: ''
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -12,3 +19,6 @@ jobs:
         with: { node-version: 20 }
       - run: npm install --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
       - run: node scripts/sweep.mjs
+        env:
+          BASE_URL: ${{ github.event.inputs.base }}
+          SHARE: ${{ github.event.inputs.share }}

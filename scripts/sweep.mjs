@@ -13,8 +13,10 @@ await ctx.addInitScript(() => {
 });
 
 const report = { pages: [], deadLinks: [], interactions: [] };
+// Preview deployments are protected: a share link sets the access cookie for the whole browser context.
+if (process.env.SHARE) { const p0 = await ctx.newPage(); await p0.goto(BASE + "/?_vercel_share=" + process.env.SHARE).catch(() => null); await p0.close(); }
 const links = new Set();
-const api = async (p) => { const r = await fetch(BASE + p).catch(() => null); return r && r.ok ? r.json().catch(() => null) : null; };
+const api = async (p) => { const r = await fetch(BASE + p + (process.env.SHARE ? (p.includes("?") ? "&" : "?") + "_vercel_share=" + process.env.SHARE : "")).catch(() => null); return r && r.ok ? r.json().catch(() => null) : null; };
 const feed = await api("/api/posts?limit=20");
 const anyPost = feed?.posts?.find((x) => x.post.kind === "trade")?.post.id;
 const fade = feed?.posts?.find((x) => x.post.kind === "trade" && x.post.fadedFromId)?.post.id;
@@ -69,9 +71,22 @@ await visit("/markets", async (page) => {
   return out;
 });
 
+// Layout: the page scrolls inside the app, and the nav stays pinned to the bottom however far you scroll.
+await visit("/", async (page) => {
+  const read = () => page.evaluate(() => { const n = document.querySelector(".nav")?.getBoundingClientRect(); const sc = document.getElementById("scroller"); return { navBottom: n ? Math.round(n.bottom) : null, vh: innerHeight, winY: window.scrollY, panelY: sc ? Math.round(sc.scrollTop) : null, ticker: Math.round(document.querySelector(".ticker")?.getBoundingClientRect().top ?? -1) }; });
+  const atTop = await read();
+  await page.evaluate(() => { const sc = document.getElementById("scroller"); if (sc) sc.scrollTop = 2500; });
+  await page.waitForTimeout(800);
+  const scrolled = await read();
+  await page.goto(BASE + "/arena"); await page.waitForTimeout(3000); await page.goBack(); await page.waitForTimeout(2500);
+  const back = await read();
+  return { atTop, scrolled, back };
+});
+
 // Dead links: every internal link seen anywhere.
 for (const l of links) {
   if (/^\/(api|_next)\//.test(l)) continue;
+  if (process.env.SHARE) continue; // protected preview: link checks only on the public site
   const r = await fetch(BASE + l, { redirect: "manual" }).catch(() => null);
   const s = r?.status ?? 0;
   if (!r || s >= 400) report.deadLinks.push(`${s} ${l}`);
