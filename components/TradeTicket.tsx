@@ -1,5 +1,6 @@
 "use client";
 
+import { errorOf, netMessage } from "@/lib/net";
 import Link from "next/link";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -159,10 +160,20 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     router.push(seed.duelId ? `/duels/${seed.duelId}` : "/");
   };
 
+  const stage = useRef<"before" | "filled">("before");
   const submit = async () => {
     if (submitting.current) return;
     submitting.current = true;
-    try { await submitOnce(); } finally { submitting.current = false; }
+    stage.current = "before";
+    try { await submitOnce(); }
+    catch (e) {
+      // Never leave the button stuck on "Filling…" when the signal drops: say plainly whether the trade went through.
+      setBusy(null);
+      setErr(stage.current === "filled"
+        ? "Your order filled on Hyperliquid, but the connection dropped before it was posted. Refresh your profile in a moment to see it."
+        : netMessage(e, "Couldn't place the trade. Try again."));
+    }
+    finally { submitting.current = false; }
   };
   const submitOnce = async () => {
     if (!authenticated) return login();
@@ -185,7 +196,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       setBusy("Filling (demo)…");
       const r = await postTrade(mid, size, undefined, true, slOverride);
       setBusy(null);
-      if (!r.ok) return setErr((await r.json()).error ?? "Couldn't place demo trade");
+      if (!r.ok) return setErr(await errorOf(r, "Couldn't place demo trade"));
       return finish(r);
     }
     if (stockLiveBlocked) return setErr("Stock perps are demo-only for now. Real-money stock trading is coming soon.");
@@ -199,6 +210,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       feeTenthsBps: mFee.tenthsBps,
     });
     if (!res.ok) { setBusy(null); return setErr(res.error ?? "Order failed"); }
+    stage.current = "filled";
     setBusy("Posting to feed…");
     const r = await postTrade(res.avgPx ?? refPx, res.totalSz ?? size, res.oid);
     setBusy(null);

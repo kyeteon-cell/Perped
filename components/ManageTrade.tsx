@@ -1,7 +1,8 @@
 "use client";
 
+import { errorOf, netMessage } from "@/lib/net";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { mutate as globalMutate } from "swr";
 import { Sheet } from "./Sheet";
 import type { FeedRow } from "@/lib/feed";
@@ -41,7 +42,14 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
   const fail = (m: string) => { setErr(m); setBusy(null); };
   const asset = markets.find((m) => m.name === post.coin);
 
+  // A dropped connection used to leave Close stuck on its spinner. Now it frees up and says what happened.
   const close = async (fraction: number) => {
+    closedOnHl.current = false;
+    try { await closeOnce(fraction); }
+    catch (e) { fail(closedOnHl.current ? "Closed on Hyperliquid, but the connection dropped before Perped recorded it. Refresh in a moment." : netMessage(e, "Couldn't close. Try again.")); }
+  };
+  const closedOnHl = useRef(false);
+  const closeOnce = async (fraction: number) => {
     setBusy(`close${fraction}`); setErr(null);
     let exitPx = px;
     if (!post.paper) {
@@ -49,10 +57,10 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
       const res = await closePosition(makeExchangeClient(walletClient), asset, (side === "long" ? 1 : -1) * size * fraction, mid, fee.tenthsBps);
       if (!res.ok) return fail(res.error ?? "Close failed on Hyperliquid");
       exitPx = res.avgPx ?? mid;
+      closedOnHl.current = true;
     }
     const r = await authedFetch(`/api/posts/${post.id}/close`, { method: "POST", body: JSON.stringify({ exitPx, fraction, reason: "manual" }) });
-    const j = await r.json();
-    if (!r.ok) return fail(j.error ?? "Couldn't record the close");
+    if (!r.ok) return fail(await errorOf(r, "Couldn't record the close"));
     setBusy(null); onChanged?.();
     // Everything that shows your open trades or live fades refreshes now, not on its next poll.
     void globalMutate((k) => typeof k === "string" && (k === "/api/me/fades" || (k.startsWith("/api/posts?") && k.includes("status=open"))));
@@ -60,6 +68,9 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
   };
 
   const saveTpSl = async () => {
+    try { await saveTpSlOnce(); } catch (e) { fail(netMessage(e, "Couldn't save your exits. Try again.")); }
+  };
+  const saveTpSlOnce = async () => {
     setBusy("tpsl"); setErr(null);
     const tpN = tp ? Number(tp) : null, slN = sl ? Number(sl) : null;
     if (tpN && (side === "long" ? tpN <= entry : tpN >= entry)) return fail(`Take profit must be ${side === "long" ? "above" : "below"} ${fmtPrice(entry)}`);
@@ -70,8 +81,7 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
       if (!res.ok) return fail(res.error ?? "Hyperliquid rejected the orders");
     }
     const r = await authedFetch(`/api/posts/${post.id}`, { method: "PATCH", body: JSON.stringify({ tpPx: tpN, slPx: slN }) });
-    const j = await r.json();
-    if (!r.ok) return fail(j.error ?? "Couldn't save");
+    if (!r.ok) return fail(await errorOf(r, "Couldn't save"));
     setBusy(null); setDone(tpN || slN ? "Exits set" : "Exits cleared"); onChanged?.();
   };
 

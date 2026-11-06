@@ -6,7 +6,18 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
-    version: "0.9.7", date: "6 Nov 2026", title: "Type your amount",
+    version: "0.9.10", date: "7 Nov 2026", title: "Bad signal, handled",
+    new: [
+      "Lose signal and a chip at the top tells you prices and trades are paused. It says Back online when you reconnect, and live prices pick up straight away instead of after a delay.",
+    ],
+    fixed: [
+      "Trade, close and set-exits buttons no longer get stuck on their spinner if your connection drops mid-tap. You get a clear message about what happened and what to check before trying again.",
+      "If your real-money order fills but the connection drops before it posts, Perped tells you it filled, so you don't place it twice.",
+      "Patch notes show the right version number again.",
+    ],
+  },
+  {
+    version: "0.9.9", date: "6 Nov 2026", title: "Type your amount",
     fixed: [
       "Trade and quick trade: you can type any amount in the margin box (decimals too), not just pick a preset. Tap the box to open the keypad; tapping a preset still fills it in.",
     ],

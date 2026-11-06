@@ -2354,3 +2354,7 @@ body.min-h-dvh { min-height: 0; }
 .amt-in { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0; outline: none; color: var(--text); font-size: 40px; font-weight: 600; letter-spacing: -.02em; }
 .amt-edit { flex: none; align-self: center; font-size: 12px; font-weight: 800; color: var(--muted); }
 .amt-box:focus-within .amt-edit { visibility: hidden; }
+
+/* Offline chip: same spot as the update chip, plain and quiet. */
+.net-chip { position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 141; padding: 9px 16px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 13px; font-weight: 800; box-shadow: 0 10px 30px -10px rgba(0,0,0,.5); white-space: nowrap; pointer-events: none; animation: chip-drop .35s cubic-bezier(.2,1.4,.4,1) both; }
+.net-chip.back { background: var(--green); color: #fff; }

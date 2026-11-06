@@ -10,6 +10,7 @@ import { Moments } from "@/components/Moments";
 import { ViewportFix } from "@/components/ViewportFix";
 import { ScrollMemory } from "@/components/ScrollMemory";
 import { UpdateCheck } from "@/components/UpdateCheck";
+import { OfflineBar } from "@/components/OfflineBar";
 import { RefCapture } from "@/components/RefCapture";
 import { APP_NAME, APP_URL } from "@/lib/config";
 
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <ScrollMemory />
           <UpdateCheck />
+          <OfflineBar />
           <PositionsPill />
           <Moments />
           <ViewportFix />

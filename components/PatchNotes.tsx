@@ -51,7 +51,7 @@ export function PatchNotesSheet({ onClose }: { onClose: () => void }) {
     <Sheet label="Patch notes" onClose={onClose}>
       <div className="pn px-5 pb-6">
         <div className="pn-top" data-sheet-handle><b>Patch notes</b><span className="when">You&apos;re on v{APP_VERSION}</span></div>
-        {RELEASES.map((r, i) => <ReleaseCard key={r.version} r={r} latest={i === 0} />)}
+        {RELEASES.map((r, i) => <ReleaseCard key={`${r.version}-${i}`} r={r} latest={i === 0} />)}
         <button type="button" className="btn ghost mt-3 w-full" style={{ padding: 12, fontSize: 14 }} onClick={onClose}>Done</button>
       </div>
     </Sheet>

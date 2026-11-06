@@ -80,6 +80,15 @@ if (typeof document !== "undefined") {
   });
 }
 
+// Signal back after a dead spot: reconnect now instead of waiting out the retry backoff (up to 10s of frozen prices).
+if (typeof window !== "undefined") {
+  window.addEventListener("online", () => {
+    if (!subs.size || ws) return;
+    if (reconnect) { clearTimeout(reconnect); reconnect = null; }
+    retry = 0; connect();
+  });
+}
+
 function subscribe(cb: () => void) {
   subs.add(cb);
   if (subs.size === 1 && !ws) connect();
