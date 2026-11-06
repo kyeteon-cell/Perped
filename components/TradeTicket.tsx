@@ -169,7 +169,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     catch (e) {
       // Never leave the button stuck on "Filling…" when the signal drops: say plainly whether the trade went through.
       setBusy(null);
-      setErr(stage.current === "filled"
+      setErr((stage.current as "before" | "filled") === "filled"
         ? "Your order filled on Hyperliquid, but the connection dropped before it was posted. Refresh your profile in a moment to see it."
         : netMessage(e, "Couldn't place the trade. Try again."));
     }
