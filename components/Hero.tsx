@@ -14,7 +14,7 @@ import { useLive } from "@/lib/hooks/useLive";
 
 /** The "your day" card at the top of Home. Shows a generic welcome for logged-out visitors. */
 export function Hero({ onDeposit }: { onDeposit: () => void }) {
-  const { allowed: liveOk, gate } = useLive();
+  const { allowed: liveOk } = useLive();
   const { authenticated, profile } = useSession();
   const { data } = useSWR<{ accountValue: number | null; stats: { realizedPnl7d: string; callStreak: number } | null; positions: unknown[] }>(
     profile ? `/api/profile/${profile.handle}` : null,
@@ -38,28 +38,22 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
   }
   const bal = profile.isDemo ? demo.equity : (data?.accountValue ?? 0);
   const openN = profile.isDemo ? demo.openCount : (data?.positions?.length ?? 0);
+  // Signed in: one compact row (balance, 7d, open, streak, Trade) so the feed starts on the first screen.
+  // Go live / Connect wallet live in Settings; Post is the pen in the Home banner.
+  const pnl7 = Number(data?.stats?.realizedPnl7d ?? 0);
+  const streak = data?.stats?.callStreak ?? 0;
+  const needsFunds = bal === 0 && !profile.isDemo;
   return (
-    <div className="hero photo" style={{ backgroundImage: `url(${small("/api/share-bg/hero-chrome", 1080)})` }}>
-      <div className="k">{greet}, {profile.handle}{profile.isDemo ? " · demo" : ""}</div>
-      <div className="big mono"><Roll v={bal} fmt={(x) => fmtUsd(x)} /></div>
-      {profile.isDemo && demo.openCount > 0 && (
-        <div className="mt-1 flex flex-wrap gap-x-4 text-[12px] opacity-90">
-          <span>Available <b className="mono">{fmtUsd(demo.cash)}</b></span>
-          <span>In trades <b className="mono">{fmtUsd(demo.margin)}</b></span>
-          <span>Unrealised <b className="mono"><Roll v={demo.upnl} fmt={(x) => fmtUsd(x, { sign: true })} /></b></span>
+    <div className="hbal">
+      <Link href={`/u/${profile.handle}`} className="min-w-0 flex-1" aria-label={`${greet}, ${profile.handle}. Your account`}>
+        <div className="hbal-v mono"><Roll v={bal} fmt={(x) => fmtUsd(x)} /></div>
+        <div className="hbal-s truncate">
+          {profile.isDemo ? "Demo · " : ""}7d <b className={`mono ${pnl7 > 0 ? "green" : pnl7 < 0 ? "red" : ""}`}>{fmtUsd(pnl7, { sign: true })}</b>
+          {" · "}{openN} open{profile.isDemo && demo.openCount > 0 ? <> · <b className={`mono ${demo.upnl >= 0 ? "green" : "red"}`}><Roll v={demo.upnl} fmt={(x) => fmtUsd(x, { sign: true })} /></b> live</> : null}
+          {streak > 0 && <> · <span className="gl"><Glyph n="flame" />{streak}</span></>}
         </div>
-      )}
-      <div className="mt-2.5 flex gap-4 text-[13px] opacity-95">
-        <span>7 days <b className="mono">{fmtUsd(Number(data?.stats?.realizedPnl7d ?? 0), { sign: true })}</b></span>
-        <span>Open <b className="mono">{openN}</b></span>
-        {(data?.stats?.callStreak ?? 0) > 0 && <span>Streak <b className="gl"><Glyph n="flame" />{data!.stats!.callStreak}</b></span>}
-      </div>
-      <div className="hero-actions">
-        <Link href="/markets" className="solid">Trade</Link>
-        {!liveOk ? <button className="live-off" onClick={gate(() => null)}>Go live<span className="soon-pill">Soon</span></button> : profile.isDemo ? <Link href="/settings">Connect wallet</Link> : <button onClick={onDeposit}>Deposit</button>}
-        <Link href="/compose">Post</Link>
-      </div>
-      {bal === 0 && !profile.isDemo && <div className="relative mt-3 text-[12px] opacity-90">Fund your account to place your first trade.</div>}
+      </Link>
+      {needsFunds && liveOk ? <button className="hbal-go" onClick={onDeposit}>Deposit</button> : <Link href="/markets" className="hbal-go">Trade</Link>}
     </div>
   );
 }

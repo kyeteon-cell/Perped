@@ -9,6 +9,7 @@ import { FeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
 import { WelcomeGate as WelcomeOnce } from "@/components/WelcomeGate";
 import { QuickPost } from "@/components/QuickPost";
+import { NowStrip } from "@/components/NowStrip";
 import { FollowButton } from "@/components/FollowButton";
 import { FeedFilters, EMPTY_FILTER, activeCount, filterQuery, filterSummary, type FeedFilter } from "@/components/FeedFilters";
 import { PullRefresh } from "@/components/PullRefresh";
@@ -21,12 +22,8 @@ import { useMids } from "@/lib/hooks/useMids";
 import { fmtUsd, fmtPct } from "@/lib/format";
 import { useLive } from "@/lib/hooks/useLive";
 const PushPrompt = dynamic(() => import("@/components/PushPrompt").then((m) => m.PushPrompt), { ssr: false });
-const FirstBattle = dynamic(() => import("@/components/FirstBattle").then((m) => m.FirstBattle), { ssr: false });
-const FightNightHome = dynamic(() => import("@/components/FightNightHome").then((m) => m.FightNightHome), { ssr: false });
 const Pulse = dynamic(() => import("@/components/Pulse").then((m) => m.Pulse), { ssr: false });
-const QuickCall = dynamic(() => import("@/components/QuickCall").then((m) => m.QuickCall), { ssr: false });
 const Banked = dynamic(() => import("@/components/Banked").then((m) => m.Banked), { ssr: false });
-const DailyFade = dynamic(() => import("@/components/DailyFade").then((m) => m.DailyFade), { ssr: false });
 const WeekRecap = dynamic(() => import("@/components/WeekRecap").then((m) => m.WeekRecap), { ssr: false });
 const DepositSheet = dynamic(() => import("@/components/DepositSheet").then((m) => m.DepositSheet), { ssr: false });
 
@@ -108,6 +105,7 @@ export default function HomePage() {
           <div className="home-banner-sub">Powered by Hyperliquid</div>
         </div>
         <div className="flex gap-2">
+          {authenticated && <Link href="/compose" className="iconbtn glass" aria-label="Post"><Icon d={I.pen} /></Link>}
           {authenticated && (
             <Link href="/notifications" className="iconbtn glass" aria-label="Notifications"><Icon d={I.bell} />{unread > 0 && <span className="badge">{unread}</span>}</Link>
           )}
@@ -124,16 +122,12 @@ export default function HomePage() {
         ))}
       </div>
 
+      {/* For you: compact balance, one Happening now strip, Banked, then straight into the feed (v0.10). */}
       {tab === "foryou" && <Hero onDeposit={() => setDeposit(true)} />}
-      {tab === "foryou" && <WeekRecap />}
-      {tab === "foryou" && <FightNightHome />}
-      {tab === "foryou" && <DailyFade />}
-      {tab === "foryou" && <FirstBattle rows={allPosts} />}
-      {tab === "foryou" && <PushPrompt />}
-      {tab === "foryou" && <QuickCall mids={mids} />}
-      {tab !== "live" && <QuickPost onPosted={() => mutate()} />}
-      {tab !== "following" && <LazyMount minHeight={160}><Pulse mids={mids} /></LazyMount>}
-      {tab === "foryou" && <LazyMount minHeight={100}><Banked /></LazyMount>}
+      {tab === "foryou" && <NowStrip rows={allPosts} mids={mids} />}
+      {tab === "following" && <QuickPost onPosted={() => mutate()} />}
+      {tab === "live" && <LazyMount minHeight={160}><Pulse mids={mids} /></LazyMount>}
+      {tab === "foryou" && <LazyMount minHeight={40}><Banked /></LazyMount>}
 
       <div className="realness">
         {(["all", "real", "demo"] as const).map((v) => v === "real" && !liveOk
@@ -158,6 +152,8 @@ export default function HomePage() {
       {groupFeed(posts).map((g, i) => (
         <div key={g.kind === "strip" ? `strip-${g.items[0].post.id}` : g.item.post.id} className={g.kind === "one" && fresh.has(g.item.post.id) ? "feed-new" : undefined}>
           {g.kind === "strip" ? <RankStrip items={g.items} /> : <FeedPost item={g.item} mid={liveMid(g.item)} onChanged={mutate} />}
+          {tab === "foryou" && i === 1 && <div className="feed-tuck"><WeekRecap /></div>}
+          {tab === "foryou" && i === 5 && <div className="feed-tuck"><PushPrompt /></div>}
           {i === 4 && suggested.length > 0 && <Suggested rows={suggested} />}
         </div>
       ))}

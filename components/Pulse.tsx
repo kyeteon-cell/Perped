@@ -155,25 +155,29 @@ function StreakCard({ s }: { s: PulseData["streaks"] }) {
  * who faded whom and who's winning that, who's on a streak. Numbers tick with every price update,
  * the rail auto-advances every few seconds and pauses while you're touching it.
  */
-export function Pulse({ mids }: { mids: Record<string, number> }) {
+/** Pulse's live cards (duels, who's up, fades, who's down, streaks). Used by the Pulse rail and Home's Happening now strip. */
+export function usePulseCards(mids: Record<string, number>) {
   const { data } = useSWR<PulseData>("/api/pulse", { refreshInterval: 60_000 });
-  const rail = useRef<HTMLDivElement>(null);
-  const paused = useRef(false);
-  const [idx, setIdx] = useState(0);
-
   const open = useMemo(() => data?.open ?? [], [data]);
   const ranked = useMemo(() => {
     const rows = open.filter((t) => t.coin && mids[t.coin]).map((t) => ({ t, roi: live(t, mids, t.coin).roi }));
     rows.sort((a, b) => b.roi - a.roi);
     return { up: rows.filter((r) => r.roi > 0).slice(0, 4).map((r) => r.t), down: rows.filter((r) => r.roi < 0).slice(-4).reverse().map((r) => r.t) };
   }, [open, mids]);
-
   const cards: React.ReactNode[] = [];
   (data?.duels ?? []).slice(0, 3).forEach((d) => cards.push(<DuelCard key={`d${d.id}`} d={d} mids={mids} />));
   cards.push(<BoardCard key="up" title="Up right now" tag="live ROI" rows={ranked.up} mids={mids} up />);
   (data?.fades ?? []).slice(0, 3).forEach((f) => cards.push(<FadeCard key={`f${f.fader.postId}`} f={f} mids={mids} />));
   cards.push(<BoardCard key="down" title="Down bad" tag="live ROI" rows={ranked.down} mids={mids} up={false} />);
   if (data?.streaks?.length) cards.push(<StreakCard key="s" s={data.streaks} />);
+  return { data, cards };
+}
+
+export function Pulse({ mids }: { mids: Record<string, number> }) {
+  const { data, cards } = usePulseCards(mids);
+  const rail = useRef<HTMLDivElement>(null);
+  const paused = useRef(false);
+  const [idx, setIdx] = useState(0);
 
   // Auto-advance.
   useEffect(() => {
@@ -192,7 +196,7 @@ export function Pulse({ mids }: { mids: Record<string, number> }) {
 
   return (
     <section className="pulse" aria-label="Live pulse">
-      <div className="flex items-center justify-between px-5"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Pulse</span><span className="when">{(data.duels.length ? `${data.duels.length} duel${data.duels.length > 1 ? "s" : ""} · ` : "")}{open.length} open</span></div>
+      <div className="flex items-center justify-between px-5"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Pulse</span><span className="when">{(data.duels.length ? `${data.duels.length} duel${data.duels.length > 1 ? "s" : ""} · ` : "")}{data.open?.length ?? 0} open</span></div>
       <div
         ref={rail}
         className="prail"

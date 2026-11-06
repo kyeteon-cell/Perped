@@ -6,6 +6,18 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
+    version: "0.10.0", date: "7 Nov 2026", title: "A faster Home",
+    new: [
+      "Happening now: Fight Night, the Daily Fade, the one-hour call, your first fade and the live Pulse cards are one swipeable strip instead of five stacked cards. Whatever matters most right now comes first, and it stops sliding once you touch it.",
+      "The feed now starts on your first screen, instead of two screens down.",
+    ],
+    improved: [
+      "Your balance is one compact row with 7-day P&L, open trades, streak and a Trade button. Tap it for your profile.",
+      "Posting moved to the pen in the top bar. Your week and phone alerts now sit inside the feed instead of above it.",
+      "Pulse has its own spot on the Live tab.",
+    ],
+  },
+  {
     version: "0.9.10", date: "7 Nov 2026", title: "Bad signal, handled",
     new: [
       "Lose signal and a chip at the top tells you prices and trades are paused. It says Back online when you reconnect, and live prices pick up straight away instead of after a delay.",
