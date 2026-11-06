@@ -14,7 +14,11 @@ type Kind = "funding" | "depth" | "premium" | "typical";
 
 /** Shared fetch so the page (chart guides) and the tiles use one request. */
 export function useCoinStats(coin: string) {
-  return useSWR<CoinStats>(`/api/markets/${coin}/stats`, { refreshInterval: 60_000, revalidateOnFocus: false });
+  const { data } = useSWR<CoinStats>(`/api/markets/${coin}/stats`, { refreshInterval: 60_000, revalidateOnFocus: false });
+  // The API answers an unknown or unavailable market with { error } (still parsed as data). Treat that as "no stats"
+  // so nothing reads st.typical / st.liq off an error body and crashes the page.
+  const ok = !!data && typeof data === "object" && !!(data as Partial<CoinStats>).typical;
+  return { data: ok ? data : undefined };
 }
 
 /** Minutes:seconds until the next hourly Hyperliquid funding payment. */

@@ -10,7 +10,7 @@ import { useMarkets, type Market } from "@/lib/hooks/useMarkets";
 import { useMids } from "@/lib/hooks/useMids";
 import { makeExchangeClient, placeMarketOrder, approveBuilderFee } from "@/lib/hl-exchange";
 import { getMaxBuilderFee } from "@/lib/hl-info";
-import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice, autoStopDist, demoLiqPx } from "@/lib/format";
+import { fmtUsd, roundSize, fmtSize, fmtPct, fmtPrice, fmtPx, autoStopDist, demoLiqPx } from "@/lib/format";
 import { BUILDER_ADDRESS, BUILDER_CONFIGURED, BUILDER_MAX_FEE_RATE } from "@/lib/config";
 import { CoinMark, ticker } from "./ui";
 import { useLive } from "@/lib/hooks/useLive";
@@ -76,6 +76,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
 
   const market: Market | undefined = useMemo(() => markets.find((m) => m.name === coin), [markets, coin]);
   const mid = mids[coin] ?? market?.mid ?? 0;
+  const pxDecimals = market ? Math.max(0, 6 - market.szDecimals) : 2;
   const maxLev = market?.maxLeverage ?? 100;
   const isStock = market?.kind === "stock" || market?.kind === "index";
   // Stock perps settle on builder dexes with their own collateral; real-money routing there isn't wired yet.
@@ -90,8 +91,9 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
   }, [address, fee.tenthsBps, isDemo]);
   // Fades default to an automatic stop (see autoStopDist): −10% of margin, never tighter than a 1% move.
   const slSeeded = useRef(false);
-  useEffect(() => { if (isFade && mid && !sl && !slSeeded.current) { slSeeded.current = true; setSl((side === "long" ? mid * (1 - autoStopDist(lev)) : mid * (1 + autoStopDist(lev))).toFixed(market?.szDecimals ? 6 - market.szDecimals : 2)); } }, [isFade, mid, side, sl, market, lev]);
+  useEffect(() => { if (isFade && mid && !sl && !slSeeded.current) { slSeeded.current = true; setSl((side === "long" ? mid * (1 - autoStopDist(lev)) : mid * (1 + autoStopDist(lev))).toFixed(pxDecimals)); } }, [isFade, mid, side, sl, market, lev]);
 
+  // Price decimals Hyperliquid allows here (6 − szDecimals for perps). szDecimals 0 (kPEPE, kBONK…) means 6, not 2.
   const refPx = orderType === "limit" && Number(limitPx) > 0 ? Number(limitPx) : mid;
   const notional = usd * lev;
   const size = market && refPx ? roundSize(notional / refPx, market.szDecimals) : 0;
@@ -172,7 +174,7 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
     let slOverride: number | undefined;
     if (isFade && quick && slSeeded.current && !tpslValid) {
       slOverride = side === "long" ? mid * (1 - autoStopDist(lev)) : mid * (1 + autoStopDist(lev));
-      setSl(slOverride.toFixed(market?.szDecimals ? 6 - market.szDecimals : 2));
+      setSl(slOverride.toFixed(pxDecimals));
     } else if (!tpslValid) return setErr(side === "long" ? "Take profit must be above entry and stop loss below." : "Take profit must be below entry and stop loss above.");
     setErr(null);
     if (isDemo) {
@@ -263,8 +265,8 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
         {tpslOn && (
           <>
             <div className="mt-3.5 grid grid-cols-2 gap-2.5">
-              <div><div className="eyebrow mb-2">Take profit</div><input type="number" inputMode="decimal" className="field mono" value={tp} onChange={(e) => setTp(e.target.value)} placeholder={refPx ? (side === "long" ? (refPx * 1.04).toFixed(2) : (refPx * 0.96).toFixed(2)) : ""} />{tpPrev && <div className={`mt-2 text-[13px] font-semibold ${tpPrev.usd >= 0 ? "green" : "red"}`}>{fmtPct(tpPrev.pct, 1)} · {fmtUsd(tpPrev.usd, { sign: true })}</div>}</div>
-              <div><div className="eyebrow mb-2">Stop loss</div><input type="number" inputMode="decimal" className="field mono" value={sl} onChange={(e) => setSl(e.target.value)} placeholder={refPx ? (side === "long" ? (refPx * 0.97).toFixed(2) : (refPx * 1.03).toFixed(2)) : ""} />{slPrev && <div className={`mt-2 text-[13px] font-semibold ${slPrev.usd >= 0 ? "green" : "red"}`}>{fmtPct(slPrev.pct, 1)} · {fmtUsd(slPrev.usd, { sign: true })}</div>}</div>
+              <div><div className="eyebrow mb-2">Take profit</div><input type="number" inputMode="decimal" className="field mono" value={tp} onChange={(e) => setTp(e.target.value)} placeholder={refPx ? (side === "long" ? fmtPx(refPx * 1.04, market?.szDecimals ?? 0) : fmtPx(refPx * 0.96, market?.szDecimals ?? 0)) : ""} />{tpPrev && <div className={`mt-2 text-[13px] font-semibold ${tpPrev.usd >= 0 ? "green" : "red"}`}>{fmtPct(tpPrev.pct, 1)} · {fmtUsd(tpPrev.usd, { sign: true })}</div>}</div>
+              <div><div className="eyebrow mb-2">Stop loss</div><input type="number" inputMode="decimal" className="field mono" value={sl} onChange={(e) => setSl(e.target.value)} placeholder={refPx ? (side === "long" ? fmtPx(refPx * 0.97, market?.szDecimals ?? 0) : fmtPx(refPx * 1.03, market?.szDecimals ?? 0)) : ""} />{slPrev && <div className={`mt-2 text-[13px] font-semibold ${slPrev.usd >= 0 ? "green" : "red"}`}>{fmtPct(slPrev.pct, 1)} · {fmtUsd(slPrev.usd, { sign: true })}</div>}</div>
             </div>
             <p className="faint mt-2.5 text-xs">Placed on Hyperliquid with the order; both trigger as market orders even if Perped is closed.</p>
           </>

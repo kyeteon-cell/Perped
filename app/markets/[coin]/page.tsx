@@ -8,7 +8,7 @@ import { MarketTape, SentimentRibbon, useMarketTraders, pick, toMarkers, type Le
 import { TradeTicket } from "@/components/TradeTicket";
 import { FeedPost } from "@/components/FeedPost";
 import { CoinMark, Icon, I, ticker } from "@/components/ui";
-import { fmtPct, fmtPrice } from "@/lib/format";
+import { fmtPct, fmtPrice, normCoin } from "@/lib/format";
 import { useMids } from "@/lib/hooks/useMids";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
@@ -17,12 +17,15 @@ import { MarketStats, useCoinStats, useFundingCountdown, type MarketItem } from 
 
 export default function MarketPage({ params }: { params: Promise<{ coin: string }> }) {
   const { coin: raw } = use(params);
-  const coin = raw.toUpperCase();
   const { profile } = useSession();
   const { data } = useSWR<{ markets: MarketItem[] }>("/api/markets", { refreshInterval: 60_000 });
+  // Hyperliquid names are case-sensitive and the 1000x markets keep a lower-case "k" (kPEPE, kBONK). Never upper-case
+  // the whole thing: match the listed market case-insensitively, falling back to the normalised name while it loads.
+  const asked = (() => { try { return decodeURIComponent(raw); } catch { return raw; } })();
+  const coin = data?.markets?.find((x) => x.name.toLowerCase() === asked.toLowerCase())?.name ?? normCoin(asked);
   const { data: cs } = useCoinStats(coin);
   const countdown = useFundingCountdown();
-  const guides = useMemo(() => (cs ? [{ price: cs.typical.high, label: "Typical high" }, { price: cs.typical.low, label: "Typical low" }] : []), [cs]);
+  const guides = useMemo(() => (cs?.typical ? [{ price: cs.typical.high, label: "Typical high" }, { price: cs.typical.low, label: "Typical low" }] : []), [cs]);
   const { data: feed, mutate } = useSWR<{ posts: FeedRow[] }>(`/api/posts?coin=${coin}&limit=20`, { refreshInterval: 20_000 });
   const { data: me } = useSWR<{ stats: { closedTrades: number } | null }>(profile ? `/api/profile/${profile.handle}` : null);
   const { mids } = useMids();
@@ -74,7 +77,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
       <div className="mt-2 hairline" />
       <TradeTicket seed={{ coin, closedTrades: me?.stats?.closedTrades ?? 0 }} compact />
 
-      {(feed?.posts.length ?? 0) > 0 && (
+      {(feed?.posts?.length ?? 0) > 0 && (
         <section className="mt-2" data-tint="brand">
           <div className="eyebrow px-5 pb-2 pt-4">Perped on {ticker(coin)}</div>
           {feed!.posts.map((item) => <FeedPost key={item.post.id} item={item} mid={px || undefined} onChanged={mutate} />)}

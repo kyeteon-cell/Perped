@@ -6,6 +6,13 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.8", date: "6 Nov 2026", title: "kPEPE and 1000x markets fixed",
+    fixed: [
+      "Opening kPEPE (and the other 1000x markets like kBONK and kSHIB) no longer crashes the app.",
+      "Stops, targets and the automatic fade stop on those markets now use the right number of decimals, instead of rounding a 0.005 price to 0.01.",
+    ],
+  },
+  {
     version: "0.9.7", date: "6 Nov 2026", title: "Stop losses fixed",
     fixed: [
       "Stop losses and take profits on demo trades now fill at the price you set, not wherever price had got to by the next check. Before, a stop could close well past your level (and lose a lot more than you planned).",
