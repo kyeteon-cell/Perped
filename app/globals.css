@@ -2373,7 +2373,7 @@ body.min-h-dvh { min-height: 0; }
 .now-dots i.on { width: 16px; background: var(--brand); }
 .now-rail { padding-top: 10px; padding-bottom: 6px; align-items: stretch; }
 .now-slide { flex: none; width: calc(100vw - 56px); max-width: 360px; scroll-snap-align: start; display: flex; }
-.now-slide:empty { display: none; }
+.now-slide:empty, .now-slide:not(:has(> :not(template))) { display: none; } /* empty, or only a loading placeholder */
 .now-slide > * { margin: 0 !important; width: 100%; }
 .now-slide .pulse-skel { min-height: 170px; }
 .feed-tuck > * { margin: 10px 14px !important; }
