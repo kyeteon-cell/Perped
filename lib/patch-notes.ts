@@ -6,6 +6,12 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
+    version: "0.9.7", date: "6 Nov 2026", title: "Type your amount",
+    fixed: [
+      "Trade and quick trade: you can type any amount in the margin box (decimals too), not just pick a preset. Tap the box to open the keypad; tapping a preset still fills it in.",
+    ],
+  },
+  {
     version: "0.9.8", date: "6 Nov 2026", title: "kPEPE and 1000x markets fixed",
     fixed: [
       "Opening kPEPE (and the other 1000x markets like kBONK and kSHIB) no longer crashes the app.",

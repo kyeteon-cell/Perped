@@ -58,6 +58,10 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
   const [coin, setCoin] = useState(seed.coin);
   const [side, setSide] = useState<"long" | "short">(seed.side ?? "long");
   const [usd, setUsd] = useState(seed.usd ?? 50);
+  // What's typed in the amount box, kept as text so you can clear it, type decimals and edit freely.
+  const [usdText, setUsdText] = useState(String(seed.usd ?? 50));
+  const amountRef = useRef<HTMLInputElement>(null);
+  const pickUsd = (n: number) => { setUsd(n); setUsdText(String(n)); };
   // Leverage cap = whatever Hyperliquid allows on this market (BTC 40×, ETH 25×, …). No caps of our own.
   const [lev, setLev] = useState(seed.leverage ?? profile?.defaultLeverage ?? 2);
   const [orderType_, setOrderType] = useState<"market" | "limit">("market");
@@ -243,8 +247,20 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
 
       <div className="block">
         <div className="flex items-center justify-between text-sm"><span className="muted">Margin ({isDemo ? "demo USDC" : "USDC"})</span><span className="when">{isDemo ? `Available ${fmtUsd(Number(profile?.demoBalance ?? 0))}` : "Hyperliquid minimum $10 notional"}</span></div>
-        <div className="mono my-2 text-[40px] font-semibold tracking-tight"><span className="muted text-2xl align-top">$</span><input type="number" inputMode="decimal" className="mono inline-block w-40 border-0 bg-transparent p-0 text-[40px] font-semibold tracking-tight outline-none" value={usd} min={1} onChange={(e) => setUsd(Math.max(0, Number(e.target.value)))} /></div>
-        <div className="seg">{QUICK.map((q) => <button key={q} className={`chip ${usd === q ? "on" : ""}`} onClick={() => setUsd(q)}>{q}</button>)}</div>
+        {/* Type any amount, or tap a preset. The box is clearly a field, and tapping anywhere on it opens the keypad. */}
+        <label className="amt-box" onClick={() => amountRef.current?.focus()}>
+          <span className="amt-cur">$</span>
+          <input ref={amountRef} type="text" inputMode="decimal" enterKeyHint="done" autoComplete="off" aria-label="Margin amount"
+            className="amt-in mono" value={usdText} placeholder="0"
+            onFocus={(e) => e.currentTarget.select()}
+            onChange={(e) => {
+              const t = e.target.value.replace(",", ".").replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1").slice(0, 10);
+              setUsdText(t); setUsd(Math.max(0, Number(t) || 0));
+            }}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
+          <span className="amt-edit">Type amount</span>
+        </label>
+        <div className="seg">{QUICK.map((q) => <button key={q} type="button" className={`chip ${usd === q ? "on" : ""}`} onClick={() => pickUsd(q)}>{q}</button>)}</div>
         {seed.lockLev ? (
           <div className="mt-4 mb-3 flex items-center justify-between text-sm"><span className="muted">Leverage</span><span className="mono font-bold">{lev}×<span className="when ml-2">matched to {seed.handle ?? "theirs"}</span></span></div>
         ) : (<>
