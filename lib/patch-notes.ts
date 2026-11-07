@@ -6,6 +6,13 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
+    version: "0.11.2", date: "7 Nov 2026", title: "Tidier language picker",
+    improved: [
+      "Settings → Language is now one small pill with your language's flag. Tap it to see all ten languages with their flags.",
+      "Choosing a language no longer switches straight away. Pick one, then press Change to confirm, so a stray tap won't change the app's language.",
+    ],
+  },
+  {
     version: "0.11.1", date: "7 Nov 2026", title: "Four more languages",
     new: [
       "Français, Deutsch, Italiano and العربية are in Settings → Language, alongside English, Español, ไทย, 简体中文, 한국어 and Tiếng Việt. That's ten languages, every screen translated.",
