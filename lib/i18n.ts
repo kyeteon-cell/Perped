@@ -6,10 +6,14 @@
  */
 export const LANGS = [
   { code: "en", name: "English" },
+  { code: "es", name: "Español" },
+  { code: "fr", name: "Français" },
+  { code: "de", name: "Deutsch" },
+  { code: "it", name: "Italiano" },
+  { code: "ar", name: "العربية" },
   { code: "th", name: "ไทย" },
   { code: "zh", name: "简体中文" },
   { code: "ko", name: "한국어" },
-  { code: "es", name: "Español" },
   { code: "vi", name: "Tiếng Việt" },
 ] as const;
 export type Lang = (typeof LANGS)[number]["code"];
@@ -29,6 +33,9 @@ export function tt(s: string): string {
 
 export function currentLang(): Lang { return cur; }
 
+/** Languages written right to left. The whole layout mirrors for these. */
+export const RTL: readonly string[] = ["ar"];
+
 export function storedLang(): Lang {
   try {
     const l = localStorage.getItem(LANG_KEY);
@@ -46,6 +53,10 @@ export async function loadLang(l: Lang): Promise<void> {
     ko: () => import("./i18n/ko.json"),
     es: () => import("./i18n/es.json"),
     vi: () => import("./i18n/vi.json"),
+    fr: () => import("./i18n/fr.json"),
+    de: () => import("./i18n/de.json"),
+    it: () => import("./i18n/it.json"),
+    ar: () => import("./i18n/ar.json"),
   };
   dict = (await loaders[l]()).default;
   cur = l;

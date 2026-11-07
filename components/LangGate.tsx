@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { loadLang, storedLang } from "@/lib/i18n";
+import { RTL, loadLang, storedLang } from "@/lib/i18n";
 
 /**
  * Applies the saved language once on start-up: loads its file, then re-renders the app in it. The head script
@@ -13,7 +13,7 @@ export function LangGate({ children }: { children: React.ReactNode }) {
     const l = storedLang();
     const done = () => document.documentElement.removeAttribute("data-lang-wait");
     if (l === "en") return done();
-    loadLang(l).then(() => { document.documentElement.lang = l; setGen(1); }).catch(() => null).finally(() => requestAnimationFrame(done));
+    loadLang(l).then(() => { document.documentElement.lang = l; document.documentElement.dir = RTL.includes(l) ? "rtl" : "ltr"; setGen(1); }).catch(() => null).finally(() => requestAnimationFrame(done));
   }, []);
   return <Fragment key={gen}>{children}</Fragment>;
 }
