@@ -6,6 +6,16 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
+    version: "0.11.0", date: "7 Nov 2026", title: "Perped in your language",
+    new: [
+      "Settings → Language: Perped now speaks English, ไทย, 简体中文, 한국어, Español and Tiếng Việt. Every screen is translated, from sign-in and the feed to fades, the trade ticket, markets, invites and help pages.",
+      "Logged out? There's a Language link on the welcome card too.",
+    ],
+    improved: [
+      "Trading words people actually use stay as they are in every language: Long, Short, Fade, P&L, ROI and XP.",
+    ],
+  },
+  {
     version: "0.10.1", date: "7 Nov 2026", title: "Behind the scenes",
     improved: [
       "Small under-the-hood changes so we can see which parts of Perped people enjoy and where they get stuck, and fix those first.",
