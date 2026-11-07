@@ -8,7 +8,7 @@ export const RELEASES: Release[] = [
   {
     version: "0.10.1", date: "7 Nov 2026", title: "Behind the scenes",
     improved: [
-      "Small under-the-hood changes so we can see which parts of Perped people enjoy and where they get stuck, and fix those first. No personal data is collected.",
+      "Small under-the-hood changes so we can see which parts of Perped people enjoy and where they get stuck, and fix those first.",
     ],
   },
   {
