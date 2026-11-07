@@ -1,6 +1,9 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { SignInSheet } from "@/components/SignInSheet";
+import { LangGate } from "@/components/LangGate";
 import { ComingSoonSheet } from "@/components/ComingSoonSheet";
 import { SessionProvider } from "@/lib/hooks/useSession";
 import { PrivyProvider, usePrivy, useWallets } from "@privy-io/react-auth";
@@ -19,8 +22,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   if (!appId) {
     return (
       <div className="p-6 text-sm">
-        <p className="font-semibold">Missing NEXT_PUBLIC_PRIVY_APP_ID</p>
-        <p className="muted mt-2">Create an app at dashboard.privy.io, copy the App ID into .env.local and restart.</p>
+        <p className="font-semibold">{tt("Missing NEXT_PUBLIC_PRIVY_APP_ID")}</p>
+        <p className="muted mt-2">{tt("Create an app at dashboard.privy.io, copy the App ID into .env.local and restart.")}</p>
       </div>
     );
   }
@@ -36,7 +39,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         supportedChains: [chain],
       }}
     >
-      <AuthedSWR><SessionProvider><Visit />{children}<SignInSheet /><ComingSoonSheet /></SessionProvider></AuthedSWR>
+      <AuthedSWR><SessionProvider><LangGate><Visit />{children}<SignInSheet /><ComingSoonSheet /></LangGate></SessionProvider></AuthedSWR>
     </PrivyProvider>
   );
 }

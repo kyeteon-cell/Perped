@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import dynamic from "next/dynamic";
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
@@ -51,25 +53,25 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     <div className="hairline flex gap-3 px-5 py-3.5" style={{ paddingLeft: reply ? 52 : undefined, background: reply ? "var(--surface)" : undefined }}>
       <Avatar handle={c.author.handle} url={c.author.avatarUrl} size={32} />
       <div className="min-w-0 flex-1">
-        <div className="nrow text-sm font-bold">{c.author.handle}{c.author.verified && <span className="vbadge">✓</span>}<Badges u={c.author} />{post?.author?.handle === c.author.handle && <span className="lbl done ml-1.5" style={{ padding: "1px 6px", fontSize: 10 }}>OP</span>}<span className="when"> · {timeAgo(c.comment.createdAt)}</span>{copierHandles.has(c.author.handle) && <span className="lbl long ml-1.5" style={{ padding: "1px 8px", fontSize: 10 }}><i />Copied</span>}{faderHandles.has(c.author.handle) && <span className="lbl short ml-1.5" style={{ padding: "1px 8px", fontSize: 10 }}><i />Faded</span>}</div>
+        <div className="nrow text-sm font-bold">{c.author.handle}{c.author.verified && <span className="vbadge">✓</span>}<Badges u={c.author} />{post?.author?.handle === c.author.handle && <span className="lbl done ml-1.5" style={{ padding: "1px 6px", fontSize: 10 }}>OP</span>}<span className="when"> · {timeAgo(c.comment.createdAt)}</span>{copierHandles.has(c.author.handle) && <span className="lbl long ml-1.5" style={{ padding: "1px 8px", fontSize: 10 }}><i />{tt("Copied")}</span>}{faderHandles.has(c.author.handle) && <span className="lbl short ml-1.5" style={{ padding: "1px 8px", fontSize: 10 }}><i />{tt("Faded")}</span>}</div>
         <RichText text={c.comment.body} className="mt-1 text-[15px] leading-relaxed" />
-        {!reply && <div className="acts mt-1.5"><button onClick={() => setReplyTo(c.comment.id)}>Reply</button></div>}
+        {!reply && <div className="acts mt-1.5"><button onClick={() => setReplyTo(c.comment.id)}>{tt("Reply")}</button></div>}
       </div>
     </div>
   );
 
   return (
     <div data-tint="brand" className="fade-in pb-40">
-      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Thread</div>{post ? <button className="iconbtn" aria-label="Share" onClick={() => setReceipt(true)}><Icon d={I.share} /></button> : <span className="w-9" />}</header>
+      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label={tt("Back")}><Icon d={I.back} /></Link><div className="name">{tt("Thread")}</div>{post ? <button className="iconbtn" aria-label={tt("Share")} onClick={() => setReceipt(true)}><Icon d={I.share} /></button> : <span className="w-9" />}</header>
       {!post && (data || error ? <LoadFail gone={!!data} what="post" retry={() => mutate()} /> : <SkeletonList n={1} />)}
       {post && <FeedPost item={post} full autoQuick={autoQuick} mid={post.post.coin ? mids[post.post.coin] : undefined} onChanged={() => mutate()} />}
       {roots.map((c) => (<div key={c.comment.id}>{Row({ c })}{children(c.comment.id).map((r) => <div key={r.comment.id}>{Row({ c: r, reply: true })}</div>)}</div>))}
-      {cm && roots.length === 0 && <p className="muted p-5 text-sm">No comments yet. Respect or roast.</p>}
+      {cm && roots.length === 0 && <p className="muted p-5 text-sm">{tt("No comments yet. Respect or roast.")}</p>}
       <div style={{ bottom: "calc(88px + env(safe-area-inset-bottom, 0px))", background: "var(--bg)", borderColor: "var(--line)" }} className="fixed left-1/2 flex w-full max-w-md -translate-x-1/2 items-center gap-2.5 border-t px-4 py-2.5">
         {profile && <Avatar handle={profile.handle} url={profile.avatarUrl} size={32} />}
-        <input className="field" placeholder={replyTo ? "Reply…" : "Add a comment"} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} />
-        {replyTo && <button className="chip" onClick={() => setReplyTo(null)} aria-label="Cancel reply">×</button>}
-        <button className="copy" onClick={send}>Send</button>
+        <input className="field" placeholder={replyTo ? tt("Reply…") : tt("Add a comment")} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} />
+        {replyTo && <button className="chip" onClick={() => setReplyTo(null)} aria-label={tt("Cancel reply")}>×</button>}
+        <button className="copy" onClick={send}>{tt("Send")}</button>
       </div>
       {cErr && <p style={{ bottom: "calc(144px + env(safe-area-inset-bottom, 0px))" }} className="red fixed left-1/2 w-full max-w-md -translate-x-1/2 px-5 text-xs">{cErr}</p>}
       {receipt && post && <ShareSheet item={post} mid={post.post.coin ? mids[post.post.coin] : undefined} onClose={() => setReceipt(false)} />}

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useState } from "react";
 import useSWR from "swr";
 import { stringToHex } from "viem";
@@ -17,20 +19,20 @@ export function HlRecordCard({ r }: { r: HlRecord & { verifiedAt?: string } }) {
   return (
     <section className="hlr">
       <div className="hlr-h">
-        <span className="hlr-badge">Verified on Hyperliquid</span>
+        <span className="hlr-badge">{tt("Verified on Hyperliquid")}</span>
         <a className="hlr-wallet mono" href={`https://hypurrscan.io/address/${r.address}`} target="_blank" rel="noreferrer">{short(r.address)} ↗</a>
       </div>
       <div className="hlr-grid">
-        <div><small>All-time PnL</small><b className={`mono ${pnlCls(r.pnlAll)}`}>{fmtUsd(r.pnlAll, { sign: true, compact: true })}</b></div>
-        <div><small>Last 30 days</small><b className={`mono ${pnlCls(r.pnl30d)}`}>{fmtUsd(r.pnl30d, { sign: true, compact: true })}</b></div>
-        <div><small>Volume</small><b className="mono">{fmtUsd(r.volumeAll, { compact: true })}</b></div>
-        <div><small>Win rate</small><b className="mono">{r.closes ? `${Math.round(r.winRate)}%` : "—"}</b><span>{r.closes ? `${r.closes.toLocaleString("en-US")} closes` : "no closes yet"}</span></div>
+        <div><small>{tt("All-time PnL")}</small><b className={`mono ${pnlCls(r.pnlAll)}`}>{fmtUsd(r.pnlAll, { sign: true, compact: true })}</b></div>
+        <div><small>{tt("Last 30 days")}</small><b className={`mono ${pnlCls(r.pnl30d)}`}>{fmtUsd(r.pnl30d, { sign: true, compact: true })}</b></div>
+        <div><small>{tt("Volume")}</small><b className="mono">{fmtUsd(r.volumeAll, { compact: true })}</b></div>
+        <div><small>{tt("Win rate")}</small><b className="mono">{r.closes ? `${Math.round(r.winRate)}%` : "—"}</b><span>{r.closes ? `${r.closes.toLocaleString("en-US")} closes` : tt("no closes yet")}</span></div>
       </div>
       <div className="hlr-foot">
-        <span>Trading since {since(r.since)}</span>
+        <span>{tt("Trading since")}{" "}{since(r.since)}</span>
         {r.topCoins.length > 0 && <span className="hlr-coins">{r.topCoins.map((c) => <CoinMark key={c.coin} coin={c.coin} size="xs" />)}<span className="when">{r.topCoins.map((c) => c.coin).join(" · ")}</span></span>}
       </div>
-      {r.best && <div className="hlr-best">Best close: <b>{r.best.coin}</b> <b className="mono green">{fmtUsd(r.best.pnl, { sign: true, compact: true })}</b></div>}
+      {r.best && <div className="hlr-best">{tt("Best close:")}{" "}<b>{r.best.coin}</b> <b className="mono green">{fmtUsd(r.best.pnl, { sign: true, compact: true })}</b></div>}
     </section>
   );
 }
@@ -72,27 +74,27 @@ export function HlImportSettings() {
       const [addr] = (await eth.request({ method: "eth_requestAccounts" })) as string[];
       if (!addr) return;
       void submit(addr.toLowerCase(), (message) => eth.request({ method: "personal_sign", params: [stringToHex(message), addr] }) as Promise<string>);
-    } catch { setErr("Your browser wallet didn't connect"); }
+    } catch { setErr(tt("Your browser wallet didn't connect")); }
   };
 
   return (
     <div className="hli">
       {rec ? (
         <>
-          <div className="srow"><span>Hyperliquid record<span className="when ml-1.5">{short(rec.address)} · on your profile</span></span><span className={`mono ${pnlCls(rec.summary.pnlAll)}`}>{fmtUsd(rec.summary.pnlAll, { sign: true, compact: true })}</span></div>
+          <div className="srow"><span>{tt("Hyperliquid record")}<span className="when ml-1.5">{short(rec.address)}{" "}{tt("· on your profile")}</span></span><span className={`mono ${pnlCls(rec.summary.pnlAll)}`}>{fmtUsd(rec.summary.pnlAll, { sign: true, compact: true })}</span></div>
           <div className="hli-acts">
-            <button className="chip" disabled={!!busy} onClick={async () => { setBusy("Refreshing…"); await authedFetch("/api/me/hl-import", { method: "PATCH" }); await mutate(); setBusy(null); }}>Refresh</button>
-            <button className="chip" disabled={!!busy} onClick={async () => { await authedFetch("/api/me/hl-import", { method: "DELETE" }); await mutate(); }}>Remove from profile</button>
+            <button className="chip" disabled={!!busy} onClick={async () => { setBusy("Refreshing…"); await authedFetch("/api/me/hl-import", { method: "PATCH" }); await mutate(); setBusy(null); }}>{tt("Refresh")}</button>
+            <button className="chip" disabled={!!busy} onClick={async () => { await authedFetch("/api/me/hl-import", { method: "DELETE" }); await mutate(); }}>{tt("Remove from profile")}</button>
           </div>
         </>
       ) : (
         <div className="hli-card">
-          <b>Bring your Hyperliquid track record</b>
-          <p>Already trade on Hyperliquid? Sign a message with that wallet and your all-time PnL, volume and win rate show on your profile, verified on-chain. Signing can&rsquo;t move funds.</p>
+          <b>{tt("Bring your Hyperliquid track record")}</b>
+          <p>{tt("Already trade on Hyperliquid? Sign a message with that wallet and your all-time PnL, volume and win rate show on your profile, verified on-chain. Signing can’t move funds.")}</p>
           <div className="hli-acts">
-            {hasExternalWallet && walletClient?.account ? <button className="btn ink" disabled={!!busy} onClick={withConnected}>Use {short(walletClient.account.address)}</button>
-              : <button className="btn ink" disabled={!!busy} onClick={linkWallet}>Connect a wallet</button>}
-            {eth && <button className="btn" disabled={!!busy} onClick={withBrowserWallet}>A different wallet</button>}
+            {hasExternalWallet && walletClient?.account ? <button className="btn ink" disabled={!!busy} onClick={withConnected}>{tt("Use")}{" "}{short(walletClient.account.address)}</button>
+              : <button className="btn ink" disabled={!!busy} onClick={linkWallet}>{tt("Connect a wallet")}</button>}
+            {eth && <button className="btn" disabled={!!busy} onClick={withBrowserWallet}>{tt("A different wallet")}</button>}
           </div>
         </div>
       )}

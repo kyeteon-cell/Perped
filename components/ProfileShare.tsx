@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { siteOrigin } from "@/lib/config";
 import { small } from "@/lib/img";
 import { useEffect, useState } from "react";
@@ -137,7 +139,7 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
   useEffect(() => {
     if (stats[range]) return;
     let off = false;
-    authedFetch(`/api/profile/${frozen.handle}/card?range=${range}`).then((r) => r.json()).then((j: CardStats) => { if (!off) setStats((s) => ({ ...s, [range]: j })); }).catch(() => setMsg("Couldn't load the stats"));
+    authedFetch(`/api/profile/${frozen.handle}/card?range=${range}`).then((r) => r.json()).then((j: CardStats) => { if (!off) setStats((s) => ({ ...s, [range]: j })); }).catch(() => setMsg(tt("Couldn't load the stats")));
     return () => { off = true; };
   }, [range, frozen.handle, stats, authedFetch]);
   const st = stats[range];
@@ -152,7 +154,7 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
     if (!st) { setPng(null); return; }
     let off = false;
     setPng(null);
-    draw(frozen, st, range, bg, top).then((c) => { if (!off) setPng(c.toDataURL("image/png")); }).catch(() => setMsg("Couldn't draw the card"));
+    draw(frozen, st, range, bg, top).then((c) => { if (!off) setPng(c.toDataURL("image/png")); }).catch(() => setMsg(tt("Couldn't draw the card")));
     try { localStorage.setItem("perped:profile-bg", bg); localStorage.setItem("perped:profile-range", range); } catch {}
     return () => { off = true; };
   }, [frozen, st, range, bg, top]);
@@ -166,28 +168,28 @@ export function ProfileShare({ data, onClose }: { data: ProfileShareData; onClos
       const text = st ? `${frozen.handle} on Perped, ${RANGE_LABEL[range][1].toLowerCase()}: ${st.won}–${st.lost} in fades. Join with my code ${frozen.handle} and pay lower fees forever: ${invite}` : invite;
       if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text });
       else if (navigator.share) await navigator.share({ text, url: invite });
-      else { const a = document.createElement("a"); a.href = png; a.download = file.name; a.click(); setMsg("Image saved"); }
+      else { const a = document.createElement("a"); a.href = png; a.download = file.name; a.click(); setMsg(tt("Image saved")); }
     } catch { /* cancelled */ }
     setBusy(false);
   };
-  const copy = async () => { try { await navigator.clipboard.writeText(invite); setMsg("Invite link copied"); } catch {} };
+  const copy = async () => { try { await navigator.clipboard.writeText(invite); setMsg(tt("Invite link copied")); } catch {} };
 
   return (
-    <Sheet label="Share profile" onClose={onClose}>
+    <Sheet label={tt("Share profile")} onClose={onClose}>
       <div className="px-5 pb-6">
-        <div className="text-lg font-extrabold" data-sheet-handle>Share {frozen.handle}</div>
+        <div className="text-lg font-extrabold" data-sheet-handle>{tt("Share")}{" "}{frozen.handle}</div>
         <div className="bshare-prev mt-3">{png ? <img src={png} alt={`${frozen.handle}'s trader card`} /> : <div className="skel" style={{ aspectRatio: "4 / 5", borderRadius: 18 }} />}</div>
-        <div className="ps-inv mt-3"><span>Invite code <b className="mono">{frozen.handle}</b></span><span className="mono truncate">{invite.replace(/^https?:\/\//, "")}</span></div>
-        <div className="eyebrow mt-4">Period</div>
+        <div className="ps-inv mt-3"><span>{tt("Invite code")}{" "}<b className="mono">{frozen.handle}</b></span><span className="mono truncate">{invite.replace(/^https?:\/\//, "")}</span></div>
+        <div className="eyebrow mt-4">{tt("Period")}</div>
         <div className="ps-range mt-2" role="tablist">{(Object.keys(RANGE_LABEL) as CardRange[]).map((k) => <button key={k} role="tab" aria-selected={range === k} className={range === k ? "on" : ""} onClick={() => setRange(k)}>{RANGE_LABEL[k][0]}</button>)}</div>
-        <div className="eyebrow mt-4">Background</div>
+        <div className="eyebrow mt-4">{tt("Background")}</div>
         <div className="themes mt-2">
           {BGS.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === bg ? "on" : ""}`} onClick={() => setBg(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(${small(`/api/share-bg/${t.key}`, 128)})` }} /><span>{t.name}</span></button>)}
         </div>
         {msg && <p className="when mt-2 text-center">{msg}</p>}
         <div className="mt-4 grid grid-cols-[2fr_1fr] gap-2.5">
-          <button className="btn ink" onClick={share} disabled={!png || busy}>{busy ? "Opening…" : "Share image"}</button>
-          <button className="btn" onClick={copy}>Copy invite</button>
+          <button className="btn ink" onClick={share} disabled={!png || busy}>{busy ? tt("Opening…") : tt("Share image")}</button>
+          <button className="btn" onClick={copy}>{tt("Copy invite")}</button>
         </div>
       </div>
     </Sheet>

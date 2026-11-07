@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { useSession } from "@/lib/hooks/useSession";
@@ -51,8 +53,8 @@ export function PickWinner({ fightId, targetHandle, faderHandle, big = false }: 
   return (
     <div ref={box} className={`pick ${big ? "big" : ""}`} onClick={(e) => e.stopPropagation()}>
       <div className="pick-h">
-        <span>{canPick ? "Who wins?" : data.settled ? "The crowd picked" : data.mine ? `You picked @${name(data.mine)}` : data.inIt ? "Spectators picked" : "Picks closed"}</span>
-        <span className="pick-xp">{canPick ? `+${data.xp} XP if right` : result === "won" ? "Your pick won" : result === "lost" ? "Your pick lost" : total ? `${total} pick${total === 1 ? "" : "s"}` : ""}</span>
+        <span>{canPick ? tt("Who wins?") : data.settled ? tt("The crowd picked") : data.mine ? `You picked @${name(data.mine)}` : data.inIt ? tt("Spectators picked") : tt("Picks closed")}</span>
+        <span className="pick-xp">{canPick ? `+${data.xp} XP if right` : result === "won" ? tt("Your pick won") : result === "lost" ? tt("Your pick lost") : total ? `${total} pick${total === 1 ? "" : "s"}` : ""}</span>
       </div>
       {canPick ? (
         <div className="pick-btns">
@@ -65,7 +67,7 @@ export function PickWinner({ fightId, targetHandle, faderHandle, big = false }: 
           <span className={`pick-r ${data.mine === "fader" ? "me" : ""} ${pop === "fader" ? "pop" : ""}`}><b className="mono">{100 - tPct}%</b> @{faderHandle}</span>
         </div>
       )}
-      {canPick && <p className="pick-note">Free to pick. Calling the upset pays +{data.upsetXp} XP. Picks close when either side closes.</p>}
+      {canPick && <p className="pick-note">{tt("Free to pick. Calling the upset pays +")}{data.upsetXp}{" "}{tt("XP. Picks close when either side closes.")}</p>}
       {err && <p className="pick-err">{err}</p>}
     </div>
   );

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -28,7 +30,7 @@ export function Nav() {
   const me = profile ? `/u/${profile.handle}` : null;
   const meOn = path.startsWith("/u/") || path.startsWith("/settings") || path.startsWith("/notifications");
   return (
-    <>{loginError && <div className="fixed inset-x-0 top-0 z-50 px-4 py-2 text-center text-xs" style={{ background: "var(--red-soft)", color: "var(--red)" }}>{loginError}</div>}<nav className="nav" aria-label="Tabs">
+    <>{loginError && <div className="fixed inset-x-0 top-0 z-50 px-4 py-2 text-center text-xs" style={{ background: "var(--red-soft)", color: "var(--red)" }}>{loginError}</div>}<nav className="nav" aria-label={tt("Tabs")}>
       <div className="nav-inner">
         {tabs.map((t) => (
           <Link key={t.href} href={t.href} className={t.match(path) ? "on" : ""} data-t={t.tint}>
@@ -36,9 +38,9 @@ export function Nav() {
           </Link>
         ))}
         {authenticated && me ? (
-          <Link href={me} className={meOn ? "on" : ""} data-t="violet"><Icon d={I.user} size={24} />You</Link>
+          <Link href={me} className={meOn ? "on" : ""} data-t="violet"><Icon d={I.user} size={24} />{tt("You")}</Link>
         ) : (
-          <a href="#" onClick={(e) => { e.preventDefault(); login(); }} data-t="violet"><Icon d={I.user} size={24} />Log in</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); login(); }} data-t="violet"><Icon d={I.user} size={24} />{tt("Log in")}</a>
         )}
       </div>
     </nav></>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { small } from "@/lib/img";
 import { useEffect, useMemo, useState } from "react";
 import { Sheet } from "./Sheet";
@@ -190,19 +192,19 @@ export function ShareSheet({ item, mid, onClose }: { item: FeedRow; mid?: number
   const shareX = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(data.url)}`;
 
   return (
-    <Sheet label="Share" onClose={onClose}>
+    <Sheet label={tt("Share")} onClose={onClose}>
         <div className="flex flex-col items-center gap-3.5 px-5 pb-5">
-          {img ? <img src={img} alt="Share card preview" className="share-prev" /> : <div className="share-prev" />}
+          {img ? <img src={img} alt={tt("Share card preview")} className="share-prev" /> : <div className="share-prev" />}
           <div className="themes">
             {THEMES.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === themeId ? "on" : ""}`} onClick={() => setThemeId(t.key)} aria-label={t.name}><i style={t.scrim === "light" ? { background: "linear-gradient(160deg,#fff,#e6e7ea)" } : { backgroundImage: `url(${small(`/api/share-bg/${t.key}`, 128)})` }} /><span>{t.name}</span></button>)}
           </div>
           <div className="grid w-full grid-cols-2 gap-2.5">
-            <button className="btn brand" style={{ padding: 12 }} onClick={nativeShare}>{challengeable ? "Challenge a friend" : "Share"}</button>
-            <button className="btn ghostline" style={{ padding: 12 }} onClick={save}>Save image</button>
-            <a className="btn ink" style={{ padding: 12 }} href={shareX} target="_blank" rel="noreferrer">Post to X</a>
-            <button className="btn ghostline" style={{ padding: 12 }} onClick={copyLink}>{msg ?? (challengeable ? "Copy challenge link" : "Copy link")}</button>
+            <button className="btn brand" style={{ padding: 12 }} onClick={nativeShare}>{challengeable ? tt("Challenge a friend") : tt("Share")}</button>
+            <button className="btn ghostline" style={{ padding: 12 }} onClick={save}>{tt("Save image")}</button>
+            <a className="btn ink" style={{ padding: 12 }} href={shareX} target="_blank" rel="noreferrer">{tt("Post to X")}</a>
+            <button className="btn ghostline" style={{ padding: 12 }} onClick={copyLink}>{msg ?? (challengeable ? tt("Copy challenge link") : tt("Copy link"))}</button>
           </div>
-          <p className="faint text-center text-xs">{challengeable ? (profile ? "Your link is an invite: anyone who joins through it gets reduced fees, and you earn a cut of every fee they ever pay." : "Cards show the real numbers. Losses too.") : "Cards show the real numbers. Losses too. Nobody edits a receipt."}</p>
+          <p className="faint text-center text-xs">{challengeable ? (profile ? tt("Your link is an invite: anyone who joins through it gets reduced fees, and you earn a cut of every fee they ever pay.") : tt("Cards show the real numbers. Losses too.")) : tt("Cards show the real numbers. Losses too. Nobody edits a receipt.")}</p>
         </div>
     </Sheet>
   );

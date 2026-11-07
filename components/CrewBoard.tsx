@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import Link from "next/link";
 import { Badges } from "./ui";
 import { fmtUsd } from "@/lib/format";
@@ -12,7 +14,7 @@ export function CrewEmblem({ tag, size = 44 }: { tag: string; size?: number }) {
 
 /** This week's crew war, best first. */
 export function CrewBoard({ board, mine }: { board: CrewCard[]; mine?: string | null }) {
-  if (!board.length) return <div className="block text-center muted text-sm">No crews yet. Start the first one.</div>;
+  if (!board.length) return <div className="block text-center muted text-sm">{tt("No crews yet. Start the first one.")}</div>;
   return (
     <div>
       {board.map((c) => (
@@ -20,7 +22,7 @@ export function CrewBoard({ board, mine }: { board: CrewCard[]; mine?: string | 
           <span className="rank">{c.rank}</span>
           <CrewEmblem tag={c.tag} />
           <div className="min-w-0 flex-1">
-            <div className="nrow name"><span className="truncate">{c.name}</span>{mine === c.slug && <span className="crew-you">Yours</span>}</div>
+            <div className="nrow name"><span className="truncate">{c.name}</span>{mine === c.slug && <span className="crew-you">{tt("Yours")}</span>}</div>
             <div className="when truncate">@{c.owner.handle}<Badges u={c.owner} /> · {c.members} {c.members === 1 ? "member" : "members"} · {fmtUsd(c.pnl7d, { sign: true, compact: true })} 7d</div>
           </div>
           <div className="text-right">

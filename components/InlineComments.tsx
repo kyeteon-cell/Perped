@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
@@ -43,12 +45,12 @@ export function InlineComments({ postId, onCount }: { postId: number; onCount?: 
           <div className="min-w-0 flex-1 text-[13px]"><span className="nrow inline-flex align-middle"><b>{c.author.handle}</b><Badges u={c.author} /></span> <span className="when">{timeAgo(c.comment.createdAt)}</span><RichText text={c.comment.body} className="m-0 leading-snug" /></div>
         </div>
       ))}
-      {all.length > 3 && <Link href={`/post/${postId}`} className="when block py-1">See all {all.length} comments →</Link>}
-      {data && all.length === 0 && <div className="when py-1">Be the first. Respect or roast.</div>}
+      {all.length > 3 && <Link href={`/post/${postId}`} className="when block py-1">{tt("See all")}{" "}{all.length}{" "}{tt("comments →")}</Link>}
+      {data && all.length === 0 && <div className="when py-1">{tt("Be the first. Respect or roast.")}</div>}
       <form className="icm-form" onSubmit={(e) => { e.preventDefault(); send(); }}>
         {profile && <Avatar handle={profile.handle} url={profile.avatarUrl} size={26} link={false} />}
-        <input className="field" style={{ padding: "9px 12px", fontSize: 14 }} placeholder={authenticated ? "Say something…" : "Log in to comment"} value={draft} onChange={(e) => setDraft(e.target.value)} onFocus={() => { if (!authenticated) login(); }} enterKeyHint="send" maxLength={500} />
-        <button type="submit" className="copy" disabled={busy || !draft.trim()}>Post</button>
+        <input className="field" style={{ padding: "9px 12px", fontSize: 14 }} placeholder={authenticated ? tt("Say something…") : tt("Log in to comment")} value={draft} onChange={(e) => setDraft(e.target.value)} onFocus={() => { if (!authenticated) login(); }} enterKeyHint="send" maxLength={500} />
+        <button type="submit" className="copy" disabled={busy || !draft.trim()}>{tt("Post")}</button>
       </form>
       {err && <p className="red text-xs">{err}</p>}
     </div>

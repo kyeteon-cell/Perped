@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useSession } from "@/lib/hooks/useSession";
@@ -34,7 +36,7 @@ export function QuickPost({ onPosted }: { onPosted: () => void }) {
       <div className="flex items-start gap-3">
         <Avatar handle={profile.handle} url={profile.avatarUrl} size={36} link={false} />
         <div className="min-w-0 flex-1">
-          <textarea ref={ta} className="qp-ta" rows={open ? 3 : 1} placeholder="What's your read? $BTC, @someone…" value={body} maxLength={1000}
+          <textarea ref={ta} className="qp-ta" rows={open ? 3 : 1} placeholder={tt("What's your read? $BTC, @someone…")} value={body} maxLength={1000}
             onFocus={() => setOpen(true)} onChange={(e) => setBody(e.target.value)}
             onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") post(); }} />
           {open && (
@@ -43,18 +45,18 @@ export function QuickPost({ onPosted }: { onPosted: () => void }) {
                 {COINS.map((c) => <button key={c} type="button" className={`chip ${coin === c ? "on" : ""}`} style={{ padding: "5px 9px", fontSize: 12 }} onClick={() => setCoin(coin === c ? null : c)}><CoinMark coin={c} size="xs" />{c}</button>)}
               </div>
               <div className="mt-2.5 flex items-center gap-2">
-                <Link href="/compose?mode=call" className="chip" style={{ padding: "7px 11px", fontSize: 12 }}>Make a call</Link>
-                <Link href="/compose?mode=poll" className="chip" style={{ padding: "7px 11px", fontSize: 12 }}>Poll</Link>
+                <Link href="/compose?mode=call" className="chip" style={{ padding: "7px 11px", fontSize: 12 }}>{tt("Make a call")}</Link>
+                <Link href="/compose?mode=poll" className="chip" style={{ padding: "7px 11px", fontSize: 12 }}>{tt("Poll")}</Link>
                 <span className="when ml-auto">{body.length > 800 ? `${1000 - body.length}` : ""}</span>
-                <button type="button" className="chip" onClick={() => { setOpen(false); setBody(""); setCoin(null); }}>Cancel</button>
-                <button type="button" className="copy" disabled={busy || !body.trim()} onClick={post}>{busy ? "…" : "Post"}</button>
+                <button type="button" className="chip" onClick={() => { setOpen(false); setBody(""); setCoin(null); }}>{tt("Cancel")}</button>
+                <button type="button" className="copy" disabled={busy || !body.trim()} onClick={post}>{busy ? "…" : tt("Post")}</button>
               </div>
               {err && <p className="red mt-2 text-xs">{err}</p>}
             </>
           )}
         </div>
       </div>
-      {!authenticated && <button className="absolute inset-0" onClick={() => login()} aria-label="Log in to post" />}
+      {!authenticated && <button className="absolute inset-0" onClick={() => login()} aria-label={tt("Log in to post")} />}
     </div>
   );
 }

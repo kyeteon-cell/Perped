@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import dynamic from "next/dynamic";
 import { Glyph } from "./Glyph";
 import Link from "next/link";
@@ -24,7 +26,7 @@ function Bar({ f, live, right }: { f: Fighter; live: number; right?: boolean }) 
   const h = healthOf(f, live), w = `${Math.max(3, h * 100)}%`, bleed = h < 0.4;
   return (
     <div className={`ar-hpbox ${right ? "r" : ""}`}>
-      <div className="ar-hphead"><span>{f.closed ? "Banked" : "Margin/SL health"}</span><b style={{ color: f.side === "long" ? "var(--green)" : "var(--red)" }}>{f.closed ? "Closed" : `${Math.round(h * 100)}%`}</b></div>
+      <div className="ar-hphead"><span>{f.closed ? tt("Banked") : tt("Margin/SL health")}</span><b style={{ color: f.side === "long" ? "var(--green)" : "var(--red)" }}>{f.closed ? tt("Closed") : `${Math.round(h * 100)}%`}</b></div>
       <div className={`ar-hpbar ${bleed ? "bleed" : ""} ${f.closed ? "done" : ""}`}>
         <div className="ar-hptrack"><i className={f.side} style={{ width: w }} /></div>
         {bleed && <div className={`ar-drips ${f.side}`} style={{ width: w }} aria-hidden="true"><b /><b /><b /></div>}
@@ -53,7 +55,7 @@ export function FinishSave({ b, winner, loser, quiet, compact }: { b: ArenaBattl
     const u = wOpen ? winner : loser, fin = wOpen;
     return (
       <>
-        <button className={`hub-btn side ${legOf(b, u).side}`} onClick={() => pick(u, fin ? "Finish them · back" : "Save them · back")}><span className="gl"><Glyph n={fin ? "dagger" : "buoy"} />{fin ? "Finish them" : "Save them"}</span></button>
+        <button className={`hub-btn side ${legOf(b, u).side}`} onClick={() => pick(u, fin ? "Finish them · back" : "Save them · back")}><span className="gl"><Glyph n={fin ? "dagger" : "buoy"} />{fin ? tt("Finish them") : tt("Save them")}</span></button>
         {open && <QuickTrade item={open.item} mode="copy" lock title={open.title} onClose={() => setOpen(null)} />}
       </>
     );
@@ -63,7 +65,7 @@ export function FinishSave({ b, winner, loser, quiet, compact }: { b: ArenaBattl
     return (
       <>
         <div className="bb-acts quiet" style={sides.length > 1 ? undefined : { gridTemplateColumns: "1fr" }}>
-          {sides.map((u) => <button key={u.id} onClick={() => pick(u, "Back")}><span>Back <b>{u.handle}</b></span></button>)}
+          {sides.map((u) => <button key={u.id} onClick={() => pick(u, "Back")}><span>{tt("Back")}{" "}<b>{u.handle}</b></span></button>)}
         </div>
         {open && <QuickTrade item={open.item} mode="copy" lock title={open.title} onClose={() => setOpen(null)} />}
       </>
@@ -72,8 +74,8 @@ export function FinishSave({ b, winner, loser, quiet, compact }: { b: ArenaBattl
   return (
     <>
       <div className="bb-acts" style={wOpen && lOpen ? undefined : { gridTemplateColumns: "1fr" }}>
-        {wOpen && <button className={`bb-finish side ${legOf(b, winner).side}`} onClick={() => pick(winner, "Finish them · back")}><span className="gl"><Glyph n="dagger" />Finish them</span><small>back {winner.handle}</small></button>}
-        {lOpen && <button className={`bb-save side ${legOf(b, loser).side}`} onClick={() => pick(loser, "Save them · back")}><span className="gl"><Glyph n="buoy" />Save them</span><small>back {loser.handle}</small></button>}
+        {wOpen && <button className={`bb-finish side ${legOf(b, winner).side}`} onClick={() => pick(winner, "Finish them · back")}><span className="gl"><Glyph n="dagger" />{tt("Finish them")}</span><small>back {winner.handle}</small></button>}
+        {lOpen && <button className={`bb-save side ${legOf(b, loser).side}`} onClick={() => pick(loser, "Save them · back")}><span className="gl"><Glyph n="buoy" />{tt("Save them")}</span><small>back {loser.handle}</small></button>}
       </div>
       {open && <QuickTrade item={open.item} mode="copy" lock title={open.title} onClose={() => setOpen(null)} />}
     </>
@@ -81,7 +83,7 @@ export function FinishSave({ b, winner, loser, quiet, compact }: { b: ArenaBattl
 }
 
 /** Revenge / run it back: quick-fade the opponent's newest open trade; if they have none, make them your nemesis so you get pinged. */
-export function RevengeButton({ handle, label = <span className="gl"><Glyph n="drop" />Revenge</span>, className = "bb-revenge" }: { handle: string; label?: React.ReactNode; className?: string }) {
+export function RevengeButton({ handle, label = <span className="gl"><Glyph n="drop" />{tt("Revenge")}</span>, className = "bb-revenge" }: { handle: string; label?: React.ReactNode; className?: string }) {
   const { authenticated, login, authedFetch } = useSession();
   const [item, setItem] = useState<FeedRow | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -100,7 +102,7 @@ export function RevengeButton({ handle, label = <span className="gl"><Glyph n="d
   };
   return (
     <>
-      <button className={className} onClick={go} disabled={busy}>{busy ? "Finding their trade…" : label}</button>
+      <button className={className} onClick={go} disabled={busy}>{busy ? tt("Finding their trade…") : label}</button>
       {msg && <p className="when mt-1.5 text-[12px]">{msg}</p>}
       {item && <QuickTrade item={item} mode="fade" onClose={() => setItem(null)} />}
     </>
@@ -113,7 +115,7 @@ export function KillFeed({ kills }: { kills: ArenaBattle[] }) {
   if (!kills.length) return null;
   return (
     <div className="bb-kills">
-      <div className="eyebrow">Eliminations</div>
+      <div className="eyebrow">{tt("Eliminations")}</div>
       {kills.filter((k) => k.winnerId).slice(0, 6).map((b) => {
         const w = b.winnerId === b.fader.id ? b.fader : b.target, l = w.id === b.fader.id ? b.target : b.fader;
         const ll = legOf(b, l);
@@ -144,8 +146,8 @@ export function BodyCount({ board }: { board: ArenaRes["board"] }) {
   );
   return (
     <div className="bb-board">
-      {col(<span className="gl"><Glyph n="dagger" />Butcher · this week</span>, board.butchers, "perped")}
-      {col(<span className="gl"><Glyph n="tomb" />Most rekt</span>, board.rekt, "lost")}
+      {col(<span className="gl"><Glyph n="dagger" />{tt("Butcher · this week")}</span>, board.butchers, "perped")}
+      {col(<span className="gl"><Glyph n="tomb" />{tt("Most rekt")}</span>, board.rekt, "lost")}
     </div>
   );
 }

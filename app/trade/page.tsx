@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -36,8 +38,8 @@ function TradeInner() {
   return (
     <div data-tint="blue">
       <header className="flex items-center justify-between px-4 py-3">
-        <Link href={`/markets/${seed.coin}`} className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link>
-        <div className="name">{duelId ? "Duel · your side" : fade ? "Fade" : copy ? "Copy trade" : "Trade"}</div>
+        <Link href={`/markets/${seed.coin}`} className="iconbtn" aria-label={tt("Back")}><Icon d={I.back} /></Link>
+        <div className="name">{duelId ? tt("Duel · your side") : fade ? tt("Fade") : copy ? tt("Copy trade") : tt("Trade")}</div>
         <span className="w-9" />
       </header>
       <TradeTicket seed={seed} />

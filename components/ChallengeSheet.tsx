@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { Glyph } from "./Glyph";
 import { Sheet } from "./Sheet";
 
@@ -27,27 +29,27 @@ export function ChallengeSheet({ handle, onClose }: { handle: string; onClose: (
     setBusy(true); setErr(null);
     let r: Response, j: { error?: string; duel?: { id: number }; [k: string]: unknown };
     try { r = await authedFetch("/api/duels", { method: "POST", body: JSON.stringify({ opponent: handle, coin, side, stakeUsd: stake, hours }) }); j = await r.json().catch(() => ({})); }
-    catch { setBusy(false); return setErr("Couldn't reach Perped. Check your connection."); }
+    catch { setBusy(false); return setErr(tt("Couldn't reach Perped. Check your connection.")); }
     setBusy(false);
     if (!r.ok) return setErr(j.error ?? "Couldn't create the duel");
     router.push(`/trade?duel=${j.duel?.id}`);
   };
 
   return (
-    <Sheet label="Challenge to a duel" onClose={onClose}>
+    <Sheet label={tt("Challenge to a duel")} onClose={onClose}>
         <div className="px-5 pb-6">
-          <div className="flex items-center justify-between"><b className="text-lg gl"><Glyph n="swords" />Challenge {handle}</b><span className="when">{hours}h · ${stake} each</span></div>
+          <div className="flex items-center justify-between"><b className="text-lg gl"><Glyph n="swords" />{tt("Challenge")}{" "}{handle}</b><span className="when">{hours}h · ${stake} each</span></div>
           <p className="muted mt-1 text-sm">You take one side, they take the other. Whoever is further ahead when the clock runs out wins. Stakes are your own positions; nothing is pooled.</p>
-          <div className="eyebrow mt-4 mb-2">Market</div>
+          <div className="eyebrow mt-4 mb-2">{tt("Market")}</div>
           <div className="seg">{top.map((c) => <button key={c} className={`chip ${c === coin ? "on" : ""}`} onClick={() => setCoin(c)}><CoinMark coin={c} size="xs" />{ticker(c)}</button>)}</div>
-          <div className="eyebrow mt-4 mb-2">Your side</div>
-          <div className="grid grid-cols-2 gap-2.5"><button className={`btn ${side === "long" ? "long" : ""}`} onClick={() => setSide("long")}>Long</button><button className={`btn ${side === "short" ? "short" : ""}`} onClick={() => setSide("short")}>Short</button></div>
-          <div className="eyebrow mt-4 mb-2">Stake (margin each)</div>
+          <div className="eyebrow mt-4 mb-2">{tt("Your side")}</div>
+          <div className="grid grid-cols-2 gap-2.5"><button className={`btn ${side === "long" ? "long" : ""}`} onClick={() => setSide("long")}>{tt("Long")}</button><button className={`btn ${side === "short" ? "short" : ""}`} onClick={() => setSide("short")}>{tt("Short")}</button></div>
+          <div className="eyebrow mt-4 mb-2">{tt("Stake (margin each)")}</div>
           <div className="seg">{[25, 50, 100, 250, 500].map((s) => <button key={s} className={`chip ${s === stake ? "on" : ""}`} onClick={() => setStake(s)}>${s}</button>)}</div>
-          <div className="eyebrow mt-4 mb-2">Settles in</div>
+          <div className="eyebrow mt-4 mb-2">{tt("Settles in")}</div>
           <div className="seg">{[1, 4, 24, 72, 168].map((h) => <button key={h} className={`chip ${h === hours ? "on" : ""}`} onClick={() => setHours(h)}>{h < 24 ? `${h}h` : `${h / 24}d`}</button>)}</div>
           {err && <p className="red mt-3 text-sm">{err}</p>}
-          <button className="btn brand mt-5" onClick={go} disabled={busy}>{busy ? "Creating…" : `Send challenge · then open your ${side}`}</button>
+          <button className="btn brand mt-5" onClick={go} disabled={busy}>{busy ? tt("Creating…") : `Send challenge · then open your ${side}`}</button>
         </div>
     </Sheet>
   );

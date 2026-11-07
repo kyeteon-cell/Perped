@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { Sheet } from "./Sheet";
@@ -76,45 +78,45 @@ export function FeedFilters({ value, onChange, onClose }: { value: FeedFilter; o
   const toggleKind = (k: string) => setF((x) => ({ ...x, kinds: x.kinds.includes(k) ? x.kinds.filter((y) => y !== k) : [...x.kinds, k] }));
   const n = activeCount(f);
   return (
-    <Sheet label="Filter the feed" onClose={onClose}>
+    <Sheet label={tt("Filter the feed")} onClose={onClose}>
       <div className="px-5 pb-6">
         <div className="flex items-center justify-between" data-sheet-handle>
-          <div className="text-lg font-extrabold">Filter the feed</div>
+          <div className="text-lg font-extrabold">{tt("Filter the feed")}</div>
           <div className="flex items-center gap-2">
-            {n > 0 && <button className="chip" onClick={() => setF(EMPTY_FILTER)}>Reset</button>}
-            <button className="chip on" onClick={onClose}>Done{n ? ` · ${n}` : ""}</button>
+            {n > 0 && <button className="chip" onClick={() => setF(EMPTY_FILTER)}>{tt("Reset")}</button>}
+            <button className="chip on" onClick={onClose}>{tt("Done")}{n ? ` · ${n}` : ""}</button>
           </div>
         </div>
 
-        <Row label="Coins">
-          <input className="field" style={{ padding: "8px 12px", fontSize: 13 }} placeholder="Search a market" value={q} onChange={(e) => setQ(e.target.value)} />
+        <Row label={tt("Coins")}>
+          <input className="field" style={{ padding: "8px 12px", fontSize: 13 }} placeholder={tt("Search a market")} value={q} onChange={(e) => setQ(e.target.value)} />
           <div className="flex flex-wrap gap-1.5 w-full">
             {f.coins.filter((c) => !shown.some((m) => m.name === c)).map((c) => <Opt key={c} on onClick={() => toggleCoin(c)}><CoinMark coin={c} size="xs" />{ticker(c)}</Opt>)}
             {shown.map((m) => <Opt key={m.name} on={f.coins.includes(m.name)} onClick={() => toggleCoin(m.name)}><CoinMark coin={m.name} size="xs" />{ticker(m.name)}</Opt>)}
           </div>
         </Row>
 
-        <Row label="Side">
-          {([["", "Any"], ["long", "Long"], ["short", "Short"]] as const).map(([v, l]) => <Opt key={v} on={f.side === v} onClick={() => setF({ ...f, side: v })}>{l}</Opt>)}
+        <Row label={tt("Side")}>
+          {([["", tt("Any")], ["long", tt("Long")], ["short", tt("Short")]] as const).map(([v, l]) => <Opt key={v} on={f.side === v} onClick={() => setF({ ...f, side: v })}>{l}</Opt>)}
         </Row>
-        <Row label="Margin put up">
-          {([["", "Any"], ["lt100", "Under $100"], ["100-500", "$100–500"], ["500-2000", "$500–2k"], ["gt2000", "$2k+"]] as const).map(([v, l]) => <Opt key={v} on={f.margin === v} onClick={() => setF({ ...f, margin: v })}>{l}</Opt>)}
+        <Row label={tt("Margin put up")}>
+          {([["", tt("Any")], ["lt100", "Under $100"], ["100-500", "$100–500"], ["500-2000", "$500–2k"], ["gt2000", "$2k+"]] as const).map(([v, l]) => <Opt key={v} on={f.margin === v} onClick={() => setF({ ...f, margin: v })}>{l}</Opt>)}
         </Row>
-        <Row label="Leverage">
-          {([["", "Any"], ["le5", "Up to 5×"], ["6-20", "6–20×"], ["ge21", "21× and up"]] as const).map(([v, l]) => <Opt key={v} on={f.lev === v} onClick={() => setF({ ...f, lev: v })}>{l}</Opt>)}
+        <Row label={tt("Leverage")}>
+          {([["", tt("Any")], ["le5", "Up to 5×"], ["6-20", "6–20×"], ["ge21", "21× and up"]] as const).map(([v, l]) => <Opt key={v} on={f.lev === v} onClick={() => setF({ ...f, lev: v })}>{l}</Opt>)}
         </Row>
-        <Row label="Post types (none selected = all)">
-          {([["trade", "Trades"], ["call", "Calls"], ["poll", "Polls"], ["text", "Posts"], ["system", "Results & alerts"]] as const).map(([v, l]) => <Opt key={v} on={f.kinds.includes(v)} onClick={() => toggleKind(v)}>{l}</Opt>)}
+        <Row label={tt("Post types (none selected = all)")}>
+          {([["trade", tt("Trades")], ["call", tt("Calls")], ["poll", tt("Polls")], ["text", tt("Posts")], ["system", "Results & alerts"]] as const).map(([v, l]) => <Opt key={v} on={f.kinds.includes(v)} onClick={() => toggleKind(v)}>{l}</Opt>)}
         </Row>
-        <Row label="Money">
-          {([["", "All"], ["real", "Real money"], ["demo", "Demo"]] as const).map(([v, l]) => v === "real" && !liveOk
-            ? <button key={v} type="button" className="chip live-off" style={{ padding: "7px 11px", fontSize: 12 }} onClick={gate(() => null)}>{l}<span className="soon-pill">Soon</span></button>
+        <Row label={tt("Money")}>
+          {([["", tt("All")], ["real", "Real money"], ["demo", tt("Demo")]] as const).map(([v, l]) => v === "real" && !liveOk
+            ? <button key={v} type="button" className="chip live-off" style={{ padding: "7px 11px", fontSize: 12 }} onClick={gate(() => null)}>{l}<span className="soon-pill">{tt("Soon")}</span></button>
             : <Opt key={v} on={f.money === v} onClick={() => setF({ ...f, money: v })}>{l}</Opt>)}
         </Row>
-        <Row label="Traders">
-          <Opt on={f.verified} onClick={() => setF({ ...f, verified: !f.verified })}>Verified only</Opt>
-          <Opt on={f.nobots} onClick={() => setF({ ...f, nobots: !f.nobots })}>Hide house traders</Opt>
-          <Opt on={f.hot} onClick={() => setF({ ...f, hot: !f.hot })}>Contested (3+ copies or fades)</Opt>
+        <Row label={tt("Traders")}>
+          <Opt on={f.verified} onClick={() => setF({ ...f, verified: !f.verified })}>{tt("Verified only")}</Opt>
+          <Opt on={f.nobots} onClick={() => setF({ ...f, nobots: !f.nobots })}>{tt("Hide house traders")}</Opt>
+          <Opt on={f.hot} onClick={() => setF({ ...f, hot: !f.hot })}>{tt("Contested (3+ copies or fades)")}</Opt>
         </Row>
         <p className="faint mt-3 text-[11px]">Filters stick until you reset them. Side, margin and leverage apply to trades; calls and posts for your chosen coins still show unless you limit post types.</p>
       </div>

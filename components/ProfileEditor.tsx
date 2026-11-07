@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useRef, useState } from "react";
 import { useSession } from "@/lib/hooks/useSession";
 import { Avatar } from "./ui";
@@ -50,35 +52,35 @@ export function ProfileEditor() {
   const saveBio = async () => {
     if (bio === (profile.bio ?? "")) return;
     const r = await authedFetch("/api/me", { method: "POST", body: JSON.stringify({ handle: profile.handle, bio }) });
-    if (!r.ok) setErr("Couldn't save bio"); else refreshMe();
+    if (!r.ok) setErr(tt("Couldn't save bio")); else refreshMe();
   };
 
   return (
     <section id="profile">
-      <div className="eyebrow px-5 pb-1.5 pt-3.5">Profile</div>
+      <div className="eyebrow px-5 pb-1.5 pt-3.5">{tt("Profile")}</div>
       <div className="px-5">
-        <div className="pe-banner" style={{ backgroundImage: profile.bannerUrl ? `url(${profile.bannerUrl})` : undefined }} onClick={() => bannerIn.current?.click()} role="button" aria-label="Change banner">
-          <span className="pe-hint">{busy === "banner" ? "Uploading…" : profile.bannerUrl ? "Tap to change banner" : "Tap to add a banner"}</span>
+        <div className="pe-banner" style={{ backgroundImage: profile.bannerUrl ? `url(${profile.bannerUrl})` : undefined }} onClick={() => bannerIn.current?.click()} role="button" aria-label={tt("Change banner")}>
+          <span className="pe-hint">{busy === "banner" ? tt("Uploading…") : profile.bannerUrl ? tt("Tap to change banner") : tt("Tap to add a banner")}</span>
         </div>
         <div className="-mt-9 flex items-end gap-3 px-2">
-          <button type="button" className="pe-av" onClick={() => avatarIn.current?.click()} aria-label="Change profile picture">
+          <button type="button" className="pe-av" onClick={() => avatarIn.current?.click()} aria-label={tt("Change profile picture")}>
             <Avatar handle={profile.handle} url={profile.avatarUrl} size={76} link={false} />
-            <span className="pe-cam">{busy === "avatar" ? "…" : <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-label="Change photo"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></svg>}</span>
+            <span className="pe-cam">{busy === "avatar" ? "…" : <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-label={tt("Change photo")}><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></svg>}</span>
           </button>
           <div className="flex flex-wrap gap-2 pb-1">
-            <button className="chip" onClick={() => avatarIn.current?.click()}>Change photo</button>
-            {profile.avatarUrl && <button className="chip" onClick={() => clear("avatar")}>Remove</button>}
-            {profile.bannerUrl && <button className="chip" onClick={() => clear("banner")}>Remove banner</button>}
+            <button className="chip" onClick={() => avatarIn.current?.click()}>{tt("Change photo")}</button>
+            {profile.avatarUrl && <button className="chip" onClick={() => clear("avatar")}>{tt("Remove")}</button>}
+            {profile.bannerUrl && <button className="chip" onClick={() => clear("banner")}>{tt("Remove banner")}</button>}
           </div>
         </div>
         <input ref={avatarIn} type="file" accept="image/*" hidden onChange={(e) => upload("avatar", e.target.files?.[0] ?? null)} />
         <input ref={bannerIn} type="file" accept="image/*" hidden onChange={(e) => upload("banner", e.target.files?.[0] ?? null)} />
         <div className="mt-3">
-          <div className="eyebrow mb-1.5" style={{ color: "var(--muted)" }}>Bio</div>
-          <input className="field" value={bio} maxLength={160} placeholder="One line about how you trade" onChange={(e) => setBio(e.target.value)} onBlur={saveBio} />
+          <div className="eyebrow mb-1.5" style={{ color: "var(--muted)" }}>{tt("Bio")}</div>
+          <input className="field" value={bio} maxLength={160} placeholder={tt("One line about how you trade")} onChange={(e) => setBio(e.target.value)} onBlur={saveBio} />
         </div>
         {err && <p className="red mt-2 text-xs">{err}</p>}
-        <p className="faint mt-2 text-[11px]">Photos are resized on your phone before upload. Square photo for the picture, wide for the banner.</p>
+        <p className="faint mt-2 text-[11px]">{tt("Photos are resized on your phone before upload. Square photo for the picture, wide for the banner.")}</p>
       </div>
     </section>
   );

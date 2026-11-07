@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -94,7 +96,7 @@ export default function SearchPage() {
   const CoinRow = ({ c }: { c: MarketItem }) => (
     <button type="button" className="s-row s-main" onClick={() => goCoin(c.name)}>
       <CoinMark coin={c.name} />
-      <span className="s-mid"><span className="s-nm"><span className="truncate"><Hl text={ticker(c.name)} q={term} /></span></span><span className="s-sub">Volume {fmtUsd(c.volume24h, { compact: true })} · {c.maxLeverage}× max</span></span>
+      <span className="s-mid"><span className="s-nm"><span className="truncate"><Hl text={ticker(c.name)} q={term} /></span></span><span className="s-sub">{tt("Volume")}{" "}{fmtUsd(c.volume24h, { compact: true })} · {c.maxLeverage}{tt("× max")}</span></span>
       <span className="s-px"><b className="mono">{fmtPrice(c.mid)}</b><small className={`mono ${c.change24h >= 0 ? "green" : "red"}`}>{fmtPct(c.change24h, 1)}</small></span>
     </button>
   );
@@ -106,15 +108,15 @@ export default function SearchPage() {
         <label className="s-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
           <input ref={input} value={raw} onChange={(e) => { setRaw(e.target.value); setShowAll(null); }} onKeyDown={(e) => e.key === "Enter" && onEnter()}
-            placeholder="Search coins and traders" aria-label="Search coins and traders" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="search" />
-          {raw && <button type="button" className="s-clear" aria-label="Clear" onClick={() => { setRaw(""); input.current?.focus(); }}>×</button>}
+            placeholder={tt("Search coins and traders")} aria-label={tt("Search coins and traders")} autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="search" />
+          {raw && <button type="button" className="s-clear" aria-label={tt("Clear")} onClick={() => { setRaw(""); input.current?.focus(); }}>×</button>}
         </label>
-        <button type="button" className="s-cancel" onClick={() => (window.history.length > 1 ? router.back() : router.push("/"))}>Cancel</button>
+        <button type="button" className="s-cancel" onClick={() => (window.history.length > 1 ? router.back() : router.push("/"))}>{tt("Cancel")}</button>
       </div>
       <div className="s-segs" role="tablist">
         {(["all", "coins", "traders"] as Filter[]).map((f) => (
           <button key={f} type="button" role="tab" aria-selected={mode === f} className={mode === f ? "on" : ""} onClick={() => { setFilter(f); if (q.startsWith("@") || q.startsWith("$")) setRaw(term); }}>
-            {f === "all" ? "All" : f === "coins" ? "Coins" : "Traders"}{term && f === "coins" && mode !== "traders" ? ` · ${coins.length}` : ""}{term && f === "traders" && mode !== "coins" && found ? ` · ${users.length}` : ""}
+            {f === "all" ? tt("All") : f === "coins" ? tt("Coins") : tt("Traders")}{term && f === "coins" && mode !== "traders" ? ` · ${coins.length}` : ""}{term && f === "traders" && mode !== "coins" && found ? ` · ${users.length}` : ""}
           </button>
         ))}
       </div>
@@ -122,7 +124,7 @@ export default function SearchPage() {
       {!term ? (
         <>
           {recent.length > 0 && <>
-            <div className="s-sec"><b>Recent</b><button type="button" onClick={() => { setRecent([]); try { localStorage.removeItem(RECENT_KEY); } catch {} }}>Clear</button></div>
+            <div className="s-sec"><b>{tt("Recent")}</b><button type="button" onClick={() => { setRecent([]); try { localStorage.removeItem(RECENT_KEY); } catch {} }}>{tt("Clear")}</button></div>
             <div className="s-recent">{recent.map((r) => (
               <button key={`${r.t}${r.v}`} type="button" onClick={() => (r.t === "coin" ? goCoin(r.v) : goUser({ handle: r.v, avatarUrl: r.a }))}>
                 {r.t === "coin" ? <CoinMark coin={r.v} size="xs" /> : <Avatar handle={r.v} url={r.a ?? undefined} size={20} link={false} />}{r.t === "coin" ? ticker(r.v) : r.v}
@@ -130,7 +132,7 @@ export default function SearchPage() {
             ))}</div>
           </>}
           {mode !== "traders" && movers.length > 0 && <>
-            <div className="s-sec"><b>Moving now</b><span>24h</span></div>
+            <div className="s-sec"><b>{tt("Moving now")}</b><span>24h</span></div>
             <div className="s-movers">{movers.map((m) => {
               const why = crowdLabel(m.funding8h) ?? (m.oiChange24h != null && Math.abs(m.oiChange24h) >= 5 ? `OI ${fmtPct(m.oiChange24h, 1)}` : `Vol ${fmtUsd(m.volume24h, { compact: true })}`);
               return (
@@ -141,33 +143,33 @@ export default function SearchPage() {
             })}</div>
           </>}
           {mode !== "coins" && (sug?.traders.length ?? 0) > 0 && <>
-            <div className="s-sec"><b>Traders to watch</b><span>this week</span></div>
+            <div className="s-sec"><b>{tt("Traders to watch")}</b><span>{tt("this week")}</span></div>
             {sug!.traders.map((u) => <UserRow key={u.handle} u={u} />)}
           </>}
-          <p className="s-hint">Tip: start with @ for traders or $ for coins.</p>
+          <p className="s-hint">{tt("Tip: start with @ for traders or $ for coins.")}</p>
         </>
       ) : (
         <>
           {top && (
-            <div className="s-top1"><div className="s-tag">Top result</div>{top.t === "user" ? <UserRow u={top.u} /> : <CoinRow c={top.c} />}</div>
+            <div className="s-top1"><div className="s-tag">{tt("Top result")}</div>{top.t === "user" ? <UserRow u={top.u} /> : <CoinRow c={top.c} />}</div>
           )}
           {mode !== "coins" && restUsers.length > 0 && <>
-            <div className="s-sec"><b>Traders</b><span>by rank</span></div>
+            <div className="s-sec"><b>{tt("Traders")}</b><span>{tt("by rank")}</span></div>
             {restUsers.slice(0, mode === "traders" ? Infinity : cap("traders")).map((u) => <UserRow key={u.handle} u={u} />)}
-            {mode === "all" && showAll !== "traders" && restUsers.length > 4 && <button type="button" className="s-more" onClick={() => setShowAll("traders")}>See all {users.length} traders</button>}
+            {mode === "all" && showAll !== "traders" && restUsers.length > 4 && <button type="button" className="s-more" onClick={() => setShowAll("traders")}>{tt("See all")}{" "}{users.length} traders</button>}
           </>}
           {mode !== "traders" && restCoins.length > 0 && <>
-            <div className="s-sec"><b>Coins</b><span>by volume</span></div>
+            <div className="s-sec"><b>{tt("Coins")}</b><span>{tt("by volume")}</span></div>
             {restCoins.slice(0, mode === "coins" ? 40 : cap("coins")).map((c) => <CoinRow key={c.name} c={c} />)}
-            {mode === "all" && showAll !== "coins" && restCoins.length > 4 && <button type="button" className="s-more" onClick={() => setShowAll("coins")}>See all {coins.length} coins</button>}
+            {mode === "all" && showAll !== "coins" && restCoins.length > 4 && <button type="button" className="s-more" onClick={() => setShowAll("coins")}>{tt("See all")}{" "}{coins.length} coins</button>}
           </>}
           {!top && !restUsers.length && !restCoins.length && !(isLoading && mode !== "coins") && (
-            <p className="s-hint" style={{ textAlign: "center", padding: "32px 16px" }}>Nothing matches “{term}”.{mode !== "all" && <> <button type="button" className="underline" onClick={() => { setFilter("all"); setRaw(term); }}>Search everything</button></>}</p>
+            <p className="s-hint" style={{ textAlign: "center", padding: "32px 16px" }}>{tt("Nothing matches “")}{term}”.{mode !== "all" && <> <button type="button" className="underline" onClick={() => { setFilter("all"); setRaw(term); }}>{tt("Search everything")}</button></>}</p>
           )}
         </>
       )}
       <div style={{ height: 120 }} />
-      <Link href="/markets" className="sr-only">All markets</Link>
+      <Link href="/markets" className="sr-only">{tt("All markets")}</Link>
     </div>
   );
 }

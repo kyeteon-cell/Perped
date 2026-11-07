@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useState } from "react";
 import { BUILDER_FEE_REFERRED_TENTHS_BPS } from "@/lib/config";
 
@@ -19,18 +21,18 @@ export function EarningsCalc({ sharePct, title = "What your people could earn yo
   const mine = fees * (sharePct / 100);
   return (
     <section className="calc">
-      <div className="calc-h"><span className="eyebrow">{title}</span><span className="calc-rate">{sharePct}% of their fees</span></div>
-      <div className="calc-out"><b className="mono">{money(mine)}</b><span>a month</span></div>
-      <div className="calc-sub">{money(mine * 12)} a year, every year they keep trading</div>
+      <div className="calc-h"><span className="eyebrow">{title}</span><span className="calc-rate">{sharePct}{tt("% of their fees")}</span></div>
+      <div className="calc-out"><b className="mono">{money(mine)}</b><span>{tt("a month")}</span></div>
+      <div className="calc-sub">{money(mine * 12)}{" "}{tt("a year, every year they keep trading")}</div>
       <label className="calc-row">
-        <span>People who trade with your link</span><b className="mono">{people.toLocaleString("en-US")}</b>
-        <input type="range" min={0} max={PEOPLE.length - 1} step={1} value={pi} onChange={(e) => setPi(Number(e.target.value))} aria-label="People who trade with your link" />
+        <span>{tt("People who trade with your link")}</span><b className="mono">{people.toLocaleString("en-US")}</b>
+        <input type="range" min={0} max={PEOPLE.length - 1} step={1} value={pi} onChange={(e) => setPi(Number(e.target.value))} aria-label={tt("People who trade with your link")} />
       </label>
       <label className="calc-row">
-        <span>Each trades a month</span><b className="mono">{money(vol)}</b>
-        <input type="range" min={0} max={VOLUME.length - 1} step={1} value={vi} onChange={(e) => setVi(Number(e.target.value))} aria-label="Volume each person trades a month" />
+        <span>{tt("Each trades a month")}</span><b className="mono">{money(vol)}</b>
+        <input type="range" min={0} max={VOLUME.length - 1} step={1} value={vi} onChange={(e) => setVi(Number(e.target.value))} aria-label={tt("Volume each person trades a month")} />
       </label>
-      <p className="calc-note">{money(people * vol)} traded a month × the {(rate * 100).toFixed(3)}% invite fee = {money(fees)} in fees, and {sharePct}% of that is yours. An estimate: real earnings follow what people actually trade, and demo trades don&rsquo;t pay.</p>
+      <p className="calc-note">{money(people * vol)}{" "}{tt("traded a month × the")}{" "}{(rate * 100).toFixed(3)}{tt("% invite fee =")}{" "}{money(fees)}{" "}{tt("in fees, and")}{" "}{sharePct}{tt("% of that is yours. An estimate: real earnings follow what people actually trade, and demo trades don’t pay.")}</p>
     </section>
   );
 }

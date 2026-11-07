@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { small } from "@/lib/img";
 import { useEffect, useMemo, useState } from "react";
 import { Sheet } from "./Sheet";
@@ -130,7 +132,7 @@ export function BattleShare({ data, onClose }: { data: BattleShareData; onClose:
   useEffect(() => {
     let off = false;
     setPng(null);
-    draw(frozen, key).then((c) => { if (!off) setPng(c.toDataURL("image/png")); }).catch(() => setMsg("Couldn't draw the card"));
+    draw(frozen, key).then((c) => { if (!off) setPng(c.toDataURL("image/png")); }).catch(() => setMsg(tt("Couldn't draw the card")));
     try { localStorage.setItem("perped:battle-bg", key); } catch {}
     return () => { off = true; };
   }, [frozen, key]);
@@ -144,25 +146,25 @@ export function BattleShare({ data, onClose }: { data: BattleShareData; onClose:
       const text = `${frozen.a.handle} vs ${frozen.b.handle} on ${frozen.coin}. Pick a side on Perped ${frozen.url}`;
       if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text });
       else if (navigator.share) await navigator.share({ text, url: frozen.url });
-      else { const a = document.createElement("a"); a.href = png; a.download = file.name; a.click(); setMsg("Image saved"); }
+      else { const a = document.createElement("a"); a.href = png; a.download = file.name; a.click(); setMsg(tt("Image saved")); }
     } catch { /* cancelled */ }
     setBusy(false);
   };
-  const copy = async () => { try { await navigator.clipboard.writeText(frozen.url); setMsg("Link copied"); } catch {} };
+  const copy = async () => { try { await navigator.clipboard.writeText(frozen.url); setMsg(tt("Link copied")); } catch {} };
 
   return (
-    <Sheet label="Share this fade" onClose={onClose}>
+    <Sheet label={tt("Share this fade")} onClose={onClose}>
       <div className="px-5 pb-6">
-        <div className="text-lg font-extrabold" data-sheet-handle>Share this fade</div>
-        <div className="bshare-prev mt-3">{png ? <img src={png} alt="Fade scorecard" /> : <div className="skel" style={{ aspectRatio: "4 / 5", borderRadius: 18 }} />}</div>
-        <div className="eyebrow mt-4">Background</div>
+        <div className="text-lg font-extrabold" data-sheet-handle>{tt("Share this fade")}</div>
+        <div className="bshare-prev mt-3">{png ? <img src={png} alt={tt("Fade scorecard")} /> : <div className="skel" style={{ aspectRatio: "4 / 5", borderRadius: 18 }} />}</div>
+        <div className="eyebrow mt-4">{tt("Background")}</div>
         <div className="themes mt-2">
           {BGS.map((t) => <button key={t.key} type="button" className={`theme-dot ${t.key === bg ? "on" : ""}`} onClick={() => setBg(t.key)} aria-label={t.name}><i style={{ backgroundImage: `url(${small(`/api/share-bg/${t.key}`, 128)})` }} /><span>{t.name}</span></button>)}
         </div>
         {msg && <p className="when mt-2 text-center">{msg}</p>}
         <div className="mt-4 grid grid-cols-[2fr_1fr] gap-2.5">
-          <button className="btn ink" onClick={share} disabled={!png || busy}>{busy ? "Opening…" : "Share image"}</button>
-          <button className="btn" onClick={copy}>Copy link</button>
+          <button className="btn ink" onClick={share} disabled={!png || busy}>{busy ? tt("Opening…") : tt("Share image")}</button>
+          <button className="btn" onClick={copy}>{tt("Copy link")}</button>
         </div>
       </div>
     </Sheet>

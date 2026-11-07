@@ -40,7 +40,7 @@ export const viewport: Viewport = {
 };
 
 // Runs before paint: resolves Day / Night / Auto from localStorage into data-theme so there is no flash.
-const themeScript = `(function(){try{var t=localStorage.getItem("perped-theme")||"auto";var d=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light");}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem("perped-theme")||"auto";var d=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light");}catch(e){}try{var l=localStorage.getItem("perped:lang");if(l&&l!=="en"){var h=document.documentElement;h.lang=l;h.setAttribute("data-lang-wait","1");setTimeout(function(){h.removeAttribute("data-lang-wait")},2500);}}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

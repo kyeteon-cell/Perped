@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/hooks/useSession";
@@ -30,33 +32,33 @@ export function SignInOptions({ compact = false, onDark = false }: { compact?: b
   return (
     <div className={`${cls} ${compact ? "compact" : ""}`}>
       <div className="sio-group">
-        <div className="sio-head"><span className="demo-tag">Demo</span><span>Practice with $10,000. No wallet needed.</span></div>
+        <div className="sio-head"><span className="demo-tag">{tt("Demo")}</span><span>{tt("Practice with $10,000. No wallet needed.")}</span></div>
         {prev && <button className="sio-continue" disabled={busy} onClick={() => back(prev.token)}><Icon d={I.user} size={16} />{busy ? "…" : `Continue as ${prev.handle}`}</button>}
         <div className="sio-row">
           <button onClick={() => go("twitter")}><Icon d={I.x} size={16} />X</button>
-          <button onClick={() => go("google")}><span className="g">G</span>Google</button>
-          <button onClick={() => go("email")}><Icon d={I.mail} size={16} />Email</button>
-          {DEMO_ENABLED && <button onClick={demo} disabled={busy}><Icon d={I.bolt} size={16} />{busy ? "…" : "Guest"}</button>}
+          <button onClick={() => go("google")}><span className="g">G</span>{tt("Google")}</button>
+          <button onClick={() => go("email")}><Icon d={I.mail} size={16} />{tt("Email")}</button>
+          {DEMO_ENABLED && <button onClick={demo} disabled={busy}><Icon d={I.bolt} size={16} />{busy ? "…" : tt("Guest")}</button>}
         </div>
       </div>
       {liveOk ? (
         <div className="sio-group">
-          <div className="sio-head"><span className="real-tag">Real</span><span>Your wallet becomes your Hyperliquid account.</span></div>
+          <div className="sio-head"><span className="real-tag">{tt("Real")}</span><span>{tt("Your wallet becomes your Hyperliquid account.")}</span></div>
           <div className="sio-row">
-            <button className="primary" onClick={() => go("wallet")}><Icon d={I.wallet} size={16} />Connect a wallet · trade real money</button>
+            <button className="primary" onClick={() => go("wallet")}><Icon d={I.wallet} size={16} />{tt("Connect a wallet · trade real money")}</button>
           </div>
         </div>
       ) : (
         <div className="sio-group live-off" role="button" tabIndex={0} onClick={gate(() => null)}>
-          <div className="sio-head"><span className="real-tag">Real</span><span>Real-money trading opens soon.</span><span className="soon-pill">Soon</span></div>
+          <div className="sio-head"><span className="real-tag">{tt("Real")}</span><span>{tt("Real-money trading opens soon.")}</span><span className="soon-pill">{tt("Soon")}</span></div>
           <div className="sio-row">
-            <button className="primary" onClick={(e) => { e.stopPropagation(); gate(() => null)(); }}><Icon d={I.lock} size={16} />Connect a wallet · coming soon</button>
+            <button className="primary" onClick={(e) => { e.stopPropagation(); gate(() => null)(); }}><Icon d={I.lock} size={16} />{tt("Connect a wallet · coming soon")}</button>
           </div>
         </div>
       )}
       <div className="mt-2 text-center">
-        {!restoring ? <button className="when underline" onClick={() => setRestoring(true)}>Have a guest key? Restore your account</button> : (
-          <div className="flex gap-2"><input className="field" style={{ padding: "8px 12px", fontSize: 13 }} placeholder="Paste your guest key" value={key} onChange={(e) => setKey(e.target.value)} /><button className="chip on" disabled={busy || !key.trim()} onClick={() => back(key)}>Restore</button></div>
+        {!restoring ? <button className="when underline" onClick={() => setRestoring(true)}>{tt("Have a guest key? Restore your account")}</button> : (
+          <div className="flex gap-2"><input className="field" style={{ padding: "8px 12px", fontSize: 13 }} placeholder={tt("Paste your guest key")} value={key} onChange={(e) => setKey(e.target.value)} /><button className="chip on" disabled={busy || !key.trim()} onClick={() => back(key)}>{tt("Restore")}</button></div>
         )}
       </div>
       {(loginError || guestError) && <p className="red mt-2 text-xs">{loginError ?? guestError}</p>}

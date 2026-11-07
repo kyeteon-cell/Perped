@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { siteOrigin } from "@/lib/config";
 import { small } from "@/lib/img";
 import { useEffect, useState } from "react";
@@ -35,23 +37,23 @@ export function TrophyCase({ handle }: { handle: string }) {
   const row = open ? R.get(open) : null;
   return (
     <section id="trophies" className="trophies">
-      <div className="flex items-center justify-between"><span className="eyebrow">Trophies</span><span className="when"><b style={{ color: "var(--text)" }}>{got.length}</b> of {TROPHIES.length}</span></div>
+      <div className="flex items-center justify-between"><span className="eyebrow">{tt("Trophies")}</span><span className="when"><b style={{ color: "var(--text)" }}>{got.length}</b> of {TROPHIES.length}</span></div>
       <div className="tro-meter"><i style={{ width: `${(got.length / TROPHIES.length) * 100}%` }} /></div>
       {got.length > 0 && (
         <>
-          <div className="tro-sub got"><span className="tro-tick" aria-hidden>✓</span>Unlocked · {got.length}</div>
+          <div className="tro-sub got"><span className="tro-tick" aria-hidden>✓</span>{tt("Unlocked ·")}{" "}{got.length}</div>
           <div className="tro-grid">
-            {got.map((t) => <button key={t.key} className={`tro got ${t.tier}`} onClick={() => setOpen(t.key)}><span className="tro-em"><Emblem t={t} size={64} /><span className="tro-check" aria-label="Unlocked">✓</span></span><b>{t.name}</b><span>{TIER_LABEL[t.tier]}{R.get(t.key)?.paper ? " · Demo" : ""}</span></button>)}
+            {got.map((t) => <button key={t.key} className={`tro got ${t.tier}`} onClick={() => setOpen(t.key)}><span className="tro-em"><Emblem t={t} size={64} /><span className="tro-check" aria-label={tt("Unlocked")}>✓</span></span><b>{t.name}</b><span>{TIER_LABEL[t.tier]}{R.get(t.key)?.paper ? tt(" · Demo") : ""}</span></button>)}
           </div>
         </>
       )}
       {locked.length > 0 && (
         <>
-          <div className="tro-sub"><span className="tro-lockic" aria-hidden><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg></span>Locked · {locked.length}</div>
+          <div className="tro-sub"><span className="tro-lockic" aria-hidden><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg></span>{tt("Locked ·")}{" "}{locked.length}</div>
           <div className="tro-grid">
             {locked.map((t) => {
               const r = R.get(t.key), pct = Math.min(100, Math.round(((r?.value ?? 0) / t.goal) * 100));
-              return <button key={t.key} className="tro locked" onClick={() => setOpen(t.key)}><span className="tro-em"><Emblem t={t} locked size={64} /><span className="tro-lock" aria-label="Locked"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg></span></span><b>{t.name}</b><span className="tro-bar"><i style={{ width: `${pct}%` }} /></span></button>;
+              return <button key={t.key} className="tro locked" onClick={() => setOpen(t.key)}><span className="tro-em"><Emblem t={t} locked size={64} /><span className="tro-lock" aria-label={tt("Locked")}><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg></span></span><b>{t.name}</b><span className="tro-bar"><i style={{ width: `${pct}%` }} /></span></button>;
             })}
           </div>
         </>
@@ -75,12 +77,12 @@ export function TrophySheet({ t, row, handle, onClose }: { t: Trophy; row: Troph
       <div className="tro-sheet px-5 pb-6">
         <div className={`tro-hero ${row.unlocked ? t.tier : "locked"}`}><Emblem t={t} locked={!row.unlocked} size={150} /></div>
         <div className="text-center">
-          <div className="flex items-center justify-center gap-2"><span className={`tro-tier ${t.tier}`}>{TIER_LABEL[t.tier]}{row.paper ? " · Demo" : ""}</span><span className={`tro-status ${row.unlocked ? "got" : ""}`}>{row.unlocked ? "✓ Unlocked" : "Locked"}</span></div>
+          <div className="flex items-center justify-center gap-2"><span className={`tro-tier ${t.tier}`}>{TIER_LABEL[t.tier]}{row.paper ? tt(" · Demo") : ""}</span><span className={`tro-status ${row.unlocked ? "got" : ""}`}>{row.unlocked ? tt("✓ Unlocked") : tt("Locked")}</span></div>
           <h2 className="mt-2 text-[24px] font-extrabold">{t.name}</h2>
           <p className="muted mt-1 text-[14px]">{t.desc}</p>
           <p className="when mt-2">{row.unlocked ? `Unlocked ${when(row.at)} · ${rareText(row.rarity)}` : `${progressText(t, row.value)} · ${rareText(row.rarity)}`}</p>
         </div>
-        {row.unlocked && <button className="btn ink mt-4 w-full" style={{ padding: 13, fontSize: 15 }} onClick={() => setShare(true)}>Share this trophy</button>}
+        {row.unlocked && <button className="btn ink mt-4 w-full" style={{ padding: 13, fontSize: 15 }} onClick={() => setShare(true)}>{tt("Share this trophy")}</button>}
       </div>
       {share && <TrophyShare t={t} row={row} handle={handle} onClose={() => setShare(false)} />}
     </Sheet>
@@ -156,7 +158,7 @@ export function TrophyShare({ t, row, handle, onClose }: { t: Trophy; row: Troph
   const invite = referralLink(origin, handle);
   useEffect(() => {
     let off = false; setPng(null);
-    drawTrophy(t, row, handle, bg, origin).then((c) => { if (!off) setPng(c.toDataURL("image/png")); }).catch(() => setMsg("Couldn't draw the card"));
+    drawTrophy(t, row, handle, bg, origin).then((c) => { if (!off) setPng(c.toDataURL("image/png")); }).catch(() => setMsg(tt("Couldn't draw the card")));
     try { localStorage.setItem("perped:trophy-bg", bg); } catch {}
     return () => { off = true; };
   }, [t, row, handle, bg, origin]);
@@ -169,22 +171,22 @@ export function TrophyShare({ t, row, handle, onClose }: { t: Trophy; row: Troph
       const text = `Unlocked ${t.name} on Perped. ${t.desc} Join with my code ${handle}: ${invite}`;
       if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text });
       else if (navigator.share) await navigator.share({ text, url: invite });
-      else { const a = document.createElement("a"); a.href = png; a.download = file.name; a.click(); setMsg("Image saved"); }
+      else { const a = document.createElement("a"); a.href = png; a.download = file.name; a.click(); setMsg(tt("Image saved")); }
     } catch { /* cancelled */ }
     setBusy(false);
   };
-  const copy = async () => { try { await navigator.clipboard.writeText(invite); setMsg("Invite link copied"); } catch {} };
+  const copy = async () => { try { await navigator.clipboard.writeText(invite); setMsg(tt("Invite link copied")); } catch {} };
   return (
     <Sheet label={`Share ${t.name}`} onClose={onClose}>
       <div className="px-5 pb-6">
-        <div className="text-lg font-extrabold" data-sheet-handle>Share {t.name}</div>
+        <div className="text-lg font-extrabold" data-sheet-handle>{tt("Share")}{" "}{t.name}</div>
         <div className="bshare-prev mt-3">{png ? <img src={png} alt={`${t.name} trophy card`} /> : <div className="skel" style={{ aspectRatio: "4 / 5", borderRadius: 18 }} />}</div>
-        <div className="eyebrow mt-4">Background</div>
+        <div className="eyebrow mt-4">{tt("Background")}</div>
         <div className="themes mt-2">{BGS.map((b) => <button key={b.key} type="button" className={`theme-dot ${b.key === bg ? "on" : ""}`} onClick={() => setBg(b.key)} aria-label={b.name}><i style={{ backgroundImage: `url(${small(`/api/share-bg/${b.key}`, 128)})` }} /><span>{b.name}</span></button>)}</div>
         {msg && <p className="when mt-2 text-center">{msg}</p>}
         <div className="mt-4 grid grid-cols-[2fr_1fr] gap-2.5">
-          <button className="btn ink" onClick={share} disabled={!png || busy}>{busy ? "Opening…" : "Share image"}</button>
-          <button className="btn" onClick={copy}>Copy invite</button>
+          <button className="btn ink" onClick={share} disabled={!png || busy}>{busy ? tt("Opening…") : tt("Share image")}</button>
+          <button className="btn" onClick={copy}>{tt("Copy invite")}</button>
         </div>
       </div>
     </Sheet>
@@ -203,10 +205,10 @@ export function TrophyPost({ handle, keys, demo, at }: { handle: string; keys: s
     <div className={`tro-post ${top.tier}`}>
       <div className="tro-post-ems">{ts.slice(0, 4).map((t) => <a key={t.key} href={`/u/${handle}?trophy=${t.key}`}><Emblem t={t} size={ts.length > 1 ? 64 : 92} /></a>)}</div>
       <div className="min-w-0 flex-1">
-        <span className={`tro-tier ${top.tier}`}>{ts.length > 1 ? `${ts.length} trophies` : TIER_LABEL[top.tier]}{demo ? " · Demo" : ""}</span>
+        <span className={`tro-tier ${top.tier}`}>{ts.length > 1 ? `${ts.length} trophies` : TIER_LABEL[top.tier]}{demo ? tt(" · Demo") : ""}</span>
         <div className="mt-1 text-[16px] font-extrabold leading-tight"><a href={`/u/${handle}`}>{handle}</a> unlocked {ts.map((t) => t.name).join(", ")}</div>
         {ts.length === 1 && <div className="when mt-0.5">{top.desc}</div>}
-        <button className="tro-share" onClick={() => setShare(top.key)}>Share</button>
+        <button className="tro-share" onClick={() => setShare(top.key)}>{tt("Share")}</button>
       </div>
       {share && <TrophyShare t={TROPHY[share]} row={row(share)} handle={handle} onClose={() => setShare(null)} />}
     </div>

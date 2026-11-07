@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { small } from "@/lib/img";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -59,49 +61,49 @@ export default function ChallengePage() {
   return (
     <main className="px-5 pb-10 pt-8">
       <div className="hero photo" style={{ backgroundImage: `url(${small("/api/share-bg/hero-chrome-gold", 1080)})`, margin: 0 }}>
-        <div className="k">You&rsquo;ve been challenged</div>
+        <div className="k">{tt("You’ve been challenged")}</div>
         <div className="mt-3 flex items-center gap-3">
           <Avatar handle={handle} url={author?.avatarUrl} size={48} />
           <div>
-            <div className="text-lg font-extrabold">{handle}{isDemoPost(data.post) && <span className="demo-tag ml-1.5">Demo</span>}</div>
-            <div className="text-[13px] opacity-90">{isTrade ? `is ${side} ${ticker(post.coin!)} ${post.leverage}× from ${fmtPrice(entry)}` : isCall ? `says ${ticker(post.coin!)} goes ${side === "long" ? "higher" : "lower"} from ${fmtPrice(entry)}` : "posted this"}</div>
+            <div className="text-lg font-extrabold">{handle}{isDemoPost(data.post) && <span className="demo-tag ml-1.5">{tt("Demo")}</span>}</div>
+            <div className="text-[13px] opacity-90">{isTrade ? `is ${side} ${ticker(post.coin!)} ${post.leverage}× from ${fmtPrice(entry)}` : isCall ? `says ${ticker(post.coin!)} goes ${side === "long" ? "higher" : "lower"} from ${fmtPrice(entry)}` : tt("posted this")}</div>
           </div>
         </div>
         {(isTrade || isCall) && (
           <div className="mt-4 flex items-end justify-between">
             <div className="flex items-center gap-2"><CoinMark coin={post.coin!} /><span className="text-2xl font-extrabold">{ticker(post.coin!, true)}</span></div>
-            <div className="text-right"><div className={`mono text-2xl font-bold ${live >= 0 ? "green" : "red"}`}>{fmtPct(live, 1)}</div><div className="text-[11px] opacity-85">{open ? "right now" : "final"}</div></div>
+            <div className="text-right"><div className={`mono text-2xl font-bold ${live >= 0 ? "green" : "red"}`}>{fmtPct(live, 1)}</div><div className="text-[11px] opacity-85">{open ? tt("right now") : "final"}</div></div>
           </div>
         )}
       </div>
 
-      {!open && <p className="muted mt-5 text-center text-sm">This one&rsquo;s already settled. Open the app and find them on the leaderboard.</p>}
-      {open && mine && <p className="muted mt-5 text-center text-sm">That&rsquo;s your own position — send this link to someone who thinks you&rsquo;re wrong.</p>}
+      {!open && <p className="muted mt-5 text-center text-sm">{tt("This one’s already settled. Open the app and find them on the leaderboard.")}</p>}
+      {open && mine && <p className="muted mt-5 text-center text-sm">{tt("That’s your own position — send this link to someone who thinks you’re wrong.")}</p>}
 
       {open && !mine && isTrade && (
         <div className="mt-5 flex flex-col gap-2.5">
-          <button className={`btn ${other}`} disabled={!!busy} onClick={fade}>{busy === "fade" ? "Setting you up…" : `Think they're wrong? Go ${other} · fade ${handle}`}</button>
-          <button className="btn" disabled={!!busy} onClick={copy}>{busy === "copy" ? "Setting you up…" : `Agree? Copy the trade`}</button>
+          <button className={`btn ${other}`} disabled={!!busy} onClick={fade}>{busy === "fade" ? tt("Setting you up…") : `Think they're wrong? Go ${other} · fade ${handle}`}</button>
+          <button className="btn" disabled={!!busy} onClick={copy}>{busy === "copy" ? tt("Setting you up…") : tt("Agree? Copy the trade")}</button>
         </div>
       )}
       {open && !mine && isCall && (
         <div className="mt-5 flex flex-col gap-2.5">
-          <button className={`btn ${other}`} disabled={!!busy} onClick={() => call(other)}>{busy === other ? "Locking in…" : `Think they're wrong? ${other === "long" ? "Higher" : "Lower"} in an hour`}</button>
-          <button className="btn" disabled={!!busy} onClick={() => call(side)}>{busy === side ? "Locking in…" : `Agree · ${side === "long" ? "Higher" : "Lower"}`}</button>
+          <button className={`btn ${other}`} disabled={!!busy} onClick={() => call(other)}>{busy === other ? tt("Locking in…") : `Think they're wrong? ${other === "long" ? "Higher" : "Lower"} in an hour`}</button>
+          <button className="btn" disabled={!!busy} onClick={() => call(side)}>{busy === side ? tt("Locking in…") : `Agree · ${side === "long" ? "Higher" : "Lower"}`}</button>
         </div>
       )}
       {err && <p className="red mt-3 text-center text-xs">{err}</p>}
 
       <div className="card mt-6" style={{ padding: 16 }}>
-        <div className="eyebrow">How this works</div>
+        <div className="eyebrow">{tt("How this works")}</div>
         <ul className="muted mt-2 flex flex-col gap-1.5 text-[13px]">
-          <li>• One tap gives you a <b>demo account with $10,000</b> of practice money at real Hyperliquid prices. No email, no wallet.</li>
-          <li>• Your result is public: win and it shows on {handle}&rsquo;s post. Lose and, well, you got perped.</li>
-          <li>• Want to trade real money later? Connect a wallet in Settings. {ref ? `Joining through ${ref}'s link gets you reduced fees.` : ""}</li>
+          <li>{tt("• One tap gives you a")}{" "}<b>{tt("demo account with $10,000")}</b>{" "}{tt("of practice money at real Hyperliquid prices. No email, no wallet.")}</li>
+          <li>{tt("• Your result is public: win and it shows on")}{" "}{handle}{tt("’s post. Lose and, well, you got perped.")}</li>
+          <li>{tt("• Want to trade real money later? Connect a wallet in Settings.")}{" "}{ref ? `Joining through ${ref}'s link gets you reduced fees.` : ""}</li>
         </ul>
-        <Link href="/how-it-works" className="chip mt-3 inline-flex">Where your money is &amp; how fees work →</Link>
+        <Link href="/how-it-works" className="chip mt-3 inline-flex">{tt("Where your money is & how fees work →")}</Link>
       </div>
-      <p className="faint mt-4 text-center text-[11px]">Perped · PvP perps on Hyperliquid · <Link href="/">open the app</Link></p>
+      <p className="faint mt-4 text-center text-[11px]">{tt("Perped · PvP perps on Hyperliquid ·")}{" "}<Link href="/">{tt("open the app")}</Link></p>
     </main>
   );
 }

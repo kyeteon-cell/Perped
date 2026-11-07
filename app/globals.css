@@ -2390,3 +2390,10 @@ body.min-h-dvh { min-height: 0; }
 .adm-step.leak { border-color: var(--red); }
 .adm-step.leak i { background: color-mix(in srgb, var(--red) 16%, transparent); }
 .adm-step.leak em { color: var(--red); font-weight: 800; }
+
+/* Language: hide the app for the moment it takes to switch the first render to the saved language. */
+html[data-lang-wait] #scroller, html[data-lang-wait] .nav { visibility: hidden; }
+.lang-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.lang-list button { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; text-align: left; }
+.lang-list button.on { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+.lang-list button small { color: var(--muted); font-weight: 700; font-size: 11px; }

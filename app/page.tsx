@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { onPageScroll, scrollToTop, scrollTopNow } from "@/lib/scroller";
 import { small } from "@/lib/img";
 import { useEffect, useRef, useState } from "react";
@@ -102,14 +104,14 @@ export default function HomePage() {
         <div className="home-banner-row">
         <div>
           <h1 className="m-0"><img src="/api/share-bg/logo-wordmark" alt="perped" className="logo-wordmark" /></h1>
-          <div className="home-banner-sub">Powered by Hyperliquid</div>
+          <div className="home-banner-sub">{tt("Powered by Hyperliquid")}</div>
         </div>
         <div className="flex gap-2">
-          {authenticated && <Link href="/compose" className="iconbtn glass" aria-label="Post"><Icon d={I.pen} /></Link>}
+          {authenticated && <Link href="/compose" className="iconbtn glass" aria-label={tt("Post")}><Icon d={I.pen} /></Link>}
           {authenticated && (
-            <Link href="/notifications" className="iconbtn glass" aria-label="Notifications"><Icon d={I.bell} />{unread > 0 && <span className="badge">{unread}</span>}</Link>
+            <Link href="/notifications" className="iconbtn glass" aria-label={tt("Notifications")}><Icon d={I.bell} />{unread > 0 && <span className="badge">{unread}</span>}</Link>
           )}
-          <Link href="/search" className="iconbtn glass" aria-label="Search"><Icon d={I.search} /></Link>
+          <Link href="/search" className="iconbtn glass" aria-label={tt("Search")}><Icon d={I.search} /></Link>
         </div>
         </div>
       </header>
@@ -117,7 +119,7 @@ export default function HomePage() {
       <div className="tabs mt-3" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         {(["foryou", "following", "live"] as Tab[]).map((t) => (
           <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>
-            {t === "foryou" ? "For you" : t === "following" ? "Following" : <>Live {connected && <span className="dot" />}</>}
+            {t === "foryou" ? tt("For you") : t === "following" ? tt("Following") : <>{tt("Live")}{" "}{connected && <span className="dot" />}</>}
           </button>
         ))}
       </div>
@@ -131,9 +133,9 @@ export default function HomePage() {
 
       <div className="realness">
         {(["all", "real", "demo"] as const).map((v) => v === "real" && !liveOk
-          ? <button key={v} className="chip live-off" onClick={gate(() => null)}>Real money<span className="soon-pill">Soon</span></button>
-          : <button key={v} className={`chip ${shown === v ? (v === "demo" ? "on demo-on" : v === "real" ? "on real-on" : "on") : ""}`} onClick={() => setRealnessP(v)}>{v === "all" ? "All trades" : v === "real" ? "Real money" : "Demo"}</button>)}
-        <button className={`chip ml-auto ${nFilters ? "on" : ""}`} onClick={() => setFiltering(true)}><Icon d={I.list} size={14} />Filter{nFilters ? ` · ${nFilters}` : ""}</button>
+          ? <button key={v} className="chip live-off" onClick={gate(() => null)}>{tt("Real money")}<span className="soon-pill">{tt("Soon")}</span></button>
+          : <button key={v} className={`chip ${shown === v ? (v === "demo" ? "on demo-on" : v === "real" ? "on real-on" : "on") : ""}`} onClick={() => setRealnessP(v)}>{v === "all" ? tt("All trades") : v === "real" ? tt("Real money") : tt("Demo")}</button>)}
+        <button className={`chip ml-auto ${nFilters ? "on" : ""}`} onClick={() => setFiltering(true)}><Icon d={I.list} size={14} />{tt("Filter")}{nFilters ? ` · ${nFilters}` : ""}</button>
       </div>
       {nFilters > 0 && <div className="flex items-center gap-2 px-5 pb-1"><span className="when truncate">{filterSummary(filter)}</span><button className="when ml-auto underline" onClick={() => setFilter(EMPTY_FILTER)}>clear</button></div>}
       {filtering && <FeedFilters value={filter} onChange={setFilter} onClose={() => setFiltering(false)} />}
@@ -141,10 +143,10 @@ export default function HomePage() {
       {isLoading && posts.length === 0 && <SkeletonList n={3} />}
       {!isLoading && posts.length === 0 && (
         <div className="block text-center" style={{ padding: "36px 24px" }}>
-          <h3 className="text-xl font-bold tracking-tight">{nFilters ? "Nothing matches those filters" : tab === "following" ? "Nobody you follow has posted yet" : "Your feed is quiet"}</h3>
-          {nFilters > 0 && <button className="chip mt-3" onClick={() => setFilter(EMPTY_FILTER)}>Clear filters</button>}
-          <p className="muted mx-auto mt-1.5 max-w-[28ch]">{tab === "following" ? "Follow a few traders and their trades show up here live." : "Open the first position and it shows up here for everyone to copy, fade, cheer or roast."}</p>
-          {tab === "following" ? null : <Link href="/markets" className="copy mt-4 inline-block">Place the first trade</Link>}
+          <h3 className="text-xl font-bold tracking-tight">{nFilters ? tt("Nothing matches those filters") : tab === "following" ? tt("Nobody you follow has posted yet") : tt("Your feed is quiet")}</h3>
+          {nFilters > 0 && <button className="chip mt-3" onClick={() => setFilter(EMPTY_FILTER)}>{tt("Clear filters")}</button>}
+          <p className="muted mx-auto mt-1.5 max-w-[28ch]">{tab === "following" ? tt("Follow a few traders and their trades show up here live.") : tt("Open the first position and it shows up here for everyone to copy, fade, cheer or roast.")}</p>
+          {tab === "following" ? null : <Link href="/markets" className="copy mt-4 inline-block">{tt("Place the first trade")}</Link>}
         </div>
       )}
       {!isLoading && posts.length === 0 && tab === "following" && suggested.length > 0 && <Suggested rows={suggested} />}
@@ -184,7 +186,7 @@ function groupFeed(rows: FeedRow[]): Array<{ kind: "one"; item: FeedRow } | { ki
 function Suggested({ rows }: { rows: { handle: string; pnl: number; winRate: string; avatarUrl?: string | null }[] }) {
   return (
     <div className="hairline py-4" data-tint="violet">
-      <div className="flex items-center justify-between px-5"><span className="eyebrow">Traders like you</span><span className="when">doing well this week</span></div>
+      <div className="flex items-center justify-between px-5"><span className="eyebrow">{tt("Traders like you")}</span><span className="when">{tt("doing well this week")}</span></div>
       <div className="hstrip mt-3">
         {rows.map((r) => (
           <div key={r.handle} className="hcard violet text-center" style={{ width: 140 }}>

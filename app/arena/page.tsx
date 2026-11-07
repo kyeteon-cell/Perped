@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { onPageScroll, scrollTopNow } from "@/lib/scroller";
 import { ArenaIntro } from "@/components/ArenaIntro";
 import { small } from "@/lib/img";
@@ -81,7 +83,7 @@ function GladBadge({ b, r }: { b: ArenaBattle; r: ReturnType<typeof readBattle> 
     <>
       <Glyph n="swords" />
       <span className="truncate"><b>{k.out.handle}</b> {k.how} {fmtPct(k.outRoi, 1)}{k.outLeg.closedAt ? ` · ${timeAgo(k.outLeg.closedAt)} ago` : ""}</span>
-      <span className="ml-auto flex items-center gap-1.5"><span className="muted">{k.still.handle} needs {fmtPct(k.outRoi, 1)}</span><span className={`glad-st ${k.winning ? "g" : "r"}`}>{k.winning ? "Winning" : "Chasing"}</span></span>
+      <span className="ml-auto flex items-center gap-1.5"><span className="muted">{k.still.handle} needs {fmtPct(k.outRoi, 1)}</span><span className={`glad-st ${k.winning ? "g" : "r"}`}>{k.winning ? tt("Winning") : tt("Chasing")}</span></span>
     </>
   );
 }
@@ -94,11 +96,11 @@ function PitCard({ x }: { x: Row }) {
   return (
     <div className="hub-card pit">
       <Link href={`/battle/${b.faderPostId}`} className="hub-body">
-        <div className="hub-head"><span className="hub-tag blood gl"><Glyph n="drop" />The Pit</span><span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span></div>
+        <div className="hub-head"><span className="hub-tag blood gl"><Glyph n="drop" />{tt("The Pit")}</span><span className="when"><CoinMark coin={b.coin} size="xs" />{ticker(b.coin)}</span></div>
         <div className="hub-f"><span className="hub-av win"><Avatar handle={r.winner.handle} url={r.winner.avatarUrl} size={34} link={false} xp={r.winner.xp} /><em><Glyph n="crown" tone="gold" /></em></span><b className="truncate">{r.winner.handle}</b><span className={`mono ${wr >= 0 ? "green" : "red"}`}>{fmtPct(wr, 1)}</span></div>
         <div className="hub-vs">vs</div>
         <div className="hub-f"><span className="hub-av crack"><Avatar handle={r.loser.handle} url={r.loser.avatarUrl} size={34} link={false} xp={r.loser.xp} /></span><b className="truncate">{r.loser.handle}</b><span className={`mono ${r.worst >= 0 ? "green" : "red"}`}>{fmtPct(r.worst, 1)}</span></div>
-        <div className="hub-foot">{r.minLiq < 50 ? <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span> : <span className="when">{fmtPct(r.gap, 1).replace(/^[+−-]/, "")} gap</span>}</div>
+        <div className="hub-foot">{r.minLiq < 50 ? <span className="ab-warn">{tt("liq in")}{" "}{r.minLiq.toFixed(1)}%</span> : <span className="when">{fmtPct(r.gap, 1).replace(/^[+−-]/, "")} gap</span>}</div>
       </Link>
       <FinishSave b={b} winner={r.winner} loser={r.loser} compact />
     </div>
@@ -111,20 +113,20 @@ function StandingCard({ list }: { list: Row[] }) {
   const x = list[Math.min(i, list.length - 1)];
   if (!x) return (
     <div className="hub-card stand empty">
-      <div className="hub-head"><span className="hub-tag chrome gl"><Glyph n="swords" />Last standing</span></div>
-      <p className="when mt-2">When one side of a fade gets knocked out and the other is still in, they show up here for 24 hours.</p>
+      <div className="hub-head"><span className="hub-tag chrome gl"><Glyph n="swords" />{tt("Last standing")}</span></div>
+      <p className="when mt-2">{tt("When one side of a fade gets knocked out and the other is still in, they show up here for 24 hours.")}</p>
     </div>
   );
   const k = koInfo(x.b, x.r);
   return (
     <div className="hub-card stand">
       <Link href={`/battle/${x.b.faderPostId}`} className="hub-body">
-        <div className="hub-head"><span className="hub-tag chrome gl"><Glyph n="swords" />Last standing</span><span className="when"><CoinMark coin={x.b.coin} size="xs" />{ticker(x.b.coin)}</span></div>
+        <div className="hub-head"><span className="hub-tag chrome gl"><Glyph n="swords" />{tt("Last standing")}</span><span className="when"><CoinMark coin={x.b.coin} size="xs" />{ticker(x.b.coin)}</span></div>
         <div className="hub-solo">
           <span className="hub-av big"><Avatar handle={k.still.handle} url={k.still.avatarUrl} size={48} link={false} xp={k.still.xp} /></span>
           <b className="truncate">{k.still.handle}</b>
           <span className={`mono hub-roi ${k.stillRoi >= 0 ? "green" : "red"}`}>{fmtPct(k.stillRoi, 1)}</span>
-          <span className={`glad-st ${k.winning ? "g" : "r"}`}>{k.winning ? "Winning" : "Chasing"}</span>
+          <span className={`glad-st ${k.winning ? "g" : "r"}`}>{k.winning ? tt("Winning") : tt("Chasing")}</span>
         </div>
         <div className="hub-foot when truncate"><b>{k.out.handle}</b> {k.how} {fmtPct(k.outRoi, 1)}{k.outLeg.closedAt ? ` · ${timeAgo(k.outLeg.closedAt)}` : ""}</div>
         {k.outLeg.closedAt && <div className="hub-left">{leftOf(k.outLeg.closedAt)}</div>}
@@ -188,7 +190,7 @@ function FightCard({ x, tag, cls }: { x: Row; tag: ReactNode; cls: string }) {
             </div>
           );
         })}
-        <div className="hub-foot">{x.r.minLiq < 50 ? <span className="ab-warn">liq in {x.r.minLiq.toFixed(1)}%</span> : <span className="when">{fmtPct(x.r.gap, 1).replace(/^[+−-]/, "")} gap · {timeAgo(b.createdAt)}</span>}</div>
+        <div className="hub-foot">{x.r.minLiq < 50 ? <span className="ab-warn">{tt("liq in")}{" "}{x.r.minLiq.toFixed(1)}%</span> : <span className="when">{fmtPct(x.r.gap, 1).replace(/^[+−-]/, "")}{" "}{tt("gap ·")}{" "}{timeAgo(b.createdAt)}</span>}</div>
       </Link>
       <FinishSave b={b} winner={x.r.winner} loser={x.r.loser} quiet />
     </div>
@@ -202,29 +204,29 @@ function AllHub({ rows, nem, high, mine, list }: { rows: Row[]; nem: Row[]; high
   return (
     <div className="mt-3 flex flex-col gap-3">
       <div className="hub-hero">
-        <FightCard x={main} cls="main" tag={<span className="hub-tag gold gl"><Glyph n="trophy" />Main event</span>} />
-        {mine && mine.b.id !== main.b.id ? <FightCard x={mine} cls="yours" tag={<span className="hub-tag ink gl"><Glyph n="swords" />Your fight</span>} />
+        <FightCard x={main} cls="main" tag={<span className="hub-tag gold gl"><Glyph n="trophy" />{tt("Main event")}</span>} />
+        {mine && mine.b.id !== main.b.id ? <FightCard x={mine} cls="yours" tag={<span className="hub-tag ink gl"><Glyph n="swords" />{tt("Your fight")}</span>} />
           : (
             <div className="hub-card yours empty">
-              <div className="hub-head"><span className="hub-tag ink gl"><Glyph n="swords" />Your fight</span></div>
-              <p className="when mt-1">{mine ? "You're in the main event." : "You're not in a fade right now. Fade a trade from the feed and your fight lives here."}</p>
-              <Link href="/" className="hub-btn mt-auto text-center">Find a trade to fade</Link>
+              <div className="hub-head"><span className="hub-tag ink gl"><Glyph n="swords" />{tt("Your fight")}</span></div>
+              <p className="when mt-1">{mine ? tt("You're in the main event.") : tt("You're not in a fade right now. Fade a trade from the feed and your fight lives here.")}</p>
+              <Link href="/" className="hub-btn mt-auto text-center">{tt("Find a trade to fade")}</Link>
             </div>
           )}
       </div>
       {nem.length > 0 && (
         <section>
-          <div className="asub"><Glyph n="skull" /><b>Vendettas</b><span className="when">swipe</span></div>
+          <div className="asub"><Glyph n="skull" /><b>{tt("Vendettas")}</b><span className="when">swipe</span></div>
           <div className="hub-rail">{nem.map((x) => <MiniFight key={x.b.id} x={x} lead />)}</div>
         </section>
       )}
       {high.length > 0 && (
         <section>
-          <div className="asub"><Glyph n="flame" /><b>High stakes</b><span className="when">swipe</span></div>
+          <div className="asub"><Glyph n="flame" /><b>{tt("High stakes")}</b><span className="when">swipe</span></div>
           <div className="hub-rail">{high.slice(0, 12).map((x) => <MiniFight key={x.b.id} x={x} lead />)}</div>
         </section>
       )}
-      <div className="asub"><Glyph n="bolt" /><b>Every fade</b><span className="when">{rows.length} live</span></div>
+      <div className="asub"><Glyph n="bolt" /><b>{tt("Every fade")}</b><span className="when">{rows.length} live</span></div>
       {list}
     </div>
   );
@@ -237,7 +239,7 @@ function KillTicker({ kills }: { kills: ArenaBattle[] }) {
     const w = b.winnerId === b.fader.id ? b.fader : b.target, l = w.id === b.fader.id ? b.target : b.fader;
     return <Link key={b.id} href={`/battle/${b.faderPostId}`} className="kt-item"><Glyph n="skull" tone="blood" /><b>{w.handle}</b> perped <b>{l.handle}</b><span className="when">{ticker(b.coin)} · {timeAgo(b.settledAt ?? b.createdAt)}</span></Link>;
   });
-  return <div className="kticker" aria-label="Eliminations"><div className="kt-track">{items}{items.map((it, i) => <span key={`d${i}`} aria-hidden>{it}</span>)}</div></div>;
+  return <div className="kticker" aria-label={tt("Eliminations")}><div className="kt-track">{items}{items.map((it, i) => <span key={`d${i}`} aria-hidden>{it}</span>)}</div></div>;
 }
 
 /** The Bloodbath as a hub: numbers up top, the Pit beside Last standing, then swipeable rails. */
@@ -246,24 +248,24 @@ function BloodHub({ blood, knocked, rekt, data }: { blood: Row[]; knocked: Row[]
   return (
     <div className="mt-3 flex flex-col gap-3">
       <div className="hub-stats">
-        <div><b className="mono">{blood.length}</b><span>getting perped</span></div>
-        <div><b className="mono">{knocked.length}</b><span>knocked out</span></div>
-        <div><b className="mono">{kills24}</b><span>liquidated 24h</span></div>
-        <div><b className="mono">{blood[0] ? fmtPct(blood[0].r.gap, 0).replace(/^[+−-]/, "") : "–"}</b><span>widest gap</span></div>
+        <div><b className="mono">{blood.length}</b><span>{tt("getting perped")}</span></div>
+        <div><b className="mono">{knocked.length}</b><span>{tt("knocked out")}</span></div>
+        <div><b className="mono">{kills24}</b><span>{tt("liquidated 24h")}</span></div>
+        <div><b className="mono">{blood[0] ? fmtPct(blood[0].r.gap, 0).replace(/^[+−-]/, "") : "–"}</b><span>{tt("widest gap")}</span></div>
       </div>
       <div className="hub-hero">
-        {blood[0] ? <PitCard x={blood[0]} /> : <div className="hub-card pit empty"><div className="hub-head"><span className="hub-tag blood gl"><Glyph n="drop" />The Pit</span></div><p className="when mt-2">No bloodbaths right now. Everyone&rsquo;s still standing.</p></div>}
+        {blood[0] ? <PitCard x={blood[0]} /> : <div className="hub-card pit empty"><div className="hub-head"><span className="hub-tag blood gl"><Glyph n="drop" />{tt("The Pit")}</span></div><p className="when mt-2">{tt("No bloodbaths right now. Everyone’s still standing.")}</p></div>}
         <StandingCard list={knocked} />
       </div>
       {blood.length > 1 && (
         <section>
-          <div className="asub"><Glyph n="drop" /><b>Getting perped</b><span className="when">swipe</span></div>
+          <div className="asub"><Glyph n="drop" /><b>{tt("Getting perped")}</b><span className="when">swipe</span></div>
           <div className="hub-rail">{blood.slice(1).map((x) => <MiniFight key={x.b.id} x={x} />)}</div>
         </section>
       )}
       {rekt.length > 0 && (
         <section>
-          <div className="asub"><Glyph n="tomb" /><b>Graveyard</b><span className="when">recently liquidated</span></div>
+          <div className="asub"><Glyph n="tomb" /><b>{tt("Graveyard")}</b><span className="when">{tt("recently liquidated")}</span></div>
           <div className="hub-rail">{rekt.map((x) => <MiniFight key={x.b.id} x={x} rekt />)}</div>
         </section>
       )}
@@ -289,7 +291,7 @@ function BattleRow({ b, mid, badge, noChase }: { b: ArenaBattle; mid: number; ba
   return (
     <Link href={`/battle/${b.faderPostId}`} className={`arow ${b.nemesis ? "nemesis" : ""} ${flip ? "flip" : ""}`}>
       {b.nemesis && <NemesisBar b={b} />}
-      {isFightNight(b.createdAt) && b.status === "open" && <span className="fn-badge gl"><Glyph n="glove" />Fight Night · 2× XP</span>}
+      {isFightNight(b.createdAt) && b.status === "open" && <span className="fn-badge gl"><Glyph n="glove" />{tt("Fight Night · 2× XP")}</span>}
       {!settled && !noChase && (b.faderLeg.status === "closed" || b.targetLeg.status === "closed") && (() => {
         const fBanked = b.faderLeg.status === "closed", banker = fBanked ? b.fader : b.target, chaser = fBanked ? b.target : b.fader;
         const bank = fBanked ? a : t, now = fBanked ? t : a;
@@ -321,7 +323,7 @@ function FightNight() {
     tick(); const id = setInterval(tick, 30_000); return () => clearInterval(id);
   }, []);
   if (!t) return null;
-  return <Link href="/how-it-works#fight-night" className={`fightnight ${t === "live" ? "on" : ""}`}><span className="gl"><Glyph n="glove" />{t === "live" ? "Fight Night · LIVE" : `Fight Night in ${t}`}</span></Link>;
+  return <Link href="/how-it-works#fight-night" className={`fightnight ${t === "live" ? "on" : ""}`}><span className="gl"><Glyph n="glove" />{t === "live" ? tt("Fight Night · LIVE") : `Fight Night in ${t}`}</span></Link>;
 }
 
 /** Sworn rivals meeting again: the series so far and which meeting this is. */
@@ -330,8 +332,8 @@ function NemesisBar({ b }: { b: ArenaBattle }) {
   const lead = n.faderWins === n.targetWins ? "series level" : `${n.faderWins > n.targetWins ? b.fader.handle : b.target.handle} leads`;
   return (
     <div className="nem-bar">
-      <span className="nem-tag gl"><Glyph n="skull" />Vendetta</span>
-      <span className="nem-txt">Meeting #{n.meeting} · <b className="mono">{n.faderWins}–{n.targetWins}</b> · {lead}</span>
+      <span className="nem-tag gl"><Glyph n="skull" />{tt("Vendetta")}</span>
+      <span className="nem-txt">{tt("Meeting #")}{n.meeting} · <b className="mono">{n.faderWins}–{n.targetWins}</b> · {lead}</span>
     </div>
   );
 }
@@ -345,18 +347,18 @@ function CallOut({ onPick, onClose, rivals }: { onPick: (h: string) => void; onC
   const { data } = useSWR<{ users: { handle: string; avatarUrl: string | null; xp: number }[] }>(`/api/users?q=${encodeURIComponent(dq)}`);
   const list = (data?.users ?? []).filter((u) => u.handle !== profile?.handle);
   return (
-    <Sheet label="Call someone out" onClose={onClose}>
+    <Sheet label={tt("Call someone out")} onClose={onClose}>
       <div className="px-5 pb-6">
-        <div className="text-lg font-extrabold" data-sheet-handle>Call someone out</div>
+        <div className="text-lg font-extrabold" data-sheet-handle>{tt("Call someone out")}</div>
         <p className="muted text-sm">Pick a trader. You choose the coin, your side and the clock; they take the other side.</p>
-        <input className="field mt-3" placeholder="Search a handle" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
-        {!q && rivals.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{rivals.map((h) => <button key={h} className="chip" onClick={() => onPick(h)}>Rematch {h}</button>)}</div>}
+        <input className="field mt-3" placeholder={tt("Search a handle")} value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
+        {!q && rivals.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{rivals.map((h) => <button key={h} className="chip" onClick={() => onPick(h)}>{tt("Rematch")}{" "}{h}</button>)}</div>}
         <div className="mt-2 flex flex-col">
           {list.map((u) => (
             <button key={u.handle} className="lb" style={{ width: "100%", textAlign: "left", background: "none", border: 0 }} onClick={() => onPick(u.handle)}>
               <Avatar handle={u.handle} url={u.avatarUrl} size={36} link={false} xp={u.xp} />
               <div className="min-w-0 flex-1"><div className="name">{u.handle}</div><div className="when">{rankFor(u.xp).title} · {u.xp.toLocaleString()} XP</div></div>
-              <span className="chip on"><Glyph n="swords" />Challenge</span>
+              <span className="chip on"><Glyph n="swords" />{tt("Challenge")}</span>
             </button>
           ))}
         </div>
@@ -372,73 +374,73 @@ function ArenaHow({ onClose }: { onClose: () => void }) {
     <section className="ah-sec"><h3 className="gl"><Glyph n={icon} />{title}</h3>{children}</section>
   );
   return (
-    <Sheet label="How the Arena works" onClose={onClose}>
+    <Sheet label={tt("How the Arena works")} onClose={onClose}>
       <div className="ah px-5 pb-6">
-        <h2 className="text-[22px] font-extrabold leading-tight">How the Arena works</h2>
-        <p className="muted mt-1 text-[14px]">Every live fade on Perped in one place. Here&rsquo;s exactly how fights start, how they&rsquo;re won and what everything on this page means.</p>
+        <h2 className="text-[22px] font-extrabold leading-tight">{tt("How the Arena works")}</h2>
+        <p className="muted mt-1 text-[14px]">{tt("Every live fade on Perped in one place. Here’s exactly how fights start, how they’re won and what everything on this page means.")}</p>
 
-        <S icon="bolt" title="A fade is a fight">
+        <S icon="bolt" title={tt("A fade is a fight")}>
           <ul>
-            <li><b>Fading a trade starts it:</b> same coin, the opposite side. Quick fade uses the trader&rsquo;s exact leverage and adds a stop loss for you.</li>
-            <li><b>Higher ROI wins</b> (leverage included). Under 0.5% apart is a draw. Getting liquidated loses on the spot.</li>
-            <li><b>Bank and chase:</b> if one side closes first, their ROI is locked in. The side still in has to beat it when they close, or they lose.</li>
-            <li>It settles when both positions close. After 7 days, anything still open is marked at the live price.</li>
-            <li>You can fade a trade once. Anyone else can pile in, so one trade can have many fights.</li>
+            <li><b>{tt("Fading a trade starts it:")}</b>{" "}{tt("same coin, the opposite side. Quick fade uses the trader’s exact leverage and adds a stop loss for you.")}</li>
+            <li><b>{tt("Higher ROI wins")}</b>{" "}{tt("(leverage included). Under 0.5% apart is a draw. Getting liquidated loses on the spot.")}</li>
+            <li><b>{tt("Bank and chase:")}</b>{" "}{tt("if one side closes first, their ROI is locked in. The side still in has to beat it when they close, or they lose.")}</li>
+            <li>{tt("It settles when both positions close. After 7 days, anything still open is marked at the live price.")}</li>
+            <li>{tt("You can fade a trade once. Anyone else can pile in, so one trade can have many fights.")}</li>
           </ul>
         </S>
 
-        <S icon="drop" title="Health bars">
+        <S icon="drop" title={tt("Health bars")}>
           <ul>
-            <li>100% at your entry, 0% at your stop loss, or at liquidation if you have no stop.</li>
-            <li>Under 40% they bleed. A stop already in profit shows full: that fight can&rsquo;t be lost.</li>
+            <li>{tt("100% at your entry, 0% at your stop loss, or at liquidation if you have no stop.")}</li>
+            <li>{tt("Under 40% they bleed. A stop already in profit shows full: that fight can’t be lost.")}</li>
           </ul>
         </S>
 
-        <S icon="people" title="Finding fights">
+        <S icon="people" title={tt("Finding fights")}>
           <ul>
-            <li><b>Everyone / Following:</b> all fades, or only yours, people you follow and your rivals. It works with every tab below.</li>
-            <li><b>All:</b> the <b>Main event</b> (the riskiest fight right now) next to <b>Your fight</b>, then Vendettas and High stakes to swipe, then every fade.</li>
-            <li><b>Vendettas:</b> two traders in a feud: they&rsquo;ve fought each other more than anyone else, or one called the other out. Shows the series score.</li>
-            <li><b>High stakes:</b> 20× or more, a $5k+ position, or someone within 10% of liquidation.</li>
+            <li><b>{tt("Everyone / Following:")}</b>{" "}{tt("all fades, or only yours, people you follow and your rivals. It works with every tab below.")}</li>
+            <li><b>{tt("All:")}</b> the <b>{tt("Main event")}</b>{" "}{tt("(the riskiest fight right now) next to")}{" "}<b>{tt("Your fight")}</b>{tt(", then Vendettas and High stakes to swipe, then every fade.")}</li>
+            <li><b>{tt("Vendettas:")}</b>{" "}{tt("two traders in a feud: they’ve fought each other more than anyone else, or one called the other out. Shows the series score.")}</li>
+            <li><b>{tt("High stakes:")}</b>{" "}{tt("20× or more, a $5k+ position, or someone within 10% of liquidation.")}</li>
           </ul>
         </S>
 
-        <S icon="skull" title="Bloodbath">
+        <S icon="skull" title={tt("Bloodbath")}>
           <ul>
-            <li>Fights where one side is more than 7% ahead of the other.</li>
-            <li><b>The Pit:</b> the most one-sided fight right now.</li>
-            <li><b>Last standing:</b> one side is out (stopped, liquidated or banked) and the other is still in. Newest first; each stays 24 hours. <b>Winning</b> means they&rsquo;re beating the number the other side finished on; <b>Chasing</b> means they&rsquo;re not, yet.</li>
-            <li><b>Getting perped:</b> the rest of the one-sided fights, to swipe through.</li>
-            <li><b>Graveyard and eliminations:</b> recent liquidations. <b>Body count:</b> this week&rsquo;s Butcher (most people perped) and Most rekt.</li>
+            <li>{tt("Fights where one side is more than 7% ahead of the other.")}</li>
+            <li><b>{tt("The Pit:")}</b>{" "}{tt("the most one-sided fight right now.")}</li>
+            <li><b>{tt("Last standing:")}</b> one side is out (stopped, liquidated or banked) and the other is still in. Newest first; each stays 24 hours. <b>{tt("Winning")}</b> means they&rsquo;re beating the number the other side finished on; <b>{tt("Chasing")}</b>{" "}{tt("means they’re not, yet.")}</li>
+            <li><b>{tt("Getting perped:")}</b>{" "}{tt("the rest of the one-sided fights, to swipe through.")}</li>
+            <li><b>{tt("Graveyard and eliminations:")}</b>{" "}{tt("recent liquidations.")}{" "}<b>{tt("Body count:")}</b>{" "}{tt("this week’s Butcher (most people perped) and Most rekt.")}</li>
           </ul>
         </S>
 
-        <S icon="dagger" title="Backing a side">
+        <S icon="dagger" title={tt("Backing a side")}>
           <ul>
-            <li><b>Back</b> on any fight copies that fighter&rsquo;s trade. One tap: you pick the size, it uses their leverage.</li>
-            <li>In the Bloodbath it&rsquo;s <b>Finish them</b> (back the winner) or <b>Save them</b> (back the loser for a comeback).</li>
-            <li>The two fighters can&rsquo;t back either side of their own fight.</li>
+            <li><b>{tt("Back")}</b>{" "}{tt("on any fight copies that fighter’s trade. One tap: you pick the size, it uses their leverage.")}</li>
+            <li>{tt("In the Bloodbath it’s")}{" "}<b>{tt("Finish them")}</b>{" "}{tt("(back the winner) or")}{" "}<b>{tt("Save them")}</b>{" "}{tt("(back the loser for a comeback).")}</li>
+            <li>{tt("The two fighters can’t back either side of their own fight.")}</li>
           </ul>
         </S>
 
-        <S icon="swords" title="Call someone out">
+        <S icon="swords" title={tt("Call someone out")}>
           <ul>
             <li>A <b>duel</b>: a timed head-to-head they accept by link. The start price is the live price when they accept; whoever is ahead when the clock runs out wins.</li>
-            <li>Fight the same trader three times, or call them out, and you become <b>rivals</b>: you&rsquo;re pinged with a one-tap fade whenever they trade.</li>
+            <li>{tt("Fight the same trader three times, or call them out, and you become")}{" "}<b>rivals</b>{tt(": you’re pinged with a one-tap fade whenever they trade.")}</li>
           </ul>
         </S>
 
-        <S icon="trophy" title="XP and ranks">
+        <S icon="trophy" title={tt("XP and ranks")}>
           <ul>
-            <li><b>Fade win +60</b> (+30 for winning by 20%+, +40 for beating someone two ranks above you). Loss +10. Draw +20. Liquidated: nothing.</li>
-            <li><b>Duel win +75</b>, loss +10. From Knife Catcher up, losses cost XP, so ranks can be lost.</li>
-            <li><b>Streak bounties:</b> anyone on 5+ wins carries one. Break it for 25 XP plus 10 per win in their streak.</li>
-            <li><b>Fight Night:</b> 9 to 10pm Bangkok time every night. Fades started in that hour pay double XP.</li>
-            <li><b>Trophies:</b> fights earn them too: Hat Trick, Giant Slayer, Executioner, Comeback Kid and more. They&rsquo;re on your profile&rsquo;s Stats tab.</li>
+            <li><b>{tt("Fade win +60")}</b>{" "}{tt("(+30 for winning by 20%+, +40 for beating someone two ranks above you). Loss +10. Draw +20. Liquidated: nothing.")}</li>
+            <li><b>{tt("Duel win +75")}</b>{tt(", loss +10. From Knife Catcher up, losses cost XP, so ranks can be lost.")}</li>
+            <li><b>{tt("Streak bounties:")}</b>{" "}{tt("anyone on 5+ wins carries one. Break it for 25 XP plus 10 per win in their streak.")}</li>
+            <li><b>{tt("Fight Night:")}</b>{" "}{tt("9 to 10pm Bangkok time every night. Fades started in that hour pay double XP.")}</li>
+            <li><b>{tt("Trophies:")}</b>{" "}{tt("fights earn them too: Hat Trick, Giant Slayer, Executioner, Comeback Kid and more. They’re on your profile’s Stats tab.")}</li>
           </ul>
         </S>
 
-        <Link href="/how-it-works#arena" className="btn mt-4 w-full" style={{ padding: 12, fontSize: 14 }} onClick={onClose}>Full rules</Link>
+        <Link href="/how-it-works#arena" className="btn mt-4 w-full" style={{ padding: 12, fontSize: 14 }} onClick={onClose}>{tt("Full rules")}</Link>
       </div>
     </Sheet>
   );
@@ -466,15 +468,15 @@ export default function ArenaPage() {
     <div className="fade-in pb-8" data-tint="gold">
       <ArenaIntro />
       <div className={`arena-sticky ${stuck ? "on" : ""}`} aria-hidden={!stuck}>
-        <b className="text-[15px] font-extrabold">Arena</b>
+        <b className="text-[15px] font-extrabold">{tt("Arena")}</b>
         {me && <span className="mono text-[13px] font-bold"><span>{me.won}</span><span className="muted">–</span><span className="muted">{me.lost}</span></span>}
         {me && me.streak > 0 && <span className="gl text-[13px] font-bold"><Glyph n="flame" tone="gold" />{me.streak}</span>}
         <span className="ml-auto"><FightNight /></span>
       </div>
       <header className="lb-hero" style={{ backgroundImage: `url(${small("/api/share-bg/hero-bulls", 1080)})` }}>
-        <div className="flex items-center justify-between gap-2"><h1 className="h1" style={{ color: "#fff" }}>Arena</h1><button className="arena-how" onClick={() => setHow(true)}>How it works</button></div>
-        <div className="text-[12px]" style={{ color: "rgba(255,255,255,.85)" }}>Fade someone and it&rsquo;s on. Call them out and it&rsquo;s a duel. Winner takes the XP.</div>
-        <div className="mt-3 flex flex-wrap items-center gap-2"><button className="arena-cta" onClick={callOut}><span className="gl"><Glyph n="swords" />Call someone out</span></button><FightNight /></div>
+        <div className="flex items-center justify-between gap-2"><h1 className="h1" style={{ color: "#fff" }}>{tt("Arena")}</h1><button className="arena-how" onClick={() => setHow(true)}>{tt("How it works")}</button></div>
+        <div className="text-[12px]" style={{ color: "rgba(255,255,255,.85)" }}>{tt("Fade someone and it’s on. Call them out and it’s a duel. Winner takes the XP.")}</div>
+        <div className="mt-3 flex flex-wrap items-center gap-2"><button className="arena-cta" onClick={callOut}><span className="gl"><Glyph n="swords" />{tt("Call someone out")}</span></button><FightNight /></div>
       </header>
 
       {!data && (arenaErr ? <LoadFail retry={() => retryArena()} /> : <SkeletonList n={3} card={false} />)}
@@ -484,22 +486,22 @@ export default function ArenaPage() {
           <div className="flex items-center gap-3">
             <RankEmblem level={lvl.level} size={52} />
             <div className="flex-1">
-              <div className="eyebrow">Your record</div>
+              <div className="eyebrow">{tt("Your record")}</div>
               <div className="mono text-[24px] font-bold"><span>{me.won}</span><span className="muted"> – </span><span className="muted">{me.lost}</span>{me.drawn ? <span className="muted text-[15px]"> · {me.drawn} drawn</span> : null}</div>
             </div>
-            <div className="text-right"><div className="text-[22px] font-extrabold">{me.streak > 0 ? <span className="gl"><Glyph n="flame" tone="gold" />{me.streak}</span> : "—"}</div><div className="when text-[11px]">streak · best {me.best}</div></div>
+            <div className="text-right"><div className="text-[22px] font-extrabold">{me.streak > 0 ? <span className="gl"><Glyph n="flame" tone="gold" />{me.streak}</span> : "—"}</div><div className="when text-[11px]">{tt("streak · best")}{" "}{me.best}</div></div>
           </div>
         </section>
       )}
 
       {me && me.challenges.length > 0 && (
         <section className="block">
-          <div className="eyebrow" style={{ color: "var(--red)" }}>You&rsquo;ve been called out</div>
+          <div className="eyebrow" style={{ color: "var(--red)" }}>{tt("You’ve been called out")}</div>
           {me.challenges.map((c) => (
             <Link key={c.id} href={`/duels/${c.id}`} className="lb">
               <Avatar handle={c.from.handle} url={c.from.avatarUrl} size={40} link={false} xp={c.from.xp} />
-              <div className="min-w-0 flex-1"><div className="name">{c.from.handle}</div><div className="when">{c.side} {ticker(c.coin)} · {fmtUsd(c.stakeUsd)} each · {c.hours}h</div></div>
-              <span className="chip on">Answer</span>
+              <div className="min-w-0 flex-1"><div className="name">{c.from.handle}</div><div className="when">{c.side} {ticker(c.coin)} · {fmtUsd(c.stakeUsd)}{" "}{tt("each ·")}{" "}{c.hours}h</div></div>
+              <span className="chip on">{tt("Answer")}</span>
             </Link>
           ))}
         </section>
@@ -510,12 +512,12 @@ export default function ArenaPage() {
 
       {me && me.rivals.length > 0 && (
         <section className="block">
-          <div className="eyebrow">Your rivals</div>
+          <div className="eyebrow">{tt("Your rivals")}</div>
           {me.rivals.map((r) => (
             <div key={r.user.id} className="lb">
               <Avatar handle={r.user.handle} url={r.user.avatarUrl} size={40} xp={r.user.xp} />
-              <div className="min-w-0 flex-1"><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="name">{r.user.handle}</Link><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="mono when block"><span style={{ color: "var(--text)" }}>{r.won}W</span> · <span>{r.lost}L</span> · see the series →</Link></div>
-              <button className="chip on" onClick={() => setTarget(r.user.handle)}>Rematch</button>
+              <div className="min-w-0 flex-1"><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="name">{r.user.handle}</Link><Link href={`/rivalry/${profile?.handle}/${r.user.handle}`} className="mono when block"><span style={{ color: "var(--text)" }}>{r.won}W</span> · <span>{r.lost}L</span>{" "}{tt("· see the series →")}</Link></div>
+              <button className="chip on" onClick={() => setTarget(r.user.handle)}>{tt("Rematch")}</button>
             </div>
           ))}
         </section>
@@ -523,15 +525,15 @@ export default function ArenaPage() {
 
       {data && data.streaks.length > 0 && (
         <section className="block">
-          <div className="eyebrow">Hot streaks</div>
+          <div className="eyebrow">{tt("Hot streaks")}</div>
           <div className="hstrip mt-2" style={{ margin: "8px -20px 0", padding: "0 20px 4px" }}>
             {data.streaks.map((s) => (
               <div key={s.user.id} className="hcard text-center" style={{ width: 120 }}>
                 <div className="flex justify-center"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={44} xp={s.user.xp} /></div>
                 <div className="name mt-1.5 truncate text-[13px]">{s.user.handle}</div>
                 <div className="text-[18px] font-extrabold"><span className="gl"><Glyph n="flame" tone="gold" />{s.streak}</span></div>
-                {s.streak >= 5 && <div className="bounty gl"><Glyph n="bag" />Bounty +{25 + s.streak * 10} XP</div>}
-                {profile?.handle !== s.user.handle && <button className="chip mt-1.5 w-full justify-center" style={{ fontSize: 11, padding: "5px 8px" }} onClick={() => (authenticated ? setTarget(s.user.handle) : login())}>Break it</button>}
+                {s.streak >= 5 && <div className="bounty gl"><Glyph n="bag" />{tt("Bounty +")}{25 + s.streak * 10} XP</div>}
+                {profile?.handle !== s.user.handle && <button className="chip mt-1.5 w-full justify-center" style={{ fontSize: 11, padding: "5px 8px" }} onClick={() => (authenticated ? setTarget(s.user.handle) : login())}>{tt("Break it")}</button>}
               </div>
             ))}
           </div>
@@ -540,12 +542,12 @@ export default function ArenaPage() {
 
       {data && data.recent.length > 0 && (
         <section className="block">
-          <div className="eyebrow">Recent results</div>
+          <div className="eyebrow">{tt("Recent results")}</div>
           <div className="mt-2 flex flex-col gap-2">{data.recent.map((b) => <BattleRow key={b.id} b={b} mid={mids[b.coin] ?? 0} />)}</div>
         </section>
       )}
 
-      <div className="px-5 py-2 text-center"><Link href="/how-it-works#battles" className="when underline">How fades and duels are scored →</Link></div>
+      <div className="px-5 py-2 text-center"><Link href="/how-it-works#battles" className="when underline">{tt("How fades and duels are scored →")}</Link></div>
 
       {picking && <CallOut rivals={(me?.rivals ?? []).map((r) => r.user.handle)} onClose={() => setPicking(false)} onPick={(h) => { setPicking(false); setTarget(h); }} />}
       {target && <ChallengeSheet handle={target} onClose={() => setTarget(null)} />}
@@ -589,8 +591,8 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   const row = ({ b, r }: { b: ArenaBattle; r: ReturnType<typeof readBattle> }, kind: Heat | "ko") => (
     <div key={`${kind}${b.id}`}>
       <BattleRow b={b} mid={mids[b.coin] ?? 0} noChase={kind === "ko"} badge={
-        kind === "high" ? <><span>{flames(r.heat)}</span><b className="mono">{b.faderLeg.leverage}× vs {b.targetLeg.leverage}×</b>{r.minLiq < 50 && <span className="ab-warn">{r.closer.handle} liq in {r.minLiq.toFixed(1)}%</span>}</>
-        : kind === "blood" ? <><Glyph n="skull" tone="blood" /><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">liq in {r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted"><span className="gl">{r.winner.handle}<Glyph n="crown" tone="gold" /></span></span></>
+        kind === "high" ? <><span>{flames(r.heat)}</span><b className="mono">{b.faderLeg.leverage}{tt("× vs")}{" "}{b.targetLeg.leverage}×</b>{r.minLiq < 50 && <span className="ab-warn">{r.closer.handle}{" "}{tt("liq in")}{" "}{r.minLiq.toFixed(1)}%</span>}</>
+        : kind === "blood" ? <><Glyph n="skull" tone="blood" /><b>{r.loser.handle}</b><b className="mono red">{fmtPct(r.worst, 0)}</b>{r.minLiq < 50 && <span className="ab-warn">{tt("liq in")}{" "}{r.minLiq.toFixed(1)}%</span>}<span className="ml-auto muted"><span className="gl">{r.winner.handle}<Glyph n="crown" tone="gold" /></span></span></>
         : kind === "ko" ? <GladBadge b={b} r={r} />
         : scope === "following" && tag(b) ? <span className="ab-tag">{tag(b)}</span>
         : undefined
@@ -601,19 +603,19 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
   const empty = scope === "following" && !rows.length;
   return (
     <section className="block">
-      <div className="flex items-center justify-between"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Live fades</span><span className="when">{all.length} live</span></div>
+      <div className="flex items-center justify-between"><span className="eyebrow flex items-center gap-2"><i className="livedot" />{tt("Live fades")}</span><span className="when">{all.length} live</span></div>
       <KillTicker kills={data.kills ?? []} />
-      <div className="ascope mt-3" role="tablist" aria-label="Whose fades">
-        <button role="tab" aria-selected={scope === "everyone"} className={scope === "everyone" ? "on" : ""} onClick={() => setScope("everyone")}>Everyone<small>{all.length}</small></button>
-        <button role="tab" aria-selected={scope === "following"} className={scope === "following" ? "on" : ""} onClick={() => setScope("following")}>Following<small>{nFol}</small></button>
+      <div className="ascope mt-3" role="tablist" aria-label={tt("Whose fades")}>
+        <button role="tab" aria-selected={scope === "everyone"} className={scope === "everyone" ? "on" : ""} onClick={() => setScope("everyone")}>{tt("Everyone")}<small>{all.length}</small></button>
+        <button role="tab" aria-selected={scope === "following"} className={scope === "following" ? "on" : ""} onClick={() => setScope("following")}>{tt("Following")}<small>{nFol}</small></button>
       </div>
-      <div className="aheat mt-2" role="tablist" aria-label="How hot">
+      <div className="aheat mt-2" role="tablist" aria-label={tt("How hot")}>
         {pills.map((t) => <button key={t.k} role="tab" aria-selected={tab === t.k} className={`ah-${t.k} ${tab === t.k ? "on" : ""}`} onClick={() => setTab(t.k)}>{t.short}<small className="mono">{t.n}</small></button>)}
       </div>
 
       {empty ? (
         <div className="aempty mt-3">
-          <p className="muted text-sm">Follow traders to fill this. Their fades show up here the moment they fade or get faded.</p>
+          <p className="muted text-sm">{tt("Follow traders to fill this. Their fades show up here the moment they fade or get faded.")}</p>
           <div className="mt-2 flex flex-col gap-2">{data.streaks.slice(0, 3).map((s) => (
             <div key={s.user.id} className="flex items-center gap-2.5"><Avatar handle={s.user.handle} url={s.user.avatarUrl} size={30} /><span className="flex-1 truncate text-[14px] font-bold">{s.user.handle}<span className="when ml-1.5 gl"><Glyph n="flame" tone="gold" />{s.streak} streak</span></span><FollowButton handle={s.user.handle} compact /></div>
           ))}</div>
@@ -624,13 +626,13 @@ function LiveTabs({ data, mids, me }: { data: ArenaRes; mids: Record<string, num
         <AllHub rows={rows} nem={nem} high={high} mine={rows.find((x) => mine(x.b)) ?? null} list={
         <div className="flex flex-col gap-2">
           {list.map((x) => row(x, tab))}
-          {!list.length && <p className="muted text-sm">No fades running. Fade a trade in the feed to start one.</p>}
+          {!list.length && <p className="muted text-sm">{tt("No fades running. Fade a trade in the feed to start one.")}</p>}
         </div>
         } />
       ) : (
         <div className="mt-3 flex flex-col gap-2">
           {list.map((x) => row(x, tab))}
-          {!list.length && <p className="muted text-sm">{tab === "high" ? "No high-stakes fades right now. Nobody's above 20× or near liquidation." : tab === "nemesis" ? "No vendettas running right now. A vendetta is a feud between two traders who have fought each other more than anyone else, or where one called the other out." : "No fades running. Fade a trade in the feed to start one."}</p>}
+          {!list.length && <p className="muted text-sm">{tab === "high" ? tt("No high-stakes fades right now. Nobody's above 20× or near liquidation.") : tab === "nemesis" ? tt("No vendettas running right now. A vendetta is a feud between two traders who have fought each other more than anyone else, or where one called the other out.") : tt("No fades running. Fade a trade in the feed to start one.")}</p>}
         </div>
       )}
     </section>

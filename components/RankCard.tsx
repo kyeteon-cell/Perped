@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useState } from "react";
 import { RANKS, rankFor, XP_REASON_LABEL } from "@/lib/rank";
 import { RankEmblem } from "./ui";
@@ -11,13 +13,13 @@ export function RankCard({ xp, won, lost, recent, ladder = false }: { ladder?: b
   const [open, setOpen] = useState(ladder);
   return (
     <section className="block" id="rank" style={{ scrollMarginTop: 64 }}>
-      <div className="flex items-center justify-between"><span className="eyebrow">Rank</span><button className="when" onClick={() => setOpen((v) => !v)}>{open ? "hide ladder" : "see the ladder"}</button></div>
+      <div className="flex items-center justify-between"><span className="eyebrow">{tt("Rank")}</span><button className="when" onClick={() => setOpen((v) => !v)}>{open ? tt("hide ladder") : tt("see the ladder")}</button></div>
       <div className="mt-2 flex items-end justify-between gap-3">
         <div className="flex items-center gap-3">
           <RankEmblem level={r.level} size={64} />
           <div>
           <div className="text-[22px] font-extrabold tracking-tight">{r.title}</div>
-          <div className="mono when mt-1">{r.xp.toLocaleString()} XP{r.next ? ` · ${r.toNext.toLocaleString()} to ${r.next.title}` : " · top of the ladder"}</div>
+          <div className="mono when mt-1">{r.xp.toLocaleString()} XP{r.next ? ` · ${r.toNext.toLocaleString()} to ${r.next.title}` : tt(" · top of the ladder")}</div>
           </div>
         </div>
         <div className="text-right">
@@ -33,7 +35,7 @@ export function RankCard({ xp, won, lost, recent, ladder = false }: { ladder?: b
               <span className="flex items-center gap-2"><RankEmblem level={x.level} size={28} />{x.title}</span><span className="mono">{x.min.toLocaleString()} XP</span>
             </div>
           ))}
-          <p className="faint mt-2 text-[11px]">Fades: win +60 (+30 for a 20%+ margin, +40 for an upset), loss +10, draw +20. Duels +75 / +10. One-hour calls +6 / +2. Closed trades +4 / +1. Liquidations earn nothing. From Knife Catcher up, losses cost XP (fade −15, duel −10, liquidation −25 per rank above Wick Hunter) and ranks can be lost.</p>
+          <p className="faint mt-2 text-[11px]">{tt("Fades: win +60 (+30 for a 20%+ margin, +40 for an upset), loss +10, draw +20. Duels +75 / +10. One-hour calls +6 / +2. Closed trades +4 / +1. Liquidations earn nothing. From Knife Catcher up, losses cost XP (fade −15, duel −10, liquidation −25 per rank above Wick Hunter) and ranks can be lost.")}</p>
         </div>
       )}
       {recent.length > 0 && (
@@ -51,15 +53,15 @@ export function RankCard({ xp, won, lost, recent, ladder = false }: { ladder?: b
 export function RecordLine({ xp, won, lost, onOpen }: { xp: number; won: number; lost: number; onOpen: () => void }) {
   const r = rankFor(xp), n = won + lost;
   return (
-    <button type="button" className="recline mt-3.5" onClick={onOpen} aria-label="See the rank ladder">
+    <button type="button" className="recline mt-3.5" onClick={onOpen} aria-label={tt("See the rank ladder")}>
       <div className="recline-top">
-        <span>Fades <span className="mono green">{won}W</span>–<span className="mono red">{lost}L</span></span>
-        {n > 0 && <><em>·</em><span className="mono">{Math.round((won / n) * 100)}% win</span></>}
+        <span>{tt("Fades")}{" "}<span className="mono green">{won}W</span>–<span className="mono red">{lost}L</span></span>
+        {n > 0 && <><em>·</em><span className="mono">{Math.round((won / n) * 100)}{tt("% win")}</span></>}
         <em>·</em><span className={`recline-rank lv${r.level}`}>{r.title}</span>
-        <em className="ml-auto">ranks ›</em>
+        <em className="ml-auto">{tt("ranks ›")}</em>
       </div>
       <div className="xpbar" style={{ height: 6 }}><i className={`lv${r.level}`} style={{ width: `${Math.round(r.progress * 100)}%` }} /></div>
-      <div className="recline-sub"><span className="mono">{r.xp.toLocaleString()} XP</span><span>{r.next ? `${r.toNext.toLocaleString()} XP to ${r.next.title}` : "Top of the ladder"}</span></div>
+      <div className="recline-sub"><span className="mono">{r.xp.toLocaleString()} XP</span><span>{r.next ? `${r.toNext.toLocaleString()} XP to ${r.next.title}` : tt("Top of the ladder")}</span></div>
     </button>
   );
 }

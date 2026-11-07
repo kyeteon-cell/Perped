@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sheet } from "./Sheet";
@@ -38,26 +40,26 @@ export function ComingSoonSheet() {
     try {
       const j = await authedFetch("/api/live", { method: "POST" }).then((r) => r.json());
       if (j.error) setErr(j.error); else await refresh();
-    } catch { setErr("Couldn't reach Perped. Try again."); }
+    } catch { setErr(tt("Couldn't reach Perped. Try again.")); }
     setBusy(false);
   };
 
   const signedIn = authenticated && !isGuest && !!profile;
   let cta: React.ReactNode;
-  if (signedIn && status?.early) cta = <div className="cs-state"><Icon d={I.check} size={16} />You&rsquo;ve got early access. You&rsquo;ll be first in.</div>;
-  else if (signedIn && status?.joined) cta = <div className="cs-state"><Icon d={I.check} size={16} />You&rsquo;re on the list{status.place ? <> &middot; <b className="mono">#{status.place.toLocaleString()}</b> in line</> : null}</div>;
-  else cta = <button className="btn brand w-full" style={{ padding: 13, fontSize: 15 }} disabled={busy} onClick={join}>{busy ? "…" : isGuest ? "Sign in with X for early access" : signedIn ? "Get early access" : "Sign in for early access"}</button>;
+  if (signedIn && status?.early) cta = <div className="cs-state"><Icon d={I.check} size={16} />{tt("You’ve got early access. You’ll be first in.")}</div>;
+  else if (signedIn && status?.joined) cta = <div className="cs-state"><Icon d={I.check} size={16} />{tt("You’re on the list")}{status.place ? <> &middot; <b className="mono">#{status.place.toLocaleString()}</b>{" "}{tt("in line")}</> : null}</div>;
+  else cta = <button className="btn brand w-full" style={{ padding: 13, fontSize: 15 }} disabled={busy} onClick={join}>{busy ? "…" : isGuest ? tt("Sign in with X for early access") : signedIn ? tt("Get early access") : tt("Sign in for early access")}</button>;
 
   return (
-    <Sheet label="Real money is coming soon" onClose={() => setShow(false)}>
+    <Sheet label={tt("Real money is coming soon")} onClose={() => setShow(false)}>
       <div className="cs px-5 pb-6">
-        <div className="cs-badge"><Icon d={I.lock} size={14} />Real money · coming soon</div>
-        <h2 className="mt-2 text-[22px] font-extrabold leading-tight">Real trading opens soon</h2>
-        <p className="muted mt-1.5 text-[14px] leading-relaxed">Perped is demo only while we get ready. Every trade runs on live Hyperliquid prices with $10,000 of practice money, so nothing is at risk.</p>
+        <div className="cs-badge"><Icon d={I.lock} size={14} />{tt("Real money · coming soon")}</div>
+        <h2 className="mt-2 text-[22px] font-extrabold leading-tight">{tt("Real trading opens soon")}</h2>
+        <p className="muted mt-1.5 text-[14px] leading-relaxed">{tt("Perped is demo only while we get ready. Every trade runs on live Hyperliquid prices with $10,000 of practice money, so nothing is at risk.")}</p>
 
         <div className="cs-season">
           <span className="cs-ico"><Glyph n="trophy" /></span>
-          <div><b>Season 0 counts</b><p className="when mt-0.5">Your XP, rank, record and wins carry over when real money opens. Climb now, start ahead.</p></div>
+          <div><b>{tt("Season 0 counts")}</b><p className="when mt-0.5">{tt("Your XP, rank, record and wins carry over when real money opens. Climb now, start ahead.")}</p></div>
         </div>
 
         <div className="mt-4">{cta}</div>
@@ -65,11 +67,11 @@ export function ComingSoonSheet() {
 
         <a className="cs-x" href={X_URL} target="_blank" rel="noopener noreferrer">
           <span className="cs-ico x"><Icon d={I.x} size={16} /></span>
-          <span className="flex-1"><b>Follow @perped_ on X</b><span className="when block">Launch date and early-access drops land there first</span></span>
+          <span className="flex-1"><b>{tt("Follow @perped_ on X")}</b><span className="when block">{tt("Launch date and early-access drops land there first")}</span></span>
           <span aria-hidden>→</span>
         </a>
 
-        <button className="btn ghost mt-3 w-full" style={{ padding: 12, fontSize: 14 }} onClick={() => setShow(false)}>Keep practising</button>
+        <button className="btn ghost mt-3 w-full" style={{ padding: 12, fontSize: 14 }} onClick={() => setShow(false)}>{tt("Keep practising")}</button>
       </div>
     </Sheet>
   );
@@ -82,7 +84,7 @@ export function LiveSoonNote() {
   return (
     <button className="cs-note" onClick={gate(() => null)}>
       <Icon d={I.lock} size={16} />
-      <span><b>Real money opens soon.</b> Perped is demo only for now. Everything below is how it will work. Tap for early access.</span>
+      <span><b>{tt("Real money opens soon.")}</b>{" "}{tt("Perped is demo only for now. Everything below is how it will work. Tap for early access.")}</span>
     </button>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 import useSWR from "swr";
@@ -34,7 +36,7 @@ function equity(closed: Closed[]) {
 /** Area line with a zero baseline; green when the series ends above where it started. */
 function Curve({ pts, h = 110, w = 340, showAxis = true }: { pts: { t: number; v: number }[]; h?: number; w?: number; showAxis?: boolean }) {
   const uid = useId().replace(/:/g, "");
-  if (pts.length < 2) return <div className="grid place-items-center text-xs" style={{ height: h, color: "var(--muted)" }}>Not enough closed trades yet</div>;
+  if (pts.length < 2) return <div className="grid place-items-center text-xs" style={{ height: h, color: "var(--muted)" }}>{tt("Not enough closed trades yet")}</div>;
   const vs = pts.map((p) => p.v); const min = Math.min(0, ...vs), max = Math.max(0, ...vs), span = max - min || 1;
   const x = (i: number) => (i / (pts.length - 1)) * w, y = (v: number) => 8 + ((max - v) / span) * (h - 16);
   const path = pts.map((p, i) => `${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
@@ -42,7 +44,7 @@ function Curve({ pts, h = 110, w = 340, showAxis = true }: { pts: { t: number; v
   const zero = y(0);
   const id = `eq${uid}`;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height: h }} role="img" aria-label="Cumulative P&L">
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height: h }} role="img" aria-label={tt("Cumulative P&L")}>
       <defs><linearGradient id={id} x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={col} stopOpacity=".28" /><stop offset="1" stopColor={col} stopOpacity="0" /></linearGradient></defs>
       {showAxis && <line x1="0" x2={w} y1={zero} y2={zero} stroke="var(--line)" strokeDasharray="3 4" />}
       <polygon points={`0,${zero} ${path} ${w},${zero}`} fill={`url(#${id})`} />
@@ -91,9 +93,9 @@ export function PerformanceCard({ handle, stats }: { handle: string; stats: Stat
     <section className="block">
       <div className="flex items-start justify-between">
         <div>
-          <div className="eyebrow">Performance</div>
+          <div className="eyebrow">{tt("Performance")}</div>
           <div className={`mono mt-1 text-[30px] font-bold leading-none tracking-tight ${shownTotal >= 0 ? "green" : "red"}`}>{fmtUsd(shownTotal, { sign: true })}</div>
-          <div className="when mt-1">{range === "30d" ? "realised, last 30 days" : "realised, all time"} · {closed.length} closed</div>
+          <div className="when mt-1">{range === "30d" ? tt("realised, last 30 days") : tt("realised, all time")} · {closed.length} closed</div>
         </div>
         <div className="seg">{(["30d", "all"] as const).map((r) => <button key={r} className={`chip ${range === r ? "on" : ""}`} style={{ padding: "5px 9px", fontSize: 11 }} onClick={() => setRange(r)}>{r}</button>)}</div>
       </div>
@@ -107,7 +109,7 @@ export function PerformanceCard({ handle, stats }: { handle: string; stats: Stat
         ].map(([k, v]) => <div key={k}><div className="mono text-[15px] font-bold">{v}</div><div className="when text-[11px]">{k}</div></div>)}
       </div>
       <div className="mt-3"><Split a={wins} b={losses} la="wins" lb="losses" /></div>
-      <Link href={`/u/${handle}/stats`} className="chip mt-3.5 inline-flex">Full stats →</Link>
+      <Link href={`/u/${handle}/stats`} className="chip mt-3.5 inline-flex">{tt("Full stats →")}</Link>
     </section>
   );
 }
@@ -134,24 +136,24 @@ export function StatsPanels({ handle, stats, rivalries }: { handle: string; stat
   return (
     <>
       <section className="block">
-        <div className="eyebrow">Equity curve</div>
+        <div className="eyebrow">{tt("Equity curve")}</div>
         <div className={`mono mt-1 text-[32px] font-bold leading-none tracking-tight ${(eq[eq.length - 1]?.v ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(eq[eq.length - 1]?.v ?? 0, { sign: true })}</div>
-        <div className="when mt-1">cumulative realised P&L · {closed.length} closed trades</div>
+        <div className="when mt-1">{tt("cumulative realised P&L ·")}{" "}{closed.length}{" "}{tt("closed trades")}</div>
         <div className="mt-3"><Curve pts={eq} h={160} /></div>
       </section>
 
       <section className="block">
-        <div className="eyebrow">Hit rates</div>
+        <div className="eyebrow">{tt("Hit rates")}</div>
         <div className="mt-3 grid grid-cols-2 gap-4">
-          <Ring pct={stats ? Number(stats.winRate) : null} label="Trades" sub={`${wins} won · ${losses} lost`} />
-          <Ring pct={stats?.callsResolved ? (stats.callsHit / stats.callsResolved) * 100 : null} label="Calls" sub={`${stats?.callsResolved ?? 0} resolved${(stats?.callStreak ?? 0) >= 2 ? ` · ${stats!.callStreak} in a row` : ""}`} color="var(--blue)" />
-          <Ring pct={stats && Number(stats.judgement) > 0 ? Number(stats.judgement) : null} label="Judgement" sub="votes on the right side" color="var(--violet)" />
-          <Ring pct={stats ? (stats.copiedCount + stats.fadedCount ? (stats.copiedCount / (stats.copiedCount + stats.fadedCount)) * 100 : null) : null} label="Trust" sub={`${stats?.copiedCount ?? 0} copied · ${stats?.fadedCount ?? 0} faded`} color="var(--brand)" />
+          <Ring pct={stats ? Number(stats.winRate) : null} label={tt("Trades")} sub={`${wins} won · ${losses} lost`} />
+          <Ring pct={stats?.callsResolved ? (stats.callsHit / stats.callsResolved) * 100 : null} label={tt("Calls")} sub={`${stats?.callsResolved ?? 0} resolved${(stats?.callStreak ?? 0) >= 2 ? ` · ${stats!.callStreak} in a row` : ""}`} color="var(--blue)" />
+          <Ring pct={stats && Number(stats.judgement) > 0 ? Number(stats.judgement) : null} label={tt("Judgement")} sub="votes on the right side" color="var(--violet)" />
+          <Ring pct={stats ? (stats.copiedCount + stats.fadedCount ? (stats.copiedCount / (stats.copiedCount + stats.fadedCount)) * 100 : null) : null} label={tt("Trust")} sub={`${stats?.copiedCount ?? 0} copied · ${stats?.fadedCount ?? 0} faded`} color="var(--brand)" />
         </div>
       </section>
 
       <section className="block">
-        <div className="eyebrow">P&amp;L by market</div>
+        <div className="eyebrow">{tt("P&L by market")}</div>
         <div className="mt-3 flex flex-col gap-2.5">
           {byCoin.map(([coin, v]) => (
             <div key={coin} className="flex items-center gap-2.5 text-[13px]">
@@ -161,23 +163,23 @@ export function StatsPanels({ handle, stats, rivalries }: { handle: string; stat
               <span className="when w-8 text-right">{v.n}</span>
             </div>
           ))}
-          {!byCoin.length && <p className="muted text-sm">No closed trades yet.</p>}
+          {!byCoin.length && <p className="muted text-sm">{tt("No closed trades yet.")}</p>}
         </div>
       </section>
 
       <section className="block">
-        <div className="eyebrow">Long vs short</div>
+        <div className="eyebrow">{tt("Long vs short")}</div>
         <div className="mt-3"><Split a={longs.length} b={shorts.length} la={`longs · ${fmtUsd(pnlL, { sign: true, compact: true })}`} lb={`shorts · ${fmtUsd(pnlS, { sign: true, compact: true })}`} /></div>
         <div className="mt-4 grid grid-cols-2 gap-3 text-[13px]">
-          <div><div className="when">Avg win</div><div className="mono green font-bold">{fmtUsd(avgWin, { sign: true })}</div></div>
-          <div><div className="when">Avg loss</div><div className="mono red font-bold">{fmtUsd(avgLoss, { sign: true })}</div></div>
-          <div><div className="when">Best trade</div><div className="mono green font-bold">{best ? `${fmtPct(best.roi, 0)} ${ticker(best.coin)}` : "—"}</div></div>
-          <div><div className="when">Worst trade</div><div className="mono red font-bold">{worst ? `${fmtPct(worst.roi, 0)} ${ticker(worst.coin)}` : "—"}</div></div>
+          <div><div className="when">{tt("Avg win")}</div><div className="mono green font-bold">{fmtUsd(avgWin, { sign: true })}</div></div>
+          <div><div className="when">{tt("Avg loss")}</div><div className="mono red font-bold">{fmtUsd(avgLoss, { sign: true })}</div></div>
+          <div><div className="when">{tt("Best trade")}</div><div className="mono green font-bold">{best ? `${fmtPct(best.roi, 0)} ${ticker(best.coin)}` : "—"}</div></div>
+          <div><div className="when">{tt("Worst trade")}</div><div className="mono red font-bold">{worst ? `${fmtPct(worst.roi, 0)} ${ticker(worst.coin)}` : "—"}</div></div>
         </div>
       </section>
 
       <section className="block">
-        <div className="eyebrow">ROI distribution</div>
+        <div className="eyebrow">{tt("ROI distribution")}</div>
         <div className="mt-3 flex items-end gap-1" style={{ height: 90 }}>
           {hist.counts.map((n, i) => <div key={i} className="flex-1 rounded-t" style={{ height: `${(n / hMax) * 100}%`, minHeight: n ? 3 : 0, background: i < 4 ? "var(--red)" : i === 4 ? "var(--line)" : "var(--green)", opacity: 0.85 }} title={`${n}`} />)}
         </div>
@@ -186,7 +188,7 @@ export function StatsPanels({ handle, stats, rivalries }: { handle: string; stat
 
       {rivalries?.length > 0 && (
         <section className="block">
-          <div className="eyebrow">Rivalries</div>
+          <div className="eyebrow">{tt("Rivalries")}</div>
           <div className="mt-3 flex flex-col gap-2.5">
             {rivalries.map((r) => <div key={r.opponent} className="flex items-center gap-3 text-[13px]"><b className="w-28 truncate">vs {r.opponent}</b><div className="split flex-1"><i style={{ width: `${(r.wins / Math.max(1, r.wins + r.losses)) * 100}%` }} /></div><span className="mono font-bold">{r.wins}–{r.losses}</span></div>)}
           </div>

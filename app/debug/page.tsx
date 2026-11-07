@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useSession } from "@/lib/hooks/useSession";
@@ -49,17 +51,17 @@ export default function DebugPage() {
   ];
   return (
     <main className="px-5 py-6">
-      <h1 className="text-xl font-bold">Sign-in debug</h1>
-      <p className="muted mt-1 text-sm">Screenshot this page and send it over.</p>
+      <h1 className="text-xl font-bold">{tt("Sign-in debug")}</h1>
+      <p className="muted mt-1 text-sm">{tt("Screenshot this page and send it over.")}</p>
       <div className="mt-4 flex flex-col gap-2">
         {rows.map(([k, v]) => <div key={k} className="card" style={{ padding: "10px 12px" }}><div className="when">{k}</div><div className="mono break-all text-[12px]">{v}</div></div>)}
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        <button className="btn" onClick={tryGuest}>Test guest</button>
-        <button className="btn" onClick={() => s.login({ loginMethods: ["twitter"] })}>Test X</button>
-        <button className="btn" onClick={() => s.login({ loginMethods: ["email"] })}>Test email</button>
-        <button className="btn" onClick={() => s.login({ loginMethods: ["wallet"] })}>Test wallet</button>
-        <button className="btn" onClick={() => s.logout()}>Log out</button>
+        <button className="btn" onClick={tryGuest}>{tt("Test guest")}</button>
+        <button className="btn" onClick={() => s.login({ loginMethods: ["twitter"] })}>{tt("Test X")}</button>
+        <button className="btn" onClick={() => s.login({ loginMethods: ["email"] })}>{tt("Test email")}</button>
+        <button className="btn" onClick={() => s.login({ loginMethods: ["wallet"] })}>{tt("Test wallet")}</button>
+        <button className="btn" onClick={() => s.logout()}>{tt("Log out")}</button>
       </div>
     </main>
   );

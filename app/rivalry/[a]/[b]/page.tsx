@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { siteOrigin } from "@/lib/config";
 import { small } from "@/lib/img";
 import dynamic from "next/dynamic";
@@ -22,7 +24,7 @@ export default function RivalryPage({ params }: { params: Promise<{ a: string; b
   const [challenge, setChallenge] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   if (!data) return <SkeletonList n={3} />;
-  if (data.error) return <p className="muted p-5 text-sm">No rivalry between those two.</p>;
+  if (data.error) return <p className="muted p-5 text-sm">{tt("No rivalry between those two.")}</p>;
   const { a: A, b: B } = data;
   const lead = data.aWins === data.bWins ? null : data.aWins > data.bWins ? A.handle : B.handle;
   const me = data.viewer.isA ? A : data.viewer.isB ? B : null;
@@ -42,8 +44,8 @@ export default function RivalryPage({ params }: { params: Promise<{ a: string; b
   return (
     <div className="fade-in pb-10" data-tint="red">
       <section className="battle photo" style={{ backgroundImage: `url(${small("/api/share-bg/hero-chrome-gold", 1080)})` }}>
-        <div className="flex items-center justify-between"><Link href="/arena" className="when" style={{ color: "rgba(255,255,255,.8)" }}>← Arena</Link><button className="when" style={{ color: "rgba(255,255,255,.8)" }} onClick={share}>{copied ? "Link copied" : "Share"}</button></div>
-        <div className="mt-3 text-center text-[11px] font-extrabold uppercase tracking-[.14em]" style={{ color: "rgba(255,255,255,.75)" }}>{data.active ? "Rivalry" : `${data.fights} fight${data.fights === 1 ? "" : "s"} · rivals at 3`}{data.calledBy ? ` · called out by ${data.calledBy}` : ""}</div>
+        <div className="flex items-center justify-between"><Link href="/arena" className="when" style={{ color: "rgba(255,255,255,.8)" }}>{tt("← Arena")}</Link><button className="when" style={{ color: "rgba(255,255,255,.8)" }} onClick={share}>{copied ? tt("Link copied") : tt("Share")}</button></div>
+        <div className="mt-3 text-center text-[11px] font-extrabold uppercase tracking-[.14em]" style={{ color: "rgba(255,255,255,.75)" }}>{data.active ? tt("Rivalry") : `${data.fights} fight${data.fights === 1 ? "" : "s"} · rivals at 3`}{data.calledBy ? ` · called out by ${data.calledBy}` : ""}</div>
         <div className="riv-board mt-3">
           {[A, B].map((u, i) => (
             <Link key={u.id} href={`/u/${u.handle}`} className={`riv-side ${lead === u.handle ? "lead" : ""}`}>
@@ -55,39 +57,39 @@ export default function RivalryPage({ params }: { params: Promise<{ a: string; b
           ))}
         </div>
         <div className="tug neutral mt-4" style={{ height: 8 }}><i style={{ width: `${(data.aWins / total) * 100}%` }} /></div>
-        <div className="mt-2 text-center text-[13px]" style={{ color: "rgba(255,255,255,.85)" }}>{lead ? `${lead} leads ${Math.max(data.aWins, data.bWins)}–${Math.min(data.aWins, data.bWins)}` : data.fights ? "All square" : "No fights yet"}{data.draws ? ` · ${data.draws} drawn` : ""}</div>
+        <div className="mt-2 text-center text-[13px]" style={{ color: "rgba(255,255,255,.85)" }}>{lead ? `${lead} leads ${Math.max(data.aWins, data.bWins)}–${Math.min(data.aWins, data.bWins)}` : data.fights ? tt("All square") : tt("No fights yet")}{data.draws ? ` · ${data.draws} drawn` : ""}</div>
         {me && them && (
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <button className="btn brand" style={{ padding: 11, fontSize: 13 }} onClick={() => setChallenge(them.handle)}><span className="gl"><Glyph n="swords" />Rematch</span></button>
+            <button className="btn brand" style={{ padding: 11, fontSize: 13 }} onClick={() => setChallenge(them.handle)}><span className="gl"><Glyph n="swords" />{tt("Rematch")}</span></button>
             {data.active
-              ? <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => act(data.viewer.muted ? "unmute" : "mute", them.handle)}>{data.viewer.muted ? "Unmute alerts" : "Mute alerts"}</button>
-              : <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => act("call", them.handle)}>Call them out</button>}
+              ? <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => act(data.viewer.muted ? "unmute" : "mute", them.handle)}>{data.viewer.muted ? tt("Unmute alerts") : tt("Mute alerts")}</button>
+              : <button className="btn" style={{ padding: 11, fontSize: 13 }} onClick={() => act("call", them.handle)}>{tt("Call them out")}</button>}
           </div>
         )}
       </section>
 
       <section className="block">
         <div className="grid grid-cols-3 gap-2">
-          <div className="stat"><small>Current run</small><div className="v">{data.runHolder ? `${data.runHolder} ×${data.runLen}` : "—"}</div></div>
-          <div className="stat"><small>Longest run</small><div className="v">{data.bestRunHolder ? `${data.bestRunHolder} ×${data.bestRun}` : "—"}</div></div>
-          <div className="stat"><small>Fights</small><div className="v mono">{data.fights}</div></div>
+          <div className="stat"><small>{tt("Current run")}</small><div className="v">{data.runHolder ? `${data.runHolder} ×${data.runLen}` : "—"}</div></div>
+          <div className="stat"><small>{tt("Longest run")}</small><div className="v">{data.bestRunHolder ? `${data.bestRunHolder} ×${data.bestRun}` : "—"}</div></div>
+          <div className="stat"><small>{tt("Fights")}</small><div className="v mono">{data.fights}</div></div>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <div className="stat"><small>{A.handle} made</small><div className={`v mono ${data.pnlA >= 0 ? "green" : "red"}`}>{fmtUsd(data.pnlA, { sign: true })}</div></div>
           <div className="stat"><small>{B.handle} made</small><div className={`v mono ${data.pnlB >= 0 ? "green" : "red"}`}>{fmtUsd(data.pnlB, { sign: true })}</div></div>
         </div>
-        <p className="faint mt-2 text-[11px]">P&amp;L across the fades between them. Duels are scored on direction, not size.</p>
+        <p className="faint mt-2 text-[11px]">{tt("P&L across the fades between them. Duels are scored on direction, not size.")}</p>
       </section>
 
       <section className="block">
-        <div className="eyebrow">Every fight</div>
-        {data.history.length === 0 && <p className="muted mt-2 text-sm">Nothing yet. Fade one of their trades or send a duel to start the series.</p>}
+        <div className="eyebrow">{tt("Every fight")}</div>
+        {data.history.length === 0 && <p className="muted mt-2 text-sm">{tt("Nothing yet. Fade one of their trades or send a duel to start the series.")}</p>}
         <div className="mt-2 flex flex-col">
           {data.history.map((f) => (
             <Link key={`${f.kind}-${f.id}`} href={f.href} className="riv-row">
               <CoinMark coin={f.coin} size="xs" />
               <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-bold">{f.winner ? `${f.winner} won` : "Draw"} <span className="when font-normal">· {f.kind} · {ticker(f.coin)}</span></div>
+                <div className="text-[14px] font-bold">{f.winner ? `${f.winner} won` : tt("Draw")} <span className="when font-normal">· {f.kind} · {ticker(f.coin)}</span></div>
                 {f.roiA != null && <div className="mono when text-[12px]">{A.handle} {fmtPct(f.roiA, 1)} · {B.handle} {fmtPct(f.roiB ?? 0, 1)}</div>}
               </div>
               <span className="when text-[11px]">{timeAgo(f.at)}</span>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -27,18 +29,18 @@ export function DailyFade() {
   const fade = d.side === "long" ? "short" : "long";
   return (
     <section className="dfd">
-      <div className="dfd-top"><span className="dfd-tag">Daily Fade</span><span className="dfd-x">+{d.bonus} XP</span><span className="dfd-t">{t}</span></div>
+      <div className="dfd-top"><span className="dfd-tag">{tt("Daily Fade")}</span><span className="dfd-x">+{d.bonus} XP</span><span className="dfd-t">{t}</span></div>
       <div className="dfd-row">
         <Avatar handle={d.handle} url={d.avatarUrl} size={44} link={false} />
         <div className="min-w-0 flex-1">
-          <b className="truncate">{mine ? "You're today's target" : `Beat @${d.handle}`}</b>
-          <span className="when"><span className={d.side === "long" ? "green" : "red"}>{d.side === "long" ? "Long" : "Short"} {d.leverage}×</span> {ticker(d.coin)} · {d.faders} fading{mine ? " you" : ""}</span>
+          <b className="truncate">{mine ? tt("You're today's target") : `Beat @${d.handle}`}</b>
+          <span className="when"><span className={d.side === "long" ? "green" : "red"}>{d.side === "long" ? tt("Long") : tt("Short")} {d.leverage}×</span> {ticker(d.coin)} · {d.faders} fading{mine ? tt(" you") : ""}</span>
         </div>
         <CoinMark coin={d.coin} size="sm" />
       </div>
-      {mine ? <Link href={`/post/${d.postId}`} className="dfd-cta">See who&apos;s fading you →</Link>
-        : d.myBattle ? <Link href={`/battle/${d.myBattle}`} className="dfd-cta in">You&apos;re in · watch the fight →</Link>
-        : <Link href={`/post/${d.postId}?fade=1`} className={`dfd-cta go ${fade}`}>Fade it · go {fade} →</Link>}
+      {mine ? <Link href={`/post/${d.postId}`} className="dfd-cta">{tt("See who's fading you →")}</Link>
+        : d.myBattle ? <Link href={`/battle/${d.myBattle}`} className="dfd-cta in">{tt("You're in · watch the fight →")}</Link>
+        : <Link href={`/post/${d.postId}?fade=1`} className={`dfd-cta go ${fade}`}>{tt("Fade it · go")}{" "}{fade} →</Link>}
     </section>
   );
 }

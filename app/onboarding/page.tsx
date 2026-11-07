@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/hooks/useSession";
@@ -78,13 +80,13 @@ export default function OnboardingPage() {
         <>
           <div className="flex-1 px-6 pb-5 pt-12" style={{ background: "linear-gradient(180deg, var(--brand-soft) 0%, var(--bg) 100%)" }}>
             <div className="grid h-14 w-14 place-items-center rounded-2xl text-[28px] font-extrabold" style={{ background: "var(--brand)", color: "var(--brand-fg)" }}>P</div>
-            <h2 className="mt-5 text-[30px] font-bold leading-[1.1] tracking-tight">Trade in public.<br />Get perped or get paid.</h2>
-            <p className="muted mt-3 max-w-[32ch]">Post your position. Someone will copy it, someone will fade it, and the chain decides who was right.</p>
-            <div className="mt-5 flex flex-wrap gap-2"><span className="lbl long"><i />kiloklips · SOL +8.3%</span><span className="lbl short"><i />degenmaxi · ETH −2.1%</span><span className="lbl long"><i />samui_sam · HYPE +12.6%</span></div>
+            <h2 className="mt-5 text-[30px] font-bold leading-[1.1] tracking-tight">{tt("Trade in public.")}<br />{tt("Get perped or get paid.")}</h2>
+            <p className="muted mt-3 max-w-[32ch]">{tt("Post your position. Someone will copy it, someone will fade it, and the chain decides who was right.")}</p>
+            <div className="mt-5 flex flex-wrap gap-2"><span className="lbl long"><i />{tt("kiloklips · SOL +8.3%")}</span><span className="lbl short"><i />{tt("degenmaxi · ETH −2.1%")}</span><span className="lbl long"><i />{tt("samui_sam · HYPE +12.6%")}</span></div>
           </div>
           <div className="flex flex-col gap-2.5 px-6 pb-8 pt-3">
             <SignInOptions />
-            {authenticated && !address && ready && <p className="muted mt-2 text-center text-xs">Logged in — creating your wallet…</p>}
+            {authenticated && !address && ready && <p className="muted mt-2 text-center text-xs">{tt("Logged in — creating your wallet…")}</p>}
           </div>
         </>
       )}
@@ -93,25 +95,25 @@ export default function OnboardingPage() {
         <>
           <div className="flex-1 px-6 pb-3 pt-6">
             <Progress n={2} />
-            <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">What should we call you?</h2>
-            <p className="muted mt-2.5">Your handle is how you appear in the feed and on the leaderboards. You can change it later.</p>
-            <div className="card mt-5 flex items-center gap-2.5 px-4"><span className="muted">@</span><input className="field !bg-transparent !px-0" placeholder="yourname" value={handle} onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20))} autoFocus /><span className={`text-xs font-bold ${avail === false ? "red" : avail ? "green" : "faint"}`}>{avail === null ? "" : avail ? "Available" : "Taken"}</span></div>
-            <input className="field mt-2.5" placeholder="One line about how you trade (optional)" value={bio} onChange={(e) => setBio(e.target.value)} maxLength={160} />
+            <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">{tt("What should we call you?")}</h2>
+            <p className="muted mt-2.5">{tt("Your handle is how you appear in the feed and on the leaderboards. You can change it later.")}</p>
+            <div className="card mt-5 flex items-center gap-2.5 px-4"><span className="muted">@</span><input className="field !bg-transparent !px-0" placeholder="yourname" value={handle} onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20))} autoFocus /><span className={`text-xs font-bold ${avail === false ? "red" : avail ? "green" : "faint"}`}>{avail === null ? "" : avail ? tt("Available") : tt("Taken")}</span></div>
+            <input className="field mt-2.5" placeholder={tt("One line about how you trade (optional)")} value={bio} onChange={(e) => setBio(e.target.value)} maxLength={160} />
             {refCode && !refTouched ? (
-              <div className="card mt-2.5 flex items-center justify-between px-4 py-3 text-sm"><span><span className="muted">Referred by</span> <b>@{refCode.replace(/^@/, "")}</b> <span className="green ml-1.5 text-xs font-bold">reduced fee</span></span><button className="chip" onClick={() => { setRefTouched(true); setRefCode(""); }}>Change</button></div>
+              <div className="card mt-2.5 flex items-center justify-between px-4 py-3 text-sm"><span><span className="muted">{tt("Referred by")}</span> <b>@{refCode.replace(/^@/, "")}</b> <span className="green ml-1.5 text-xs font-bold">{tt("reduced fee")}</span></span><button className="chip" onClick={() => { setRefTouched(true); setRefCode(""); }}>{tt("Change")}</button></div>
             ) : (
-              <input className="field mt-2.5" placeholder="Referral code (optional) — pays a lower fee" value={refCode} onChange={(e) => { setRefTouched(true); setRefCode(e.target.value.replace(/[^a-zA-Z0-9_@]/g, "").slice(0, 21)); }} />
+              <input className="field mt-2.5" placeholder={tt("Referral code (optional) — pays a lower fee")} value={refCode} onChange={(e) => { setRefTouched(true); setRefCode(e.target.value.replace(/[^a-zA-Z0-9_@]/g, "").slice(0, 21)); }} />
             )}
             {err && <p className="red mt-3 text-sm">{err}</p>}
           </div>
-          <div className="px-6 pb-8"><button className="btn ink" onClick={saveHandle} disabled={busy || handle.length < 3 || avail === false}>{busy ? "Saving…" : "Continue"}</button></div>
+          <div className="px-6 pb-8"><button className="btn ink" onClick={saveHandle} disabled={busy || handle.length < 3 || avail === false}>{busy ? tt("Saving…") : tt("Continue")}</button></div>
         </>
       )}
 
       {step === 3 && (
         <div className="flex-1 pt-2">
           <div className="px-6"><Progress n={3} /></div>
-          <Intro onDone={() => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} track("intro_done"); setStep(hasExternalWallet && liveOk ? 4 : 5); }} doneLabel="Got it" />
+          <Intro onDone={() => { try { localStorage.setItem("perped:intro-seen", "1"); } catch {} track("intro_done"); setStep(hasExternalWallet && liveOk ? 4 : 5); }} doneLabel={tt("Got it")} />
         </div>
       )}
 
@@ -119,49 +121,49 @@ export default function OnboardingPage() {
         <>
           <div className="flex-1 px-6 pb-3 pt-6">
             <Progress n={4} />
-            <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">One signature to start</h2>
+            <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">{tt("One signature to start")}</h2>
             <p className="muted mt-2.5">Perped earns a small fee on trades placed here. Hyperliquid asks you to approve a maximum once, up front; you&apos;re only ever charged your rate.</p>
             <div className="fee mt-4">
-              <div className="fee-row"><span className="muted">Your rate{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? "Top trader" : "Referral"}</span>}</span><b className="mono">{fee.label}</b></div>
-              <div className="fee-row"><span className="muted">On a $250 trade</span><b className="mono">${(250 * fee.tenthsBps / 100000).toFixed(2)}</b></div>
-              <div className="fee-row"><span className="muted">Maximum you approve</span><b className="mono">{BUILDER_MAX_FEE_RATE}</b></div>
-              <div className="fee-row"><span className="muted">Hyperliquid's own fee</span><b className="mono">~0.045%</b></div>
-              <div className="fee-row"><span className="muted">Applies to</span><b>Trades placed in Perped only</b></div>
+              <div className="fee-row"><span className="muted">{tt("Your rate")}{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? tt("Top trader") : tt("Referral")}</span>}</span><b className="mono">{fee.label}</b></div>
+              <div className="fee-row"><span className="muted">{tt("On a $250 trade")}</span><b className="mono">${(250 * fee.tenthsBps / 100000).toFixed(2)}</b></div>
+              <div className="fee-row"><span className="muted">{tt("Maximum you approve")}</span><b className="mono">{BUILDER_MAX_FEE_RATE}</b></div>
+              <div className="fee-row"><span className="muted">{tt("Hyperliquid's own fee")}</span><b className="mono">~0.045%</b></div>
+              <div className="fee-row"><span className="muted">{tt("Applies to")}</span><b>{tt("Trades placed in Perped only")}</b></div>
             </div>
-            <ul className="muted mt-4 list-disc pl-5 text-sm leading-relaxed"><li>You sign once with your wallet. Nothing is charged now.</li><li>You can revoke it anytime from Hyperliquid.</li><li>It can never go above the amount you approve.</li></ul>
+            <ul className="muted mt-4 list-disc pl-5 text-sm leading-relaxed"><li>{tt("You sign once with your wallet. Nothing is charged now.")}</li><li>{tt("You can revoke it anytime from Hyperliquid.")}</li><li>{tt("It can never go above the amount you approve.")}</li></ul>
             {err && <p className="red mt-3 text-sm">{err}</p>}
           </div>
-          <div className="flex flex-col gap-2.5 px-6 pb-8"><button className="btn brand" onClick={approve} disabled={busy || !walletClient}>{busy ? "Waiting for signature…" : `Approve ${BUILDER_MAX_FEE_RATE} and continue`}</button><button className="btn ghost" onClick={() => setStep(5)}>Skip for now</button></div>
+          <div className="flex flex-col gap-2.5 px-6 pb-8"><button className="btn brand" onClick={approve} disabled={busy || !walletClient}>{busy ? tt("Waiting for signature…") : `Approve ${BUILDER_MAX_FEE_RATE} and continue`}</button><button className="btn ghost" onClick={() => setStep(5)}>{tt("Skip for now")}</button></div>
         </>
       )}
 
       {step === 5 && (
         <>
           <div className="flex-1 px-6 pb-3 pt-6">
-            <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">You&apos;re in{profile ? `, ${profile.handle}` : ""}.</h2>
+            <h2 className="text-[30px] font-bold leading-[1.1] tracking-tight">{tt("You're in")}{profile ? `, ${profile.handle}` : ""}.</h2>
             {hasExternalWallet && liveOk ? (
               <>
-                <p className="muted mt-2.5">Your wallet is connected and set as your Hyperliquid account. Fund it when you want to trade, or go look around first.</p>
-                <div className="card mt-4 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>Your Hyperliquid wallet {HL_NETWORK === "testnet" ? "(testnet)" : ""}</div><div className="mono mt-1.5 break-all text-[13px]">{address}</div><button className="chip info mt-3" onClick={copy}>{copied ? "Copied" : "Copy address"}</button></div>
+                <p className="muted mt-2.5">{tt("Your wallet is connected and set as your Hyperliquid account. Fund it when you want to trade, or go look around first.")}</p>
+                <div className="card mt-4 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>{tt("Your Hyperliquid wallet")}{" "}{HL_NETWORK === "testnet" ? "(testnet)" : ""}</div><div className="mono mt-1.5 break-all text-[13px]">{address}</div><button className="chip info mt-3" onClick={copy}>{copied ? tt("Copied") : tt("Copy address")}</button></div>
                 <div className="mt-3.5 flex flex-col gap-2.5">
-                  <div className="card flex items-start gap-3.5 p-3.5"><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--green-soft)", color: "var(--green)" }}><Icon d={I.card} /></div><div><b>Buy USDC with a card</b><p className="muted mt-1 text-[13px]">Apple Pay, card or bank. Lands in your wallet in minutes. Available from your profile.</p></div></div>
-                  <div className="card flex items-start gap-3.5 p-3.5"><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--blue-soft)", color: "var(--blue)" }}><Icon d={I.down} /></div><div><b>Send USDC from an exchange</b><p className="muted mt-1 text-[13px]">Withdraw to the address above on Arbitrum. It's bridged to Hyperliquid for you.</p></div></div>
+                  <div className="card flex items-start gap-3.5 p-3.5"><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--green-soft)", color: "var(--green)" }}><Icon d={I.card} /></div><div><b>{tt("Buy USDC with a card")}</b><p className="muted mt-1 text-[13px]">{tt("Apple Pay, card or bank. Lands in your wallet in minutes. Available from your profile.")}</p></div></div>
+                  <div className="card flex items-start gap-3.5 p-3.5"><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--blue-soft)", color: "var(--blue)" }}><Icon d={I.down} /></div><div><b>{tt("Send USDC from an exchange")}</b><p className="muted mt-1 text-[13px]">{tt("Withdraw to the address above on Arbitrum. It's bridged to Hyperliquid for you.")}</p></div></div>
                 </div>
               </>
             ) : (
               <>
-                <p className="muted mt-2.5">You&apos;re in <b>demo mode</b> with $10,000 of practice money. Fills are simulated at live Hyperliquid prices and tagged Demo in the feed. Nothing is at risk.</p>
+                <p className="muted mt-2.5">{tt("You're in")}{" "}<b>{tt("demo mode")}</b>{" "}{tt("with $10,000 of practice money. Fills are simulated at live Hyperliquid prices and tagged Demo in the feed. Nothing is at risk.")}</p>
                 {isGuest || liveOk ? (
-                  <button className="card mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" style={{ border: "1.5px solid var(--brand)" }} onClick={isGuest ? login : linkWallet}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}><Icon d={I.wallet} /></div><div><b>{isGuest ? (liveOk ? "Sign in to keep your account or trade real money" : "Sign in to keep your account") : "Connect a wallet to trade real money"}</b><p className="muted mt-1 text-[13px]">{isGuest ? (liveOk ? "Guest demo lives on this device only. Sign in with X to keep your record, or connect a wallet to trade for real." : "Guest demo lives on this device only. Sign in with X to keep your record and get early access to real money.") : "MetaMask, Rabby, Rainbow or WalletConnect. Your wallet becomes your Hyperliquid account. You can do this any time from Settings."}</p></div></button>
+                  <button className="card mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" style={{ border: "1.5px solid var(--brand)" }} onClick={isGuest ? login : linkWallet}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}><Icon d={I.wallet} /></div><div><b>{isGuest ? (liveOk ? tt("Sign in to keep your account or trade real money") : tt("Sign in to keep your account")) : tt("Connect a wallet to trade real money")}</b><p className="muted mt-1 text-[13px]">{isGuest ? (liveOk ? tt("Guest demo lives on this device only. Sign in with X to keep your record, or connect a wallet to trade for real.") : tt("Guest demo lives on this device only. Sign in with X to keep your record and get early access to real money.")) : tt("MetaMask, Rabby, Rainbow or WalletConnect. Your wallet becomes your Hyperliquid account. You can do this any time from Settings.")}</p></div></button>
                 ) : (
-                  <button className="card live-off mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" onClick={gate(() => null)}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--surface)", color: "var(--muted)" }}><Icon d={I.lock} /></div><div><b>Real money<span className="soon-pill">Soon</span></b><p className="muted mt-1 text-[13px]">Real trading on Hyperliquid opens soon. Tap for early access. Your demo record counts toward Season 0.</p></div></button>
+                  <button className="card live-off mt-4 flex w-full items-start gap-3.5 p-3.5 text-left" onClick={gate(() => null)}><div className="grid h-10 w-10 flex-none place-items-center rounded-xl" style={{ background: "var(--surface)", color: "var(--muted)" }}><Icon d={I.lock} /></div><div><b>{tt("Real money")}<span className="soon-pill">{tt("Soon")}</span></b><p className="muted mt-1 text-[13px]">{tt("Real trading on Hyperliquid opens soon. Tap for early access. Your demo record counts toward Season 0.")}</p></div></button>
                 )}
                 {linkError && <p className="red mt-2 text-sm">{linkError}</p>}
               </>
             )}
-            {profile && <div className="card mt-2.5 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>Your referral code</div><div className="mt-1.5 flex items-center justify-between"><b className="mono text-lg uppercase">{profile.handle}</b><button className="chip" onClick={async () => { try { await navigator.clipboard.writeText(referralLink(siteOrigin(), profile.handle)); } catch {} }}>Copy link</button></div><p className="muted mt-1.5 text-[13px]">Friends who join with it pay a lower fee. You earn {REFERRAL_SHARE_PCT}% of the Perped fee on every trade they make, for life.</p></div>}
+            {profile && <div className="card mt-2.5 p-4"><div className="eyebrow" style={{ color: "var(--muted)" }}>{tt("Your referral code")}</div><div className="mt-1.5 flex items-center justify-between"><b className="mono text-lg uppercase">{profile.handle}</b><button className="chip" onClick={async () => { try { await navigator.clipboard.writeText(referralLink(siteOrigin(), profile.handle)); } catch {} }}>{tt("Copy link")}</button></div><p className="muted mt-1.5 text-[13px]">{tt("Friends who join with it pay a lower fee. You earn")}{" "}{REFERRAL_SHARE_PCT}{tt("% of the Perped fee on every trade they make, for life.")}</p></div>}
           </div>
-          <div className="px-6 pb-8"><button className="btn ink" onClick={() => router.push("/")}>Go to the feed</button></div>
+          <div className="px-6 pb-8"><button className="btn ink" onClick={() => router.push("/")}>{tt("Go to the feed")}</button></div>
         </>
       )}
     </div>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "@/lib/hooks/useSession";
 import { AdminProgramme, type Metrics } from "@/components/AdminProgramme";
@@ -32,14 +34,14 @@ export default function Admin() {
     load(); const id = setInterval(load, 60_000); return () => clearInterval(id);
   }, [staff, call]);
 
-  if (key === undefined) return <main className="p-5"><p className="muted">Loading…</p></main>;
-  if (!staff) return <main className="p-5"><h1 className="text-xl font-extrabold">Admin</h1><p className="muted mt-2 text-sm">{authenticated ? "Your account isn't an admin. Ask the owner to add you." : "Sign in with an admin account."}</p>{!authenticated && <button className="btn ink mt-3" onClick={login}>Sign in</button>}</main>;
+  if (key === undefined) return <main className="p-5"><p className="muted">{tt("Loading…")}</p></main>;
+  if (!staff) return <main className="p-5"><h1 className="text-xl font-extrabold">{tt("Admin")}</h1><p className="muted mt-2 text-sm">{authenticated ? tt("Your account isn't an admin. Ask the owner to add you.") : tt("Sign in with an admin account.")}</p>{!authenticated && <button className="btn ink mt-3" onClick={login}>{tt("Sign in")}</button>}</main>;
   if (err) return <main className="p-5"><p className="red">{err === "unauthorized" ? `Not authorised. Signed in as @${profile?.handle ?? "nobody"}${profile?.role ? ` (${profile.role})` : ""}. Sign out and back in, then try again.` : err}</p></main>;
-  if (!m) return <main className="p-5"><p className="muted">Loading…</p></main>;
+  if (!m) return <main className="p-5"><p className="muted">{tt("Loading…")}</p></main>;
   return (
     <main className="adm-page px-4 pb-28 pt-5">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-extrabold">Perped control</h1><p className="when">Live · updated {new Date(m.at).toLocaleTimeString()}</p></div>
+        <div><h1 className="text-xl font-extrabold">{tt("Perped control")}</h1><p className="when">{tt("Live · updated")}{" "}{new Date(m.at).toLocaleTimeString()}</p></div>
         <span className="adm-role">{profile?.role === "admin" ? "ADMIN" : "OWNER"}</span>
       </div>
       <AdminProgramme call={call} m={m} />

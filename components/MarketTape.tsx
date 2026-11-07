@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { Glyph } from "./Glyph";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -34,7 +36,7 @@ export function SentimentRibbon({ traders, followingAny }: { traders: MarketTrad
     <div className="ribbon">
       {groups.map(([k, g]) => (
         <div key={k} className="rb">
-          <div className="flex items-baseline justify-between"><span className="when">{k}</span><span className={`mono text-[12px] font-bold ${g.pct == null ? "muted" : g.pct >= 50 ? "green" : "red"}`}>{g.pct == null ? (k === "Following" && !followingAny ? "follow someone" : "—") : `${g.pct}% long`}</span></div>
+          <div className="flex items-baseline justify-between"><span className="when">{k}</span><span className={`mono text-[12px] font-bold ${g.pct == null ? "muted" : g.pct >= 50 ? "green" : "red"}`}>{g.pct == null ? (k === "Following" && !followingAny ? tt("follow someone") : "—") : `${g.pct}% long`}</span></div>
           <div className="split mt-1" style={{ height: 5, background: g.pct == null ? "var(--line)" : undefined }}>{g.pct != null && <i style={{ width: `${g.pct}%` }} />}</div>
           <div className="when mt-0.5 text-[10px]">{g.n ? `${g.n} position${g.n === 1 ? "" : "s"}` : ""}</div>
         </div>
@@ -60,11 +62,11 @@ export function MarketTape({ coin, traders, lens, setLens, followingAny, mid, se
   return (
     <section className="tape">
       <div className="flex items-center justify-between">
-        <div className="seg">{(["following", "top", "all"] as Lens[]).map((l) => <button key={l} className={`chip ${lens === l ? "on" : ""}`} style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => setLens(l)}>{l === "following" ? "Following" : l === "top" ? "Top 10" : "Everyone"}</button>)}</div>
-        <button className="when" onClick={() => setShowClosed((v) => !v)}>{showClosed ? "hide closed" : "show closed"}</button>
+        <div className="seg">{(["following", "top", "all"] as Lens[]).map((l) => <button key={l} className={`chip ${lens === l ? "on" : ""}`} style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => setLens(l)}>{l === "following" ? tt("Following") : l === "top" ? tt("Top 10") : tt("Everyone")}</button>)}</div>
+        <button className="when" onClick={() => setShowClosed((v) => !v)}>{showClosed ? tt("hide closed") : tt("show closed")}</button>
       </div>
       {!shown.length && (
-        <p className="muted mt-3 text-sm">{lens === "following" ? (followingAny ? `Nobody you follow is in ${coin} right now.` : "Follow a few traders and their trades on this market show up here, and on the chart.") : `No Perped trades on ${coin} yet. Be the first; the pins are yours.`}</p>
+        <p className="muted mt-3 text-sm">{lens === "following" ? (followingAny ? `Nobody you follow is in ${coin} right now.` : tt("Follow a few traders and their trades on this market show up here, and on the chart.")) : `No Perped trades on ${coin} yet. Be the first; the pins are yours.`}</p>
       )}
       <div className="mt-2 flex flex-col">
         {shown.map((t) => {
@@ -75,8 +77,8 @@ export function MarketTape({ coin, traders, lens, setLens, followingAny, mid, se
             <div key={t.postId} id={`tape-${t.postId}`} className={`trow ${selected === String(t.postId) ? "sel" : ""} ${t.status === "closed" ? "closed" : ""}`} onClick={() => onSelect(selected === String(t.postId) ? null : String(t.postId))}>
               <Link href={`/u/${t.handle}`} onClick={(e) => e.stopPropagation()}><Avatar handle={t.handle} url={t.avatarUrl} size={30} link={false} /></Link>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 text-[13px]"><b className="truncate">{t.handle}</b>{t.top && <span className="pill gold">top</span>}{t.following && <span className="pill">following</span>}{t.isDemo && <span className="demo-tag">Demo</span>}{hot && <Link href={`/battle/${t.fadedFromId ?? t.postId}`} onClick={(e) => e.stopPropagation()} className="pill hot"><Glyph n="swords" /> {t.fadeCount} fading</Link>}</div>
-                <div className="mono when text-[12px]"><span className={t.side === "long" ? "green" : "red"}>{t.side} {t.leverage}×</span> · in at {fmtPrice(t.entryPx)}{t.status === "closed" ? ` → ${fmtPrice(t.exitPx)}` : ""} · {fmtStake(t.notionalUsd / t.leverage)} margin · {timeAgo(t.status === "closed" && t.closedAt ? t.closedAt : t.openedAt)}</div>
+                <div className="flex items-center gap-1.5 text-[13px]"><b className="truncate">{t.handle}</b>{t.top && <span className="pill gold">top</span>}{t.following && <span className="pill">following</span>}{t.isDemo && <span className="demo-tag">{tt("Demo")}</span>}{hot && <Link href={`/battle/${t.fadedFromId ?? t.postId}`} onClick={(e) => e.stopPropagation()} className="pill hot"><Glyph n="swords" /> {t.fadeCount} fading</Link>}</div>
+                <div className="mono when text-[12px]"><span className={t.side === "long" ? "green" : "red"}>{t.side} {t.leverage}×</span>{" "}{tt("· in at")}{" "}{fmtPrice(t.entryPx)}{t.status === "closed" ? ` → ${fmtPrice(t.exitPx)}` : ""} · {fmtStake(t.notionalUsd / t.leverage)}{" "}{tt("margin ·")}{" "}{timeAgo(t.status === "closed" && t.closedAt ? t.closedAt : t.openedAt)}</div>
               </div>
               <div className="text-right">
                 <div className={`mono text-[15px] font-bold ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 1)}</div>
@@ -84,10 +86,10 @@ export function MarketTape({ coin, traders, lens, setLens, followingAny, mid, se
               </div>
               {selected === String(t.postId) && t.status === "open" && !t.mine && (
                 <div className="trow-acts">
-                  <Link href={`/trade?copy=${t.postId}`} className={`copy side ${t.side}`}>Copy · {t.side === "long" ? "Long" : "Short"}</Link>
-                  <Link href={`/trade?fade=${t.postId}`} className={`fade side ${t.side === "long" ? "short" : "long"}`}>Fade · {t.side === "long" ? "Short" : "Long"}</Link>
-                  <Link href={`/post/${t.postId}`} className="chip">Thread</Link>
-                  {t.fadedFromId && <Link href={`/battle/${t.postId}`} className="chip">Fade</Link>}
+                  <Link href={`/trade?copy=${t.postId}`} className={`copy side ${t.side}`}>{tt("Copy ·")}{" "}{t.side === "long" ? tt("Long") : tt("Short")}</Link>
+                  <Link href={`/trade?fade=${t.postId}`} className={`fade side ${t.side === "long" ? "short" : "long"}`}>{tt("Fade ·")}{" "}{t.side === "long" ? tt("Short") : tt("Long")}</Link>
+                  <Link href={`/post/${t.postId}`} className="chip">{tt("Thread")}</Link>
+                  {t.fadedFromId && <Link href={`/battle/${t.postId}`} className="chip">{tt("Fade")}</Link>}
                 </div>
               )}
             </div>
@@ -96,7 +98,7 @@ export function MarketTape({ coin, traders, lens, setLens, followingAny, mid, se
       </div>
       {all.length > 3 && (
         <button type="button" className="chip mt-2 w-full" style={{ padding: "9px 12px", fontSize: 12 }} onClick={() => setExpanded((v) => !v)}>
-          {expanded ? "Show less" : `Show ${Math.min(all.length, 50) - 3} more trade${all.length - 3 === 1 ? "" : "s"}`}
+          {expanded ? tt("Show less") : `Show ${Math.min(all.length, 50) - 3} more trade${all.length - 3 === 1 ? "" : "s"}`}
         </button>
       )}
     </section>

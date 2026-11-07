@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -144,30 +146,30 @@ export function PositionsPill() {
         {unbeaten && <span className="pos-dot" aria-hidden />}
         <span className="pos-stack">{coins.map((c) => <CoinMark key={c} coin={c} size="xs" />)}</span>
         {rows.length > 0 && <><span>{rows.length} open</span><b className={`mono ${total >= 0 ? "green" : "red"}`}><Roll v={total} fmt={(x) => fmtUsd(x, { sign: true })} /></b></>}
-        {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>{unbeaten ? "Unbeaten" : "Live"} <b className="mono">{wins}–{losses}</b></span>}
+        {fades.length > 0 && <span className={rows.length ? "pos-wl" : "pos-wl solo"}>{unbeaten ? tt("Unbeaten") : tt("Live")} <b className="mono">{wins}–{losses}</b></span>}
         <span className="pos-go" aria-hidden>›</span>
       </button>
       </div>
 
       {open && (
-        <Sheet label="Your trades" onClose={() => setOpen(false)}>
+        <Sheet label={tt("Your trades")} onClose={() => setOpen(false)}>
           <div className="pos-sheet">
-            <div className="pos-h"><b>Your trades</b><span>{profile.isDemo ? "Demo · " : ""}updates live</span></div>
+            <div className="pos-h"><b>{tt("Your trades")}</b><span>{profile.isDemo ? tt("Demo · ") : ""}{tt("updates live")}</span></div>
             <div className="pos-tabs" role="tablist">
-              <button type="button" role="tab" aria-selected={tab === "positions"} className={tab === "positions" ? "on" : ""} onClick={() => setTab("positions")}>Positions <span className="mono">{rows.length}</span></button>
-              <button type="button" role="tab" aria-selected={tab === "arena"} className={tab === "arena" ? "on" : ""} onClick={() => setTab("arena")}>Live arena <span className="mono">{wins}–{losses}</span></button>
+              <button type="button" role="tab" aria-selected={tab === "positions"} className={tab === "positions" ? "on" : ""} onClick={() => setTab("positions")}>{tt("Positions")}{" "}<span className="mono">{rows.length}</span></button>
+              <button type="button" role="tab" aria-selected={tab === "arena"} className={tab === "arena" ? "on" : ""} onClick={() => setTab("arena")}>{tt("Live arena")}{" "}<span className="mono">{wins}–{losses}</span></button>
             </div>
             {tab === "arena" && <ArenaIntro />}
             {tab === "arena" ? (
-              !fd && fadesErr ? <div className="pos-load"><p>Couldn&apos;t load your fights.</p><button type="button" onClick={() => void mutateF()}>Try again</button></div>
+              !fd && fadesErr ? <div className="pos-load"><p>{tt("Couldn't load your fights.")}</p><button type="button" onClick={() => void mutateF()}>{tt("Try again")}</button></div>
               : !fd ? <div className="pos-load"><span className="skel" style={{ height: 150, borderRadius: 16 }} /></div>
               : fades.length ? <>
                 {unbeaten ? (
                   <div className="pos-unb">
-                    <small>Unbeaten</small><b className="mono">{wins}–0</b><p>Leading every fade you&apos;re in</p>
+                    <small>{tt("Unbeaten")}</small><b className="mono">{wins}–0</b><p>{tt("Leading every fade you're in")}</p>
                     <span className="pos-pips" aria-hidden>{fades.slice(0, 8).map((f) => <i key={f.battleId} />)}</span>
                   </div>
-                ) : <p className="pos-sub">{wins} ahead · {losses} behind · scored at live prices</p>}
+                ) : <p className="pos-sub">{wins}{" "}{tt("ahead ·")}{" "}{losses}{" "}{tt("behind · scored at live prices")}</p>}
                 {[...fades].sort((a, b) => b.gap - a.gap).map((f) => {
                   const mine = f.iFade ? f.fader : f.target, theirs = f.iFade ? f.target : f.fader;
                   const mark = Number(mids[mine.coin] ?? 0) || Number(mine.entryPx);
@@ -176,8 +178,8 @@ export function PositionsPill() {
                     <div className={`fc-f ${right ? "r" : ""} ${(x === me) === f.ahead ? "lead" : ""}`}>
                       <span className={`fc-av ${x.side}`}><Avatar handle={x.handle} url={x.avatarUrl} size={34} link={false} /></span>
                       <div className="min-w-0">
-                        <div className="fc-name"><span className="truncate">{x === me ? "You" : x.handle}</span></div>
-                        <div className={`fc-pos ${x.side}`}>{x.side === "long" ? "Long" : "Short"} {x.lev}×{leg.status !== "open" ? <span className="pos-banked"> · banked</span> : null}</div>
+                        <div className="fc-name"><span className="truncate">{x === me ? tt("You") : x.handle}</span></div>
+                        <div className={`fc-pos ${x.side}`}>{x.side === "long" ? tt("Long") : tt("Short")} {x.lev}×{leg.status !== "open" ? <span className="pos-banked">{" "}{tt("· banked")}</span> : null}</div>
                         <div className={`mono fc-roi ${x.roi >= 0 ? "green" : "red"}`}>{fmtPct(x.roi, 1)}</div>
                       </div>
                     </div>
@@ -185,24 +187,24 @@ export function PositionsPill() {
                   return (
                     <button key={f.battleId} type="button" className={`pos-fcard ${f.ahead ? "lead" : ""}`} onClick={() => go(`/battle/${f.battleId}`)}>
                       <div className="fc-top">
-                        <span className="fc-tag">Fade · {ticker(mine.coin)}</span>
-                        <span className={`pos-lead ${f.ahead ? "up" : ""}`}>{f.ahead ? "You lead" : "You trail"} by <RollNum v={Math.abs(f.gap)} signed={f.gap} /></span>
+                        <span className="fc-tag">{tt("Fade ·")}{" "}{ticker(mine.coin)}</span>
+                        <span className={`pos-lead ${f.ahead ? "up" : ""}`}>{f.ahead ? tt("You lead") : tt("You trail")} by <RollNum v={Math.abs(f.gap)} signed={f.gap} /></span>
                       </div>
                       <div className="fc-hp"><MiniHp f={me} live={mark} big /><span>HP</span><MiniHp f={them} live={mark} big right /></div>
                       <div className="fc-row">{side(me, mine)}<span className="fc-vs">vs</span>{side(them, theirs, true)}</div>
                       <div className={`pos-tug ${f.ahead ? "up" : ""}`}><i style={{ width: `${Math.max(6, Math.min(94, 50 + f.gap * 2))}%` }} /><u /></div>
-                      <div className="pos-fwatch">{f.iFade ? `You faded @${f.opp}` : `@${f.opp} faded you`} · watch the fight ›</div>
-                      {stamps[f.battleId] && Date.now() - stamps[f.battleId] < 5000 && <span key={stamps[f.battleId]} className="pos-stamp">Took the lead</span>}
-                      {koOf(f) && <span className="pos-ko"><b>KO</b><small>@{f.opp} got {(theirs.meta as { closeReason?: string } | null)?.closeReason === "liquidation" ? "liquidated" : "stopped out"}</small></span>}
+                      <div className="pos-fwatch">{f.iFade ? `You faded @${f.opp}` : `@${f.opp} faded you`}{" "}{tt("· watch the fight ›")}</div>
+                      {stamps[f.battleId] && Date.now() - stamps[f.battleId] < 5000 && <span key={stamps[f.battleId]} className="pos-stamp">{tt("Took the lead")}</span>}
+                      {koOf(f) && <span className="pos-ko"><b>KO</b><small>@{f.opp} got {(theirs.meta as { closeReason?: string } | null)?.closeReason === "liquidation" ? "liquidated" : tt("stopped out")}</small></span>}
                     </button>
                   );
                 })}
-              </> : <p className="pos-sub" style={{ padding: "20px 0", textAlign: "center" }}>No live fades. Find a trade to fade on the home feed.</p>
+              </> : <p className="pos-sub" style={{ padding: "20px 0", textAlign: "center" }}>{tt("No live fades. Find a trade to fade on the home feed.")}</p>
             ) : <>
             <div className="pos-tot">
-              <div><small>Open P&amp;L</small><b className={`mono ${total >= 0 ? "green" : "red"}`}><Roll v={total} fmt={(x) => fmtUsd(x, { sign: true })} /></b></div>
-              <div><small>In margin</small><b className="mono">{fmtUsd(margin)}</b></div>
-              {profile.isDemo && <div><small>Balance</small><b className="mono">{fmtUsd(Number(profile.demoBalance ?? 0))}</b></div>}
+              <div><small>{tt("Open P&L")}</small><b className={`mono ${total >= 0 ? "green" : "red"}`}><Roll v={total} fmt={(x) => fmtUsd(x, { sign: true })} /></b></div>
+              <div><small>{tt("In margin")}</small><b className="mono">{fmtUsd(margin)}</b></div>
+              {profile.isDemo && <div><small>{tt("Balance")}</small><b className="mono">{fmtUsd(Number(profile.demoBalance ?? 0))}</b></div>}
             </div>
             {groups.all.length > 1 && (
               <div className="pos-bulk">
@@ -218,7 +220,7 @@ export function PositionsPill() {
                 })}
               </div>
             )}
-            {live.some((x) => !x.post.paper) && groups.all.length > 1 && <p className="pos-sub">Real-money trades close one at a time (each needs your wallet).</p>}
+            {live.some((x) => !x.post.paper) && groups.all.length > 1 && <p className="pos-sub">{tt("Real-money trades close one at a time (each needs your wallet).")}</p>}
             {err && <p className="pos-err">{err}</p>}
             {live.map(({ post, px, pnl, roi }) => {
               const side = post.side as "long" | "short", lev = post.leverage ?? 1;
@@ -228,26 +230,26 @@ export function PositionsPill() {
                   <div className="pos-r1">
                     <CoinMark coin={post.coin!} size="sm" />
                     <div className="pos-mid">
-                      <b>{ticker(post.coin!)} <span className={`lbl ${side}`}><i />{side === "long" ? "Long" : "Short"} {lev}×</span></b>
+                      <b>{ticker(post.coin!)} <span className={`lbl ${side}`}><i />{side === "long" ? tt("Long") : tt("Short")} {lev}×</span></b>
                       <span className="mono">{fmtPrice(Number(post.entryPx))} → {fmtPrice(px)}{post.paper && lev > 1 ? ` · liq ${fmtPrice(liq)}` : ""}</span>
                     </div>
                     <div className="pos-pnl"><b className={`mono ${pnl >= 0 ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</b><small className={`mono ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 1)}</small></div>
                   </div>
                   {chartFor === post.id && <PosChart post={post} liq={post.paper && lev > 1 ? liq : null} onGo={go} />}
                   <div className="pos-acts">
-                    <button type="button" className={chartFor === post.id ? "on" : ""} onClick={() => setChartFor(chartFor === post.id ? null : post.id)}>{chartFor === post.id ? "Hide chart" : "Chart"}</button>
-                    <button type="button" onClick={() => setManage(post)}>Stop / target</button>
+                    <button type="button" className={chartFor === post.id ? "on" : ""} onClick={() => setChartFor(chartFor === post.id ? null : post.id)}>{chartFor === post.id ? tt("Hide chart") : tt("Chart")}</button>
+                    <button type="button" onClick={() => setManage(post)}>{tt("Stop / target")}</button>
                     {post.paper ? <>
-                      <button type="button" disabled={busy === post.id} onClick={() => quickClose(post.id, 0.5)}>Close half</button>
-                      <button type="button" disabled={busy === post.id} onClick={() => quickClose(post.id, 1)}>{busy === post.id ? "…" : "Close"}</button>
-                    </> : <button type="button" onClick={() => setManage(post)}>Close</button>}
+                      <button type="button" disabled={busy === post.id} onClick={() => quickClose(post.id, 0.5)}>{tt("Close half")}</button>
+                      <button type="button" disabled={busy === post.id} onClick={() => quickClose(post.id, 1)}>{busy === post.id ? "…" : tt("Close")}</button>
+                    </> : <button type="button" onClick={() => setManage(post)}>{tt("Close")}</button>}
                   </div>
                 </div>
               );
             })}
-            {!live.length && (postsErr && !data ? <div className="pos-load"><p>Couldn&apos;t load your trades.</p><button type="button" onClick={() => { void mutate(); void mutateF(); }}>Try again</button></div>
+            {!live.length && (postsErr && !data ? <div className="pos-load"><p>{tt("Couldn't load your trades.")}</p><button type="button" onClick={() => { void mutate(); void mutateF(); }}>{tt("Try again")}</button></div>
               : postsLoading && !data ? <div className="pos-load"><span className="skel" style={{ height: 92, borderRadius: 16 }} /><span className="skel" style={{ height: 92, borderRadius: 16 }} /></div>
-              : <p className="pos-sub" style={{ padding: "20px 0", textAlign: "center" }}>No open positions.</p>)}
+              : <p className="pos-sub" style={{ padding: "20px 0", textAlign: "center" }}>{tt("No open positions.")}</p>)}
             </>}
           </div>
         </Sheet>
@@ -279,15 +281,15 @@ function PosChart({ post, liq, onGo }: { post: FeedRow["post"]; liq: number | nu
     return ms;
   }, [traders, post, profile?.avatarUrl, profile?.handle]);
   const guides = [
-    { price: Number(post.entryPx), label: "Your entry" },
-    ...(liq ? [{ price: liq, label: "Liq" }] : []),
-    ...(post.tpPx ? [{ price: Number(post.tpPx), label: "Target" }] : []),
-    ...(post.slPx ? [{ price: Number(post.slPx), label: "Stop" }] : []),
+    { price: Number(post.entryPx), label: tt("Your entry") },
+    ...(liq ? [{ price: liq, label: tt("Liq") }] : []),
+    ...(post.tpPx ? [{ price: Number(post.tpPx), label: tt("Target") }] : []),
+    ...(post.slPx ? [{ price: Number(post.slPx), label: tt("Stop") }] : []),
   ];
   return (
     <div className="pos-chart">
       <PriceChart coin={coin} livePx={Number(mids[coin] ?? 0) || undefined} markers={markers} guides={guides} height={230} />
-      <p className="pos-chart-note">Faces mark where traders in {ticker(coin)} got in. <button type="button" onClick={() => onGo(`/markets/${coin}`)}>Full market ›</button></p>
+      <p className="pos-chart-note">{tt("Faces mark where traders in")}{" "}{ticker(coin)}{" "}{tt("got in.")}{" "}<button type="button" onClick={() => onGo(`/markets/${coin}`)}>{tt("Full market ›")}</button></p>
     </div>
   );
 }

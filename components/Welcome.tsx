@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -21,8 +23,8 @@ const LEVELS: { k: Level; title: string; sub: string; icon: "drop" | "bolt" | "s
 const LEV: Record<Level, number> = { new: 2, crypto: 3, perps: 5 };
 
 type Slide = { title: string; body: string[]; demo?: React.ReactNode };
-const Up = () => <span className="wl-dir long">▲ Long = price up</span>;
-const Down = () => <span className="wl-dir short">▼ Short = price down</span>;
+const Up = () => <span className="wl-dir long">{tt("▲ Long = price up")}</span>;
+const Down = () => <span className="wl-dir short">{tt("▼ Short = price down")}</span>;
 
 const SLIDES: Record<"new" | "crypto", Slide[]> = {
   new: [
@@ -30,7 +32,7 @@ const SLIDES: Record<"new" | "crypto", Slide[]> = {
       demo: <div className="wl-demo"><span className="wl-tick"><CoinMark coin="BTC" size="sm" /><b>BTC</b><span className="mono">$97,412</span><span className="green mono">+1.8%</span></span><span className="wl-tick"><CoinMark coin="ETH" size="sm" /><b>ETH</b><span className="mono">$3,284</span><span className="red mono">−0.6%</span></span></div> },
     { title: "Pick a direction", body: ["Think it goes up? Go long. Think it goes down? Go short. You can make money either way.", "If the price moves your way you're in profit. If it moves against you, you're in loss."], demo: <div className="wl-demo row"><Up /><Down /></div> },
     { title: "Leverage multiplies it, both ways", body: ["With 2× leverage, a 1% move in the price is 2% on your money. With 10×, it's 10%.", "It multiplies losses exactly the same. Start low: we'll set you up at 2×."],
-      demo: <div className="wl-demo"><div className="wl-lev"><span>Price moves</span><b className="mono">+1%</b></div><div className="wl-lev"><span>At 2×</span><b className="mono green">+2%</b></div><div className="wl-lev"><span>At 10×</span><b className="mono green">+10%</b></div><div className="wl-lev"><span>…or the other way at 10×</span><b className="mono red">−10%</b></div></div> },
+      demo: <div className="wl-demo"><div className="wl-lev"><span>{tt("Price moves")}</span><b className="mono">+1%</b></div><div className="wl-lev"><span>{tt("At 2×")}</span><b className="mono green">+2%</b></div><div className="wl-lev"><span>{tt("At 10×")}</span><b className="mono green">+10%</b></div><div className="wl-lev"><span>{tt("…or the other way at 10×")}</span><b className="mono red">−10%</b></div></div> },
     { title: "Stop loss and liquidation", body: ["A stop loss closes your trade automatically if the price goes too far against you, so a bad trade stays a small loss.", "If the price goes much too far, the trade is closed for you anyway: that's liquidation. Higher leverage gets there faster."] },
     { title: "Practice money, real prices", body: ["You start with $10,000 of demo money. The prices are real, the money isn't, so nothing is at risk while you learn.", "Every trade you make is a post: people can copy you, or fade you (bet against you), and you can do the same to them."] },
   ],
@@ -48,7 +50,7 @@ function Deck({ slides, onDone }: { slides: Slide[]; onDone: () => void }) {
   const s = slides[i], last = i === slides.length - 1;
   return (
     <div className="intro" onTouchStart={(e) => { x0.current = e.touches[0].clientX; }} onTouchEnd={(e) => { if (x0.current == null) return; const dx = e.changedTouches[0].clientX - x0.current; if (Math.abs(dx) > 50) setI((n) => Math.max(0, Math.min(slides.length - 1, n + (dx < 0 ? 1 : -1)))); x0.current = null; }}>
-      <div className="intro-top"><div className="intro-dots">{slides.map((_, n) => <button key={n} aria-label={`Slide ${n + 1}`} className={n === i ? "on" : ""} onClick={() => setI(n)} />)}</div><button className="intro-skip" onClick={onDone}>Skip</button></div>
+      <div className="intro-top"><div className="intro-dots">{slides.map((_, n) => <button key={n} aria-label={`Slide ${n + 1}`} className={n === i ? "on" : ""} onClick={() => setI(n)} />)}</div><button className="intro-skip" onClick={onDone}>{tt("Skip")}</button></div>
       <div key={i} className="intro-slide">
         <div className="eyebrow">{i + 1} of {slides.length}</div>
         <h2 className="intro-h">{s.title}</h2>
@@ -56,8 +58,8 @@ function Deck({ slides, onDone }: { slides: Slide[]; onDone: () => void }) {
         {s.body.map((b, n) => <p key={n} className="intro-p">{b}</p>)}
       </div>
       <div className="intro-nav">
-        {i > 0 ? <button className="btn ghost" onClick={() => setI(i - 1)}>Back</button> : <span />}
-        <button className="btn ink" onClick={() => (last ? onDone() : setI(i + 1))}>{last ? "Try it" : "Next"}</button>
+        {i > 0 ? <button className="btn ghost" onClick={() => setI(i - 1)}>{tt("Back")}</button> : <span />}
+        <button className="btn ink" onClick={() => (last ? onDone() : setI(i + 1))}>{last ? tt("Try it") : tt("Next")}</button>
       </div>
     </div>
   );
@@ -69,26 +71,26 @@ function FirstTrade({ level, onDone, onSkip }: { level: Level; onDone: () => voi
   const [side, setSide] = useState<"long" | "short" | null>(null);
   return (
     <div className="intro">
-      <div className="intro-top"><span className="eyebrow">Your first trade</span><button className="intro-skip" onClick={onSkip}>Skip</button></div>
+      <div className="intro-top"><span className="eyebrow">{tt("Your first trade")}</span><button className="intro-skip" onClick={onSkip}>{tt("Skip")}</button></div>
       <div className="intro-slide">
-        <h2 className="intro-h">{level === "perps" ? "Open a demo position" : "Make your first trade"}</h2>
-        <p className="intro-p">{level === "new" ? "Pick a coin, then pick which way you think it goes. It's practice money, so there's nothing to lose." : level === "crypto" ? "Pick a coin and a side. We've set leverage to 3× and you can add a stop loss." : "Demo money, live Hyperliquid prices. Pick a market and go."}</p>
-        <div className="wl-step"><b>1</b>Pick a coin</div>
+        <h2 className="intro-h">{level === "perps" ? tt("Open a demo position") : tt("Make your first trade")}</h2>
+        <p className="intro-p">{level === "new" ? tt("Pick a coin, then pick which way you think it goes. It's practice money, so there's nothing to lose.") : level === "crypto" ? tt("Pick a coin and a side. We've set leverage to 3× and you can add a stop loss.") : tt("Demo money, live Hyperliquid prices. Pick a market and go.")}</p>
+        <div className="wl-step"><b>1</b>{tt("Pick a coin")}</div>
         <div className="wl-coins">{["BTC", "ETH", "SOL", "HYPE"].map((c) => <button key={c} className={coin === c ? "on" : ""} onClick={() => setCoin(c)}><CoinMark coin={c} size="sm" />{ticker(c)}</button>)}</div>
-        <div className="wl-step"><b>2</b>{level === "perps" ? "Pick a side" : "Up or down?"}</div>
+        <div className="wl-step"><b>2</b>{level === "perps" ? tt("Pick a side") : tt("Up or down?")}</div>
         <div className="wl-sides">
-          <button className={`long ${side === "long" ? "on" : ""}`} onClick={() => setSide("long")}><b>▲ Long</b><span>{level === "perps" ? "Buy" : "I think it goes up"}</span></button>
-          <button className={`short ${side === "short" ? "on" : ""}`} onClick={() => setSide("short")}><b>▼ Short</b><span>{level === "perps" ? "Sell" : "I think it goes down"}</span></button>
+          <button className={`long ${side === "long" ? "on" : ""}`} onClick={() => setSide("long")}><b>{tt("▲ Long")}</b><span>{level === "perps" ? tt("Buy") : tt("I think it goes up")}</span></button>
+          <button className={`short ${side === "short" ? "on" : ""}`} onClick={() => setSide("short")}><b>{tt("▼ Short")}</b><span>{level === "perps" ? tt("Sell") : tt("I think it goes down")}</span></button>
         </div>
         {side && (
           <>
-            <div className="wl-step"><b>3</b>{level === "new" ? "Choose how much to put in" : "Size it and go"}</div>
-            {level === "new" && <p className="when mb-2">Start small, like $100. Leverage is set to 2×, so a 1% move is 2% on that $100.</p>}
+            <div className="wl-step"><b>3</b>{level === "new" ? tt("Choose how much to put in") : tt("Size it and go")}</div>
+            {level === "new" && <p className="when mb-2">{tt("Start small, like $100. Leverage is set to 2×, so a 1% move is 2% on that $100.")}</p>}
             <div className="wl-ticket"><TradeTicket key={`${coin}-${side}`} seed={{ coin, side, leverage: LEV[level] }} compact onDone={onDone} /></div>
           </>
         )}
       </div>
-      <div className="intro-nav"><button className="btn ghost" onClick={onSkip}>Skip this</button><span className="wl-hint">{side ? "Place the trade above to continue" : "Pick a coin and a direction"}</span></div>
+      <div className="intro-nav"><button className="btn ghost" onClick={onSkip}>{tt("Skip this")}</button><span className="wl-hint">{side ? tt("Place the trade above to continue") : tt("Pick a coin and a direction")}</span></div>
     </div>
   );
 }
@@ -108,23 +110,23 @@ function FirstFade({ level, onDone, onSkip }: { level: Level; onDone: () => void
     if (p) setPick(p); else setNone(true);
   }, [data, pick, profile?.handle]);
   useEffect(() => { if (none || error) onSkip(); }, [none, error, onSkip]);
-  if (!pick) return <div className="intro"><div className="intro-top"><span className="eyebrow">Your first fade</span><button className="intro-skip" onClick={onSkip}>Skip</button></div><div className="intro-slide"><p className="muted">Finding a live trade to fade…</p></div><div className="intro-nav"><button className="btn ghost" onClick={onSkip}>Skip this</button><span /></div></div>;
+  if (!pick) return <div className="intro"><div className="intro-top"><span className="eyebrow">{tt("Your first fade")}</span><button className="intro-skip" onClick={onSkip}>{tt("Skip")}</button></div><div className="intro-slide"><p className="muted">{tt("Finding a live trade to fade…")}</p></div><div className="intro-nav"><button className="btn ghost" onClick={onSkip}>{tt("Skip this")}</button><span /></div></div>;
   const s = pick.post.side as "long" | "short", mine = s === "long" ? "short" : "long", lev = pick.post.leverage ?? 2;
   return (
     <div className="intro">
-      <div className="intro-top"><span className="eyebrow">Your first fade</span><button className="intro-skip" onClick={onSkip}>Skip</button></div>
+      <div className="intro-top"><span className="eyebrow">{tt("Your first fade")}</span><button className="intro-skip" onClick={onSkip}>{tt("Skip")}</button></div>
       <div className="intro-slide">
-        <h2 className="intro-h">Now bet against someone</h2>
-        <p className="intro-p">{level === "new" ? "Fading means taking the other side of someone's trade. If they think the price goes up, you bet it goes down. Whoever ends with the better result wins the fight." : level === "crypto" ? "A fade opens the opposite position to someone else's, at their leverage, with a stop loss added for you. It becomes a head-to-head: higher ROI wins." : "Quick fade: opposite side, their leverage, auto stop loss. It's a head-to-head on ROI, scored in the Arena."}</p>
+        <h2 className="intro-h">{tt("Now bet against someone")}</h2>
+        <p className="intro-p">{level === "new" ? tt("Fading means taking the other side of someone's trade. If they think the price goes up, you bet it goes down. Whoever ends with the better result wins the fight.") : level === "crypto" ? tt("A fade opens the opposite position to someone else's, at their leverage, with a stop loss added for you. It becomes a head-to-head: higher ROI wins.") : tt("Quick fade: opposite side, their leverage, auto stop loss. It's a head-to-head on ROI, scored in the Arena.")}</p>
         <div className="wl-them">
           <Avatar handle={pick.author!.handle} url={pick.author!.avatarUrl} size={40} link={false} />
           <div className="min-w-0 flex-1"><b>{pick.author!.handle}</b><span className="when block">is <b className={s === "long" ? "green" : "red"}>{s}</b> {ticker(pick.post.coin!)} at {lev}×</span></div>
           <CoinMark coin={pick.post.coin!} size="sm" />
         </div>
-        <div className="wl-vs"><span>You go <b className={mine === "long" ? "green" : "red"}>{mine}</b></span><span className="when">{level === "new" ? (mine === "short" ? "you win if the price falls" : "you win if the price rises") : `same ${lev}×, stop loss added`}</span></div>
+        <div className="wl-vs"><span>{tt("You go")}{" "}<b className={mine === "long" ? "green" : "red"}>{mine}</b></span><span className="when">{level === "new" ? (mine === "short" ? tt("you win if the price falls") : tt("you win if the price rises")) : `same ${lev}×, stop loss added`}</span></div>
         <div className="wl-ticket"><TradeTicket key={pick.post.id} seed={{ coin: pick.post.coin!, side: mine, leverage: lev, fadedFromId: pick.post.id, handle: pick.author!.handle, lockLev: true, toBattle: true }} compact quick onDone={onDone} /></div>
       </div>
-      <div className="intro-nav"><button className="btn ghost" onClick={onSkip}>Skip this</button><span className="wl-hint">Place the fade above to start the fight</span></div>
+      <div className="intro-nav"><button className="btn ghost" onClick={onSkip}>{tt("Skip this")}</button><span className="wl-hint">{tt("Place the fade above to start the fight")}</span></div>
     </div>
   );
 }
@@ -161,33 +163,33 @@ export function Welcome({ onClose }: { onClose: () => void }) {
   const choose = (l: Level) => { track(l === "new" ? "welcome_new" : l === "crypto" ? "welcome_crypto" : "welcome_perps"); setLevel(l); try { localStorage.setItem(LEVEL_KEY, l); } catch {} void withAccount("fade"); };
 
   return (
-    <div className="intro-overlay" role="dialog" aria-label="Welcome to Perped">
+    <div className="intro-overlay" role="dialog" aria-label={tt("Welcome to Perped")}>
       {err && <div className="welcome-err" role="alert">{err}</div>}
       {step === "ask" && (
         <div className="intro">
-          <div className="intro-top"><span className="eyebrow">Welcome to Perped</span><button className="intro-skip" onClick={finish}>Skip</button></div>
+          <div className="intro-top"><span className="eyebrow">{tt("Welcome to Perped")}</span><button className="intro-skip" onClick={finish}>{tt("Skip")}</button></div>
           <div className="intro-slide">
-            <h2 className="intro-h">How much do you know about crypto?</h2>
-            <p className="intro-p">We&rsquo;ll explain Perped at your level, then walk you through a first trade with practice money.</p>
+            <h2 className="intro-h">{tt("How much do you know about crypto?")}</h2>
+            <p className="intro-p">{tt("We’ll explain Perped at your level, then walk you through a first trade with practice money.")}</p>
             <div className="wl-levels">{LEVELS.map((l) => (
               <button key={l.k} className={`wl-level ${sel === l.k ? "on" : ""}`} aria-pressed={sel === l.k} onClick={() => setSel(l.k)}><span className="wl-ic"><Glyph n={l.icon} /></span><span className="min-w-0 flex-1"><b>{l.title}</b><span>{l.sub}</span></span><span className="wl-radio" aria-hidden /></button>
             ))}</div>
-            <p className="when mt-4">You can change this any time in Settings.</p>
+            <p className="when mt-4">{tt("You can change this any time in Settings.")}</p>
           </div>
-          <div className="intro-nav"><button className="btn ghost" onClick={finish}>Skip</button><button className="btn ink" disabled={!sel} onClick={() => sel && choose(sel)}>Continue</button></div>
+          <div className="intro-nav"><button className="btn ghost" onClick={finish}>{tt("Skip")}</button><button className="btn ink" disabled={!sel} onClick={() => sel && choose(sel)}>{tt("Continue")}</button></div>
         </div>
       )}
-      {step === "learn" && level && (level === "perps" ? <Intro onDone={toTrade} doneLabel={busy ? "…" : "Try it"} /> : <Deck slides={SLIDES[level]} onDone={toTrade} />)}
+      {step === "learn" && level && (level === "perps" ? <Intro onDone={toTrade} doneLabel={busy ? "…" : tt("Try it")} /> : <Deck slides={SLIDES[level]} onDone={toTrade} />)}
       {step === "trade" && level && <FirstTrade level={level} onDone={() => { track("first_trade_done"); setStep("done"); }} onSkip={() => { track("first_trade_skip"); setStep("done"); }} />}
       {step === "fade" && level && <FirstFade level={level} onDone={() => { track("first_fade_done"); finish(); }} onSkip={() => { track("first_fade_skip"); setStep("learn"); }} />}
       {step === "done" && level && (
         <div className="intro">
           <div className="intro-slide">
-            <div className="eyebrow">You&rsquo;re set</div>
-            <h2 className="intro-h">{level === "new" ? "That's the basics" : "You're in"}</h2>
+            <div className="eyebrow">{tt("You’re set")}</div>
+            <h2 className="intro-h">{level === "new" ? tt("That's the basics") : tt("You're in")}</h2>
             <ul className="wl-next">{NEXT[level].map((t) => <li key={t}>{t}</li>)}</ul>
           </div>
-          <div className="intro-nav"><span /><button className="btn ink" onClick={() => { finish(); router.push("/"); }}>Go to the feed</button></div>
+          <div className="intro-nav"><span /><button className="btn ink" onClick={() => { finish(); router.push("/"); }}>{tt("Go to the feed")}</button></div>
         </div>
       )}
     </div>

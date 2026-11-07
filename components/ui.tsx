@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { small, fit } from "@/lib/img";
 import Link from "next/link";
 import type { CSSProperties } from "react";
@@ -136,7 +138,7 @@ export function Skeleton({ lines = 0, h, w, className = "", round = false }: { l
 /** A feed/list placeholder: n rows of avatar + two text lines, inside cards. */
 export function SkeletonList({ n = 3, card = true }: { n?: number; card?: boolean }) {
   return (
-    <div className="flex flex-col gap-3 px-5 py-3" aria-busy="true" aria-label="Loading">
+    <div className="flex flex-col gap-3 px-5 py-3" aria-busy="true" aria-label={tt("Loading")}>
       {Array.from({ length: n }).map((_, i) => (
         <div key={i} className={card ? "card" : ""} style={{ padding: card ? 14 : "6px 0", animationDelay: `${i * 60}ms` }}>
           <div className="flex items-center gap-3">
@@ -186,9 +188,9 @@ export function Badges({ u, seat = false }: { u: BadgeUser | null | undefined; s
 export function LoadFail({ gone, what = "this", retry }: { gone?: boolean; what?: string; retry?: () => void }) {
   return (
     <div className="load-fail" role="status">
-      <b>{gone ? `This ${what} is gone` : "Couldn't load this right now"}</b>
-      <span>{gone ? "It may have been deleted, or the link is wrong." : "Check your connection and try again."}</span>
-      {gone ? <Link href="/" className="chip mt-3">Back to the feed</Link> : retry ? <button type="button" className="chip mt-3" onClick={retry}>Try again</button> : null}
+      <b>{gone ? `This ${what} is gone` : tt("Couldn't load this right now")}</b>
+      <span>{gone ? tt("It may have been deleted, or the link is wrong.") : tt("Check your connection and try again.")}</span>
+      {gone ? <Link href="/" className="chip mt-3">{tt("Back to the feed")}</Link> : retry ? <button type="button" className="chip mt-3" onClick={retry}>{tt("Try again")}</button> : null}
     </div>
   );
 }

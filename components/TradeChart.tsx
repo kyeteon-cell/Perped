@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
@@ -158,7 +160,7 @@ export function TradeChart({ coin, entry, mark, side, lev, openedAt, tp, sl }: P
       </div>
       <div className="tc-foot">
         <span className="when truncate">
-          {liq ? <>Liq <b className="mono">{fmtPrice(liq)}</b> · {liqDist!.toFixed(0)}% away</> : "No liquidation at 1×"}
+          {liq ? <>{tt("Liq")}{" "}<b className="mono">{fmtPrice(liq)}</b> · {liqDist!.toFixed(0)}{tt("% away")}</> : tt("No liquidation at 1×")}
           {m ? <> · 24h <b className={`mono ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</b></> : null}
         </span>
         <span className="tc-ivs v2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { use } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -14,12 +16,12 @@ export default function StatsPage({ params }: { params: Promise<{ handle: string
   const { handle } = use(params);
   const { data } = useSWR<Res>(`/api/profile/${handle}`);
   if (!data) return <SkeletonList n={2} />;
-  if (data.error) return <p className="muted p-5 text-sm">No trader with that handle.</p>;
+  if (data.error) return <p className="muted p-5 text-sm">{tt("No trader with that handle.")}</p>;
   return (
     <div className="fade-in profile pb-6">
       <header className="hairline flex items-center justify-between px-4 py-3">
-        <Link href={`/u/${handle}`} className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link>
-        <div className="flex items-center gap-2"><Avatar handle={data.user.handle} url={data.user.avatarUrl} size={24} /><div className="name">{data.user.handle} · stats</div></div>
+        <Link href={`/u/${handle}`} className="iconbtn" aria-label={tt("Back")}><Icon d={I.back} /></Link>
+        <div className="flex items-center gap-2"><Avatar handle={data.user.handle} url={data.user.avatarUrl} size={24} /><div className="name">{data.user.handle}{" "}{tt("· stats")}</div></div>
         <span className="w-9" />
       </header>
       <StatsPanels handle={handle} stats={data.stats} rivalries={data.rivalries ?? []} />

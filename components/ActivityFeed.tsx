@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import Link from "next/link";
 import useSWR from "swr";
 import { useState } from "react";
@@ -19,7 +21,7 @@ const FILTERS = {
 type Filter = keyof typeof FILTERS;
 
 const REASON: Record<string, string> = { tp: "Take profit", sl: "Stop loss", liquidation: "Liquidated", manual: "Closed" };
-const Side = ({ side, lev }: { side?: string | null; lev?: number | null }) => side ? <span className={`mo-side ${side}`}>{side === "long" ? "Long" : "Short"}{lev ? ` ${lev}×` : ""}</span> : null;
+const Side = ({ side, lev }: { side?: string | null; lev?: number | null }) => side ? <span className={`mo-side ${side}`}>{side === "long" ? tt("Long") : tt("Short")}{lev ? ` ${lev}×` : ""}</span> : null;
 
 /** One moment in a trader's story, drawn as what it is: a trade, a result, a fight, a call or something they said. */
 function Moment({ it, me }: { it: ActivityItem; me: { handle: string; avatarUrl: string | null } }) {
@@ -30,10 +32,10 @@ function Moment({ it, me }: { it: ActivityItem; me: { handle: string; avatarUrl:
         <Link href={it.href} className="mo">
           <span className="mo-coin">{it.coin && <CoinMark coin={it.coin} size="sm" />}</span>
           <span className="mo-main">
-            <span className="mo-title">{it.type === "open" ? "Opened" : it.type === "copy" ? "Copied" : "Faded"} <b>{ticker(it.coin ?? "")}</b> <Side side={it.side} lev={it.lev} /></span>
+            <span className="mo-title">{it.type === "open" ? tt("Opened") : it.type === "copy" ? tt("Copied") : tt("Faded")} <b>{ticker(it.coin ?? "")}</b> <Side side={it.side} lev={it.lev} /></span>
             {it.who && <span className="mo-sub"><Avatar handle={it.who} url={it.whoAvatar ?? null} size={16} link={false} />{it.type === "fade" ? "against" : "after"} <b>{it.who}</b></span>}
           </span>
-          {it.type === "fade" ? <span className="mo-tag fade gl"><Glyph n="bolt" />Fade</span> : when}
+          {it.type === "fade" ? <span className="mo-tag fade gl"><Glyph n="bolt" />{tt("Fade")}</span> : when}
         </Link>
       );
     case "close": {
@@ -43,7 +45,7 @@ function Moment({ it, me }: { it: ActivityItem; me: { handle: string; avatarUrl:
           <span className="mo-coin">{it.coin && <CoinMark coin={it.coin} size="sm" />}</span>
           <span className="mo-main">
             <span className="mo-title"><b>{ticker(it.coin ?? "")}</b> <Side side={it.side} lev={it.lev} /></span>
-            <span className="mo-sub">{liq ? <span className="gl"><Glyph n="skull" tone="blood" />Liquidated</span> : REASON[it.reason ?? "manual"] ?? "Closed"} · {timeAgo(it.at)}</span>
+            <span className="mo-sub">{liq ? <span className="gl"><Glyph n="skull" tone="blood" />{tt("Liquidated")}</span> : REASON[it.reason ?? "manual"] ?? tt("Closed")} · {timeAgo(it.at)}</span>
           </span>
           <span className={`mo-roi mono ${r >= 0 ? "green" : "red"}`}>{fmtPct(r, 1)}</span>
         </Link>
@@ -58,8 +60,8 @@ function Moment({ it, me }: { it: ActivityItem; me: { handle: string; avatarUrl:
             <Avatar handle={it.who ?? "?"} url={it.whoAvatar ?? null} size={30} link={false} />
           </span>
           <span className="mo-main">
-            <span className="mo-title">{res === "live" ? "Fighting" : res === "won" ? "Perped" : res === "lost" ? "Perped by" : "Drew with"} <b>{it.who}</b></span>
-            <span className="mo-sub">{it.coin && <>{ticker(it.coin)} · </>}{it.mine != null && it.theirs != null ? <span className="mono">{fmtPct(it.mine, 1)} vs {fmtPct(it.theirs, 1)}</span> : "live now"}</span>
+            <span className="mo-title">{res === "live" ? tt("Fighting") : res === "won" ? tt("Perped") : res === "lost" ? tt("Perped by") : tt("Drew with")} <b>{it.who}</b></span>
+            <span className="mo-sub">{it.coin && <>{ticker(it.coin)} · </>}{it.mine != null && it.theirs != null ? <span className="mono">{fmtPct(it.mine, 1)} vs {fmtPct(it.theirs, 1)}</span> : tt("live now")}</span>
           </span>
           <span className={`mo-res ${res}`}>{res === "won" ? "WON" : res === "lost" ? "LOST" : res === "draw" ? "DRAW" : "LIVE"}</span>
         </Link>
@@ -71,7 +73,7 @@ function Moment({ it, me }: { it: ActivityItem; me: { handle: string; avatarUrl:
         <Link href={it.href} className="mo">
           <span className="mo-coin">{it.coin && <CoinMark coin={it.coin} size="sm" />}</span>
           <span className="mo-main">
-            <span className="mo-title">Called <b>{ticker(it.coin ?? "")}</b> <span className={`mo-side ${it.side}`}>{it.side === "long" ? "↑ higher" : "↓ lower"}</span></span>
+            <span className="mo-title">{tt("Called")}{" "}<b>{ticker(it.coin ?? "")}</b> <span className={`mo-side ${it.side}`}>{it.side === "long" ? tt("↑ higher") : tt("↓ lower")}</span></span>
             <span className="mo-sub">{timeAgo(it.at)} ago</span>
           </span>
           <span className={`mo-res ${st === "hit" ? "won" : st === "missed" ? "lost" : "live"}`}>{st === "hit" ? "HIT" : st === "missed" ? "MISSED" : "OPEN"}</span>
@@ -82,7 +84,7 @@ function Moment({ it, me }: { it: ActivityItem; me: { handle: string; avatarUrl:
       return (
         <Link href={it.href} className="mo say">
           <span className="mo-main">
-            <span className="mo-kicker">{it.type === "poll" ? "Asked" : it.type === "comment" ? <>Replied to <b>{it.who}</b></> : "Posted"} {when}</span>
+            <span className="mo-kicker">{it.type === "poll" ? tt("Asked") : it.type === "comment" ? <>{tt("Replied to")}{" "}<b>{it.who}</b></> : tt("Posted")} {when}</span>
             <span className="mo-quote">{it.body ?? it.text}</span>
           </span>
         </Link>
@@ -109,7 +111,7 @@ export function ActivityFeed({ handle, me }: { handle: string; me: { handle: str
   const { data } = useSWR<{ items: ActivityItem[] }>(`/api/profile/${handle}/activity`, { refreshInterval: 30_000 });
   const [f, setF] = useState<Filter>("all");
   if (!data) return <SkeletonList n={4} card={false} />;
-  if (!data.items.length) return <p className="muted p-5 text-sm">Nothing yet. The first trade starts the story.</p>;
+  if (!data.items.length) return <p className="muted p-5 text-sm">{tt("Nothing yet. The first trade starts the story.")}</p>;
   const items = data.items.filter((it) => (FILTERS[f].types as readonly ActivityItem["type"][]).includes(it.type));
   const groups: { day: string; items: ActivityItem[] }[] = [];
   for (const it of items) {
@@ -120,7 +122,7 @@ export function ActivityFeed({ handle, me }: { handle: string; me: { handle: str
   return (
     <div className="act">
       <div className="act-filters">{(Object.keys(FILTERS) as Filter[]).map((k) => <button key={k} className={f === k ? "on" : ""} onClick={() => setF(k)}>{FILTERS[k].label}</button>)}</div>
-      {!items.length && <p className="muted p-5 text-sm">Nothing here yet.</p>}
+      {!items.length && <p className="muted p-5 text-sm">{tt("Nothing here yet.")}</p>}
       {groups.map((g) => {
         const reacts = g.items.filter((i) => i.type === "like" || i.type === "dislike");
         const rest = g.items.filter((i) => i.type !== "like" && i.type !== "dislike");

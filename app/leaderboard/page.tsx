@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { small } from "@/lib/img";
 import { Glyph } from "@/components/Glyph";
 import { useState } from "react";
@@ -31,27 +33,27 @@ export default function LeaderboardPage() {
 
   return (
     <div data-tint="gold" className="fade-in">
-      <header className="lb-hero" style={{ backgroundImage: `url(${small("/api/share-bg/arena", 1080)})` }}><h1 className="h1" style={{ color: "#fff" }}>Leaders</h1><div className="text-[12px]" style={{ color: "rgba(255,255,255,.8)" }}>{mode === "crews" ? "This week's crew war: fades won minus fades lost" : mode === "trades" ? "Realised PnL from Hyperliquid fills" : mode === "calls" ? "Public predictions, scored against the chart" : "XP from fades, duels, calls and trades"}</div></header>
+      <header className="lb-hero" style={{ backgroundImage: `url(${small("/api/share-bg/arena", 1080)})` }}><h1 className="h1" style={{ color: "#fff" }}>{tt("Leaders")}</h1><div className="text-[12px]" style={{ color: "rgba(255,255,255,.8)" }}>{mode === "crews" ? tt("This week's crew war: fades won minus fades lost") : mode === "trades" ? tt("Realised PnL from Hyperliquid fills") : mode === "calls" ? tt("Public predictions, scored against the chart") : tt("XP from fades, duels, calls and trades")}</div></header>
       <div className="px-5 pb-3 pt-4">
-        <div className="modes"><button className={mode === "trades" ? "on" : ""} onClick={() => setMode("trades")}>Trades</button><button className={mode === "calls" ? "on" : ""} onClick={() => setMode("calls")}>Calls</button><button className={mode === "ranks" ? "on" : ""} onClick={() => setMode("ranks")}>Ranks</button><button className={mode === "season" ? "on" : ""} onClick={() => setMode("season")}>Season</button><button className={mode === "crews" ? "on" : ""} onClick={() => setMode("crews")}>Crews</button></div>
-        {mode === "season" && data?.season && <div className="season-bar mt-3"><b className="gl"><Glyph n="trophy" tone="gold" />{data.season.name}</b><span>{seasonLeft(data.season.endsAt)} left · XP earned this month only</span></div>}
+        <div className="modes"><button className={mode === "trades" ? "on" : ""} onClick={() => setMode("trades")}>{tt("Trades")}</button><button className={mode === "calls" ? "on" : ""} onClick={() => setMode("calls")}>{tt("Calls")}</button><button className={mode === "ranks" ? "on" : ""} onClick={() => setMode("ranks")}>{tt("Ranks")}</button><button className={mode === "season" ? "on" : ""} onClick={() => setMode("season")}>{tt("Season")}</button><button className={mode === "crews" ? "on" : ""} onClick={() => setMode("crews")}>{tt("Crews")}</button></div>
+        {mode === "season" && data?.season && <div className="season-bar mt-3"><b className="gl"><Glyph n="trophy" tone="gold" />{data.season.name}</b><span>{seasonLeft(data.season.endsAt)}{" "}{tt("left · XP earned this month only")}</span></div>}
         {mode !== "crews" && <div className="seg mt-3">
-          {mode === "trades" && (["7d", "30d", "all"] as const).map((p) => <button key={p} className={`chip ${p === period ? "on" : ""}`} onClick={() => setPeriod(p)}>{p === "all" ? "All time" : p === "7d" ? "7 days" : "30 days"}</button>)}
-          <button className={`chip ${demo ? "on" : ""}`} style={{ marginLeft: "auto" }} onClick={() => setDemo((v) => !v)}>{demo ? "Demo accounts" : "Real accounts"}</button>
+          {mode === "trades" && (["7d", "30d", "all"] as const).map((p) => <button key={p} className={`chip ${p === period ? "on" : ""}`} onClick={() => setPeriod(p)}>{p === "all" ? tt("All time") : p === "7d" ? tt("7 days") : tt("30 days")}</button>)}
+          <button className={`chip ${demo ? "on" : ""}`} style={{ marginLeft: "auto" }} onClick={() => setDemo((v) => !v)}>{demo ? tt("Demo accounts") : tt("Real accounts")}</button>
         </div>}
       </div>
 
       {mode === "crews" && (
         <>
           {!crews ? <SkeletonList n={4} card={false} /> : <CrewBoard board={crews.board} mine={crews.mine?.slug} />}
-          <Link href="/crews" className="srow" style={{ color: "var(--brand)" }}><span><b>{crews?.mine ? "All crews" : "Start a crew"}</b><span className="when ml-1.5">how the war works</span></span><span>→</span></Link>
+          <Link href="/crews" className="srow" style={{ color: "var(--brand)" }}><span><b>{crews?.mine ? tt("All crews") : tt("Start a crew")}</b><span className="when ml-1.5">{tt("how the war works")}</span></span><span>→</span></Link>
         </>
       )}
       {mode !== "crews" && <>
-      {data?.fellBack && !demo && <p className="when px-5 pb-2 text-[12px]">No real-money traders ranked yet — showing demo accounts.</p>}
-      {(error || data?.error) && <div className="block text-center red text-sm">Leaderboard failed to load: {String(data?.error ?? error?.message ?? error)}</div>}
+      {data?.fellBack && !demo && <p className="when px-5 pb-2 text-[12px]">{tt("No real-money traders ranked yet — showing demo accounts.")}</p>}
+      {(error || data?.error) && <div className="block text-center red text-sm">{tt("Leaderboard failed to load:")}{" "}{String(data?.error ?? error?.message ?? error)}</div>}
       {isLoading && rows.length === 0 && <SkeletonList n={5} card={false} />}
-      {!isLoading && !error && !data?.error && rows.length === 0 && <div className="block text-center muted">{mode === "trades" ? "No closed trades yet this period." : mode === "calls" ? "Nobody has 5 resolved calls yet. Make some calls." : "Nobody ranked yet."}</div>}
+      {!isLoading && !error && !data?.error && rows.length === 0 && <div className="block text-center muted">{mode === "trades" ? tt("No closed trades yet this period.") : mode === "calls" ? tt("Nobody has 5 resolved calls yet. Make some calls.") : tt("Nobody ranked yet.")}</div>}
 
       {podium.length === 3 && (
         <div className="grid grid-cols-[1fr_1.15fr_1fr] items-end gap-2.5 px-5 pb-4">
@@ -81,25 +83,25 @@ export default function LeaderboardPage() {
             <div className="nrow name"><span className="truncate">{r.handle}</span><Badges u={r} /></div>
             <div className="when truncate">{mode === "ranks" || mode === "season" ? `${rankFor(r.xp ?? 0).title} · fades ${r.battlesWon ?? 0}–${r.battlesLost ?? 0} · ${wr(r)} win` : mode === "trades" ? `${r.closedTrades} trades · ${wr(r)} win · ${fmtUsd(Number(r.volume30d), { compact: true })} volume` : `${r.callsResolved} calls · ${r.callsHit} hit · avg ${fmtPct(Number(r.callAvgMove), 1)}${r.callStreak > 1 ? ` · ${r.callStreak} in a row` : ""} · trades ${wr(r)} win`}</div>
           </div>
-          {mode === "ranks" || mode === "season" ? <div className="text-right"><div className="mono text-[17px] font-bold">{(mode === "season" ? r.seasonXp ?? 0 : r.xp ?? 0).toLocaleString()}</div><div className="when">{mode === "season" ? "season XP" : "XP"}</div></div> : mode === "trades" ? <div className={`mono text-[17px] font-bold ${(r.pnl ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div> : <div className="text-right"><div className="mono text-[17px] font-bold">{Math.round(r.hitRate ?? 0)}%</div><div className="when">hit rate</div></div>}
+          {mode === "ranks" || mode === "season" ? <div className="text-right"><div className="mono text-[17px] font-bold">{(mode === "season" ? r.seasonXp ?? 0 : r.xp ?? 0).toLocaleString()}</div><div className="when">{mode === "season" ? tt("season XP") : "XP"}</div></div> : mode === "trades" ? <div className={`mono text-[17px] font-bold ${(r.pnl ?? 0) >= 0 ? "green" : "red"}`}>{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div> : <div className="text-right"><div className="mono text-[17px] font-bold">{Math.round(r.hitRate ?? 0)}%</div><div className="when">{tt("hit rate")}</div></div>}
         </Link>
       ))}
 
       {mode === "trades" && (data?.bottom?.length ?? 0) > 0 && (
         <>
-          <div className="eyebrow px-5 pb-1.5 pt-5" style={{ color: "var(--red)" }}>Exit liquidity · {period === "all" ? "all time" : period} · opted in</div>
+          <div className="eyebrow px-5 pb-1.5 pt-5" style={{ color: "var(--red)" }}>{tt("Exit liquidity ·")}{" "}{period === "all" ? tt("all time") : period}{" "}{tt("· opted in")}</div>
           {data!.bottom!.map((r, i) => (
             <Link key={r.handle} href={`/u/${r.handle}`} className="lb">
               <span className="rank">↓{i + 1}</span>
               <Avatar handle={r.handle} url={r.avatarUrl} size={44} link={false} />
-              <div className="min-w-0 flex-1"><div className="nrow name"><span className="truncate">{r.handle}</span><Badges u={r} /></div><div className="when truncate">{r.closedTrades} trades · {wr(r)} win{r.liquidations ? ` · ${r.liquidations} liquidation${r.liquidations === 1 ? "" : "s"}` : ""}{r.fadedCount ? ` · faded ${r.fadedCount}×` : ""}</div></div>
+              <div className="min-w-0 flex-1"><div className="nrow name"><span className="truncate">{r.handle}</span><Badges u={r} /></div><div className="when truncate">{r.closedTrades}{" "}{tt("trades ·")}{" "}{wr(r)} win{r.liquidations ? ` · ${r.liquidations} liquidation${r.liquidations === 1 ? "" : "s"}` : ""}{r.fadedCount ? ` · faded ${r.fadedCount}×` : ""}</div></div>
               <div className="mono red text-[17px] font-bold">{fmtUsd(r.pnl ?? 0, { sign: true, compact: true })}</div>
             </Link>
           ))}
-          <p className="muted px-5 py-3.5 text-xs leading-relaxed">Only traders who turned on "Show me at the bottom" in Settings appear here.</p>
+          <p className="muted px-5 py-3.5 text-xs leading-relaxed">{tt("Only traders who turned on \"Show me at the bottom\" in Settings appear here.")}</p>
         </>
       )}
-      <p className="muted px-5 py-3.5 text-xs leading-relaxed">{mode === "trades" ? "Only trades placed through Perped count, so every number is verifiable on-chain." : "A call is a public prediction: coin, direction, target, deadline. Perped checks it against Hyperliquid prices. Minimum 5 resolved calls to rank."}</p>
+      <p className="muted px-5 py-3.5 text-xs leading-relaxed">{mode === "trades" ? tt("Only trades placed through Perped count, so every number is verifiable on-chain.") : tt("A call is a public prediction: coin, direction, target, deadline. Perped checks it against Hyperliquid prices. Minimum 5 resolved calls to rank.")}</p>
       </>}
     </div>
   );

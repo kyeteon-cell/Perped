@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { errorOf, netMessage } from "@/lib/net";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -53,7 +55,7 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
     setBusy(`close${fraction}`); setErr(null);
     let exitPx = px;
     if (!post.paper) {
-      if (!walletClient || !asset || !mid) return fail("Wallet or market not ready");
+      if (!walletClient || !asset || !mid) return fail(tt("Wallet or market not ready"));
       const res = await closePosition(makeExchangeClient(walletClient), asset, (side === "long" ? 1 : -1) * size * fraction, mid, fee.tenthsBps);
       if (!res.ok) return fail(res.error ?? "Close failed on Hyperliquid");
       exitPx = res.avgPx ?? mid;
@@ -76,7 +78,7 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
     if (tpN && (side === "long" ? tpN <= entry : tpN >= entry)) return fail(`Take profit must be ${side === "long" ? "above" : "below"} ${fmtPrice(entry)}`);
     if (slN && (side === "long" ? slN >= entry : slN <= entry)) return fail(`Stop loss must be ${side === "long" ? "below" : "above"} ${fmtPrice(entry)}`);
     if (!post.paper) {
-      if (!walletClient || !asset || !address) return fail("Wallet or market not ready");
+      if (!walletClient || !asset || !address) return fail(tt("Wallet or market not ready"));
       const res = await setPositionTpSl(makeExchangeClient(walletClient), address, asset, side, size, tpN, slN);
       if (!res.ok) return fail(res.error ?? "Hyperliquid rejected the orders");
     }
@@ -88,44 +90,44 @@ export function ManageTrade({ post, mid, onChanged, onClose }: { post: FeedRow["
   const Preset = ({ r, set }: { r: number; set: (v: string) => void }) => <button className="chip" style={{ padding: "5px 9px", fontSize: 11 }} onClick={() => set(pxForRoi(r).toFixed(dec))}>{r > 0 ? "+" : ""}{r}%</button>;
 
   return (
-    <Sheet label="Manage trade" onClose={onClose}>
+    <Sheet label={tt("Manage trade")} onClose={onClose}>
         <div className="px-5 pb-6">
           <div className="flex items-center gap-3" data-sheet-handle>
             <CoinMark coin={post.coin!} />
             <div className="flex-1">
-              <div className="text-lg font-extrabold">{ticker(post.coin!, true)} <span className={`lbl ${side}`} style={{ padding: "2px 8px", fontSize: 11 }}><i />{side === "long" ? "Long" : "Short"} {lev}×</span></div>
-              <div className="mono when">{fmtStake(margin)} margin · in at {fmtPrice(entry)} · now {fmtPrice(px)}</div>
+              <div className="text-lg font-extrabold">{ticker(post.coin!, true)} <span className={`lbl ${side}`} style={{ padding: "2px 8px", fontSize: 11 }}><i />{side === "long" ? tt("Long") : tt("Short")} {lev}×</span></div>
+              <div className="mono when">{fmtStake(margin)}{" "}{tt("margin · in at")}{" "}{fmtPrice(entry)}{" "}{tt("· now")}{" "}{fmtPrice(px)}</div>
             </div>
             <div className="text-right"><div className={`mono text-xl font-bold ${roi >= 0 ? "green" : "red"}`}>{fmtPct(roi, 1)}</div><div className={`mono text-[12px] ${pnl >= 0 ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</div></div>
           </div>
           {/* Live candles while you manage: no going back to the market page to catch a level. */}
-          <div className="mt-3 tk-chart"><PriceChart coin={post.coin!} livePx={mid} height={190} guides={[{ price: entry, label: "Entry" }, ...(post.paper && lev > 1 ? [{ price: liq, label: "Liq" }] : [])]} /></div>
-          {post.paper && <p className="faint mt-2 text-[11px]">Demo · liquidates at {fmtPrice(liq)} · exits trigger within a few minutes of the price printing.</p>}
+          <div className="mt-3 tk-chart"><PriceChart coin={post.coin!} livePx={mid} height={190} guides={[{ price: entry, label: tt("Entry") }, ...(post.paper && lev > 1 ? [{ price: liq, label: tt("Liq") }] : [])]} /></div>
+          {post.paper && <p className="faint mt-2 text-[11px]">{tt("Demo · liquidates at")}{" "}{fmtPrice(liq)}{" "}{tt("· exits trigger within a few minutes of the price printing.")}</p>}
 
-          <div className="mt-5 flex items-center justify-between"><span className="font-bold">Close</span><span className="when">at market</span></div>
+          <div className="mt-5 flex items-center justify-between"><span className="font-bold">{tt("Close")}</span><span className="when">{tt("at market")}</span></div>
           <div className="mt-2 grid grid-cols-4 gap-2">
-            {[0.25, 0.5, 0.75, 1].map((f) => <button key={f} className={`btn ${f === 1 ? "short" : "ghostline"}`} style={{ padding: "11px 6px", fontSize: 14 }} disabled={!!busy} onClick={() => close(f)}>{busy === `close${f}` ? "…" : f === 1 ? "Close all" : `${f * 100}%`}</button>)}
+            {[0.25, 0.5, 0.75, 1].map((f) => <button key={f} className={`btn ${f === 1 ? "short" : "ghostline"}`} style={{ padding: "11px 6px", fontSize: 14 }} disabled={!!busy} onClick={() => close(f)}>{busy === `close${f}` ? "…" : f === 1 ? tt("Close all") : `${f * 100}%`}</button>)}
           </div>
 
-          <div className="mt-5 flex items-center justify-between"><span className="font-bold">Take profit · Stop loss</span>{(post.tpPx || post.slPx) && <button className="when" onClick={() => { setTp(""); setSl(""); }}>clear</button>}</div>
+          <div className="mt-5 flex items-center justify-between"><span className="font-bold">{tt("Take profit · Stop loss")}</span>{(post.tpPx || post.slPx) && <button className="when" onClick={() => { setTp(""); setSl(""); }}>clear</button>}</div>
           <div className="mt-2 grid grid-cols-2 gap-3">
             <div>
-              <div className="eyebrow mb-1.5">Take profit</div>
+              <div className="eyebrow mb-1.5">{tt("Take profit")}</div>
               <input type="number" inputMode="decimal" className="field mono" value={tp} onChange={(e) => setTp(e.target.value)} placeholder={pxForRoi(50).toFixed(dec)} />
               <div className="mt-1.5 flex flex-wrap gap-1">{[25, 50, 100].map((r) => <Preset key={r} r={r} set={setTp} />)}</div>
               {tp && Number(tp) > 0 && <div className={`mt-1.5 text-[12px] font-semibold ${roiAt(Number(tp)) >= 0 ? "green" : "red"}`}>{fmtPct(roiAt(Number(tp)), 0)} · {fmtUsd((margin * roiAt(Number(tp))) / 100, { sign: true })}</div>}
             </div>
             <div>
-              <div className="eyebrow mb-1.5">Stop loss</div>
+              <div className="eyebrow mb-1.5">{tt("Stop loss")}</div>
               <input type="number" inputMode="decimal" className="field mono" value={sl} onChange={(e) => setSl(e.target.value)} placeholder={pxForRoi(-30).toFixed(dec)} />
               <div className="mt-1.5 flex flex-wrap gap-1">{[-10, -25, -50].map((r) => <Preset key={r} r={r} set={setSl} />)}</div>
               {sl && Number(sl) > 0 && <div className={`mt-1.5 text-[12px] font-semibold ${roiAt(Number(sl)) >= 0 ? "green" : "red"}`}>{fmtPct(roiAt(Number(sl)), 0)} · {fmtUsd((margin * roiAt(Number(sl))) / 100, { sign: true })}</div>}
             </div>
           </div>
-          <button className="btn ink mt-3" style={{ padding: 12 }} disabled={!!busy} onClick={saveTpSl}>{busy === "tpsl" ? "Saving…" : "Save exits"}</button>
+          <button className="btn ink mt-3" style={{ padding: 12 }} disabled={!!busy} onClick={saveTpSl}>{busy === "tpsl" ? tt("Saving…") : tt("Save exits")}</button>
 
-          <div className="mt-5 flex items-center justify-between"><span className="font-bold">Add to it</span><span className="when">same side, {lev}×</span></div>
-          <Link href={`/trade?coin=${post.coin}&side=${side}&lev=${lev}&add=${post.id}`} className="btn ghostline mt-2" style={{ padding: 12 }} onClick={onClose}>Add margin · open the ticket</Link>
+          <div className="mt-5 flex items-center justify-between"><span className="font-bold">{tt("Add to it")}</span><span className="when">{tt("same side,")}{" "}{lev}×</span></div>
+          <Link href={`/trade?coin=${post.coin}&side=${side}&lev=${lev}&add=${post.id}`} className="btn ghostline mt-2" style={{ padding: 12 }} onClick={onClose}>{tt("Add margin · open the ticket")}</Link>
 
           {err && <p className="red mt-3 text-center text-xs">{err}</p>}
           {done && !err && <p className="green mt-3 text-center text-xs">{done}</p>}

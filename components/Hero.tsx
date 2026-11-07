@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { Roll } from "./Roll";
 import { small } from "@/lib/img";
 import { Glyph } from "./Glyph";
@@ -28,11 +30,11 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
   if (!authenticated || !profile) {
     return (
       <div className="hero photo" style={{ backgroundImage: `url(${small("/api/share-bg/hero-chrome", 1080)})` }}>
-        <div className="k">Perped · PvP perps</div>
-        <div className="big" style={{ fontSize: 26, lineHeight: 1.1 }}>Trade in public.<br />Get perped or get paid.</div>
-        <div className="mt-2.5 text-[13px] opacity-95">Post your position. Someone will copy it, someone will fade it, and the chain decides who was right.</div>
+        <div className="k">{tt("Perped · PvP perps")}</div>
+        <div className="big" style={{ fontSize: 26, lineHeight: 1.1 }}>{tt("Trade in public.")}<br />{tt("Get perped or get paid.")}</div>
+        <div className="mt-2.5 text-[13px] opacity-95">{tt("Post your position. Someone will copy it, someone will fade it, and the chain decides who was right.")}</div>
         <div className="mt-4"><SignInOptions compact onDark /></div>
-        <div className="hero-actions" style={{ marginTop: 10 }}><Link href="/intro">How it works in 60s</Link><Link href="/how-it-works">Where your money is →</Link></div>
+        <div className="hero-actions" style={{ marginTop: 10 }}><Link href="/intro">{tt("How it works in 60s")}</Link><Link href="/how-it-works">{tt("Where your money is →")}</Link><Link href="/settings">{tt("Language")}</Link></div>
       </div>
     );
   }
@@ -48,12 +50,12 @@ export function Hero({ onDeposit }: { onDeposit: () => void }) {
       <Link href={`/u/${profile.handle}`} className="min-w-0 flex-1" aria-label={`${greet}, ${profile.handle}. Your account`}>
         <div className="hbal-v mono"><Roll v={bal} fmt={(x) => fmtUsd(x)} /></div>
         <div className="hbal-s truncate">
-          {profile.isDemo ? "Demo · " : ""}7d <b className={`mono ${pnl7 > 0 ? "green" : pnl7 < 0 ? "red" : ""}`}>{fmtUsd(pnl7, { sign: true })}</b>
+          {profile.isDemo ? tt("Demo · ") : ""}7d <b className={`mono ${pnl7 > 0 ? "green" : pnl7 < 0 ? "red" : ""}`}>{fmtUsd(pnl7, { sign: true })}</b>
           {" · "}{openN} open{profile.isDemo && demo.openCount > 0 ? <> · <b className={`mono ${demo.upnl >= 0 ? "green" : "red"}`}><Roll v={demo.upnl} fmt={(x) => fmtUsd(x, { sign: true })} /></b> live</> : null}
           {streak > 0 && <> · <span className="gl"><Glyph n="flame" />{streak}</span></>}
         </div>
       </Link>
-      {needsFunds && liveOk ? <button className="hbal-go" onClick={onDeposit}>Deposit</button> : <Link href="/markets" className="hbal-go">Trade</Link>}
+      {needsFunds && liveOk ? <button className="hbal-go" onClick={onDeposit}>{tt("Deposit")}</button> : <Link href="/markets" className="hbal-go">{tt("Trade")}</Link>}
     </div>
   );
 }

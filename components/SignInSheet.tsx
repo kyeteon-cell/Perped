@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,12 +23,12 @@ export function SignInSheet() {
   useEffect(() => { setOpen(false); }, [path]);
   if (!open) return null;
   return (
-    <Sheet label="Sign in" onClose={() => setOpen(false)}>
+    <Sheet label={tt("Sign in")} onClose={() => setOpen(false)}>
         <div className="px-5 pb-6">
-          <h2 className="text-lg font-bold">Get in</h2>
-          <p className="muted mb-3 text-sm">Demo to practise, wallet to trade for real.</p>
+          <h2 className="text-lg font-bold">{tt("Get in")}</h2>
+          <p className="muted mb-3 text-sm">{tt("Demo to practise, wallet to trade for real.")}</p>
           <SignInOptions />
-          <p className="faint mt-3 text-center text-[11px]"><Link href="/how-it-works">How it works · where your money is · fees</Link></p>
+          <p className="faint mt-3 text-center text-[11px]"><Link href="/how-it-works">{tt("How it works · where your money is · fees")}</Link></p>
         </div>
     </Sheet>
   );

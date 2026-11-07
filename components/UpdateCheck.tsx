@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 
 const MINE = process.env.NEXT_PUBLIC_BUILD_ID ?? "dev";
@@ -32,5 +34,5 @@ export function UpdateCheck() {
     return () => { clearInterval(t); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("pageshow", onVis); };
   }, []);
   if (!ready) return null;
-  return <button type="button" className="upd-chip" onClick={() => window.location.reload()}>New version ready · Update</button>;
+  return <button type="button" className="upd-chip" onClick={() => window.location.reload()}>{tt("New version ready · Update")}</button>;
 }

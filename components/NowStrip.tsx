@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
@@ -51,9 +53,9 @@ export function NowStrip({ rows, mids }: { rows: FeedRow[]; mids: Record<string,
 
   const stop = () => { touched.current = true; };
   return (
-    <section className="now" aria-label="Happening now">
+    <section className="now" aria-label={tt("Happening now")}>
       <div className="now-head">
-        <span className="eyebrow flex items-center gap-2"><i className="livedot" />Happening now</span>
+        <span className="eyebrow flex items-center gap-2"><i className="livedot" />{tt("Happening now")}</span>
         {n > 1 && <span className="now-dots" aria-hidden>{Array.from({ length: n }, (_, i) => <i key={i} className={i === idx ? "on" : ""} />)}</span>}
       </div>
       <div

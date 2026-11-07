@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -11,9 +13,9 @@ export function CrewTag({ crew, nested = true, className = "" }: { crew?: { slug
   const router = useRouter();
   if (!crew) return null;
   const href = `/crew/${crew.slug}`;
-  if (!nested) return <Link href={href} className={`crew-tag ${className}`} title="Crew">{crew.tag}</Link>;
+  if (!nested) return <Link href={href} className={`crew-tag ${className}`} title={tt("Crew")}>{crew.tag}</Link>;
   return (
-    <span role="link" tabIndex={0} className={`crew-tag ${className}`} title="Crew"
+    <span role="link" tabIndex={0} className={`crew-tag ${className}`} title={tt("Crew")}
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(href); }}
       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); router.push(href); } }}>
       {crew.tag}

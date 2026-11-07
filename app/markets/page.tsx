@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -47,17 +49,17 @@ export default function MarketsPage() {
   return (
     <div data-tint="blue" className="fade-in">
       <header className="flex items-center justify-between px-5 pt-4">
-        <div><h1 className="h1 dot">Markets</h1><div className="when">{every.length || "…"} perps{stockCount ? ` · ${stockCount} stocks` : ""} · Hyperliquid</div></div>
-        <Link href="/search" className="iconbtn" aria-label="Search"><Icon d={I.search} /></Link>
+        <div><h1 className="h1 dot">{tt("Markets")}</h1><div className="when">{every.length || "…"} perps{stockCount ? ` · ${stockCount} stocks` : ""}{" "}{tt("· Hyperliquid")}</div></div>
+        <Link href="/search" className="iconbtn" aria-label={tt("Search")}><Icon d={I.search} /></Link>
       </header>
 
       <div className="px-5 pt-4">
         <div className="grid grid-cols-3 gap-2.5">
-          <div className="stat"><small>24h volume</small><div className="v mono">{fmtUsd(totals.vol, { compact: true })}</div></div>
-          <div className="stat"><small>Open interest</small><div className="v mono">{fmtUsd(totals.oi, { compact: true })}</div></div>
-          <div className="stat"><small>Perped live</small><div className="v mono">{totalLive}{totalLive > 0 && <span className="green ml-1 text-xs font-bold">{Math.round((totalLongs / totalLive) * 100)}% long</span>}</div></div>
+          <div className="stat"><small>{tt("24h volume")}</small><div className="v mono">{fmtUsd(totals.vol, { compact: true })}</div></div>
+          <div className="stat"><small>{tt("Open interest")}</small><div className="v mono">{fmtUsd(totals.oi, { compact: true })}</div></div>
+          <div className="stat"><small>{tt("Perped live")}</small><div className="v mono">{totalLive}{totalLive > 0 && <span className="green ml-1 text-xs font-bold">{Math.round((totalLongs / totalLive) * 100)}{tt("% long")}</span>}</div></div>
         </div>
-        <div className="eyebrow mb-2.5 mt-4">Movers · 24h</div>
+        <div className="eyebrow mb-2.5 mt-4">{tt("Movers · 24h")}</div>
       </div>
       <div className="hstrip">
         {movers.map((m) => (
@@ -70,17 +72,17 @@ export default function MarketsPage() {
       </div>
 
       <div className="seg px-5 pt-4">
-        {([["all", "All"], ["crypto", "Crypto"], ["stocks", "Stocks"]] as [Group, string][]).map(([k, l]) => (
+        {([["all", tt("All")], ["crypto", tt("Crypto")], ["stocks", tt("Stocks")]] as [Group, string][]).map(([k, l]) => (
           <button key={k} className={`chip ${group === k ? "info" : ""}`} onClick={() => setGroup(k)}>{l}</button>
         ))}
       </div>
       <div className="seg px-5 pt-2.5 pb-2.5">
-        {([["volume", "Volume"], ["gainers", "Gainers"], ["losers", "Losers"], ["oi", "Open interest"], ["oirise", "OI rising"], ["crowded", "Crowded"], ["hot", "Hot on Perped"]] as [Sort, string][]).map(([k, l]) => (
+        {([["volume", tt("Volume")], ["gainers", tt("Gainers")], ["losers", tt("Losers")], ["oi", "Open interest"], ["oirise", "OI rising"], ["crowded", tt("Crowded")], ["hot", "Hot on Perped"]] as [Sort, string][]).map(([k, l]) => (
           <button key={k} className={`chip ${sort === k ? "on" : ""}`} onClick={() => setSort(k)}>{l}</button>
         ))}
       </div>
 
-      <div className="faint grid grid-cols-[1fr_96px_64px] gap-3 px-5 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider"><span>Market</span><span className="text-right">Price · 24h</span><span className="text-right">Fund./yr</span></div>
+      <div className="faint grid grid-cols-[1fr_96px_64px] gap-3 px-5 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider"><span>{tt("Market")}</span><span className="text-right">{tt("Price · 24h")}</span><span className="text-right">{tt("Fund./yr")}</span></div>
       {!data?.markets?.length && (error || data) ? <LoadFail retry={() => mutate()} /> : !data && <SkeletonList n={6} card={false} />}
       {rows.map((m) => {
         const px = mids[m.name] ?? m.mid, up = m.change24h >= 0, lv = liveByCoin[m.name];
@@ -90,19 +92,19 @@ export default function MarketsPage() {
               <div className="flex min-w-0 items-center gap-3">
                 <CoinMark coin={m.name} />
                 <div className="min-w-0">
-                  <div className="name flex items-center gap-1.5">{ticker(m.name, true)} <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.maxLeverage}×</span>{isStock(m) && <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.kind === "index" ? "Index" : "Stock"}</span>}</div>
-                  <div className="when truncate text-xs">Vol {fmtUsd(m.volume24h, { compact: true })} · OI {fmtUsd(m.openInterest, { compact: true })}{m.oiChange24h != null && <span className="mono"> {fmtPct(m.oiChange24h, 1)}</span>}</div>
+                  <div className="name flex items-center gap-1.5">{ticker(m.name, true)} <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.maxLeverage}×</span>{isStock(m) && <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.kind === "index" ? tt("Index") : tt("Stock")}</span>}</div>
+                  <div className="when truncate text-xs">{tt("Vol")}{" "}{fmtUsd(m.volume24h, { compact: true })}{" "}{tt("· OI")}{" "}{fmtUsd(m.openInterest, { compact: true })}{m.oiChange24h != null && <span className="mono"> {fmtPct(m.oiChange24h, 1)}</span>}</div>
                 </div>
               </div>
               <Sparkline coin={m.name} up={up} />
               <div className="text-right"><div className="mono font-semibold">{fmtPrice(px)}</div><div className={`mono text-[13px] ${up ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</div></div>
               <div className="text-right"><div className="mono text-[13px] font-semibold">{(m.funding8h * 3 * 365).toFixed(1)}%</div>{crowdLabel(m.funding8h) && <div className="when text-[10.5px] leading-tight">{crowdLabel(m.funding8h)}</div>}</div>
             </div>
-            {lv && <div className="when mt-2 flex gap-3.5 text-xs"><span>Perped <b style={{ color: "var(--text)" }}>{lv.n} live</b></span><span>L/S <b className="mono" style={{ color: "var(--text)" }}>{Math.round((lv.longs / lv.n) * 100)}/{100 - Math.round((lv.longs / lv.n) * 100)}</b></span></div>}
+            {lv && <div className="when mt-2 flex gap-3.5 text-xs"><span>{tt("Perped")}{" "}<b style={{ color: "var(--text)" }}>{lv.n} live</b></span><span>L/S <b className="mono" style={{ color: "var(--text)" }}>{Math.round((lv.longs / lv.n) * 100)}/{100 - Math.round((lv.longs / lv.n) * 100)}</b></span></div>}
           </Link>
         );
       })}
-      <p className="muted px-5 py-4 text-xs leading-relaxed">Prices and funding from Hyperliquid, updating live. Stocks are perps that track the share price, listed on Hyperliquid by builders such as TradeXYZ (HIP-3): they trade 24/7 with isolated margin, and give no shares, dividends or votes. Funding is shown per year (Hyperliquid pays it hourly). OI change compares open interest with 24 hours ago. L/S is the long/short split of open Perped positions on that market.</p>
+      <p className="muted px-5 py-4 text-xs leading-relaxed">{tt("Prices and funding from Hyperliquid, updating live. Stocks are perps that track the share price, listed on Hyperliquid by builders such as TradeXYZ (HIP-3): they trade 24/7 with isolated margin, and give no shares, dividends or votes. Funding is shown per year (Hyperliquid pays it hourly). OI change compares open interest with 24 hours ago. L/S is the long/short split of open Perped positions on that market.")}</p>
     </div>
   );
 }

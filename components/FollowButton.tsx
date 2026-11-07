@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import useSWR, { useSWRConfig } from "swr";
 import { useSession } from "@/lib/hooks/useSession";
 
@@ -34,6 +36,6 @@ export function FollowButton({ handle, compact = false, className = "" }: { hand
     // Revalidate without blanking: passing undefined as data would wipe the profile to a skeleton until it refetches.
     globalMutate((k) => typeof k === "string" && k.startsWith("/api/profile/"));
   };
-  if (compact) return <button type="button" className={`fbtn ${on ? "on" : ""} ${className}`} onClick={toggle} aria-pressed={on}>{on ? "Following" : "Follow"}</button>;
-  return <button type="button" className={`btn ${on ? "" : "brand"} ${className}`} style={{ padding: 12, fontSize: 14 }} onClick={toggle} aria-pressed={on}>{on ? "Following" : "Follow"}</button>;
+  if (compact) return <button type="button" className={`fbtn ${on ? "on" : ""} ${className}`} onClick={toggle} aria-pressed={on}>{on ? tt("Following") : tt("Follow")}</button>;
+  return <button type="button" className={`btn ${on ? "" : "brand"} ${className}`} style={{ padding: 12, fontSize: 14 }} onClick={toggle} aria-pressed={on}>{on ? tt("Following") : tt("Follow")}</button>;
 }

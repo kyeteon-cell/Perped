@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 
 /**
@@ -24,7 +26,7 @@ export function OfflineBar() {
   if (state === "online") return null;
   return (
     <div role="status" aria-live="polite" className={`net-chip ${state === "back" ? "back" : ""}`}>
-      {state === "offline" ? "You're offline · prices and trades paused" : "Back online · updating"}
+      {state === "offline" ? tt("You're offline · prices and trades paused") : tt("Back online · updating")}
     </div>
   );
 }

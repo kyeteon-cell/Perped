@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import useSWR from "swr";
 import { ALERT_GROUPS, type AlertPrefs } from "@/lib/alerts";
 import { useSession } from "@/lib/hooks/useSession";
@@ -17,8 +19,8 @@ export function AlertSettings() {
   };
   return (
     <div className="alr">
-      <div className="eyebrow">Phone alerts</div>
-      <p className="when mt-1">Choose what buzzes your phone. Everything still shows in Notifications.</p>
+      <div className="eyebrow">{tt("Phone alerts")}</div>
+      <p className="when mt-1">{tt("Choose what buzzes your phone. Everything still shows in Notifications.")}</p>
       {ALERT_GROUPS.map((g) => {
         const on = prefs[g.key] !== false;
         return (

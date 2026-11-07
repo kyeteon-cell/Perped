@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { Glyph } from "./Glyph";
 import { Tug, tugShare } from "./Tug";
 import Link from "next/link";
@@ -41,7 +43,7 @@ function Ticking({ value, fmt, className }: { value: number; fmt: (n: number) =>
 }
 
 function Side({ side }: { side: "long" | "short" }) {
-  return <span className={`lbl ${side}`} style={{ padding: "2px 8px", fontSize: 10 }}><i />{side === "long" ? "Long" : "Short"}</span>;
+  return <span className={`lbl ${side}`} style={{ padding: "2px 8px", fontSize: 10 }}><i />{side === "long" ? tt("Long") : tt("Short")}</span>;
 }
 
 /* ---------- cards ---------- */
@@ -54,7 +56,7 @@ function DuelCard({ d, mids }: { d: PulseData["duels"][number]; mids: Record<str
   const leader = a.roi >= b.roi ? d.a : d.b;
   return (
     <Link href={`/post/${d.a.postId}`} className="pcard duel-live">
-      <div className="pc-head"><span className="pc-tag gold"><Glyph n="swords" /> Duel · {ticker(d.coin)}</span><span className="when">{fmtUsd(d.stakeUsd, { compact: true })} · {leftTxt} left</span></div>
+      <div className="pc-head"><span className="pc-tag gold"><Glyph n="swords" />{" "}{tt("Duel ·")}{" "}{ticker(d.coin)}</span><span className="when">{fmtUsd(d.stakeUsd, { compact: true })} · {leftTxt} left</span></div>
       <div className="duel-body" style={{ marginTop: 12 }}>
         <div className="duelist">
           <div className={`avring ${a.roi >= b.roi ? "lead" : ""}`}><Avatar handle={d.a.handle} url={d.a.avatarUrl} size={44} link={false} /></div>
@@ -91,14 +93,14 @@ function BoardCard({ title, tag, rows, mids, up }: { title: string; tag: string;
               <span className="rk">{i + 1}</span>
               <Avatar handle={t.handle} url={t.avatarUrl} size={26} link={false} />
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5 text-[13px]"><b className="truncate">{t.handle}</b>{t.isDemo && <span className="demo-tag">Demo</span>}<CoinMark coin={t.coin} size="xs" /><span className="muted">{t.leverage}×</span></span>
+                <span className="flex items-center gap-1.5 text-[13px]"><b className="truncate">{t.handle}</b>{t.isDemo && <span className="demo-tag">{tt("Demo")}</span>}<CoinMark coin={t.coin} size="xs" /><span className="muted">{t.leverage}×</span></span>
                 <span className="bbar"><i style={{ width: `${w}%`, background: l.roi >= 0 ? "var(--green)" : "var(--red)" }} /></span>
               </span>
               <Ticking value={l.roi} fmt={(n) => fmtPct(n, 1)} className={`text-[14px] font-bold ${l.roi >= 0 ? "green" : "red"}`} />
             </Link>
           );
         })}
-        {!rows.length && <div className="muted py-4 text-center text-sm">Nothing open yet</div>}
+        {!rows.length && <div className="muted py-4 text-center text-sm">{tt("Nothing open yet")}</div>}
       </div>
     </div>
   );
@@ -109,7 +111,7 @@ function FadeCard({ f, mids }: { f: PulseData["fades"][number]; mids: Record<str
   const faderWinning = fl.roi > tl.roi;
   return (
     <Link href={`/battle/${f.fader.postId}`} className={`pcard fadec ${faderWinning ? "fader-wins" : "target-wins"}`}>
-      <div className="pc-head"><span className="pc-tag violet">Fade · {ticker(f.coin)}</span><span className="when">{faderWinning ? "fader winning" : "getting perped"}</span></div>
+      <div className="pc-head"><span className="pc-tag violet">{tt("Fade ·")}{" "}{ticker(f.coin)}</span><span className="when">{faderWinning ? tt("fader winning") : tt("getting perped")}</span></div>
       <div className="mt-3 flex items-center gap-3">
         <div className="text-center">
           <div className={`avring ${faderWinning ? "lead" : "losing"}`}><Avatar handle={f.fader.handle} url={f.fader.avatarUrl} size={40} link={false} /></div>
@@ -134,7 +136,7 @@ function FadeCard({ f, mids }: { f: PulseData["fades"][number]; mids: Record<str
 function StreakCard({ s }: { s: PulseData["streaks"] }) {
   return (
     <div className="pcard streak">
-      <div className="pc-head"><span className="pc-tag brand"><Glyph n="flame" /> On a streak</span><span className="when">calls in a row</span></div>
+      <div className="pc-head"><span className="pc-tag brand"><Glyph n="flame" />{" "}{tt("On a streak")}</span><span className="when">{tt("calls in a row")}</span></div>
       <div className="mt-3 flex flex-col gap-2">
         {s.map((r, i) => (
           <Link key={r.handle} href={`/u/${r.handle}`} className="brow" style={{ animationDelay: `${i * 80}ms` }}>
@@ -166,9 +168,9 @@ export function usePulseCards(mids: Record<string, number>) {
   }, [open, mids]);
   const cards: React.ReactNode[] = [];
   (data?.duels ?? []).slice(0, 3).forEach((d) => cards.push(<DuelCard key={`d${d.id}`} d={d} mids={mids} />));
-  cards.push(<BoardCard key="up" title="Up right now" tag="live ROI" rows={ranked.up} mids={mids} up />);
+  cards.push(<BoardCard key="up" title={tt("Up right now")} tag="live ROI" rows={ranked.up} mids={mids} up />);
   (data?.fades ?? []).slice(0, 3).forEach((f) => cards.push(<FadeCard key={`f${f.fader.postId}`} f={f} mids={mids} />));
-  cards.push(<BoardCard key="down" title="Down bad" tag="live ROI" rows={ranked.down} mids={mids} up={false} />);
+  cards.push(<BoardCard key="down" title={tt("Down bad")} tag="live ROI" rows={ranked.down} mids={mids} up={false} />);
   if (data?.streaks?.length) cards.push(<StreakCard key="s" s={data.streaks} />);
   return { data, cards };
 }
@@ -195,8 +197,8 @@ export function Pulse({ mids }: { mids: Record<string, number> }) {
   if (!cards.length) return null;
 
   return (
-    <section className="pulse" aria-label="Live pulse">
-      <div className="flex items-center justify-between px-5"><span className="eyebrow flex items-center gap-2"><i className="livedot" />Pulse</span><span className="when">{(data.duels.length ? `${data.duels.length} duel${data.duels.length > 1 ? "s" : ""} · ` : "")}{data.open?.length ?? 0} open</span></div>
+    <section className="pulse" aria-label={tt("Live pulse")}>
+      <div className="flex items-center justify-between px-5"><span className="eyebrow flex items-center gap-2"><i className="livedot" />{tt("Pulse")}</span><span className="when">{(data.duels.length ? `${data.duels.length} duel${data.duels.length > 1 ? "s" : ""} · ` : "")}{data.open?.length ?? 0} open</span></div>
       <div
         ref={rail}
         className="prail"

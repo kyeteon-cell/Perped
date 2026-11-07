@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { Glyph } from "@/components/Glyph";
 import { use, useState } from "react";
 import Link from "next/link";
@@ -36,18 +38,18 @@ export default function DuelPage({ params }: { params: Promise<{ id: string }> }
   const Side = ({ u, side, roi, post }: { u: U; side: "long" | "short"; roi: number | null; post: Post | null }) => (
     <div className="duelist">
       <Link href={`/u/${u.handle}`}><div className={`avring ${roi !== null && roi >= (roi === a ? (b ?? -Infinity) : (a ?? -Infinity)) ? "lead" : ""}`}><Avatar handle={u.handle} url={u.avatarUrl} size={56} link={false} /></div></Link>
-      <div className="name mt-2">{u.handle}{u.isDemo && <span className="demo-tag ml-1">Demo</span>}</div>
-      <span className={`lbl ${side} mt-1`}><i />{side === "long" ? "Long" : "Short"}</span>
-      <div className={`mono mt-2 text-2xl font-bold ${roi === null ? "muted" : roi >= 0 ? "green" : "red"}`}>{roi === null ? (post ? "…" : "not in yet") : fmtPct(roi, 1)}</div>
-      {post && <div className="when">in at {fmtPrice(post.entryPx)}</div>}
+      <div className="name mt-2">{u.handle}{u.isDemo && <span className="demo-tag ml-1">{tt("Demo")}</span>}</div>
+      <span className={`lbl ${side} mt-1`}><i />{side === "long" ? tt("Long") : tt("Short")}</span>
+      <div className={`mono mt-2 text-2xl font-bold ${roi === null ? "muted" : roi >= 0 ? "green" : "red"}`}>{roi === null ? (post ? "…" : tt("not in yet")) : fmtPct(roi, 1)}</div>
+      {post && <div className="when">{tt("in at")}{" "}{fmtPrice(post.entryPx)}</div>}
     </div>
   );
 
   return (
     <div data-tint="gold" className="fade-in">
-      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><div className="name">Duel</div><span className="w-9" /></header>
+      <header className="hairline flex items-center justify-between px-4 py-3"><Link href="/" className="iconbtn" aria-label={tt("Back")}><Icon d={I.back} /></Link><div className="name">{tt("Duel")}</div><span className="w-9" /></header>
       <div className="post duel mx-4 mt-4">
-        <div className="duel-head"><span className="lbl gold"><Glyph n="swords" /> {d.status === "pending" ? "Challenge" : d.status === "live" ? "Live" : d.status === "settled" ? "Settled" : "Declined"}</span><span className="when">{fmtUsd(Number(d.stakeUsd))} each · {d.status === "live" ? leftTxt : new Date(d.settlesAt).toLocaleDateString()}</span></div>
+        <div className="duel-head"><span className="lbl gold"><Glyph n="swords" /> {d.status === "pending" ? tt("Challenge") : d.status === "live" ? tt("Live") : d.status === "settled" ? tt("Settled") : tt("Declined")}</span><span className="when">{fmtUsd(Number(d.stakeUsd))}{" "}{tt("each ·")}{" "}{d.status === "live" ? leftTxt : new Date(d.settlesAt).toLocaleDateString()}</span></div>
         <div className="mt-3 flex items-center gap-2.5"><CoinMark coin={d.coin} /><b className="text-xl">{ticker(d.coin, true)}</b><span className="mono muted ml-auto">{mid ? fmtPrice(mid) : "…"}</span></div>
         <div className="duel-body">
           {Side({ u: challenger, side: d.challengerSide, roi: a, post: cp })}
@@ -55,20 +57,20 @@ export default function DuelPage({ params }: { params: Promise<{ id: string }> }
           {Side({ u: opponent, side: oppSide, roi: b, post: op })}
         </div>
         {d.status === "settled" && <p className="say text-center"><b>{d.winnerId === challenger.id ? challenger.handle : opponent.handle}</b> won. {d.startPx && d.endPx ? `${fmtPrice(d.startPx)} → ${fmtPrice(d.endPx)}` : ""}</p>}
-        <p className="when mt-3 text-center">Stakes are each trader&apos;s own position. Nothing is pooled, nobody holds anything.</p>
+        <p className="when mt-3 text-center">{tt("Stakes are each trader's own position. Nothing is pooled, nobody holds anything.")}</p>
       </div>
 
       {d.status === "pending" && role === "opponent" && (
         <div className="mx-4 mt-4 grid grid-cols-2 gap-2.5">
-          <button className="btn" onClick={decline} disabled={busy}>Decline</button>
-          <button className="btn brand" onClick={() => (authenticated ? router.push(`/trade?duel=${d.id}`) : login())}>Accept · go {oppSide}</button>
+          <button className="btn" onClick={decline} disabled={busy}>{tt("Decline")}</button>
+          <button className="btn brand" onClick={() => (authenticated ? router.push(`/trade?duel=${d.id}`) : login())}>{tt("Accept · go")}{" "}{oppSide}</button>
         </div>
       )}
       {d.status === "pending" && role === "challenger" && !cp && (
-        <div className="mx-4 mt-4"><button className="btn brand" onClick={() => router.push(`/trade?duel=${d.id}`)}>Open your {d.challengerSide} on {ticker(d.coin)}</button><p className="when mt-2 text-center">Your side of the duel is your own trade. Place it so the duel can start when {opponent.handle} accepts.</p></div>
+        <div className="mx-4 mt-4"><button className="btn brand" onClick={() => router.push(`/trade?duel=${d.id}`)}>{tt("Open your")}{" "}{d.challengerSide} on {ticker(d.coin)}</button><p className="when mt-2 text-center">{tt("Your side of the duel is your own trade. Place it so the duel can start when")}{" "}{opponent.handle} accepts.</p></div>
       )}
-      {d.status === "pending" && role === "challenger" && cp && <p className="muted mx-4 mt-4 text-center text-sm">Waiting for {opponent.handle} to accept.</p>}
-      {d.status === "pending" && role === "viewer" && <p className="muted mx-4 mt-4 text-center text-sm">{challenger.handle} challenged {opponent.handle}. Waiting for an answer.</p>}
+      {d.status === "pending" && role === "challenger" && cp && <p className="muted mx-4 mt-4 text-center text-sm">{tt("Waiting for")}{" "}{opponent.handle}{" "}{tt("to accept.")}</p>}
+      {d.status === "pending" && role === "viewer" && <p className="muted mx-4 mt-4 text-center text-sm">{challenger.handle} challenged {opponent.handle}{tt(". Waiting for an answer.")}</p>}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -23,7 +25,7 @@ export function ArenaIntro({ force = false, onDone }: { force?: boolean; onDone?
   // Rendered on the page body: inside a sheet (which slides with a transform) "fixed" would be relative to the sheet.
   return createPortal(
     <div className="aint-bg" onClick={close}>
-      <div className="aint" role="dialog" aria-label="How fades work" onClick={(e) => e.stopPropagation()}>
+      <div className="aint" role="dialog" aria-label={tt("How fades work")} onClick={(e) => e.stopPropagation()}>
         <div className="aint-track" ref={track} onScroll={(e) => { const el = e.currentTarget; setI(Math.round(el.scrollLeft / Math.max(1, el.clientWidth))); }}>
           {CARDS.map((c, n) => (
             <section key={c.k} className="aint-card">
@@ -34,8 +36,8 @@ export function ArenaIntro({ force = false, onDone }: { force?: boolean; onDone?
         </div>
         <div className="aint-dots">{CARDS.map((c, n) => <i key={c.k} className={n === i ? "on" : ""} />)}</div>
         <div className="aint-acts">
-          <button type="button" onClick={close}>Skip</button>
-          <button type="button" className="go" onClick={() => (i < CARDS.length - 1 ? go(i + 1) : close())}>{i < CARDS.length - 1 ? "Next" : "Let's fight"}</button>
+          <button type="button" onClick={close}>{tt("Skip")}</button>
+          <button type="button" className="go" onClick={() => (i < CARDS.length - 1 ? go(i + 1) : close())}>{i < CARDS.length - 1 ? tt("Next") : tt("Let's fight")}</button>
         </div>
       </div>
     </div>,

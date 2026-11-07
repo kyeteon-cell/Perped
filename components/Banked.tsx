@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import Link from "next/link";
 import useSWR from "swr";
 import type { FeedRow } from "@/lib/feed";
@@ -16,8 +18,8 @@ export function Banked() {
   if (!rows.length) return null;
   const items = [...rows, ...rows]; // duplicated for a seamless loop
   return (
-    <section className="banked" aria-label="Recently closed trades">
-      <div className="bk-label">Banked</div>
+    <section className="banked" aria-label={tt("Recently closed trades")}>
+      <div className="bk-label">{tt("Banked")}</div>
       <div className="bk-track" style={{ animationDuration: `${Math.max(30, rows.length * 6)}s` }}>
         {items.map((r, i) => {
           const { post, author } = r;
@@ -33,7 +35,7 @@ export function Banked() {
               <span className="muted">{ticker(post.coin!)} {post.side} {post.leverage}×</span>
               <span className={`mono font-bold ${win ? "green" : "red"}`}>{fmtPct(roi, 1)}</span>
               <span className={`mono ${win ? "green" : "red"}`}>{fmtUsd(pnl, { sign: true })}</span>
-              {(author!.isDemo || post.paper) && <span className="demo-tag">Demo</span>}
+              {(author!.isDemo || post.paper) && <span className="demo-tag">{tt("Demo")}</span>}
               <span className="when">{timeAgo(post.closedAt ?? post.createdAt)}</span>
             </Link>
           );

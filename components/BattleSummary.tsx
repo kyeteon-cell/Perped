@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { Glyph } from "./Glyph";
 import Link from "next/link";
 import { useState } from "react";
@@ -39,16 +41,16 @@ export function BattleSummary({ battles, size = "md" }: { battles: TradeBattle[]
       </button>
       {open && (
         <span onClick={(e) => e.stopPropagation()}>
-          <Sheet label="Fades on this trade" onClose={() => setOpen(false)}>
+          <Sheet label={tt("Fades on this trade")} onClose={() => setOpen(false)}>
             <div className="px-5 pb-6">
-              <div className="text-lg font-extrabold" data-sheet-handle>Fades on this trade</div>
-              <div className="when">{wins.length} won · {losses.length} lost{draws.length ? ` · ${draws.length} drawn` : ""}</div>
+              <div className="text-lg font-extrabold" data-sheet-handle>{tt("Fades on this trade")}</div>
+              <div className="when">{wins.length}{" "}{tt("won ·")}{" "}{losses.length} lost{draws.length ? ` · ${draws.length} drawn` : ""}</div>
               <div className="mt-3 flex flex-col">
                 {battles.map((b) => (
                   <Link key={b.battleId} href={`/battle/${b.faderPostId}`} className="lb" onClick={() => setOpen(false)}>
                     <Avatar handle={b.vs ?? "?"} size={36} link={false} />
-                    <div className="min-w-0 flex-1"><div className="name">{b.vs}</div><div className="mono when">you {fmtPct(b.myRoi, 1)} · them {fmtPct(b.theirRoi, 1)}{b.reason === "liquidation" ? " · liquidation" : ""}</div></div>
-                    <span className={`lbl ${b.won === true ? "long" : b.won === false ? "short" : ""}`} style={{ padding: "3px 10px", fontSize: 11 }}>{b.won === true ? "Won" : b.won === false ? "Lost" : "Draw"}</span>
+                    <div className="min-w-0 flex-1"><div className="name">{b.vs}</div><div className="mono when">you {fmtPct(b.myRoi, 1)}{" "}{tt("· them")}{" "}{fmtPct(b.theirRoi, 1)}{b.reason === "liquidation" ? tt(" · liquidation") : ""}</div></div>
+                    <span className={`lbl ${b.won === true ? "long" : b.won === false ? "short" : ""}`} style={{ padding: "3px 10px", fontSize: 11 }}>{b.won === true ? tt("Won") : b.won === false ? tt("Lost") : tt("Draw")}</span>
                   </Link>
                 ))}
               </div>

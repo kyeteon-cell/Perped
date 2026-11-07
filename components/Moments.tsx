@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -98,8 +100,8 @@ export function Moments() {
         <div key={stamp.k} className={`mo-stamp ${stamp.fade ? "fade" : ""}`} aria-live="polite">
           {stamp.fade && <i className="mo-slash" />}
           <span className={`mo-st ${stamp.side}`}>
-            <small>{stamp.fade ? `Faded @${stamp.fade}` : "Order filled"}</small>
-            <b>{stamp.side === "long" ? "Long" : "Short"} {stamp.lev}×</b>
+            <small>{stamp.fade ? `Faded @${stamp.fade}` : tt("Order filled")}</small>
+            <b>{stamp.side === "long" ? tt("Long") : tt("Short")} {stamp.lev}×</b>
             <em>{ticker(stamp.coin)}</em>
           </span>
         </div>
@@ -107,14 +109,14 @@ export function Moments() {
       {cur && profile && <Ceremony key={cur.id} m={cur} handle={profile.handle} avatarUrl={profile.avatarUrl ?? null} xp={profile.xp ?? 0} onClose={next} onOpen={() => open(cur.href)} />}
       {!cur && d2r && !quiet && (
         <div className="mo-d2r-bg" onClick={() => setD2r(null)}>
-          <div className="mo-d2r" role="dialog" aria-label="What this would have paid" onClick={(e) => e.stopPropagation()}>
-            <small>That was a demo trade</small>
-            <p>With real money you&apos;d have banked</p>
+          <div className="mo-d2r" role="dialog" aria-label={tt("What this would have paid")} onClick={(e) => e.stopPropagation()}>
+            <small>{tt("That was a demo trade")}</small>
+            <p>{tt("With real money you'd have banked")}</p>
             <b className="mono green"><Count to={d2r.pnl} /></b>
-            <span className="when">{ticker(d2r.coin ?? "")} {d2r.side} {d2r.leverage ?? 1}× · same size, same prices</span>
+            <span className="when">{ticker(d2r.coin ?? "")} {d2r.side} {d2r.leverage ?? 1}{tt("× · same size, same prices")}</span>
             <div className="mo-d2r-acts">
-              <button type="button" className="btn primary" onClick={() => { setD2r(null); if (allowed) setDeposit(true); else openComingSoon(); }}>{allowed ? "Fund a real account" : "Get early access to real money"}</button>
-              <button type="button" className="btn" onClick={() => setD2r(null)}>Keep practising</button>
+              <button type="button" className="btn primary" onClick={() => { setD2r(null); if (allowed) setDeposit(true); else openComingSoon(); }}>{allowed ? tt("Fund a real account") : tt("Get early access to real money")}</button>
+              <button type="button" className="btn" onClick={() => setD2r(null)}>{tt("Keep practising")}</button>
             </div>
           </div>
         </div>
@@ -158,12 +160,12 @@ function Ceremony({ m, handle, avatarUrl, xp, onClose, onOpen }: { m: Moment; ha
         )}
         {kind === "trophy" && <div className="mo-trophy"><span className="mo-flip"><TrophyGlyph /></span></div>}
         {kind === "win" && <div className="mo-win"><Avatar handle={handle} url={avatarUrl} size={88} link={false} xp={xp} /><span className="mo-crown" aria-hidden /></div>}
-        <small className="mo-eyebrow">{kind === "rank" ? `Level ${now.level}` : kind === "trophy" ? "Trophy unlocked" : m.type === "duel" ? "Duel won" : "Fade won"}</small>
+        <small className="mo-eyebrow">{kind === "rank" ? `Level ${now.level}` : kind === "trophy" ? tt("Trophy unlocked") : m.type === "duel" ? tt("Duel won") : tt("Fade won")}</small>
         <h2>{kind === "rank" ? now.title : m.title.replace(/^Trophy unlocked: /, "")}</h2>
         {m.body && <p>{m.body.replace(/ · tap to pin it to your profile$/, "")}</p>}
         <div className="mo-acts">
-          {m.href && <button type="button" className="btn primary" onClick={onOpen}>{kind === "rank" ? "See your profile" : kind === "trophy" ? "View trophy" : "See the fight"}</button>}
-          <button type="button" className="btn" onClick={onClose}>Nice</button>
+          {m.href && <button type="button" className="btn primary" onClick={onOpen}>{kind === "rank" ? tt("See your profile") : kind === "trophy" ? tt("View trophy") : tt("See the fight")}</button>}
+          <button type="button" className="btn" onClick={onClose}>{tt("Nice")}</button>
         </div>
       </div>
     </div>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,22 +24,22 @@ export default function CrewsPage() {
   const [creating, setCreating] = useState(false);
   return (
     <div className="fade-in pb-8" data-tint="gold">
-      <header className="flex items-center justify-between px-4 py-3"><Link href="/leaderboard" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link><h1 className="text-xl font-bold">Crews</h1><span className="w-9" /></header>
+      <header className="flex items-center justify-between px-4 py-3"><Link href="/leaderboard" className="iconbtn" aria-label={tt("Back")}><Icon d={I.back} /></Link><h1 className="text-xl font-bold">{tt("Crews")}</h1><span className="w-9" /></header>
       <div className="px-4">
         <section className="crew-war-hero">
-          <small>Crew war · week ends in {data ? left(data.weekEndsAt) : "…"}</small>
-          <h2>Bring your group. Beat the others.</h2>
+          <small>{tt("Crew war · week ends in")}{" "}{data ? left(data.weekEndsAt) : "…"}</small>
+          <h2>{tt("Bring your group. Beat the others.")}</h2>
           <p>Every fade a member wins against someone outside the crew scores a point; every one they lose takes one away. Resets Monday 00:00 UTC.</p>
           {data?.mine ? (
-            <Link href={`/crew/${data.mine.slug}`} className="crew-war-cta">Open {data.mine.name} →</Link>
+            <Link href={`/crew/${data.mine.slug}`} className="crew-war-cta">{tt("Open")}{" "}{data.mine.name} →</Link>
           ) : (
-            <button className="crew-war-cta" onClick={() => (authenticated && profile ? setCreating(true) : login())}><span className="gl"><Glyph n="people" />Start a crew</span></button>
+            <button className="crew-war-cta" onClick={() => (authenticated && profile ? setCreating(true) : login())}><span className="gl"><Glyph n="people" />{tt("Start a crew")}</span></button>
           )}
         </section>
       </div>
-      <div className="eyebrow px-5 pb-1.5 pt-5">This week</div>
+      <div className="eyebrow px-5 pb-1.5 pt-5">{tt("This week")}</div>
       {isLoading && !data ? <SkeletonList n={4} card={false} /> : <CrewBoard board={data?.board ?? []} mine={data?.mine?.slug} />}
-      <p className="muted px-5 py-3.5 text-xs leading-relaxed">Fades inside a crew don&rsquo;t count. Ties go to the crew with more wins, then the better 7-day PnL. Demo trades count during Season 0.</p>
+      <p className="muted px-5 py-3.5 text-xs leading-relaxed">{tt("Fades inside a crew don’t count. Ties go to the crew with more wins, then the better 7-day PnL. Demo trades count during Season 0.")}</p>
       {creating && <CreateCrew onClose={() => setCreating(false)} />}
     </div>
   );
@@ -57,18 +59,18 @@ function CreateCrew({ onClose }: { onClose: () => void }) {
     if (r.slug) { onClose(); router.push(`/crew/${r.slug}`); } else setErr(r.error ?? "Couldn't start the crew");
   };
   return (
-    <Sheet label="Start a crew" onClose={onClose}>
+    <Sheet label={tt("Start a crew")} onClose={onClose}>
       <div className="px-5 pb-6">
-        <h3 className="text-lg font-extrabold">Start a crew</h3>
-        <p className="when mt-1">Your group on Perped. Anyone who joins with your crew link is credited to you, and your trades can post straight into your Telegram group.</p>
-        <label className="crew-lbl">Name</label>
-        <input className="field" maxLength={28} value={name} placeholder="Kilo Klips" onChange={(e) => { const v = e.target.value; setName(v); if (!tag || tag === autoTag(name)) setTag(autoTag(v)); }} />
-        <label className="crew-lbl">Tag <span className="when">2–5 letters, shown next to members&rsquo; names</span></label>
+        <h3 className="text-lg font-extrabold">{tt("Start a crew")}</h3>
+        <p className="when mt-1">{tt("Your group on Perped. Anyone who joins with your crew link is credited to you, and your trades can post straight into your Telegram group.")}</p>
+        <label className="crew-lbl">{tt("Name")}</label>
+        <input className="field" maxLength={28} value={name} placeholder={tt("Kilo Klips")} onChange={(e) => { const v = e.target.value; setName(v); if (!tag || tag === autoTag(name)) setTag(autoTag(v)); }} />
+        <label className="crew-lbl">{tt("Tag")}{" "}<span className="when">{tt("2–5 letters, shown next to members’ names")}</span></label>
         <input className="field mono" maxLength={5} value={tag} placeholder="KILO" onChange={(e) => setTag(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
-        <label className="crew-lbl">About <span className="when">optional</span></label>
-        <textarea className="field" rows={2} maxLength={160} value={bio} placeholder="What your crew trades and how" onChange={(e) => setBio(e.target.value)} />
+        <label className="crew-lbl">{tt("About")}{" "}<span className="when">optional</span></label>
+        <textarea className="field" rows={2} maxLength={160} value={bio} placeholder={tt("What your crew trades and how")} onChange={(e) => setBio(e.target.value)} />
         {err && <p className="red mt-2 text-sm">{err}</p>}
-        <button className="btn ink mt-4 w-full" style={{ padding: 14 }} disabled={!ok || busy} onClick={go}>{busy ? "Starting…" : "Start the crew"}</button>
+        <button className="btn ink mt-4 w-full" style={{ padding: 14 }} disabled={!ok || busy} onClick={go}>{busy ? tt("Starting…") : tt("Start the crew")}</button>
       </div>
     </Sheet>
   );

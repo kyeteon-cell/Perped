@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { createChart, ColorType, CrosshairMode, LineStyle, type IPriceLine, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
@@ -184,7 +186,7 @@ export function PriceChart({ coin, livePx, markers = NO_MARKERS, onMarkerClick, 
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
-        <div className="seg">{(["candles", "line"] as Mode[]).map((m) => <button key={m} onClick={() => setModeP(m)} className={`chip ${m === mode ? "on" : ""}`} style={{ padding: "6px 10px", fontSize: 12 }}>{m === "candles" ? "Candles" : "Line"}</button>)}</div>
+        <div className="seg">{(["candles", "line"] as Mode[]).map((m) => <button key={m} onClick={() => setModeP(m)} className={`chip ${m === mode ? "on" : ""}`} style={{ padding: "6px 10px", fontSize: 12 }}>{m === "candles" ? tt("Candles") : tt("Line")}</button>)}</div>
         <div className="flex gap-1">{INTERVALS.map((iv) => <button key={iv} onClick={() => setIv(iv)} className={`chip uppercase ${iv === interval ? "on" : ""}`} style={{ padding: "6px 8px", fontSize: 11 }}>{iv}</button>)}</div>
       </div>
       {legend && (
@@ -207,13 +209,13 @@ export function PriceChart({ coin, livePx, markers = NO_MARKERS, onMarkerClick, 
           ))}
           {markers.length > 0 && (
             <button type="button" className={`pin-toggle ${showPins ? "on" : ""}`} onClick={() => { const v = !showPins; setShowPins(v); try { localStorage.setItem("perped-chart-pins", v ? "1" : "0"); } catch {} }}>
-              {showPins ? `Traders · ${pins.reduce((a, p) => a + p.n, 0)}` : "Traders off"}
+              {showPins ? `Traders · ${pins.reduce((a, p) => a + p.n, 0)}` : tt("Traders off")}
             </button>
           )}
         </div>
-        {!candles.length && <p className="muted absolute inset-0 grid place-items-center text-sm">Loading chart…</p>}
+        {!candles.length && <p className="muted absolute inset-0 grid place-items-center text-sm">{tt("Loading chart…")}</p>}
       </div>
-      <p className="faint mt-1 text-[11px]">Hyperliquid mainnet · pinch to zoom, drag to pan</p>
+      <p className="faint mt-1 text-[11px]">{tt("Hyperliquid mainnet · pinch to zoom, drag to pan")}</p>
     </div>
   );
 }

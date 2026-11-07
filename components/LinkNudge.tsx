@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "@/lib/hooks/useSession";
@@ -17,9 +19,9 @@ export function LinkNudge() {
   if (!isGuest || hide) return null;
   return (
     <div className="link-nudge" role="note">
-      <span><b>Make this fade count.</b> Link X or Google so you count toward the alpha competition and keep your record.</span>
-      <Link href="/settings" className="link-nudge-go">Link</Link>
-      <button type="button" aria-label="Dismiss" onClick={() => { setHide(true); try { localStorage.setItem(KEY, "1"); } catch {} }}>×</button>
+      <span><b>{tt("Make this fade count.")}</b>{" "}{tt("Link X or Google so you count toward the alpha competition and keep your record.")}</span>
+      <Link href="/settings" className="link-nudge-go">{tt("Link")}</Link>
+      <button type="button" aria-label={tt("Dismiss")} onClick={() => { setHide(true); try { localStorage.setItem(KEY, "1"); } catch {} }}>×</button>
     </div>
   );
 }

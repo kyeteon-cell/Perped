@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import useSWR from "swr";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { Candle } from "@/lib/hl-info";
@@ -79,8 +81,8 @@ export function BattleArena({ coin, live, a, b }: { coin: string; live: number; 
         <Hp f={b} live={live} right />
       </div>
       <div className="ar-tabs" role="tablist">
-        <button role="tab" aria-selected={tab === "arena"} className={tab === "arena" ? "on" : ""} onClick={() => setTab("arena")}>Arena</button>
-        <button role="tab" aria-selected={tab === "race"} className={tab === "race" ? "on" : ""} onClick={() => setTab("race")}>P&amp;L race</button>
+        <button role="tab" aria-selected={tab === "arena"} className={tab === "arena" ? "on" : ""} onClick={() => setTab("arena")}>{tt("Arena")}</button>
+        <button role="tab" aria-selected={tab === "race"} className={tab === "race" ? "on" : ""} onClick={() => setTab("race")}>{tt("P&L race")}</button>
       </div>
       {tab === "arena" ? <ArenaChart coin={coin} live={live} a={a} b={b} /> : <RaceChart coin={coin} live={live} a={a} b={b} />}
       <Tape a={a} b={b} />
@@ -100,7 +102,7 @@ function Hp({ f, live, right }: { f: Fighter; live: number; right?: boolean }) {
   const w = `${Math.max(3, h * 100)}%`;
   return (
     <div className={`ar-hpbox ${right ? "r" : ""}`}>
-      <div className="ar-hphead"><span>{f.closed ? "Banked" : "Margin/SL health"}</span><b style={{ color: sideCol(f) }}>{f.closed ? "Closed" : `${Math.round(h * 100)}%`}</b></div>
+      <div className="ar-hphead"><span>{f.closed ? tt("Banked") : tt("Margin/SL health")}</span><b style={{ color: sideCol(f) }}>{f.closed ? tt("Closed") : `${Math.round(h * 100)}%`}</b></div>
       <div className={`ar-hpbar ${bleed ? "bleed" : ""} ${f.closed ? "done" : ""}`}>
         <div className="ar-hptrack"><i className={f.side} style={{ width: w }} /></div>
         {bleed && <div className={`ar-drips ${f.side}`} style={{ width: w }} aria-hidden="true"><b /><b /><b /><b /></div>}
@@ -185,8 +187,8 @@ function ArenaChart({ coin, live, a, b }: { coin: string; live: number; a: Fight
 
       {candles.length > 0 && (
         <div className="ar-ov">
-          {zones && <span className="ar-zone up at" style={{ left: pctX(CA + 6), top: `${(zones.yb / H) * 100}%` }}><Avatar handle={zones.L.handle} url={zones.L.avatarUrl} size={14} link={false} />{zones.L.handle} ahead ↑</span>}
-          {zones && <span className="ar-zone down at" style={{ left: pctX(CA + 6), top: `${(zones.yb / H) * 100}%` }}><Avatar handle={zones.S.handle} url={zones.S.avatarUrl} size={14} link={false} />{zones.S.handle} ahead ↓</span>}
+          {zones && <span className="ar-zone up at" style={{ left: pctX(CA + 6), top: `${(zones.yb / H) * 100}%` }}><Avatar handle={zones.L.handle} url={zones.L.avatarUrl} size={14} link={false} />{zones.L.handle}{" "}{tt("ahead ↑")}</span>}
+          {zones && <span className="ar-zone down at" style={{ left: pctX(CA + 6), top: `${(zones.yb / H) * 100}%` }}><Avatar handle={zones.S.handle} url={zones.S.avatarUrl} size={14} link={false} />{zones.S.handle}{" "}{tt("ahead ↓")}</span>}
           {inLv.map((l) => (
             <span key={l.key} className={`ar-lv ${l.kind === "LIQ" ? "liq" : l.f.side}`} style={{ top: pctY(l.p) }}>
               <Avatar handle={l.f.handle} url={l.f.avatarUrl} size={12} link={false} />{l.kind}
@@ -239,7 +241,7 @@ function RaceChart({ coin, live, a, b }: { coin: string; live: number; a: Fighte
     const p = go ? pos(f.roi) : pos(avg), up = f.roi >= 0;
     return (
       <div className={`rc-lane ${leader === f ? "lead" : ""}`}>
-        <div className="rc-name"><Avatar handle={f.handle} url={f.avatarUrl} size={18} link={false} /><b>{f.handle}</b><span className={`lbl ${f.side}`}><i />{f.side === "long" ? "Long" : "Short"} {f.lev}×</span>{leader === f && <span className="rc-crown">Leading</span>}</div>
+        <div className="rc-name"><Avatar handle={f.handle} url={f.avatarUrl} size={18} link={false} /><b>{f.handle}</b><span className={`lbl ${f.side}`}><i />{f.side === "long" ? tt("Long") : tt("Short")} {f.lev}×</span>{leader === f && <span className="rc-crown">{tt("Leading")}</span>}</div>
         <div className="rc-track">
           {ticks.map((v) => <span key={v} className={`rc-tick ${v === 0 ? "zero" : ""}`} style={{ left: `${pos(v)}%` }} />)}
           <span className="rc-trail" style={{ left: `${Math.min(pos(Math.min(a.roi, b.roi)), p)}%`, width: `${Math.abs(p - pos(Math.min(a.roi, b.roi)))}%`, background: leader === f ? "var(--gold)" : "transparent" }} />
@@ -248,23 +250,23 @@ function RaceChart({ coin, live, a, b }: { coin: string; live: number; a: Fighte
             <b className={`mono ${up ? "green" : "red"}`}>{fmtPct(f.roi, 1)}</b>
           </span>
         </div>
-        <div className={`rc-mom ${m >= 0 ? "green" : "red"}`}>{Math.abs(m) < 0.05 ? "holding steady" : m > 0 ? `▲ gaining ${m.toFixed(1)}% in the last 30m` : `▼ fading ${Math.abs(m).toFixed(1)}% in the last 30m`}</div>
+        <div className={`rc-mom ${m >= 0 ? "green" : "red"}`}>{Math.abs(m) < 0.05 ? tt("holding steady") : m > 0 ? `▲ gaining ${m.toFixed(1)}% in the last 30m` : `▼ fading ${Math.abs(m).toFixed(1)}% in the last 30m`}</div>
       </div>
     );
   };
   return (
     <div className="rc">
-      <div className="rc-gap">{leader ? <><b>{leader.handle}</b> ahead by <b className="mono">{gap.toFixed(1)}%</b></> : "All square"}</div>
+      <div className="rc-gap">{leader ? <><b>{leader.handle}</b>{" "}{tt("ahead by")}{" "}<b className="mono">{gap.toFixed(1)}%</b></> : tt("All square")}</div>
       {Lane({ f: a, m: mom(0) })}
       {leader && (
         <div className="rc-gapbar">
-          <span className="rc-bracket" style={{ left: `${pos(Math.min(a.roi, b.roi))}%`, width: `${pos(Math.max(a.roi, b.roi)) - pos(Math.min(a.roi, b.roi))}%` }}><b className="mono">{gapAbs.toFixed(gapAbs < 10 ? 2 : 1)}% gap</b></span>
+          <span className="rc-bracket" style={{ left: `${pos(Math.min(a.roi, b.roi))}%`, width: `${pos(Math.max(a.roi, b.roi)) - pos(Math.min(a.roi, b.roi))}%` }}><b className="mono">{gapAbs.toFixed(gapAbs < 10 ? 2 : 1)}{tt("% gap")}</b></span>
         </div>
       )}
       {Lane({ f: b, m: mom(1) })}
-      <div className="rc-scale"><span className="muted">each tick = {step}% ROI</span>{ticks.includes(0) && <span className="muted">| = start (0%)</span>}</div>
+      <div className="rc-scale"><span className="muted">{tt("each tick =")}{" "}{step}{tt("% ROI")}</span>{ticks.includes(0) && <span className="muted">{tt("| = start (0%)")}</span>}</div>
       <div className="ar-lead">
-        <div className="ar-leadhead"><span>Time in the lead</span><span>{changes} lead change{changes === 1 ? "" : "s"}</span></div>
+        <div className="ar-leadhead"><span>{tt("Time in the lead")}</span><span>{changes}{" "}{tt("lead change")}{changes === 1 ? "" : "s"}</span></div>
         <div className="ar-leadbar"><i className={a.side} style={{ width: `${aShare}%` }} /><i className={b.side} style={{ width: `${100 - aShare}%` }} /></div>
         <div className="ar-leadfoot"><b style={{ color: sideCol(a) }}>{a.handle} {aShare}%</b><b style={{ color: sideCol(b) }}>{b.handle} {100 - aShare}%</b></div>
       </div>
@@ -284,7 +286,7 @@ function Tape({ a, b }: { a: Fighter; b: Fighter }) {
   ];
   return (
     <div className="ar-tape">
-      <div className="ar-taperow head"><b style={{ color: sideCol(a) }}>{a.handle}</b><span>Tale of the tape</span><b style={{ color: sideCol(b) }}>{b.handle}</b></div>
+      <div className="ar-taperow head"><b style={{ color: sideCol(a) }}>{a.handle}</b><span>{tt("Tale of the tape")}</span><b style={{ color: sideCol(b) }}>{b.handle}</b></div>
       {rows.map(([k, x, z]) => <div key={k} className="ar-taperow"><b className="mono">{x}</b><span>{k}</span><b className="mono">{z}</b></div>)}
     </div>
   );
@@ -374,8 +376,8 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
       ) : <div className="skel" style={{ position: "absolute", inset: 0, borderRadius: 12 }} />}
       {candles.length > 0 && (
         <>
-          {zones && <span className="bcc-zone up" style={{ left: pctX(Math.min(nowX + 6, W * 0.74)), top: `${(zones.yb / H) * 100}%` }}>{zones.up.handle} ahead ↑</span>}
-          {zones && <span className="bcc-zone down" style={{ left: pctX(Math.min(nowX + 6, W * 0.74)), top: `${(zones.yb / H) * 100}%` }}>{zones.down.handle} ahead ↓</span>}
+          {zones && <span className="bcc-zone up" style={{ left: pctX(Math.min(nowX + 6, W * 0.74)), top: `${(zones.yb / H) * 100}%` }}>{zones.up.handle}{" "}{tt("ahead ↑")}</span>}
+          {zones && <span className="bcc-zone down" style={{ left: pctX(Math.min(nowX + 6, W * 0.74)), top: `${(zones.yb / H) * 100}%` }}>{zones.down.handle}{" "}{tt("ahead ↓")}</span>}
           {[a, b].map((f, i) => (
             <span key={i} className={`bcc-pin ${f.side}`} style={{ left: pctX(G / 2), top: `clamp(12px, ${(pinY[i] / H) * 100}%, calc(100% - 12px))` }} title={`${f.handle} ${f.side === "long" ? "bought" : "sold"} at ${fmtPrice(f.entry)}`}>
               <Avatar handle={f.handle} url={f.avatarUrl} size={20} link={false} />
@@ -385,7 +387,7 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
       )}
     </div></div>
     <div className="tc-foot">
-      <span className="when truncate">{leader ? <><b>{leader.handle}</b> leads by <b className="mono">{Math.abs(a.roi - b.roi).toFixed(1)}%</b></> : <b>All square</b>} · started {Math.max(1, Math.round(age / 60_000)) < 60 ? `${Math.max(1, Math.round(age / 60_000))}m` : `${Math.round(age / 3_600_000)}h`} ago</span>
+      <span className="when truncate">{leader ? <><b>{leader.handle}</b>{" "}{tt("leads by")}{" "}<b className="mono">{Math.abs(a.roi - b.roi).toFixed(1)}%</b></> : <b>{tt("All square")}</b>}{" "}{tt("· started")}{" "}{Math.max(1, Math.round(age / 60_000)) < 60 ? `${Math.max(1, Math.round(age / 60_000))}m` : `${Math.round(age / 3_600_000)}h`} ago</span>
       <span className="tc-ivs v2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
         {(Object.keys(IVS) as Iv[]).map((v) => <button key={v} type="button" className={v === civ ? "on" : ""} onClick={(e) => pick(e, v)}>{v}</button>)}
       </span>
@@ -398,7 +400,7 @@ export function BattleCardChart({ coin, live, a, b, tick = true }: { coin: strin
 export function MiniHp({ f, live, right, big }: { f: Fighter; live: number; right?: boolean; big?: boolean }) {
   const h = healthOf(f, live), low = h < 0.35;
   return (
-    <span className={`mhp ${big ? "big" : ""} ${right ? "r" : ""} ${low ? "low" : ""} ${h <= 0.001 ? "cracked" : ""} ${f.closed ? "done" : ""}`} title={f.closed ? "Closed · banked" : `${Math.round(h * 100)}% health`}>
+    <span className={`mhp ${big ? "big" : ""} ${right ? "r" : ""} ${low ? "low" : ""} ${h <= 0.001 ? "cracked" : ""} ${f.closed ? "done" : ""}`} title={f.closed ? tt("Closed · banked") : `${Math.round(h * 100)}% health`}>
       <i className={f.side} style={{ width: `${Math.max(4, h * 100)}%` }} />
     </span>
   );

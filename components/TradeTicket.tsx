@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { errorOf, netMessage } from "@/lib/net";
 import Link from "next/link";
 
@@ -184,8 +186,8 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       setBusy(null);
       if (!c.ok) return setErr(c.reason ?? "You can't fade this trade.");
     }
-    if (!market || !mid) return setErr("Market not ready.");
-    if (orderType === "limit" && !(Number(limitPx) > 0)) return setErr("Enter a limit price.");
+    if (!market || !mid) return setErr(tt("Market not ready."));
+    if (orderType === "limit" && !(Number(limitPx) > 0)) return setErr(tt("Enter a limit price."));
     let slOverride: number | undefined;
     if (isFade && quick && slSeeded.current && !tpslValid) {
       slOverride = side === "long" ? mid * (1 - autoStopDist(lev)) : mid * (1 + autoStopDist(lev));
@@ -199,8 +201,8 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       if (!r.ok) return setErr(await errorOf(r, "Couldn't place demo trade"));
       return finish(r);
     }
-    if (stockLiveBlocked) return setErr("Stock perps are demo-only for now. Real-money stock trading is coming soon.");
-    if (!walletClient || !address) return setErr("Wallet still loading, try again in a second.");
+    if (stockLiveBlocked) return setErr(tt("Stock perps are demo-only for now. Real-money stock trading is coming soon."));
+    if (!walletClient || !address) return setErr(tt("Wallet still loading, try again in a second."));
     setBusy("Signing order…");
     const res = await placeMarketOrder(makeExchangeClient(walletClient), {
       asset: market, side, usd: notional, mid, leverage: lev, orderType,
@@ -225,24 +227,24 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       {/* Full ticket (not the one already under a market chart): live candles stay on screen while you set it up. */}
       {!compact && !quick && coin && <div className="px-5 pt-3 tk-chart"><PriceChart coin={coin} livePx={mid || undefined} height={200} /></div>}
       {seed.handle && (
-        <div className="px-5 pt-3 text-[13px]"><span className="muted">{isFade ? "Fading" : "Copying"}</span> <b>{seed.handle}</b> <span className="muted">· {seed.side === "long" ? "Long" : "Short"} {seed.coin}{isFade ? " → you go the other way" : ""}</span></div>
+        <div className="px-5 pt-3 text-[13px]"><span className="muted">{isFade ? tt("Fading") : tt("Copying")}</span> <b>{seed.handle}</b> <span className="muted">· {seed.side === "long" ? tt("Long") : tt("Short")} {seed.coin}{isFade ? tt(" → you go the other way") : ""}</span></div>
       )}
 
       {isDemo && !quick && (
-        <div className="px-5 pt-3"><div className="warn"><b>Demo mode.</b> Fills are simulated at live prices against your ${Number(profile?.demoBalance ?? 0).toFixed(0)} practice balance. Nothing touches Hyperliquid. Switch off in Settings when you&apos;re ready.</div></div>
+        <div className="px-5 pt-3"><div className="warn"><b>{tt("Demo mode.")}</b>{" "}{tt("Fills are simulated at live prices against your $")}{Number(profile?.demoBalance ?? 0).toFixed(0)}{" "}{tt("practice balance. Nothing touches Hyperliquid. Switch off in Settings when you're ready.")}</div></div>
       )}
       {!isDemo && approved === false && walletClient && (
         <div className="block"><div className="card p-4" style={{ border: "1.5px solid var(--brand)" }}>
-          <div className="font-bold">One-time setup</div>
-          <p className="muted mt-1 text-sm">Approve a max {BUILDER_MAX_FEE_RATE} Perped fee so trades can be routed from here. You pay {fee.label} per fill{fee.tier !== "standard" ? ` (${fee.tier === "top" ? "top-trader" : "referral"} rate)` : ""}. One signature, revocable anytime, only on trades placed in Perped.</p>
+          <div className="font-bold">{tt("One-time setup")}</div>
+          <p className="muted mt-1 text-sm">{tt("Approve a max")}{" "}{BUILDER_MAX_FEE_RATE}{" "}{tt("Perped fee so trades can be routed from here. You pay")}{" "}{fee.label}{" "}{tt("per fill")}{fee.tier !== "standard" ? ` (${fee.tier === "top" ? "top-trader" : "referral"} rate)` : ""}{tt(". One signature, revocable anytime, only on trades placed in Perped.")}</p>
           <button className="btn brand mt-3" style={{ padding: 12, fontSize: 14 }} onClick={approve} disabled={!!busy}>{busy ?? `Approve ${BUILDER_MAX_FEE_RATE} fee`}</button>
         </div></div>
       )}
 
       {!compact && !quick && !seed.duelId && (
         <div className="block">
-          <input className="field mb-2.5" placeholder="Search markets" value={search} onChange={(e) => setSearch(e.target.value)} />
-          {!search.trim() && <div className="seg mb-2">{(["crypto", "stocks"] as const).map((g) => <button key={g} className={`chip ${group === g ? "info" : ""}`} onClick={() => setGroup(g)}>{g === "crypto" ? "Crypto" : "Stocks"}</button>)}</div>}
+          <input className="field mb-2.5" placeholder={tt("Search markets")} value={search} onChange={(e) => setSearch(e.target.value)} />
+          {!search.trim() && <div className="seg mb-2">{(["crypto", "stocks"] as const).map((g) => <button key={g} className={`chip ${group === g ? "info" : ""}`} onClick={() => setGroup(g)}>{g === "crypto" ? tt("Crypto") : tt("Stocks")}</button>)}</div>}
           <div className="seg">{filtered.map((m) => <button key={m.name} className={`chip ${m.name === coin ? "on" : ""}`} onClick={() => setCoin(m.name)}><CoinMark coin={m.name} size="xs" />{ticker(m.name)}</button>)}</div>
           <div className="mt-3.5 flex items-baseline justify-between"><span className="text-[22px] font-bold tracking-tight">{ticker(coin, true)}</span><span className="mono text-lg">{mid ? fmtPrice(mid) : "…"}</span></div>
         </div>
@@ -250,19 +252,19 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
 
       {!seed.lockLev && <div className="block">
         <div className="grid grid-cols-2 gap-2.5">
-          <button disabled={!!seed.duelId} onClick={() => setSide("long")} className={`btn ${side === "long" ? "long" : ""}`}>Long</button>
-          <button disabled={!!seed.duelId} onClick={() => setSide("short")} className={`btn ${side === "short" ? "short" : ""}`}>Short</button>
+          <button disabled={!!seed.duelId} onClick={() => setSide("long")} className={`btn ${side === "long" ? "long" : ""}`}>{tt("Long")}</button>
+          <button disabled={!!seed.duelId} onClick={() => setSide("short")} className={`btn ${side === "short" ? "short" : ""}`}>{tt("Short")}</button>
         </div>
         {!quick && !isDemo && <div className="seg mt-3.5">{(["market", "limit"] as const).map((t) => <button key={t} className={`chip capitalize ${t === orderType ? "info" : ""}`} onClick={() => setOrderType(t)}>{t}</button>)}</div>}
-        {orderType === "limit" && <div className="mt-3 flex items-center justify-between text-sm"><span className="muted">Limit price</span><input type="number" inputMode="decimal" className="field mono !w-36 !py-2.5 text-right" placeholder={mid ? String(mid) : ""} value={limitPx} onChange={(e) => setLimitPx(e.target.value)} /></div>}
+        {orderType === "limit" && <div className="mt-3 flex items-center justify-between text-sm"><span className="muted">{tt("Limit price")}</span><input type="number" inputMode="decimal" className="field mono !w-36 !py-2.5 text-right" placeholder={mid ? String(mid) : ""} value={limitPx} onChange={(e) => setLimitPx(e.target.value)} /></div>}
       </div>}
 
       <div className="block">
-        <div className="flex items-center justify-between text-sm"><span className="muted">Margin ({isDemo ? "demo USDC" : "USDC"})</span><span className="when">{isDemo ? `Available ${fmtUsd(Number(profile?.demoBalance ?? 0))}` : "Hyperliquid minimum $10 notional"}</span></div>
+        <div className="flex items-center justify-between text-sm"><span className="muted">{tt("Margin (")}{isDemo ? tt("demo USDC") : "USDC"})</span><span className="when">{isDemo ? `Available ${fmtUsd(Number(profile?.demoBalance ?? 0))}` : tt("Hyperliquid minimum $10 notional")}</span></div>
         {/* Type any amount, or tap a preset. The box is clearly a field, and tapping anywhere on it opens the keypad. */}
         <label className="amt-box" onClick={() => amountRef.current?.focus()}>
           <span className="amt-cur">$</span>
-          <input ref={amountRef} type="text" inputMode="decimal" enterKeyHint="done" autoComplete="off" aria-label="Margin amount"
+          <input ref={amountRef} type="text" inputMode="decimal" enterKeyHint="done" autoComplete="off" aria-label={tt("Margin amount")}
             className="amt-in mono" value={usdText} placeholder="0"
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => {
@@ -270,31 +272,31 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
               setUsdText(t); setUsd(Math.max(0, Number(t) || 0));
             }}
             onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
-          <span className="amt-edit">Type amount</span>
+          <span className="amt-edit">{tt("Type amount")}</span>
         </label>
         <div className="seg">{QUICK.map((q) => <button key={q} type="button" className={`chip ${usd === q ? "on" : ""}`} onClick={() => pickUsd(q)}>{q}</button>)}</div>
         {seed.lockLev ? (
-          <div className="mt-4 mb-3 flex items-center justify-between text-sm"><span className="muted">Leverage</span><span className="mono font-bold">{lev}×<span className="when ml-2">matched to {seed.handle ?? "theirs"}</span></span></div>
+          <div className="mt-4 mb-3 flex items-center justify-between text-sm"><span className="muted">{tt("Leverage")}</span><span className="mono font-bold">{lev}×<span className="when ml-2">{tt("matched to")}{" "}{seed.handle ?? "theirs"}</span></span></div>
         ) : (<>
-          <div className="mt-4 flex items-center justify-between text-sm"><span className="muted">Leverage</span><span className="mono font-bold">{lev}×<span className="when ml-2">Hyperliquid max {maxLev}×</span></span></div>
+          <div className="mt-4 flex items-center justify-between text-sm"><span className="muted">{tt("Leverage")}</span><span className="mono font-bold">{lev}×<span className="when ml-2">{tt("Hyperliquid max")}{" "}{maxLev}×</span></span></div>
           <input type="range" min={1} max={maxLev} value={lev} onChange={(e) => setLev(Number(e.target.value))} className="range my-1.5" />
         </>)}
         <div className="grid grid-cols-3 gap-2.5">
-          <div className="stat"><small>Position</small><div className="v mono">{fmtUsd(notional, { compact: notional >= 10000 })}</div></div>
-          <div className="stat"><small>Size</small><div className="v mono">{market ? fmtSize(size, market.szDecimals) : "—"}</div></div>
-          <div className="stat"><small>Liq. at</small><div className="v mono">{estLiq ? fmtPrice(estLiq) : "—"}</div></div>
+          <div className="stat"><small>{tt("Position")}</small><div className="v mono">{fmtUsd(notional, { compact: notional >= 10000 })}</div></div>
+          <div className="stat"><small>{tt("Size")}</small><div className="v mono">{market ? fmtSize(size, market.szDecimals) : "—"}</div></div>
+          <div className="stat"><small>{tt("Liq. at")}</small><div className="v mono">{estLiq ? fmtPrice(estLiq) : "—"}</div></div>
         </div>
-        {!isDemo && <div className="when mt-2.5 flex items-center justify-between"><span><Link href="/how-it-works#fees" className="underline">Perped fee</Link> {mFee.label}{isStock && <span className="when ml-1">stock rate</span>}{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? "Top trader" : "Referral"}</span>}</span><span className="mono">{fmtUsd((notional * mFee.tenthsBps) / 100000)}</span></div>}
-        {isStock && <div className="when mt-2.5 text-xs leading-relaxed">Stock perp on Hyperliquid (HIP-3): trades 24/7 against the share price, isolated margin. No shares, dividends or voting rights.{stockLiveBlocked ? " Demo only for now." : ""}</div>}
+        {!isDemo && <div className="when mt-2.5 flex items-center justify-between"><span><Link href="/how-it-works#fees" className="underline">{tt("Perped fee")}</Link> {mFee.label}{isStock && <span className="when ml-1">{tt("stock rate")}</span>}{fee.tier !== "standard" && <span className="chip ml-1.5" style={{ padding: "1px 6px", fontSize: 10, color: "var(--green)", background: "var(--green-soft)" }}>{fee.tier === "top" ? tt("Top trader") : tt("Referral")}</span>}</span><span className="mono">{fmtUsd((notional * mFee.tenthsBps) / 100000)}</span></div>}
+        {isStock && <div className="when mt-2.5 text-xs leading-relaxed">{tt("Stock perp on Hyperliquid (HIP-3): trades 24/7 against the share price, isolated margin. No shares, dividends or voting rights.")}{stockLiveBlocked ? tt(" Demo only for now.") : ""}</div>}
       </div>
 
       {!quick && <div className="block">
-        <div className="flex items-center justify-between"><span className="font-bold">Take profit · Stop loss</span><button className={`chip ${tpslOn ? "on" : ""}`} onClick={() => setTpslOn((v) => !v)}>{tpslOn ? "On" : "Off"}</button></div>
+        <div className="flex items-center justify-between"><span className="font-bold">{tt("Take profit · Stop loss")}</span><button className={`chip ${tpslOn ? "on" : ""}`} onClick={() => setTpslOn((v) => !v)}>{tpslOn ? tt("On") : tt("Off")}</button></div>
         {tpslOn && (
           <>
             <div className="mt-3.5 grid grid-cols-2 gap-2.5">
-              <div><div className="eyebrow mb-2">Take profit</div><input type="number" inputMode="decimal" className="field mono" value={tp} onChange={(e) => setTp(e.target.value)} placeholder={refPx ? (side === "long" ? fmtPx(refPx * 1.04, market?.szDecimals ?? 0) : fmtPx(refPx * 0.96, market?.szDecimals ?? 0)) : ""} />{tpPrev && <div className={`mt-2 text-[13px] font-semibold ${tpPrev.usd >= 0 ? "green" : "red"}`}>{fmtPct(tpPrev.pct, 1)} · {fmtUsd(tpPrev.usd, { sign: true })}</div>}</div>
-              <div><div className="eyebrow mb-2">Stop loss</div><input type="number" inputMode="decimal" className="field mono" value={sl} onChange={(e) => setSl(e.target.value)} placeholder={refPx ? (side === "long" ? fmtPx(refPx * 0.97, market?.szDecimals ?? 0) : fmtPx(refPx * 1.03, market?.szDecimals ?? 0)) : ""} />{slPrev && <div className={`mt-2 text-[13px] font-semibold ${slPrev.usd >= 0 ? "green" : "red"}`}>{fmtPct(slPrev.pct, 1)} · {fmtUsd(slPrev.usd, { sign: true })}</div>}</div>
+              <div><div className="eyebrow mb-2">{tt("Take profit")}</div><input type="number" inputMode="decimal" className="field mono" value={tp} onChange={(e) => setTp(e.target.value)} placeholder={refPx ? (side === "long" ? fmtPx(refPx * 1.04, market?.szDecimals ?? 0) : fmtPx(refPx * 0.96, market?.szDecimals ?? 0)) : ""} />{tpPrev && <div className={`mt-2 text-[13px] font-semibold ${tpPrev.usd >= 0 ? "green" : "red"}`}>{fmtPct(tpPrev.pct, 1)} · {fmtUsd(tpPrev.usd, { sign: true })}</div>}</div>
+              <div><div className="eyebrow mb-2">{tt("Stop loss")}</div><input type="number" inputMode="decimal" className="field mono" value={sl} onChange={(e) => setSl(e.target.value)} placeholder={refPx ? (side === "long" ? fmtPx(refPx * 0.97, market?.szDecimals ?? 0) : fmtPx(refPx * 1.03, market?.szDecimals ?? 0)) : ""} />{slPrev && <div className={`mt-2 text-[13px] font-semibold ${slPrev.usd >= 0 ? "green" : "red"}`}>{fmtPct(slPrev.pct, 1)} · {fmtUsd(slPrev.usd, { sign: true })}</div>}</div>
             </div>
             <p className="faint mt-2.5 text-xs">Placed on Hyperliquid with the order; both trigger as market orders even if Perped is closed.</p>
           </>
@@ -302,11 +304,11 @@ export function TradeTicket({ seed, compact = false, quick = false, onDone }: { 
       </div>}
 
       <div className="block">
-        {isFade && !quick && <div className="warn mb-3.5">Fading is a {isDemo ? "demo" : "real"} {side}{isDemo ? "" : " on Hyperliquid"} at your size. If they're right, you're the one who gets perped, publicly: your name goes on their post.</div>}
-        {!quick && <input className="field mb-3.5" placeholder="Add a note for the feed" value={note} maxLength={280} onChange={(e) => setNote(e.target.value)} />}
+        {isFade && !quick && <div className="warn mb-3.5">{tt("Fading is a")}{" "}{isDemo ? "demo" : "real"} {side}{isDemo ? "" : tt(" on Hyperliquid")}{" "}{tt("at your size. If they're right, you're the one who gets perped, publicly: your name goes on their post.")}</div>}
+        {!quick && <input className="field mb-3.5" placeholder={tt("Add a note for the feed")} value={note} maxLength={280} onChange={(e) => setNote(e.target.value)} />}
         {err && <p className="red mb-3 text-sm">{err}</p>}
-        <button onClick={submit} disabled={!!busy || !market || size <= 0 || stockLiveBlocked || (!isDemo && approved === false)} className={`btn ${side}`}>{busy ?? (authenticated ? (isDemo ? `Demo · ${cta}` : cta) : "Log in to trade")}</button>
-        <p className="faint mt-3 text-center text-xs leading-relaxed">{isDemo ? "Simulated fill at the live price." : "Filled on Hyperliquid."} {orderType === "market" ? "Market order, up to 3% slippage." : "Limit order rests until filled or cancelled."} You can lose your margin. Not financial advice.</p>
+        <button onClick={submit} disabled={!!busy || !market || size <= 0 || stockLiveBlocked || (!isDemo && approved === false)} className={`btn ${side}`}>{busy ?? (authenticated ? (isDemo ? `Demo · ${cta}` : cta) : tt("Log in to trade"))}</button>
+        <p className="faint mt-3 text-center text-xs leading-relaxed">{isDemo ? tt("Simulated fill at the live price.") : tt("Filled on Hyperliquid.")} {orderType === "market" ? tt("Market order, up to 3% slippage.") : tt("Limit order rests until filled or cancelled.")}{" "}{tt("You can lose your margin. Not financial advice.")}</p>
       </div>
     </div>
   );

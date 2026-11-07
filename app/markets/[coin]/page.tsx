@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
@@ -25,7 +27,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
   const coin = data?.markets?.find((x) => x.name.toLowerCase() === asked.toLowerCase())?.name ?? normCoin(asked);
   const { data: cs } = useCoinStats(coin);
   const countdown = useFundingCountdown();
-  const guides = useMemo(() => (cs?.typical ? [{ price: cs.typical.high, label: "Typical high" }, { price: cs.typical.low, label: "Typical low" }] : []), [cs]);
+  const guides = useMemo(() => (cs?.typical ? [{ price: cs.typical.high, label: tt("Typical high") }, { price: cs.typical.low, label: tt("Typical low") }] : []), [cs]);
   const { data: feed, mutate } = useSWR<{ posts: FeedRow[] }>(`/api/posts?coin=${coin}&limit=20`, { refreshInterval: 20_000 });
   const { data: me } = useSWR<{ stats: { closedTrades: number } | null }>(profile ? `/api/profile/${profile.handle}` : null);
   const { mids } = useMids();
@@ -47,15 +49,15 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
   // Unknown coin (typo or delisted): say so instead of showing a trade ticket for a market that doesn't exist.
   if (data?.markets?.length && !m) return (
     <div data-tint="blue" className="fade-in">
-      <header className="flex items-center px-4 py-3"><Link href="/markets" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link></header>
-      <div className="load-fail"><b>No market called {coin}</b><span>Hyperliquid doesn&apos;t list it right now.</span><Link href="/markets" className="chip mt-3">All markets</Link></div>
+      <header className="flex items-center px-4 py-3"><Link href="/markets" className="iconbtn" aria-label={tt("Back")}><Icon d={I.back} /></Link></header>
+      <div className="load-fail"><b>{tt("No market called")}{" "}{coin}</b><span>{tt("Hyperliquid doesn't list it right now.")}</span><Link href="/markets" className="chip mt-3">{tt("All markets")}</Link></div>
     </div>
   );
   return (
     <div data-tint="blue" className="fade-in">
       <header className="flex items-center justify-between px-4 py-3">
-        <Link href="/markets" className="iconbtn" aria-label="Back"><Icon d={I.back} /></Link>
-        <span className="mono when">Next funding {countdown}</span>
+        <Link href="/markets" className="iconbtn" aria-label={tt("Back")}><Icon d={I.back} /></Link>
+        <span className="mono when">{tt("Next funding")}{" "}{countdown}</span>
       </header>
 
       <section className="px-5">
@@ -71,7 +73,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
         <MarketTape coin={coin} traders={traders} lens={lens} setLens={setLens} followingAny={followingAny} mid={px} selected={selected} onSelect={setSelected} meId={profile?.id} />
         {m && <div className="mt-3.5"><MarketStats coin={coin} m={m} /></div>}
         {coinName(coin) && <div className="mt-3.5"><CoinAbout coin={coin} /></div>}
-        {live.length > 0 && <div className="mt-3.5 flex items-center justify-between text-sm"><span className="muted">{live.length} Perped trader{live.length === 1 ? "" : "s"} live</span><span className={`font-bold ${longs >= live.length / 2 ? "green" : "red"}`}>{Math.round((longs / live.length) * 100)}% long</span></div>}
+        {live.length > 0 && <div className="mt-3.5 flex items-center justify-between text-sm"><span className="muted">{live.length}{" "}{tt("Perped trader")}{live.length === 1 ? "" : "s"} live</span><span className={`font-bold ${longs >= live.length / 2 ? "green" : "red"}`}>{Math.round((longs / live.length) * 100)}{tt("% long")}</span></div>}
       </section>
 
       <div className="mt-2 hairline" />
@@ -79,7 +81,7 @@ export default function MarketPage({ params }: { params: Promise<{ coin: string 
 
       {(feed?.posts?.length ?? 0) > 0 && (
         <section className="mt-2" data-tint="brand">
-          <div className="eyebrow px-5 pb-2 pt-4">Perped on {ticker(coin)}</div>
+          <div className="eyebrow px-5 pb-2 pt-4">{tt("Perped on")}{" "}{ticker(coin)}</div>
           {feed!.posts.map((item) => <FeedPost key={item.post.id} item={item} mid={px || undefined} onChanged={mutate} />)}
         </section>
       )}

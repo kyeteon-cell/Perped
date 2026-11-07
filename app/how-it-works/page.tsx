@@ -1,3 +1,5 @@
+import { tt } from "@/lib/i18n";
+import { T } from "@/components/T";
 import Link from "next/link";
 import { small } from "@/lib/img";
 import { Glyph } from "@/components/Glyph";
@@ -23,232 +25,232 @@ function MoneyPath() {
         <g key={String(t)}><rect x={Number(x)} y="30" width="100" height="56" rx="10" fill="var(--green-soft)" stroke="var(--green)" strokeWidth="1.5" /><text x={Number(x) + 50} y="53" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--text)">{t}</text><text x={Number(x) + 50} y="70" textAnchor="middle" fontSize="9.5" fill="var(--muted)">{s}</text></g>
       ))}
       <g fill="none" stroke="var(--green)" strokeWidth="1.5"><path d="M110 50H130" markerEnd="url(#g)" /><path d="M130 66H110" markerEnd="url(#g)" /><path d="M230 50H250" markerEnd="url(#g)" /><path d="M250 66H230" markerEnd="url(#g)" /></g>
-      <text x="120" y="24" textAnchor="middle" fontSize="9" fill="var(--muted)">deposit / withdraw</text>
+      <text x="120" y="24" textAnchor="middle" fontSize="9" fill="var(--muted)"><T s="deposit / withdraw" /></text>
       <rect x="250" y="150" width="100" height="56" rx="10" fill="var(--blue-soft)" stroke="var(--blue)" strokeWidth="1.5" />
-      <text x="300" y="173" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--text)">Perped</text>
-      <text x="300" y="190" textAnchor="middle" fontSize="9.5" fill="var(--muted)">feed · fades · ranks</text>
+      <text x="300" y="173" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--text)"><T s="Perped" /></text>
+      <text x="300" y="190" textAnchor="middle" fontSize="9.5" fill="var(--muted)"><T s="feed · fades · ranks" /></text>
       <g fill="none" stroke="var(--blue)" strokeWidth="1.25"><path d="M285 150V86" markerEnd="url(#b)" /><path d="M315 86V150" markerEnd="url(#b)" /><path d="M250 178H60V86" strokeDasharray="4 3" markerEnd="url(#b)" /></g>
       <text x="280" y="122" textAnchor="end" fontSize="9" fill="var(--muted)">reads</text>
-      <text x="320" y="122" fontSize="9" fill="var(--muted)">signed orders</text>
-      <text x="150" y="172" textAnchor="middle" fontSize="9" fill="var(--muted)">asks your wallet to sign (never money)</text>
+      <text x="320" y="122" fontSize="9" fill="var(--muted)"><T s="signed orders" /></text>
+      <text x="150" y="172" textAnchor="middle" fontSize="9" fill="var(--muted)"><T s="asks your wallet to sign (never money)" /></text>
     </svg>
   );
 }
 
 /** /how-it-works — the trust page, written for someone who has never traded a perp. */
 export default function HowItWorks() {
-  const nav: [string, string][] = [["start", "Start here"], ["money", "Where your money is"], ["demo-path", "Demo, step by step"], ["real-path", "Real money, step by step"], ["permissions", "What we can do"], ["verify", "Check it yourself"], ["fees", "Fees"], ["earn", "Invites & earning"], ["battles", "Fades & ranks"], ["arena", "The Arena"], ["trophies", "Trophies"], ["risk", "Risks"], ["promise", "Our commitments"]];
+  const nav: [string, string][] = [["start", "Start here"], ["money", "Where your money is"], ["demo-path", "Demo, step by step"], ["real-path", "Real money, step by step"], ["permissions", "What we can do"], ["verify", "Check it yourself"], ["fees", tt("Fees")], ["earn", "Invites & earning"], ["battles", "Fades & ranks"], ["arena", "The Arena"], ["trophies", tt("Trophies")], ["risk", tt("Risks")], ["promise", "Our commitments"]];
   return (
     <main className="hw-page px-5 pb-14 pt-6">
-      <Link href="/" className="when">← Back</Link>
-      <h1 className="mt-3 text-2xl font-extrabold tracking-tight">How Perped works</h1>
-      <Link href="/intro" className="chip on mt-3 inline-flex" style={{ fontSize: 13 }}>New here? The 60-second tour →</Link>
+      <Link href="/" className="when"><T s="← Back" /></Link>
+      <h1 className="mt-3 text-2xl font-extrabold tracking-tight"><T s="How Perped works" /></h1>
+      <Link href="/intro" className="chip on mt-3 inline-flex" style={{ fontSize: 13 }}><T s="New here? The 60-second tour →" /></Link>
       <p className="muted mt-1">Perped never holds your money. Your trades live on Hyperliquid, in your own wallet&rsquo;s account; Perped is the social layer that lets people copy you, fade you and keep score. This page explains all of it from scratch.</p>
       <div className="mt-4 flex flex-wrap gap-1.5">{nav.map(([id, t]) => <a key={id} href={`#${id}`} className="chip" style={{ padding: "6px 10px", fontSize: 12 }}>{t}</a>)}</div>
 
       <section id="start" className="hw mt-7">
-        <h2 className="text-lg font-bold">Start here: the words you need</h2>
-        <p className="mt-2">If you have never traded crypto derivatives, five ideas cover almost everything on Perped.</p>
+        <h2 className="text-lg font-bold"><T s="Start here: the words you need" /></h2>
+        <p className="mt-2"><T s="If you have never traded crypto derivatives, five ideas cover almost everything on Perped." /></p>
         <dl className="hw-gloss mt-3">
-          <dt>A perp (perpetual future)</dt><dd>A contract that tracks a coin&rsquo;s price without you owning the coin. You bet on the direction: <b>long</b> means you profit if the price goes up, <b>short</b> means you profit if it goes down. There is no expiry; you hold it until you close it.</dd>
-          <dt>Margin</dt><dd>The money you put up for a trade. On Perped the card shows it as, say, <span className="mono">$250 × 40</span>: $250 of your money controlling a $10,000 position.</dd>
-          <dt>Leverage</dt><dd>The multiplier. 40× means every 1% the price moves, your position moves 40%. It cuts both ways: at 40× a 2.5% move against you wipes the whole $250. Start at 2–5× until you have closed a few trades.</dd>
-          <dt>Liquidation</dt><dd>When a losing trade eats your margin, the exchange closes it automatically and the margin is gone. Nobody chases you for more; you can never lose more than you put up on that trade.</dd>
-          <dt>A wallet</dt><dd>An app (Rabby, MetaMask, Rainbow, Phantom) that holds a private key. The key is the only thing that can move your money. Websites like Perped can <i>ask</i> the wallet to sign something; the wallet shows you what it is and you tap Approve or Reject.</dd>
-          <dt>Hyperliquid</dt><dd>The exchange. It is a blockchain built to run a perps order book, clearing billions of dollars a day. Your account on it is simply your wallet address, and anyone can look it up.</dd>
+          <dt><T s="A perp (perpetual future)" /></dt><dd><T s="A contract that tracks a coin’s price without you owning the coin. You bet on the direction:" />{" "}<b>long</b>{" "}<T s="means you profit if the price goes up," />{" "}<b>short</b> means you profit if it goes down. There is no expiry; you hold it until you close it.</dd>
+          <dt><T s="Margin" /></dt><dd><T s="The money you put up for a trade. On Perped the card shows it as, say," />{" "}<span className="mono">$250 × 40</span><T s=": $250 of your money controlling a $10,000 position." /></dd>
+          <dt><T s="Leverage" /></dt><dd><T s="The multiplier. 40× means every 1% the price moves, your position moves 40%. It cuts both ways: at 40× a 2.5% move against you wipes the whole $250. Start at 2–5× until you have closed a few trades." /></dd>
+          <dt><T s="Liquidation" /></dt><dd>When a losing trade eats your margin, the exchange closes it automatically and the margin is gone. Nobody chases you for more; you can never lose more than you put up on that trade.</dd>
+          <dt><T s="A wallet" /></dt><dd><T s="An app (Rabby, MetaMask, Rainbow, Phantom) that holds a private key. The key is the only thing that can move your money. Websites like Perped can" />{" "}<i>ask</i> the wallet to sign something; the wallet shows you what it is and you tap Approve or Reject.</dd>
+          <dt><T s="Hyperliquid" /></dt><dd><T s="The exchange. It is a blockchain built to run a perps order book, clearing billions of dollars a day. Your account on it is simply your wallet address, and anyone can look it up." /></dd>
         </dl>
       </section>
 
       <section id="money" className="hw mt-7">
-        <h2 className="text-lg font-bold">Where your money is</h2>
-        <p className="mt-2">Perped has no deposit address, no balance of yours, no wallet holding client funds, and no way to create one. Money moves between your wallet and Hyperliquid, signed by you each time. Perped sits beside that path: it reads from Hyperliquid and sends it orders your wallet has already signed.</p>
+        <h2 className="text-lg font-bold"><T s="Where your money is" /></h2>
+        <p className="mt-2"><T s="Perped has no deposit address, no balance of yours, no wallet holding client funds, and no way to create one. Money moves between your wallet and Hyperliquid, signed by you each time. Perped sits beside that path: it reads from Hyperliquid and sends it orders your wallet has already signed." /></p>
         <MoneyPath />
         <ul className="hw-list mt-3">
-          <li><b>Non-custodial.</b> Your Hyperliquid account is your wallet address. Funds in it move only with a transaction signed by your key. Hyperliquid Labs cannot move them, and neither can any front-end, Perped included.</li>
-          <li><b>Public.</b> Every account&rsquo;s balance, positions and fills are on Hyperliquid&rsquo;s explorer for anyone to see. Tap <b>Verified on Hyperliquid</b> on any real-money post to see that trader&rsquo;s.</li>
-          <li><b>If Perped vanished tomorrow,</b> your money would still be on Hyperliquid, reachable from Hyperliquid&rsquo;s own site or any other front-end with the same wallet. That is the test of a real front-end.</li>
-          <li><b>What Perped stores:</b> your handle, bio, pictures, settings, follows, likes, comments, fade results, XP, and a <i>record</i> of each trade you post (coin, side, size, entry, exit) so it can be shown and scored. Not your key, not your USDC, not your positions.</li>
-          {HL_NETWORK !== "mainnet" && <li><b>Right now real-money trading runs on Hyperliquid&rsquo;s testnet</b> while we finish testing. Prices shown are mainnet; orders go to testnet. We will say clearly when mainnet is on.</li>}
+          <li><b><T s="Non-custodial." /></b>{" "}<T s="Your Hyperliquid account is your wallet address. Funds in it move only with a transaction signed by your key. Hyperliquid Labs cannot move them, and neither can any front-end, Perped included." /></li>
+          <li><b><T s="Public." /></b>{" "}<T s="Every account’s balance, positions and fills are on Hyperliquid’s explorer for anyone to see. Tap" />{" "}<b><T s="Verified on Hyperliquid" /></b>{" "}<T s="on any real-money post to see that trader’s." /></li>
+          <li><b><T s="If Perped vanished tomorrow," /></b>{" "}<T s="your money would still be on Hyperliquid, reachable from Hyperliquid’s own site or any other front-end with the same wallet. That is the test of a real front-end." /></li>
+          <li><b><T s="What Perped stores:" /></b>{" "}<T s="your handle, bio, pictures, settings, follows, likes, comments, fade results, XP, and a" />{" "}<i>record</i>{" "}<T s="of each trade you post (coin, side, size, entry, exit) so it can be shown and scored. Not your key, not your USDC, not your positions." /></li>
+          {HL_NETWORK !== "mainnet" && <li><b><T s="Right now real-money trading runs on Hyperliquid’s testnet" /></b> while we finish testing. Prices shown are mainnet; orders go to testnet. We will say clearly when mainnet is on.</li>}
         </ul>
       </section>
 
       <span id="demo" />
       <section id="demo-path" className="hw mt-7">
-        <h2 className="text-lg font-bold">Demo, step by step</h2>
-        <p className="mt-2">Most people start here. Demo is $10,000 of practice money at live prices. Nothing goes to Hyperliquid and nothing can be lost.</p>
+        <h2 className="text-lg font-bold"><T s="Demo, step by step" /></h2>
+        <p className="mt-2"><T s="Most people start here. Demo is $10,000 of practice money at live prices. Nothing goes to Hyperliquid and nothing can be lost." /></p>
         <ol className="hw-steps mt-3">
-          <li><b>Tap Guest</b> on the Home screen (or sign in with X, Google or email). An account is made on the spot with a random handle; you can change it in Settings.</li>
-          <li><b>Make a one-hour call.</b> Top of Home: &ldquo;Where&rsquo;s BTC in an hour?&rdquo; Tap Higher or Lower. It settles against the price it was made at, on the hour. This is the gentlest way in: no leverage, no sizing.</li>
-          <li><b>Open a trade.</b> Markets → pick a coin → Long or Short → choose margin and leverage → confirm. The fill is simulated at the live Hyperliquid price and appears in the feed as your post, marked <span className="demo-tag">Demo</span>.</li>
-          <li><b>Manage it.</b> Every open trade of yours has a <b>Manage</b> pill: close 25/50/75/100%, set a take-profit or stop-loss (with presets in % terms), or add to it. Demo stops are checked against the live price every few minutes.</li>
-          <li><b>Copy or fade.</b> Swipe a live trade right to copy it, or left to fade it. <b><Glyph n="bolt" /> Quick fade</b> asks for one thing, your size: it takes the opposite side at the trader&rsquo;s exact leverage, adds a stop loss for you, and drops you straight into the fade page.</li>
-          <li><b>Fight.</b> Every fade is a <b>head-to-head</b>: whoever ends with the higher ROI wins. Watch it live on the fade page, and in the Arena with everyone else&rsquo;s. Share any trade as a challenge link; a friend who taps it lands straight in the opposite trade.</li>
-          <li><b>Climb.</b> Wins, calls and fades earn XP and ranks. The demo leaderboard ranks practice accounts against each other; it never mixes with real-money results.</li>
+          <li><b><T s="Tap Guest" /></b> on the Home screen (or sign in with X, Google or email). An account is made on the spot with a random handle; you can change it in Settings.</li>
+          <li><b><T s="Make a one-hour call." /></b>{" "}<T s="Top of Home: “Where’s BTC in an hour?” Tap Higher or Lower. It settles against the price it was made at, on the hour. This is the gentlest way in: no leverage, no sizing." /></li>
+          <li><b><T s="Open a trade." /></b>{" "}<T s="Markets → pick a coin → Long or Short → choose margin and leverage → confirm. The fill is simulated at the live Hyperliquid price and appears in the feed as your post, marked" />{" "}<span className="demo-tag"><T s="Demo" /></span>.</li>
+          <li><b><T s="Manage it." /></b>{" "}<T s="Every open trade of yours has a" />{" "}<b><T s="Manage" /></b>{" "}<T s="pill: close 25/50/75/100%, set a take-profit or stop-loss (with presets in % terms), or add to it. Demo stops are checked against the live price every few minutes." /></li>
+          <li><b><T s="Copy or fade." /></b>{" "}<T s="Swipe a live trade right to copy it, or left to fade it." />{" "}<b><Glyph n="bolt" />{" "}<T s="Quick fade" /></b>{" "}<T s="asks for one thing, your size: it takes the opposite side at the trader’s exact leverage, adds a stop loss for you, and drops you straight into the fade page." /></li>
+          <li><b><T s="Fight." /></b>{" "}<T s="Every fade is a" />{" "}<b>head-to-head</b>: whoever ends with the higher ROI wins. Watch it live on the fade page, and in the Arena with everyone else&rsquo;s. Share any trade as a challenge link; a friend who taps it lands straight in the opposite trade.</li>
+          <li><b><T s="Climb." /></b> Wins, calls and fades earn XP and ranks. The demo leaderboard ranks practice accounts against each other; it never mixes with real-money results.</li>
         </ol>
       </section>
 
       <section id="real-path" className="hw mt-7">
-        <h2 className="text-lg font-bold">Real money, step by step</h2>
+        <h2 className="text-lg font-bold"><T s="Real money, step by step" /></h2>
         <LiveSoonNote />
-        <p className="mt-2">Only do this once you have closed a few demo trades and understand leverage. Every step below is signed by you in your own wallet.</p>
+        <p className="mt-2"><T s="Only do this once you have closed a few demo trades and understand leverage. Every step below is signed by you in your own wallet." /></p>
         <ol className="hw-steps mt-3">
-          <li><b>Get a wallet.</b> Install Rabby, MetaMask, Rainbow or Phantom (with Ethereum networks on) on your phone. Write the seed phrase on paper. Nobody — not Perped, not Hyperliquid — can recover it for you.</li>
-          <li><b>Get USDC on Arbitrum.</b> Buy USDC on an exchange and withdraw it to your wallet address choosing the <b>Arbitrum</b> network, or buy directly in the wallet app. You also need a little ETH on Arbitrum (a dollar or two) to pay network fees.</li>
-          <li><b>Deposit to Hyperliquid.</b> Send USDC to Hyperliquid&rsquo;s bridge contract (Perped&rsquo;s Deposit button opens it). Your wallet signs it; Hyperliquid credits your account a minute later. Perped is not part of this transaction.</li>
-          <li><b>Connect and go live.</b> On Perped, Settings → Connect a wallet → Go live. Your wallet becomes your Hyperliquid account inside Perped. Your demo history stays on your profile.</li>
-          <li><b>Approve the fee cap, once.</b> Your wallet will ask you to approve a Perped builder fee of at most {F(BUILDER_MAX_FEE_TENTHS_BPS)} per fill. That is a cap enforced by Hyperliquid; what we actually charge is lower (see Fees). You can revoke it on Hyperliquid at any time.</li>
-          <li><b>Trade.</b> Tap Long or Short. Perped builds the order; your wallet shows the coin, side and size; you approve; Hyperliquid fills it. Your position now exists on Hyperliquid, and Perped posts the record, marked <span className="real-tag">Real</span> with a link to the explorer.</li>
-          <li><b>Close, or let your stop do it.</b> Same as trading: a signed order, filled by Hyperliquid. Take-profit and stop-loss orders are placed on Hyperliquid itself when you set them, so they fire even if Perped is closed.</li>
-          <li><b>Withdraw.</b> On Hyperliquid&rsquo;s site, sign a withdrawal and USDC arrives in your wallet on Arbitrum within minutes. Perped is not involved and cannot stop you.</li>
+          <li><b><T s="Get a wallet." /></b>{" "}<T s="Install Rabby, MetaMask, Rainbow or Phantom (with Ethereum networks on) on your phone. Write the seed phrase on paper. Nobody — not Perped, not Hyperliquid — can recover it for you." /></li>
+          <li><b><T s="Get USDC on Arbitrum." /></b>{" "}<T s="Buy USDC on an exchange and withdraw it to your wallet address choosing the" />{" "}<b><T s="Arbitrum" /></b>{" "}<T s="network, or buy directly in the wallet app. You also need a little ETH on Arbitrum (a dollar or two) to pay network fees." /></li>
+          <li><b><T s="Deposit to Hyperliquid." /></b> Send USDC to Hyperliquid&rsquo;s bridge contract (Perped&rsquo;s Deposit button opens it). Your wallet signs it; Hyperliquid credits your account a minute later. Perped is not part of this transaction.</li>
+          <li><b><T s="Connect and go live." /></b>{" "}<T s="On Perped, Settings → Connect a wallet → Go live. Your wallet becomes your Hyperliquid account inside Perped. Your demo history stays on your profile." /></li>
+          <li><b><T s="Approve the fee cap, once." /></b>{" "}<T s="Your wallet will ask you to approve a Perped builder fee of at most" />{" "}{F(BUILDER_MAX_FEE_TENTHS_BPS)} per fill. That is a cap enforced by Hyperliquid; what we actually charge is lower (see Fees). You can revoke it on Hyperliquid at any time.</li>
+          <li><b><T s="Trade." /></b> Tap Long or Short. Perped builds the order; your wallet shows the coin, side and size; you approve; Hyperliquid fills it. Your position now exists on Hyperliquid, and Perped posts the record, marked <span className="real-tag"><T s="Real" /></span>{" "}<T s="with a link to the explorer." /></li>
+          <li><b><T s="Close, or let your stop do it." /></b>{" "}<T s="Same as trading: a signed order, filled by Hyperliquid. Take-profit and stop-loss orders are placed on Hyperliquid itself when you set them, so they fire even if Perped is closed." /></li>
+          <li><b><T s="Withdraw." /></b>{" "}<T s="On Hyperliquid’s site, sign a withdrawal and USDC arrives in your wallet on Arbitrum within minutes. Perped is not involved and cannot stop you." /></li>
         </ol>
-        <p className="muted mt-3 text-[13px]">Start with an amount you could lose without noticing. Check your first two or three fills on the explorer. Then size up.</p>
+        <p className="muted mt-3 text-[13px]"><T s="Start with an amount you could lose without noticing. Check your first two or three fills on the explorer. Then size up." /></p>
       </section>
 
       <section id="permissions" className="hw mt-7">
-        <h2 className="text-lg font-bold">What Perped can and cannot do with your wallet</h2>
-        <p className="mt-2">Everything Perped does on your behalf needs a signature from your wallet. There are exactly two things you ever sign for Perped.</p>
+        <h2 className="text-lg font-bold"><T s="What Perped can and cannot do with your wallet" /></h2>
+        <p className="mt-2"><T s="Everything Perped does on your behalf needs a signature from your wallet. There are exactly two things you ever sign for Perped." /></p>
         <table className="hw-table mt-3">
-          <thead><tr><th>Permission</th><th>Lets Perped</th><th>Cannot</th></tr></thead>
+          <thead><tr><th><T s="Permission" /></th><th><T s="Lets Perped" /></th><th><T s="Cannot" /></th></tr></thead>
           <tbody>
-            <tr><td>Each order (open, close, TP, SL)</td><td>Hand you that one order to approve, then send it to Hyperliquid</td><td>Sign anything without you tapping Approve; move funds; withdraw</td></tr>
-            <tr><td>Builder fee cap (once)</td><td>Let Hyperliquid add up to {F(BUILDER_MAX_FEE_TENTHS_BPS)} to fills placed through Perped</td><td>Charge above the cap; charge on trades made elsewhere; touch your balance</td></tr>
+            <tr><td><T s="Each order (open, close, TP, SL)" /></td><td><T s="Hand you that one order to approve, then send it to Hyperliquid" /></td><td>Sign anything without you tapping Approve; move funds; withdraw</td></tr>
+            <tr><td><T s="Builder fee cap (once)" /></td><td><T s="Let Hyperliquid add up to" />{" "}{F(BUILDER_MAX_FEE_TENTHS_BPS)}{" "}<T s="to fills placed through Perped" /></td><td>Charge above the cap; charge on trades made elsewhere; touch your balance</td></tr>
           </tbody>
         </table>
         <ul className="hw-list mt-3">
-          <li><b>Cannot withdraw or deposit for you.</b> Those are Hyperliquid transactions only your key can sign. Perped never holds that key and never asks for it.</li>
-          <li><b>Cannot freeze your account.</b> Your account is on Hyperliquid. Deleting your Perped profile changes nothing on-chain.</li>
-          <li><b>Cannot see your seed phrase.</b> Wallet apps never expose it to websites.</li>
-          <li><b>Cannot trade while you are away,</b> except for take-profit and stop-loss orders you signed in advance, which Hyperliquid itself executes.</li>
+          <li><b><T s="Cannot withdraw or deposit for you." /></b>{" "}<T s="Those are Hyperliquid transactions only your key can sign. Perped never holds that key and never asks for it." /></li>
+          <li><b><T s="Cannot freeze your account." /></b>{" "}<T s="Your account is on Hyperliquid. Deleting your Perped profile changes nothing on-chain." /></li>
+          <li><b><T s="Cannot see your seed phrase." /></b>{" "}<T s="Wallet apps never expose it to websites." /></li>
+          <li><b><T s="Cannot trade while you are away," /></b>{" "}<T s="except for take-profit and stop-loss orders you signed in advance, which Hyperliquid itself executes." /></li>
         </ul>
-        <p className="mt-3">If Perped ever asks for anything not listed here — a transfer, an approval for an unknown contract, a seed phrase — close the tab. It is a bug or an impostor site, and either is worth telling us about.</p>
+        <p className="mt-3"><T s="If Perped ever asks for anything not listed here — a transfer, an approval for an unknown contract, a seed phrase — close the tab. It is a bug or an impostor site, and either is worth telling us about." /></p>
       </section>
 
       <section id="verify" className="hw mt-7">
-        <h2 className="text-lg font-bold">Check it yourself</h2>
-        <p className="mt-2">Do not take our word for any of this. Each check takes a few minutes in a browser.</p>
+        <h2 className="text-lg font-bold"><T s="Check it yourself" /></h2>
+        <p className="mt-2"><T s="Do not take our word for any of this. Each check takes a few minutes in a browser." /></p>
         <ol className="hw-steps mt-3">
-          <li><b>Look yourself up.</b> Paste your wallet address into Hyperliquid&rsquo;s explorer. Balance, positions and every fill are there with timestamps, and they match what Perped shows because both read the same ledger.</li>
-          <li><b>Tap &ldquo;Verified on Hyperliquid&rdquo;</b> on any real post. If a post claims a fill that is not on the explorer, the post is wrong, not the chain.</li>
-          <li><b>Read what your wallet asks you to approve.</b> The fee cap shows its exact number; each order shows coin, side and size. Anything else: decline.</li>
-          <li><b>Check the builder fee on Hyperliquid.</b> Its site lists which builders you have approved and at what cap. Perped&rsquo;s entry is at or below the number on this page, and you can revoke it there.</li>
-          <li><b>Try the exit.</b> Open Hyperliquid&rsquo;s own site with the same wallet. Your position is there. Close or withdraw there. Perped is one window onto your account, not the account.</li>
+          <li><b><T s="Look yourself up." /></b>{" "}<T s="Paste your wallet address into Hyperliquid’s explorer. Balance, positions and every fill are there with timestamps, and they match what Perped shows because both read the same ledger." /></li>
+          <li><b><T s="Tap “Verified on Hyperliquid”" /></b>{" "}<T s="on any real post. If a post claims a fill that is not on the explorer, the post is wrong, not the chain." /></li>
+          <li><b><T s="Read what your wallet asks you to approve." /></b> The fee cap shows its exact number; each order shows coin, side and size. Anything else: decline.</li>
+          <li><b><T s="Check the builder fee on Hyperliquid." /></b>{" "}<T s="Its site lists which builders you have approved and at what cap. Perped’s entry is at or below the number on this page, and you can revoke it there." /></li>
+          <li><b><T s="Try the exit." /></b>{" "}<T s="Open Hyperliquid’s own site with the same wallet. Your position is there. Close or withdraw there. Perped is one window onto your account, not the account." /></li>
         </ol>
       </section>
 
       <section id="market" className="hw mt-7">
-        <h2 className="text-lg font-bold">Reading the market</h2>
-        <p className="mt-2">Every coin page shows four tiles under the chart. All of it comes straight from Hyperliquid&rsquo;s public data, nothing is estimated. Tap a tile for the detail.</p>
-        <p className="mt-2"><b>Funding (cost to hold).</b> Perps stay close to the real price by making one side pay the other every hour. Positive funding means longs pay shorts. We show it per 8 hours, like most exchanges, and per year so you can feel the cost. Hyperliquid&rsquo;s resting rate is 0.01% per 8h (about 11% a year); well above that means longs are crowded, below zero means shorts are. The detail also compares Hyperliquid with Binance and Bybit.</p>
-        <p className="mt-2"><b>Depth (liquidity).</b> How much money is waiting to buy and sell within 2% of the price, and the split between buyers and sellers. The detail shows the spread and what a $1k, $10k or $100k market order would actually cost you in slippage, worked out from the live order book.</p>
-        <p className="mt-2"><b>Premium (price vs spot).</b> How far the perp price is from the spot index Hyperliquid tracks. A big gap usually means higher funding is coming and tends to close back toward zero.</p>
-        <p className="mt-2"><b>Typical day.</b> The median high-to-low move over the last 30 full days, and how far a move would liquidate you at different leverage. If a normal day moves further than your liquidation distance, noise alone can wipe you out. The dashed lines on the chart are the typical high and low from today&rsquo;s open.</p>
-        <p className="mt-2"><b>Open interest.</b> The total value of open positions. Rising open interest with a rising price means new money is backing the move; we record it every 10 minutes to show the 24-hour change.</p>
+        <h2 className="text-lg font-bold"><T s="Reading the market" /></h2>
+        <p className="mt-2"><T s="Every coin page shows four tiles under the chart. All of it comes straight from Hyperliquid’s public data, nothing is estimated. Tap a tile for the detail." /></p>
+        <p className="mt-2"><b><T s="Funding (cost to hold)." /></b> Perps stay close to the real price by making one side pay the other every hour. Positive funding means longs pay shorts. We show it per 8 hours, like most exchanges, and per year so you can feel the cost. Hyperliquid&rsquo;s resting rate is 0.01% per 8h (about 11% a year); well above that means longs are crowded, below zero means shorts are. The detail also compares Hyperliquid with Binance and Bybit.</p>
+        <p className="mt-2"><b><T s="Depth (liquidity)." /></b>{" "}<T s="How much money is waiting to buy and sell within 2% of the price, and the split between buyers and sellers. The detail shows the spread and what a $1k, $10k or $100k market order would actually cost you in slippage, worked out from the live order book." /></p>
+        <p className="mt-2"><b><T s="Premium (price vs spot)." /></b>{" "}<T s="How far the perp price is from the spot index Hyperliquid tracks. A big gap usually means higher funding is coming and tends to close back toward zero." /></p>
+        <p className="mt-2"><b><T s="Typical day." /></b>{" "}<T s="The median high-to-low move over the last 30 full days, and how far a move would liquidate you at different leverage. If a normal day moves further than your liquidation distance, noise alone can wipe you out. The dashed lines on the chart are the typical high and low from today’s open." /></p>
+        <p className="mt-2"><b><T s="Open interest." /></b> The total value of open positions. Rising open interest with a rising price means new money is backing the move; we record it every 10 minutes to show the 24-hour change.</p>
       </section>
 
       <section id="fees" className="hw mt-7">
-        <h2 className="text-lg font-bold">Fees</h2>
-        <p className="mt-2">Perped earns a <b>builder fee</b>: a small percentage of each real fill, added to Hyperliquid&rsquo;s own trading fee and collected by Hyperliquid, which pays Perped. We never invoice you and never hold a balance of yours. We earn the same on a winning trade as a losing one.</p>
+        <h2 className="text-lg font-bold"><T s="Fees" /></h2>
+        <p className="mt-2"><T s="Perped earns a" />{" "}<b><T s="builder fee" /></b><T s=": a small percentage of each real fill, added to Hyperliquid’s own trading fee and collected by Hyperliquid, which pays Perped. We never invoice you and never hold a balance of yours. We earn the same on a winning trade as a losing one." /></p>
         <table className="hw-table mt-3">
           <tbody>
-            <tr><td>Standard</td><td className="mono">{F(BUILDER_FEE_STANDARD_TENTHS_BPS)}</td><td>of notional, per fill, shown on the ticket</td></tr>
-            <tr><td>Joined through an invite</td><td className="mono">{F(BUILDER_FEE_REFERRED_TENTHS_BPS)}</td><td>for life</td></tr>
-            <tr><td>Top {TOP_TIER_RANK} on the leaderboard</td><td className="mono">{F(BUILDER_FEE_TOP_TENTHS_BPS)}</td><td>while ranked</td></tr>
-            <tr><td>Stock perps (NVDA, TSLA, indices)</td><td className="mono">{F(STOCK_FEE_STANDARD_TENTHS_BPS)}</td><td>{F(STOCK_FEE_REFERRED_TENTHS_BPS)} with an invite, {F(STOCK_FEE_TOP_TENTHS_BPS)} for the top {TOP_TIER_RANK}</td></tr>
-            <tr><td>Cap you approve once</td><td className="mono">{F(BUILDER_MAX_FEE_TENTHS_BPS)}</td><td>enforced by Hyperliquid, not by us</td></tr>
+            <tr><td><T s="Standard" /></td><td className="mono">{F(BUILDER_FEE_STANDARD_TENTHS_BPS)}</td><td><T s="of notional, per fill, shown on the ticket" /></td></tr>
+            <tr><td><T s="Joined through an invite" /></td><td className="mono">{F(BUILDER_FEE_REFERRED_TENTHS_BPS)}</td><td><T s="for life" /></td></tr>
+            <tr><td><T s="Top" />{" "}{TOP_TIER_RANK}{" "}<T s="on the leaderboard" /></td><td className="mono">{F(BUILDER_FEE_TOP_TENTHS_BPS)}</td><td><T s="while ranked" /></td></tr>
+            <tr><td><T s="Stock perps (NVDA, TSLA, indices)" /></td><td className="mono">{F(STOCK_FEE_STANDARD_TENTHS_BPS)}</td><td>{F(STOCK_FEE_REFERRED_TENTHS_BPS)}{" "}<T s="with an invite," />{" "}{F(STOCK_FEE_TOP_TENTHS_BPS)}{" "}<T s="for the top" />{" "}{TOP_TIER_RANK}</td></tr>
+            <tr><td><T s="Cap you approve once" /></td><td className="mono">{F(BUILDER_MAX_FEE_TENTHS_BPS)}</td><td><T s="enforced by Hyperliquid, not by us" /></td></tr>
           </tbody>
         </table>
-        <p className="mt-3">Example: $250 margin at 40× is $10,000 of notional. At {F(BUILDER_FEE_STANDARD_TENTHS_BPS)} the Perped fee is <span className="mono">${((10000 * BUILDER_FEE_STANDARD_TENTHS_BPS) / 100000).toFixed(2)}</span> to open and the same to close. Hyperliquid&rsquo;s own fee applies on top and is published on their site. Stock perps are listed by builders on Hyperliquid (HIP-3); their exchange fee is often much lower than on crypto, so Perped charges less on them too.</p>
-        <p className="mt-2"><b>Invites.</b> Share a challenge or invite link and anyone who joins through it pays the reduced rate. You receive {REFERRAL_SHARE_PCT}% of the Perped fee on everything they trade ({REFERRAL_TOP_SHARE_PCT}% once {REFERRAL_TOP_THRESHOLD} of your invitees are active), paid in USDC and shown in Settings. It comes out of the fee, never out of anyone&rsquo;s trading balance.</p>
-        <p className="mt-2">Demo trading is free, because there is no fill to charge on.</p>
+        <p className="mt-3"><T s="Example: $250 margin at 40× is $10,000 of notional. At" />{" "}{F(BUILDER_FEE_STANDARD_TENTHS_BPS)}{" "}<T s="the Perped fee is" />{" "}<span className="mono">${((10000 * BUILDER_FEE_STANDARD_TENTHS_BPS) / 100000).toFixed(2)}</span> to open and the same to close. Hyperliquid&rsquo;s own fee applies on top and is published on their site. Stock perps are listed by builders on Hyperliquid (HIP-3); their exchange fee is often much lower than on crypto, so Perped charges less on them too.</p>
+        <p className="mt-2"><b><T s="Invites." /></b>{" "}<T s="Share a challenge or invite link and anyone who joins through it pays the reduced rate. You receive" />{" "}{REFERRAL_SHARE_PCT}<T s="% of the Perped fee on everything they trade (" />{REFERRAL_TOP_SHARE_PCT}<T s="% once" />{" "}{REFERRAL_TOP_THRESHOLD}{" "}<T s="of your invitees are active), paid in USDC and shown in Settings. It comes out of the fee, never out of anyone’s trading balance." /></p>
+        <p className="mt-2"><T s="Demo trading is free, because there is no fill to charge on." /></p>
       </section>
 
       <section id="earn" className="hw mt-7">
-        <h2 className="text-lg font-bold">Invites, founders and earning</h2>
-        <p className="mt-2">Perped is <b>invite only</b> for real-money trading. Anyone can practise on demo. To go live you need someone&rsquo;s invite code, or a spot from the waitlist, which lets people in every Monday at 9pm Bangkok time, oldest first. Codes have no limit: share yours anywhere.</p>
+        <h2 className="text-lg font-bold"><T s="Invites, founders and earning" /></h2>
+        <p className="mt-2"><T s="Perped is" />{" "}<b><T s="invite only" /></b>{" "}<T s="for real-money trading. Anyone can practise on demo. To go live you need someone’s invite code, or a spot from the waitlist, which lets people in every Monday at 9pm Bangkok time, oldest first. Codes have no limit: share yours anywhere." /></p>
         <ul className="mt-2">
-          <li><b>Your friends pay less, forever.</b> Anyone who joins with a code pays {F(BUILDER_FEE_REFERRED_TENTHS_BPS)} per fill instead of {F(BUILDER_FEE_STANDARD_TENTHS_BPS)}, for as long as they trade on Perped.</li>
-          <li><b>You earn from their trades.</b> {REFERRAL_SHARE_PCT}% of the Perped fee on every real fill they make, rising to {REFERRAL_TOP_SHARE_PCT}% once {REFERRAL_TOP_THRESHOLD} of your invitees traded in the last 30 days.</li>
-          <li><b>You earn when people trade off your posts.</b> When someone copies or fades your trade, or trades straight from your call, you get {CREATOR_PCT}% of the fee on that fill ({CREATOR_RANKED_PCT}% from {RANKS.find((r) => r.level === CREATOR_RANKED_LEVEL)?.title} rank up). It counts when the position is held {CREATOR_MIN_HOLD_S / 60}+ minutes, and never for your own trades or accounts.</li>
-          <li><b><Glyph n="crown" tone="gold" /> Founders.</b> Up to {FOUNDER_SEATS} hand-picked traders, numbered seats. Founders earn {FOUNDER_L1_PCT}% of the fees from everyone they invite for life; {FOUNDER_L2_PCT}% from the people their invitees bring in; and {CREATOR_FOUNDER_PCT}% when their trades or calls are copied, faded or traded. A founder who brings in no real-money trader within {FOUNDER_GRACE_DAYS} days gives the seat back and moves to regular rates.</li>
+          <li><b><T s="Your friends pay less, forever." /></b>{" "}<T s="Anyone who joins with a code pays" />{" "}{F(BUILDER_FEE_REFERRED_TENTHS_BPS)}{" "}<T s="per fill instead of" />{" "}{F(BUILDER_FEE_STANDARD_TENTHS_BPS)}<T s=", for as long as they trade on Perped." /></li>
+          <li><b><T s="You earn from their trades." /></b> {REFERRAL_SHARE_PCT}<T s="% of the Perped fee on every real fill they make, rising to" />{" "}{REFERRAL_TOP_SHARE_PCT}<T s="% once" />{" "}{REFERRAL_TOP_THRESHOLD}{" "}<T s="of your invitees traded in the last 30 days." /></li>
+          <li><b><T s="You earn when people trade off your posts." /></b>{" "}<T s="When someone copies or fades your trade, or trades straight from your call, you get" />{" "}{CREATOR_PCT}<T s="% of the fee on that fill (" />{CREATOR_RANKED_PCT}<T s="% from" />{" "}{RANKS.find((r) => r.level === CREATOR_RANKED_LEVEL)?.title}{" "}<T s="rank up). It counts when the position is held" />{" "}{CREATOR_MIN_HOLD_S / 60}<T s="+ minutes, and never for your own trades or accounts." /></li>
+          <li><b><Glyph n="crown" tone="gold" />{" "}<T s="Founders." /></b>{" "}<T s="Up to" />{" "}{FOUNDER_SEATS}{" "}<T s="hand-picked traders, numbered seats. Founders earn" />{" "}{FOUNDER_L1_PCT}% of the fees from everyone they invite for life; {FOUNDER_L2_PCT}% from the people their invitees bring in; and {CREATOR_FOUNDER_PCT}<T s="% when their trades or calls are copied, faded or traded. A founder who brings in no real-money trader within" />{" "}{FOUNDER_GRACE_DAYS}{" "}<T s="days gives the seat back and moves to regular rates." /></li>
         </ul>
-        <p className="mt-2"><b>The rules.</b> Earnings are counted once a day from the builder fees Perped actually collected on Hyperliquid, and paid weekly in USDC to your Perped wallet. They start when someone trades with real money; demo sign-ups don&rsquo;t count. No more than {PAYOUT_CAP_PCT}% of any trader&rsquo;s fees is ever paid out in total. Rates can change for new sign-ups, never retroactively for earnings already counted. Accounts that game the system (self-referral, wash trading, fake accounts) lose their earnings. You&rsquo;re responsible for any tax on what you earn.</p>
+        <p className="mt-2"><b><T s="The rules." /></b> Earnings are counted once a day from the builder fees Perped actually collected on Hyperliquid, and paid weekly in USDC to your Perped wallet. They start when someone trades with real money; demo sign-ups don&rsquo;t count. No more than {PAYOUT_CAP_PCT}<T s="% of any trader’s fees is ever paid out in total. Rates can change for new sign-ups, never retroactively for earnings already counted. Accounts that game the system (self-referral, wash trading, fake accounts) lose their earnings. You’re responsible for any tax on what you earn." /></p>
       </section>
 
       <section id="battles" className="hw mt-7">
-        <h2 className="text-lg font-bold">Fades, duels and ranks</h2>
+        <h2 className="text-lg font-bold"><T s="Fades, duels and ranks" /></h2>
         <ul className="hw-list">
-          <li><b>A fade starts when someone fades a trade:</b> same coin, the other side. Higher leverage-adjusted ROI wins; under 0.5% apart is a draw; a liquidation loses on the spot. <b>Bank and chase:</b> if one side closes first, their ROI is banked and the fade stays live; the side still in has to beat that number when they close, or they lose. Bailing early hands your opponent a target, but nobody can win just by holding longer. It settles when both positions close; if a fade is still open after 7 days, the open side is marked at the live price.</li>
-          <li><b>Quick fade&rsquo;s automatic stop.</b> It aims for a 10% loss on your margin, but never sits closer than a 1% price move (so normal wobble doesn&rsquo;t stop you out at high leverage), and always closes well before liquidation. At 10× that is 1% away; at 25×, 1% away and −25% of margin; at 2×, 5% away. Change it any time from Manage.</li>
-          <li><b>Margin/SL health.</b> The bars on a fade run from 100% at your entry to 0% at your stop loss, or at liquidation if you have no stop. Under 40% they pulse and bleed, still in the side&rsquo;s colour: green for a long, red for a short. A stop already in profit shows full: you can&rsquo;t lose that one.</li>
-          <li><b>Colours always mean the same thing.</b> Green is bought or in profit, red is sold or in loss. Prices are coloured by which way the market moved; your P&amp;L by whether you&rsquo;re up. Leaders get a gold ring, never a green one.</li>
-          <li><b>One fade per person per trade.</b> You can fade a trade once, and you can&rsquo;t fade back someone who faded you on it: you&rsquo;re already in a fade with them. Anyone else can pile in, so one trade can fight many fades.</li>
-          <li><b>Rivals and vendettas.</b> Fight the same trader three times (fades and duels both count), or call them out, and you become rivals: you get an alert with a one-tap quick fade whenever they open a trade, and the series score shows next to their name. When two traders have fought each other more than anyone else, or one has called the other out, it becomes a <b>vendetta</b>: their fades get a <Glyph n="skull" tone="violet" /> Vendetta tag, their own tab in the Arena, and the running score. Taking back the lead in a series pays +25 XP; five straight wins is a sweep, +50 XP.</li>
-          <li><b>A duel</b> is a timed head-to-head you accept by link. The start price is the live price when it&rsquo;s accepted; whoever is ahead when the clock runs out wins.</li>
-          <li><b>XP is slow and it can go down.</b> Fade win +60 (+30 for a 20%+ margin, +40 for beating someone two ranks above you), loss +10, draw +20. Duel +75 / +10. One-hour call +6 / +2. Closed trade +4 / +1. Liquidations earn nothing. From Knife Catcher up, losing costs XP: fade −15, duel −10, liquidation −25, multiplied by how many ranks you are above Wick Hunter, so ranks can be lost. Beating a guest account made that same day pays draw XP only.</li>
-          <li><b><Glyph n="bag" tone="gold" /> Streak bounties.</b> Anyone on a 5+ fade win streak carries a bounty. Break it and you get 25 XP plus 10 XP for every win in their streak, on top of the win, and a feed post.</li>
-          <li><b>Ranks.</b> Your emblem shows next to your name everywhere. Demo and real accounts earn XP the same way; the leaderboard still separates them.
+          <li><b><T s="A fade starts when someone fades a trade:" /></b> same coin, the other side. Higher leverage-adjusted ROI wins; under 0.5% apart is a draw; a liquidation loses on the spot. <b><T s="Bank and chase:" /></b> if one side closes first, their ROI is banked and the fade stays live; the side still in has to beat that number when they close, or they lose. Bailing early hands your opponent a target, but nobody can win just by holding longer. It settles when both positions close; if a fade is still open after 7 days, the open side is marked at the live price.</li>
+          <li><b><T s="Quick fade’s automatic stop." /></b> It aims for a 10% loss on your margin, but never sits closer than a 1% price move (so normal wobble doesn&rsquo;t stop you out at high leverage), and always closes well before liquidation. At 10× that is 1% away; at 25×, 1% away and −25% of margin; at 2×, 5% away. Change it any time from Manage.</li>
+          <li><b><T s="Margin/SL health." /></b>{" "}<T s="The bars on a fade run from 100% at your entry to 0% at your stop loss, or at liquidation if you have no stop. Under 40% they pulse and bleed, still in the side’s colour: green for a long, red for a short. A stop already in profit shows full: you can’t lose that one." /></li>
+          <li><b><T s="Colours always mean the same thing." /></b> Green is bought or in profit, red is sold or in loss. Prices are coloured by which way the market moved; your P&amp;L by whether you&rsquo;re up. Leaders get a gold ring, never a green one.</li>
+          <li><b><T s="One fade per person per trade." /></b>{" "}<T s="You can fade a trade once, and you can’t fade back someone who faded you on it: you’re already in a fade with them. Anyone else can pile in, so one trade can fight many fades." /></li>
+          <li><b><T s="Rivals and vendettas." /></b>{" "}<T s="Fight the same trader three times (fades and duels both count), or call them out, and you become rivals: you get an alert with a one-tap quick fade whenever they open a trade, and the series score shows next to their name. When two traders have fought each other more than anyone else, or one has called the other out, it becomes a" />{" "}<b>vendetta</b><T s=": their fades get a" />{" "}<Glyph n="skull" tone="violet" /> Vendetta tag, their own tab in the Arena, and the running score. Taking back the lead in a series pays +25 XP; five straight wins is a sweep, +50 XP.</li>
+          <li><b><T s="A duel" /></b> is a timed head-to-head you accept by link. The start price is the live price when it&rsquo;s accepted; whoever is ahead when the clock runs out wins.</li>
+          <li><b><T s="XP is slow and it can go down." /></b>{" "}<T s="Fade win +60 (+30 for a 20%+ margin, +40 for beating someone two ranks above you), loss +10, draw +20. Duel +75 / +10. One-hour call +6 / +2. Closed trade +4 / +1. Liquidations earn nothing. From Knife Catcher up, losing costs XP: fade −15, duel −10, liquidation −25, multiplied by how many ranks you are above Wick Hunter, so ranks can be lost. Beating a guest account made that same day pays draw XP only." /></li>
+          <li><b><Glyph n="bag" tone="gold" />{" "}<T s="Streak bounties." /></b>{" "}<T s="Anyone on a 5+ fade win streak carries a bounty. Break it and you get 25 XP plus 10 XP for every win in their streak, on top of the win, and a feed post." /></li>
+          <li><b><T s="Ranks." /></b> Your emblem shows next to your name everywhere. Demo and real accounts earn XP the same way; the leaderboard still separates them.
             <div className="ladder mt-3">{RANKS.map((r) => <div key={r.level} className="lad"><img src={small(`/api/share-bg/rank-${r.level}`, 128)} alt="" loading="lazy" decoding="async" /><div className="text-[12px] font-bold">{r.title}</div><div className="mono when text-[11px]">{r.min.toLocaleString()} XP</div></div>)}</div>
           </li>
         </ul>
       </section>
 
       <section id="arena" className="hw mt-7">
-        <h2 className="text-lg font-bold">The Arena</h2>
-        <p className="mt-2">Every live fade on Perped, sorted so the good ones are easy to find, with a way to jump into each.</p>
+        <h2 className="text-lg font-bold"><T s="The Arena" /></h2>
+        <p className="mt-2"><T s="Every live fade on Perped, sorted so the good ones are easy to find, with a way to jump into each." /></p>
         <ul className="hw-list mt-3">
-          <li><b><Glyph n="skull" tone="violet" /> Vendettas:</b> fades between two traders locked in a feud, pinned to the top of the live list with the series score and which meeting this is.</li>
-          <li><b><Glyph n="flame" tone="gold" /> High stakes:</b> 20× or more, a $5k+ position, or someone within 10% of liquidation.</li>
-          <li><b><Glyph n="people" /> Everyone / Following:</b> the switch at the top. Following shows your fades and fades of people you follow or your rivals, and works with every tab.</li>
-          <li><b><Glyph n="bolt" /> All:</b> the Main event (the riskiest fight right now) beside Your fight, then Vendettas and High stakes to swipe, then every fade.</li>
-          <li><b><Glyph n="drop" tone="blood" /> Bloodbath:</b> fades where one side is more than 7% ahead of the other (ROI, leverage included). At the top is <b>The Pit</b>, the most one-sided fight right now, beside <b>Last standing</b>: fades where one side is already out (stopped, liquidated or banked) and the other is still in, newest first, each for 24 hours, marked Winning or Chasing against the number the other side finished on.</li>
-          <li><b><Glyph n="dagger" /> Finish them / <Glyph n="buoy" /> Save them:</b> on every Bloodbath fade. Finish backs the winner, Save backs the loser for a comeback. Every other fade has a plain <b>Back</b> for each side. One tap, size only, at their leverage. The two fighters can&rsquo;t back either side of their own fight.</li>
-          <li><b>REKT and Revenge:</b> liquidations stay in Bloodbath for six hours as tombstones. <b><Glyph n="drop" tone="blood" /> Revenge</b> quick-fades the winner&rsquo;s newest open trade; if they have none, they become your rival and you&rsquo;re pinged when they next trade. <b>Eliminations</b> lists the last day&rsquo;s liquidations.</li>
-          <li><b>Body count:</b> this week&rsquo;s <Glyph n="dagger" /> Butcher (most people perped) and <Glyph n="tomb" /> Most rekt.</li>
-          <li><b>Last stand:</b> if you&rsquo;re 20% down in a fade you get one alert: cut it, or double down. Your followers get one too.</li>
-          <li id="fight-night"><b><Glyph n="glove" tone="gold" /> Fight Night:</b> every night from 9 to 10pm Bangkok time (14:00–15:00 UTC), the hour everyone piles into the Arena at once. <b>Every fade that starts inside the hour pays double XP</b> to whoever earns XP from it (losses still cost the usual amount). When it opens you get an alert (and a phone push if alerts are on), Home shows the three biggest live fades with vendettas first, and the countdown in the Arena header turns gold and reads LIVE. An hour before, Home shows a countdown so you can line up your fades.</li>
-          <li><b>Side with / Run it back:</b> on a live fade you&rsquo;re watching, Side with copies either fighter in one tap. On a fade you just finished, Run it back (or Revenge) quick-fades your opponent&rsquo;s next trade.</li>
+          <li><b><Glyph n="skull" tone="violet" />{" "}<T s="Vendettas:" /></b>{" "}<T s="fades between two traders locked in a feud, pinned to the top of the live list with the series score and which meeting this is." /></li>
+          <li><b><Glyph n="flame" tone="gold" />{" "}<T s="High stakes:" /></b>{" "}<T s="20× or more, a $5k+ position, or someone within 10% of liquidation." /></li>
+          <li><b><Glyph n="people" />{" "}<T s="Everyone / Following:" /></b>{" "}<T s="the switch at the top. Following shows your fades and fades of people you follow or your rivals, and works with every tab." /></li>
+          <li><b><Glyph n="bolt" />{" "}<T s="All:" /></b>{" "}<T s="the Main event (the riskiest fight right now) beside Your fight, then Vendettas and High stakes to swipe, then every fade." /></li>
+          <li><b><Glyph n="drop" tone="blood" />{" "}<T s="Bloodbath:" /></b>{" "}<T s="fades where one side is more than 7% ahead of the other (ROI, leverage included). At the top is" />{" "}<b><T s="The Pit" /></b><T s=", the most one-sided fight right now, beside" />{" "}<b><T s="Last standing" /></b><T s=": fades where one side is already out (stopped, liquidated or banked) and the other is still in, newest first, each for 24 hours, marked Winning or Chasing against the number the other side finished on." /></li>
+          <li><b><Glyph n="dagger" />{" "}<T s="Finish them /" />{" "}<Glyph n="buoy" />{" "}<T s="Save them:" /></b>{" "}<T s="on every Bloodbath fade. Finish backs the winner, Save backs the loser for a comeback. Every other fade has a plain" />{" "}<b><T s="Back" /></b>{" "}<T s="for each side. One tap, size only, at their leverage. The two fighters can’t back either side of their own fight." /></li>
+          <li><b><T s="REKT and Revenge:" /></b>{" "}<T s="liquidations stay in Bloodbath for six hours as tombstones." />{" "}<b><Glyph n="drop" tone="blood" />{" "}<T s="Revenge" /></b> quick-fades the winner&rsquo;s newest open trade; if they have none, they become your rival and you&rsquo;re pinged when they next trade. <b><T s="Eliminations" /></b>{" "}<T s="lists the last day’s liquidations." /></li>
+          <li><b><T s="Body count:" /></b>{" "}<T s="this week’s" />{" "}<Glyph n="dagger" />{" "}<T s="Butcher (most people perped) and" />{" "}<Glyph n="tomb" />{" "}<T s="Most rekt." /></li>
+          <li><b><T s="Last stand:" /></b>{" "}<T s="if you’re 20% down in a fade you get one alert: cut it, or double down. Your followers get one too." /></li>
+          <li id="fight-night"><b><Glyph n="glove" tone="gold" />{" "}<T s="Fight Night:" /></b>{" "}<T s="every night from 9 to 10pm Bangkok time (14:00–15:00 UTC), the hour everyone piles into the Arena at once." />{" "}<b><T s="Every fade that starts inside the hour pays double XP" /></b>{" "}<T s="to whoever earns XP from it (losses still cost the usual amount). When it opens you get an alert (and a phone push if alerts are on), Home shows the three biggest live fades with vendettas first, and the countdown in the Arena header turns gold and reads LIVE. An hour before, Home shows a countdown so you can line up your fades." /></li>
+          <li><b><T s="Side with / Run it back:" /></b>{" "}<T s="on a live fade you’re watching, Side with copies either fighter in one tap. On a fade you just finished, Run it back (or Revenge) quick-fades your opponent’s next trade." /></li>
         </ul>
       </section>
 
       <section id="trophies" className="hw mt-7">
-        <h2 className="text-lg font-bold">Trophies</h2>
-        <p className="mt-2">29 trophies for what you do on Perped, in four tiers: <b>bronze</b> (round), <b>silver</b> (hexagon), <b>gold</b> (sunburst) and <b>obsidian</b> (purple shield). Your trophy case is on the Stats tab of your profile: unlocked ones carry a gold tick, locked ones are grey with a lock and a progress bar.</p>
+        <h2 className="text-lg font-bold"><T s="Trophies" /></h2>
+        <p className="mt-2"><T s="29 trophies for what you do on Perped, in four tiers:" />{" "}<b>bronze</b>{" "}<T s="(round)," />{" "}<b>silver</b>{" "}<T s="(hexagon)," />{" "}<b>gold</b>{" "}<T s="(sunburst) and" />{" "}<b>obsidian</b>{" "}<T s="(purple shield). Your trophy case is on the Stats tab of your profile: unlocked ones carry a gold tick, locked ones are grey with a lock and a progress bar." /></p>
         <ul className="hw-list mt-3">
-          <li><b>Bronze, the first steps:</b> First Blood (first trade), Contrarian (first fade), Copycat (first copy), Safety First (a trade with a stop loss), Called It (first call that hits), Survivor (hold a trade 24 hours without liquidation), Sniper (close at +100% ROI).</li>
-          <li><b>Silver:</b> Hat Trick (3 fade wins in a row), Executioner (your opponent gets liquidated), Last Standing (win as the one still in after the other side closed), Double Up (+250% ROI), Clean Sheet (10 trades in a row at 5×+ without liquidation), Influencer (copied 10 times), Oracle (10 calls hit), Recruiter (5 people you invited trade).</li>
-          <li><b>Gold:</b> Rampage (5 in a row), Giant Slayer (beat someone two ranks above you), Bounty Hunter (break a 5+ streak), Comeback Kid (win a fade after being 50%+ down), Fight Night Champion (3 wins started in one Fight Night), Moonshot (+500% ROI), Diamond Hands (hold a winner 7 days), Idol (copied 100 times), Most Wanted (faded 25 times), Prophet (70%+ of at least 20 calls), Kingmaker (25 invitees who trade).</li>
-          <li><b>Obsidian:</b> Untouchable (10 in a row), Blood Feud (lead a rivalry by 5), Ten Bagger (+1,000% ROI) and <b>Season 0</b>: traded before real money opened. It can&rsquo;t be earned after that.</li>
-          <li><b>When you unlock one</b> you get a notification and it goes in the feed (several within an hour share one post). Gold and obsidian also tell your followers. Each trophy shows how many players have it.</li>
-          <li><b>Share it:</b> open any unlocked trophy for a share card with your invite code on it. Your best three also appear on your profile card.</li>
-          <li>Demo trades count during Season 0; those trophies are marked <b>Demo</b>. Bot accounts can&rsquo;t earn trophies.</li>
+          <li><b><T s="Bronze, the first steps:" /></b>{" "}<T s="First Blood (first trade), Contrarian (first fade), Copycat (first copy), Safety First (a trade with a stop loss), Called It (first call that hits), Survivor (hold a trade 24 hours without liquidation), Sniper (close at +100% ROI)." /></li>
+          <li><b><T s="Silver:" /></b>{" "}<T s="Hat Trick (3 fade wins in a row), Executioner (your opponent gets liquidated), Last Standing (win as the one still in after the other side closed), Double Up (+250% ROI), Clean Sheet (10 trades in a row at 5×+ without liquidation), Influencer (copied 10 times), Oracle (10 calls hit), Recruiter (5 people you invited trade)." /></li>
+          <li><b><T s="Gold:" /></b>{" "}<T s="Rampage (5 in a row), Giant Slayer (beat someone two ranks above you), Bounty Hunter (break a 5+ streak), Comeback Kid (win a fade after being 50%+ down), Fight Night Champion (3 wins started in one Fight Night), Moonshot (+500% ROI), Diamond Hands (hold a winner 7 days), Idol (copied 100 times), Most Wanted (faded 25 times), Prophet (70%+ of at least 20 calls), Kingmaker (25 invitees who trade)." /></li>
+          <li><b><T s="Obsidian:" /></b>{" "}<T s="Untouchable (10 in a row), Blood Feud (lead a rivalry by 5), Ten Bagger (+1,000% ROI) and" />{" "}<b><T s="Season 0" /></b><T s=": traded before real money opened. It can’t be earned after that." /></li>
+          <li><b><T s="When you unlock one" /></b>{" "}<T s="you get a notification and it goes in the feed (several within an hour share one post). Gold and obsidian also tell your followers. Each trophy shows how many players have it." /></li>
+          <li><b><T s="Share it:" /></b>{" "}<T s="open any unlocked trophy for a share card with your invite code on it. Your best three also appear on your profile card." /></li>
+          <li>Demo trades count during Season 0; those trophies are marked <b><T s="Demo" /></b><T s=". Bot accounts can’t earn trophies." /></li>
         </ul>
       </section>
 
       <section id="risk" className="hw mt-7">
-        <h2 className="text-lg font-bold">What can still go wrong</h2>
-        <p className="mt-2">&ldquo;Perped cannot take your money&rdquo; is true. It is not the same as &ldquo;you cannot lose money.&rdquo;</p>
+        <h2 className="text-lg font-bold"><T s="What can still go wrong" /></h2>
+        <p className="mt-2"><T s="“Perped cannot take your money” is true. It is not the same as “you cannot lose money.”" /></p>
         <ul className="hw-list mt-3">
-          <li><b>Leverage.</b> At 40×, a 2.5% move against you is a total loss of margin. This is the exchange working as designed, and it is the most common way people lose on perps. Start low.</li>
-          <li><b>Copying is not advice.</b> A trader&rsquo;s rank, streak or past results say nothing about their next trade. The person you copy may close while you are asleep.</li>
-          <li><b>Bugs.</b> Perped is new software. A bug could mis-size an order or show a stale price. That is why every real trade links to the explorer and why we tell you to trade small until you have checked a few fills.</li>
-          <li><b>Your wallet.</b> Lose the keys and the account is unrecoverable by anyone. Sign a malicious transaction on another site and the funds in that wallet are at risk regardless of Perped.</li>
-          <li><b>Hyperliquid itself.</b> If the chain halts, trading halts everywhere on it. It has a strong record, but it is not a bank and nothing here is insured.</li>
-          <li><b>Regulation.</b> Crypto perpetuals are unregulated in most places and prohibited in some, including the United States and the United Kingdom. It is on you to know whether you may use Hyperliquid where you live.</li>
-          <li><b>Impostors.</b> Anyone can clone a site&rsquo;s look. Check the address bar. The real Perped never asks for a seed phrase, a transfer, or an approval beyond the two permissions above.</li>
+          <li><b><T s="Leverage." /></b>{" "}<T s="At 40×, a 2.5% move against you is a total loss of margin. This is the exchange working as designed, and it is the most common way people lose on perps. Start low." /></li>
+          <li><b><T s="Copying is not advice." /></b>{" "}<T s="A trader’s rank, streak or past results say nothing about their next trade. The person you copy may close while you are asleep." /></li>
+          <li><b><T s="Bugs." /></b>{" "}<T s="Perped is new software. A bug could mis-size an order or show a stale price. That is why every real trade links to the explorer and why we tell you to trade small until you have checked a few fills." /></li>
+          <li><b><T s="Your wallet." /></b>{" "}<T s="Lose the keys and the account is unrecoverable by anyone. Sign a malicious transaction on another site and the funds in that wallet are at risk regardless of Perped." /></li>
+          <li><b><T s="Hyperliquid itself." /></b>{" "}<T s="If the chain halts, trading halts everywhere on it. It has a strong record, but it is not a bank and nothing here is insured." /></li>
+          <li><b><T s="Regulation." /></b>{" "}<T s="Crypto perpetuals are unregulated in most places and prohibited in some, including the United States and the United Kingdom. It is on you to know whether you may use Hyperliquid where you live." /></li>
+          <li><b><T s="Impostors." /></b>{" "}<T s="Anyone can clone a site’s look. Check the address bar. The real Perped never asks for a seed phrase, a transfer, or an approval beyond the two permissions above." /></li>
         </ul>
       </section>
 
       <section id="promise" className="hw mt-7">
-        <h2 className="text-lg font-bold">What we commit to</h2>
+        <h2 className="text-lg font-bold"><T s="What we commit to" /></h2>
         <ul className="hw-list">
-          <li>We will never hold user funds, run a deposit address, or custody keys. If that ever changed it would be announced first and be opt-in.</li>
-          <li>Every fee rate is published here and on the trade ticket. We will not raise a rate without notice, and the on-chain cap you approved cannot be exceeded by us at all.</li>
-          <li>Every real-money post links to its on-chain record. We do not edit receipts, including our own.</li>
-          <li>Demo is always labelled. We will not pass off simulated results as real.</li>
-          <li>When something breaks, we say so in the app and in public, not quietly.</li>
+          <li><T s="We will never hold user funds, run a deposit address, or custody keys. If that ever changed it would be announced first and be opt-in." /></li>
+          <li><T s="Every fee rate is published here and on the trade ticket. We will not raise a rate without notice, and the on-chain cap you approved cannot be exceeded by us at all." /></li>
+          <li><T s="Every real-money post links to its on-chain record. We do not edit receipts, including our own." /></li>
+          <li><T s="Demo is always labelled. We will not pass off simulated results as real." /></li>
+          <li><T s="When something breaks, we say so in the app and in public, not quietly." /></li>
         </ul>
-        <p className="mt-3">If you take one thing from this page: your trust should rest on Hyperliquid&rsquo;s design and on your own wallet, not on us. We built Perped so that it has to be that way.</p>
-        <p className="muted mt-3 text-[13px]">Perped is an independent builder on Hyperliquid, not affiliated with Hyperliquid Labs. Questions or something that looks wrong: message <a href="https://x.com/perped_" target="_blank" rel="noreferrer">@perped_ on X</a>.</p>
+        <p className="mt-3"><T s="If you take one thing from this page: your trust should rest on Hyperliquid’s design and on your own wallet, not on us. We built Perped so that it has to be that way." /></p>
+        <p className="muted mt-3 text-[13px]"><T s="Perped is an independent builder on Hyperliquid, not affiliated with Hyperliquid Labs. Questions or something that looks wrong: message" />{" "}<a href="https://x.com/perped_" target="_blank" rel="noreferrer"><T s="@perped_ on X" /></a>.</p>
       </section>
     </main>
   );

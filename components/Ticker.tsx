@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useMids } from "@/lib/hooks/useMids";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import { CoinMark, ticker } from "./ui";
@@ -19,7 +21,7 @@ export function Ticker() {
   if (!rows.length) return <div className="ticker" aria-hidden />;
   const items = [...rows, ...rows]; // duplicated for a seamless loop
   return (
-    <div className="ticker" aria-label="Live prices">
+    <div className="ticker" aria-label={tt("Live prices")}>
       <div className="tk-track">
         {items.map((r, i) => (
           <span key={`${r.c}-${i}`} className="tk">

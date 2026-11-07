@@ -1,5 +1,7 @@
 "use client";
 
+
+import { tt } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 import type { FeedRow } from "@/lib/feed";
 import { fmtPct, fmtStake, fmtUsd, pnlForPosition } from "@/lib/format";
@@ -36,10 +38,10 @@ export function PinCard({ item, roi }: { item: FeedRow; roi: number }) {
       </div>
       {battles.length > 0 && <div className="mt-2"><BattleSummary battles={battles} size="sm" /></div>}
       <div className="pc-chips mt-2">
-        {live ? <span className="pc-chip live"><i className="dot" />LIVE</span> : reason === "tp" ? <span className="pc-chip good">TP hit</span> : reason === "liquidation" ? <span className="pc-chip bad">Liquidated</span> : null}
+        {live ? <span className="pc-chip live"><i className="dot" />LIVE</span> : reason === "tp" ? <span className="pc-chip good">{tt("TP hit")}</span> : reason === "liquidation" ? <span className="pc-chip bad">{tt("Liquidated")}</span> : null}
         {item.copyCount > 0 && <span className="pc-chip">{item.copyCount} copied</span>}
         {item.fadeCount > 0 && <span className="pc-chip">{item.fadeCount} faded</span>}
-        {wins >= 3 && <span className="pc-chip gold">Giant slayer</span>}
+        {wins >= 3 && <span className="pc-chip gold">{tt("Giant slayer")}</span>}
       </div>
       <div className="when mt-2 text-[11px]">{fmtStake(margin)} margin{live ? "" : ` · held ${heldTxt}`} · {new Date(post.closedAt ?? post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
     </div>
