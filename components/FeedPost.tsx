@@ -22,6 +22,7 @@ import { BattleCardChart, MiniHp, type Fighter } from "./BattleArena";
 import { PickWinner } from "./PickWinner";
 import { tugShare } from "./Tug";
 import { HL_NETWORK } from "@/lib/config";
+import { useMid } from "@/lib/hooks/useMids";
 const TrophyPost = dynamic(() => import("./Trophies").then((m) => m.TrophyPost), { ssr: false });
 
 // Sheets only open after a tap: load their code (and the Hyperliquid trading SDK behind them) on demand, not with the feed.
@@ -45,6 +46,18 @@ const d = (x: Date | string | null | undefined) => (x ? new Date(x) : null);
 /** One feed item. Dispatches on post.kind: trade, call, poll, text, system. */
 /** Memoised: a feed card only re-renders when its own item or price changes. */
 export const FeedPost = memo(FeedPostInner);
+
+/** Only live trades and open calls need the ticking price; closed cards stay still. */
+const isLivePost = (p: FeedRow["post"]) => (p.kind === "trade" ? p.status === "open" : p.kind === "call" && p.callStatus === "open");
+
+/**
+ * A feed card that follows its own coin's live price. Lists use this instead of passing prices down, so a
+ * price tick redraws only the cards for that coin, not the whole page.
+ */
+export const LiveFeedPost = memo(function LiveFeedPost({ item, onChanged }: { item: FeedRow; onChanged?: () => void }) {
+  const mid = useMid(item.post.coin && isLivePost(item.post) ? item.post.coin : undefined);
+  return <FeedPost item={item} mid={mid} onChanged={onChanged} />;
+});
 
 function FeedPostInner(props: Props) {
   const k = props.item.post.kind;

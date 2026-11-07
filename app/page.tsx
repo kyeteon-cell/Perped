@@ -7,7 +7,7 @@ import { small } from "@/lib/img";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
-import { FeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
+import { LiveFeedPost, RankStrip, isDemoPost } from "@/components/FeedPost";
 import { Hero } from "@/components/Hero";
 import { WelcomeGate as WelcomeOnce } from "@/components/WelcomeGate";
 import { QuickPost } from "@/components/QuickPost";
@@ -20,7 +20,7 @@ import dynamic from "next/dynamic";
 import { Avatar, Icon, I, SkeletonList } from "@/components/ui";
 import type { FeedRow } from "@/lib/feed";
 import { useSession } from "@/lib/hooks/useSession";
-import { useMids } from "@/lib/hooks/useMids";
+import { useMids, useMidsConnected } from "@/lib/hooks/useMids";
 import { fmtUsd, fmtPct } from "@/lib/format";
 import { useLive } from "@/lib/hooks/useLive";
 const PushPrompt = dynamic(() => import("@/components/PushPrompt").then((m) => m.PushPrompt), { ssr: false });
@@ -31,14 +31,16 @@ const DepositSheet = dynamic(() => import("@/components/DepositSheet").then((m) 
 
 type Tab = "foryou" | "following" | "live";
 
-/** Only live trades and open calls need the ticking price; closed cards stay still. */
-const isLive = (p: FeedRow["post"]) => (p.kind === "trade" ? p.status === "open" : p.kind === "call" && p.callStatus === "open");
+
+function LiveNowStrip({ rows }: { rows: FeedRow[] }) { const { mids } = useMids(); return <NowStrip rows={rows} mids={mids} />; }
+function LivePulse() { const { mids } = useMids(); return <Pulse mids={mids} />; }
 
 export default function HomePage() {
   const { allowed: liveOk, gate } = useLive();
   const { authenticated, profile, authedFetch, unread } = useSession();
-  const { mids, connected } = useMids();
-  const liveMid = (it: FeedRow) => (it.post.coin && isLive(it.post) ? mids[it.post.coin] : undefined);
+  // Prices tick every second; the page itself doesn't subscribe to them. Each live card, the strip and the
+  // pulse read only what they need, so a tick redraws a few numbers instead of the whole feed.
+  const connected = useMidsConnected();
   const [tab, setTab] = useState<Tab>("foryou");
   const [realness, setRealness] = useState<"all" | "real" | "demo">("all");
   const setRealnessP = (v: "all" | "real" | "demo") => { setRealness(v); try { localStorage.setItem("perped:realness", v); } catch {} };
@@ -126,9 +128,9 @@ export default function HomePage() {
 
       {/* For you: compact balance, one Happening now strip, Banked, then straight into the feed (v0.10). */}
       {tab === "foryou" && <Hero onDeposit={() => setDeposit(true)} />}
-      {tab === "foryou" && <NowStrip rows={allPosts} mids={mids} />}
+      {tab === "foryou" && <LiveNowStrip rows={allPosts} />}
       {tab === "following" && <QuickPost onPosted={() => mutate()} />}
-      {tab === "live" && <LazyMount minHeight={160}><Pulse mids={mids} /></LazyMount>}
+      {tab === "live" && <LazyMount minHeight={160}><LivePulse /></LazyMount>}
       {tab === "foryou" && <LazyMount minHeight={40}><Banked /></LazyMount>}
 
       <div className="realness">
@@ -152,8 +154,8 @@ export default function HomePage() {
       {!isLoading && posts.length === 0 && tab === "following" && suggested.length > 0 && <Suggested rows={suggested} />}
 
       {groupFeed(posts).map((g, i) => (
-        <div key={g.kind === "strip" ? `strip-${g.items[0].post.id}` : g.item.post.id} className={g.kind === "one" && fresh.has(g.item.post.id) ? "feed-new" : undefined}>
-          {g.kind === "strip" ? <RankStrip items={g.items} /> : <FeedPost item={g.item} mid={liveMid(g.item)} onChanged={mutate} />}
+        <div key={g.kind === "strip" ? `strip-${g.items[0].post.id}` : g.item.post.id} className={g.kind === "one" && fresh.has(g.item.post.id) ? "fi feed-new" : "fi"}>
+          {g.kind === "strip" ? <RankStrip items={g.items} /> : <LiveFeedPost item={g.item} onChanged={mutate} />}
           {tab === "foryou" && i === 1 && <div className="feed-tuck"><WeekRecap /></div>}
           {tab === "foryou" && i === 5 && <div className="feed-tuck"><PushPrompt /></div>}
           {i === 4 && suggested.length > 0 && <Suggested rows={suggested} />}

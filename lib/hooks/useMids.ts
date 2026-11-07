@@ -115,3 +115,16 @@ export function useMids() {
     connected: useSyncExternalStore(subscribe, getConnected, () => false),
   };
 }
+
+/**
+ * One coin's live mid. Re-renders only when that coin's price changes, not on every tick of every market,
+ * so a long list (feed, markets) doesn't redraw itself each second.
+ */
+export function useMid(coin?: string | null): number | undefined {
+  return useSyncExternalStore(subscribe, () => (coin ? mids[coin] : undefined), () => undefined);
+}
+
+/** Live connection state only (for the "Live" dot); doesn't re-render on price ticks. */
+export function useMidsConnected(): boolean {
+  return useSyncExternalStore(subscribe, getConnected, () => false);
+}

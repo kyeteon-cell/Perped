@@ -22,9 +22,12 @@ export function ViewportFix() {
     let timers: number[] = [];
     let nudged = false;
     const typing = () => { const a = document.activeElement as HTMLElement | null; return !!a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.isContentEditable); };
+    // Only write when a value changes: this runs on every scroll frame, and touching a variable on <html>
+    // makes the browser re-check the styles of the whole page.
+    let lastB = NaN, lastT = NaN;
     const set = (bottom: number, top: number) => {
-      root.style.setProperty("--vv-bottom", `${bottom}px`);
-      root.style.setProperty("--vv-top", `${top}px`);
+      if (bottom !== lastB) { lastB = bottom; root.style.setProperty("--vv-bottom", `${bottom}px`); }
+      if (top !== lastT) { lastT = top; root.style.setProperty("--vv-top", `${top}px`); }
     };
     const apply = () => {
       raf = 0;

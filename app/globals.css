@@ -2412,3 +2412,25 @@ html[data-lang-wait] #scroller, html[data-lang-wait] .nav { visibility: hidden; 
 
 /* Right-to-left (Arabic): the layout mirrors, but prices, numbers, charts and the ticker stay left-to-right. */
 [dir="rtl"] .mono, [dir="rtl"] canvas, [dir="rtl"] svg, [dir="rtl"] .tchart, [dir="rtl"] .tk-track, [dir="rtl"] input[type="number"], [dir="rtl"] input[inputmode="decimal"] { direction: ltr; unicode-bidi: isolate; }
+
+/* ---- Performance (v0.11.3) ----
+   Feed cards off screen skip layout and paint until you scroll near them. */
+.fi { content-visibility: auto; contain-intrinsic-size: auto 380px; }
+/* Frosted bars re-blur everything scrolling under them on every frame. The tab bar is now solid, and the
+   nav keeps a lighter blur (it's 94% opaque, so the look is the same). */
+.tabs { background: var(--bg) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.nav { backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important; }
+/* Page entry: no blur filter (blurring a whole page is expensive on phones). */
+@keyframes pagein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* Rank emblem gleam: a fade in and out (GPU-only) instead of sliding a gradient, which repainted every avatar
+   on screen every frame. */
+.av-wrap::after { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9), transparent 55%); background-size: auto; background-position: 0 0; opacity: 0; animation: av-glint 7s ease-in-out var(--gd, 0s) infinite; }
+@keyframes av-glint { 0%, 84%, 100% { opacity: 0; } 92% { opacity: .85; } }
+/* Bar sheen: moved to a sliding layer (GPU-only) instead of animating the background. */
+.track b { position: relative; overflow: hidden; background-image: none; animation: none; }
+.track b::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); transform: translateX(-100%); animation: track-sheen 2.4s linear infinite; }
+@keyframes track-sheen { to { transform: translateX(100%); } }
+/* Positions dot: opacity pulse instead of a box-shadow pulse. */
+.pos-dot { animation: pos-dot-o 2s ease-in-out infinite; }
+@keyframes pos-dot-o { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .track b::after, .pos-dot { animation: none; } }

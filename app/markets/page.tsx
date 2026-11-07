@@ -2,14 +2,14 @@
 
 
 import { tt } from "@/lib/i18n";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { Sparkline } from "@/components/Sparkline";
 import { CoinMark, Icon, I, ticker, SkeletonList, LoadFail } from "@/components/ui";
 import { fmtPct, fmtUsd, fmtPrice, crowdLabel } from "@/lib/format";
 import type { MarketItem as MarketRow } from "@/components/MarketStats";
-import { useMids } from "@/lib/hooks/useMids";
+import { useMid } from "@/lib/hooks/useMids";
 import type { FeedRow } from "@/lib/feed";
 
 type Group = "all" | "crypto" | "stocks";
@@ -19,7 +19,6 @@ type Sort = "volume" | "gainers" | "losers" | "oi" | "oirise" | "crowded" | "hot
 export default function MarketsPage() {
   const { data, error, mutate } = useSWR<{ markets: MarketRow[] }>("/api/markets", { refreshInterval: 60_000 });
   const { data: live } = useSWR<{ posts: FeedRow[] }>("/api/posts?tab=live&limit=50", { refreshInterval: 30_000 });
-  const { mids } = useMids();
   const [sort, setSort] = useState<Sort>("volume");
   const [group, setGroup] = useState<Group>("all");
 
@@ -66,7 +65,7 @@ export default function MarketsPage() {
           <Link key={m.name} href={`/markets/${m.name}`} className={`hcard mover ${m.change24h >= 0 ? "up" : "down"}`}>
             <div className="flex min-w-0 items-center gap-2"><CoinMark coin={m.name} size="sm" /><span className="name min-w-0 truncate">{ticker(m.name)}</span></div>
             <div className={`mono text-lg font-bold ${m.change24h >= 0 ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</div>
-            <div className="mono when">{fmtPrice(mids[m.name] ?? m.mid)}</div>
+            <div className="mono when"><LivePx coin={m.name} fallback={m.mid} /></div>
           </Link>
         ))}
       </div>
@@ -84,27 +83,34 @@ export default function MarketsPage() {
 
       <div className="faint grid grid-cols-[1fr_96px_64px] gap-3 px-5 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wider"><span>{tt("Market")}</span><span className="text-right">{tt("Price · 24h")}</span><span className="text-right">{tt("Fund./yr")}</span></div>
       {!data?.markets?.length && (error || data) ? <LoadFail retry={() => mutate()} /> : !data && <SkeletonList n={6} card={false} />}
-      {rows.map((m) => {
-        const px = mids[m.name] ?? m.mid, up = m.change24h >= 0, lv = liveByCoin[m.name];
-        return (
-          <Link key={m.name} href={`/markets/${m.name}`} className="hairline block px-5 py-3.5">
-            <div className="grid grid-cols-[1fr_56px_auto_64px] items-center gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <CoinMark coin={m.name} />
-                <div className="min-w-0">
-                  <div className="name flex items-center gap-1.5">{ticker(m.name, true)} <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.maxLeverage}×</span>{isStock(m) && <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.kind === "index" ? tt("Index") : tt("Stock")}</span>}</div>
-                  <div className="when truncate text-xs">{tt("Vol")}{" "}{fmtUsd(m.volume24h, { compact: true })}{" "}{tt("· OI")}{" "}{fmtUsd(m.openInterest, { compact: true })}{m.oiChange24h != null && <span className="mono"> {fmtPct(m.oiChange24h, 1)}</span>}</div>
-                </div>
-              </div>
-              <Sparkline coin={m.name} up={up} />
-              <div className="text-right"><div className="mono font-semibold">{fmtPrice(px)}</div><div className={`mono text-[13px] ${up ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</div></div>
-              <div className="text-right"><div className="mono text-[13px] font-semibold">{(m.funding8h * 3 * 365).toFixed(1)}%</div>{crowdLabel(m.funding8h) && <div className="when text-[10.5px] leading-tight">{crowdLabel(m.funding8h)}</div>}</div>
-            </div>
-            {lv && <div className="when mt-2 flex gap-3.5 text-xs"><span>{tt("Perped")}{" "}<b style={{ color: "var(--text)" }}>{lv.n} live</b></span><span>L/S <b className="mono" style={{ color: "var(--text)" }}>{Math.round((lv.longs / lv.n) * 100)}/{100 - Math.round((lv.longs / lv.n) * 100)}</b></span></div>}
-          </Link>
-        );
-      })}
+      {rows.map((m) => <MarketRowItem key={m.name} m={m} lv={liveByCoin[m.name]} />)}
       <p className="muted px-5 py-4 text-xs leading-relaxed">{tt("Prices and funding from Hyperliquid, updating live. Stocks are perps that track the share price, listed on Hyperliquid by builders such as TradeXYZ (HIP-3): they trade 24/7 with isolated margin, and give no shares, dividends or votes. Funding is shown per year (Hyperliquid pays it hourly). OI change compares open interest with 24 hours ago. L/S is the long/short split of open Perped positions on that market.")}</p>
     </div>
   );
 }
+
+/** Just the ticking price: the only part of a market row that changes every second. */
+function LivePx({ coin, fallback }: { coin: string; fallback: number }) {
+  return <>{fmtPrice(useMid(coin) ?? fallback)}</>;
+}
+
+const MarketRowItem = memo(function MarketRowItem({ m, lv }: { m: MarketRow; lv?: { n: number; longs: number } }) {
+  const up = m.change24h >= 0;
+  return (
+        <Link href={`/markets/${m.name}`} className="hairline block px-5 py-3.5">
+          <div className="grid grid-cols-[1fr_56px_auto_64px] items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <CoinMark coin={m.name} />
+              <div className="min-w-0">
+                <div className="name flex items-center gap-1.5">{ticker(m.name, true)} <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.maxLeverage}×</span>{isStock(m) && <span className="muted rounded-md px-1.5 text-[11px] font-bold" style={{ background: "var(--surface)" }}>{m.kind === "index" ? tt("Index") : tt("Stock")}</span>}</div>
+                <div className="when truncate text-xs">{tt("Vol")}{" "}{fmtUsd(m.volume24h, { compact: true })}{" "}{tt("· OI")}{" "}{fmtUsd(m.openInterest, { compact: true })}{m.oiChange24h != null && <span className="mono"> {fmtPct(m.oiChange24h, 1)}</span>}</div>
+              </div>
+            </div>
+            <Sparkline coin={m.name} up={up} />
+            <div className="text-right"><div className="mono font-semibold"><LivePx coin={m.name} fallback={m.mid} /></div><div className={`mono text-[13px] ${up ? "green" : "red"}`}>{fmtPct(m.change24h, 1)}</div></div>
+            <div className="text-right"><div className="mono text-[13px] font-semibold">{(m.funding8h * 3 * 365).toFixed(1)}%</div>{crowdLabel(m.funding8h) && <div className="when text-[10.5px] leading-tight">{crowdLabel(m.funding8h)}</div>}</div>
+          </div>
+          {lv && <div className="when mt-2 flex gap-3.5 text-xs"><span>{tt("Perped")}{" "}<b style={{ color: "var(--text)" }}>{lv.n} live</b></span><span>L/S <b className="mono" style={{ color: "var(--text)" }}>{Math.round((lv.longs / lv.n) * 100)}/{100 - Math.round((lv.longs / lv.n) * 100)}</b></span></div>}
+        </Link>
+  );
+});

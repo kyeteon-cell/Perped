@@ -8,7 +8,7 @@ import { Glyph } from "@/components/Glyph";
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
-import { FeedPost } from "@/components/FeedPost";
+import { FeedPost, LiveFeedPost } from "@/components/FeedPost";
 
 import { Sheet } from "@/components/Sheet";
 
@@ -230,7 +230,7 @@ export default function ProfilePage({ params }: { params: Promise<{ handle: stri
           <div className="seg px-5 pb-1 pt-3.5"><button className={`chip ${tradeTab === "open" ? "on" : ""}`} onClick={() => setTradeTab("open")}>{tt("Open ·")}{" "}{user.isDemo ? (feed?.posts.length ?? 0) : data.positions.length}</button><button className={`chip ${tradeTab === "closed" ? "on" : ""}`} onClick={() => setTradeTab("closed")}>{tt("Closed ·")}{" "}{s?.closedTrades ?? 0}</button></div>
           {tradeTab === "open" && user.isDemo && (feed?.posts ?? []).map((item) => (
             <div key={item.post.id} className="relative">
-              <FeedPost item={item} mid={item.post.coin ? mids[item.post.coin] : undefined} onChanged={mutateFeed} />
+              <LiveFeedPost item={item} onChanged={mutateFeed} />
             </div>
           ))}
           {tradeTab === "open" && !user.isDemo && data.positions.map((p) => {

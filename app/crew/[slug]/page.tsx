@@ -5,12 +5,11 @@ import { tt } from "@/lib/i18n";
 import { use, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
-import { FeedPost } from "@/components/FeedPost";
+import { LiveFeedPost } from "@/components/FeedPost";
 import { Avatar, Badges, Icon, I, LoadFail, SkeletonList } from "@/components/ui";
 import { CrewEmblem } from "@/components/CrewBoard";
 import { EarningsCalc } from "@/components/EarningsCalc";
 import { useSession } from "@/lib/hooks/useSession";
-import { useMids } from "@/lib/hooks/useMids";
 import { siteOrigin } from "@/lib/config";
 import { fmtPct, fmtUsd } from "@/lib/format";
 import type { CrewCard, CrewMember } from "@/lib/crews";
@@ -30,7 +29,6 @@ export default function CrewPage({ params }: { params: Promise<{ slug: string }>
   const { slug } = use(params);
   const { data, mutate, error } = useSWR<Res>(`/api/crews/${slug}`, { refreshInterval: 30_000 });
   const { authenticated, login, startGuest, profile, authedFetch } = useSession();
-  const { mids } = useMids();
   const [tab, setTab] = useState<"members" | "trades">("members");
   const { data: feed, mutate: mutateFeed } = useSWR<{ posts: FeedRow[] }>(tab === "trades" ? `/api/posts?crew=${slug}&kind=trade&limit=30` : null);
   const [busy, setBusy] = useState(false), [msg, setMsg] = useState<string | null>(null), [copied, setCopied] = useState(false);
@@ -102,7 +100,7 @@ export default function CrewPage({ params }: { params: Promise<{ slug: string }>
           <div className={`mono text-[16px] font-bold ${m.pnl30d > 0 ? "green" : m.pnl30d < 0 ? "red" : ""}`}>{fmtUsd(m.pnl30d, { sign: true, compact: true })}<div className="when text-right font-normal">30d</div></div>
         </Link>
       ))}
-      {tab === "trades" && (!feed ? <SkeletonList n={3} /> : feed.posts.length ? feed.posts.map((item) => <FeedPost key={item.post.id} item={item} mid={item.post.coin ? mids[item.post.coin] : undefined} onChanged={mutateFeed} />) : <p className="muted p-5 text-sm">{tt("No trades from this crew yet.")}</p>)}
+      {tab === "trades" && (!feed ? <SkeletonList n={3} /> : feed.posts.length ? feed.posts.map((item) => <LiveFeedPost key={item.post.id} item={item} onChanged={mutateFeed} />) : <p className="muted p-5 text-sm">{tt("No trades from this crew yet.")}</p>)}
     </div>
   );
 }

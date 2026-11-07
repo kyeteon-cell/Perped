@@ -6,6 +6,15 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
+    version: "0.11.3", date: "7 Nov 2026", title: "Smoother and faster",
+    improved: [
+      "Live prices no longer redraw the whole page every second. Only the numbers that actually moved update, so Home, Markets, profiles and crews scroll much more smoothly.",
+      "Cards further down the feed wait until you scroll near them before they're drawn.",
+      "Lighter animations and frosted bars, so phones spend less effort on every frame.",
+    ],
+    fixed: ["The Trade button on Home showed as an empty black pill."],
+  },
+  {
     version: "0.11.2", date: "7 Nov 2026", title: "Tidier language picker",
     improved: [
       "Settings → Language is now one small pill with your language's flag. Tap it to see all ten languages with their flags.",
