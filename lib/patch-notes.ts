@@ -6,6 +6,12 @@ export type Release = { version: string; date: string; title: string; new?: stri
 
 export const RELEASES: Release[] = [
   {
+    version: "0.10.1", date: "7 Nov 2026", title: "Behind the scenes",
+    improved: [
+      "Small under-the-hood changes so we can see which parts of Perped people enjoy and where they get stuck, and fix those first. No personal data is collected.",
+    ],
+  },
+  {
     version: "0.10.0", date: "7 Nov 2026", title: "A faster Home",
     new: [
       "Happening now: Fight Night, the Daily Fade, the one-hour call, your first fade and the live Pulse cards are one swipeable strip instead of five stacked cards. Whatever matters most right now comes first, and it stops sliding once you touch it.",

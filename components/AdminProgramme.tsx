@@ -31,6 +31,8 @@ export type Metrics = {
   perTraderPerDay: number;
   estFees: { today: number; week: number };
   daily: { day: string; signups: number; trades: number; traders: number }[];
+  flow?: { visitors: number; joined: number; linked: number; traded: number; faded: number; returned: number };
+  sources?: { src: string; visitors: number; joined: number; faded: number }[];
 };
 type Tab = "overview" | "founders" | "waitlist" | "payouts" | "team" | "tools" | "comp";
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
@@ -67,7 +69,6 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
     ["Scheduled jobs", h.cronSecret, h.cronSecret ? "earnings daily, waitlist Mondays 9pm" : "CRON_SECRET missing"],
     ["Database", !Object.keys(p.errors).length, Object.keys(p.errors).length ? `${Object.keys(p.errors).length} section(s) failed to load` : "all queries OK"],
   ];
-  const fn = m?.funnel;
   return (
     <div className="mt-3">
       <div className="adm-kpis">
@@ -114,14 +115,7 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
                 ["Fades / copies 7d", `${m.trades.fades_week} / ${m.trades.copies_week}`, `${m.events.quickfade_week} quick fades opened`],
                 ["Phone alerts on", String(m.push.people), `${m.push.devices} devices`],
               ] as [string, string, string][]).map(([k, v, s2]) => <div key={k} className="adm-tile"><small>{k}</small><b className="mono">{v}</b><span>{s2}</span></div>)}</div>
-              <section className="inv-card">
-                <span className="eyebrow">Funnel · joined in the last 7 days</span>
-                <div className="adm-funnel mt-2">
-                  {([["Visited", m.events.visitors_week, m.events.visitors_week], ["Finished the intro", m.events.intro_week, m.events.visitors_week], ["Joined", fn!.cohort, m.events.visitors_week], ["Made a trade", fn!.traded, fn!.cohort], ["Got into a fade", fn!.battled, fn!.cohort], ["Came back the next day", fn!.returned, fn!.cohort]] as [string, number, number][]).map(([k, n, of]) => (
-                    <div key={k} className="adm-step"><span>{k}</span><b className="mono">{n}</b><em>{pct(n, of)}</em><i style={{ width: of ? `${Math.min(100, (n / of) * 100)}%` : "0%" }} /></div>
-                  ))}
-                </div>
-              </section>
+              {m.flow ? <FunnelCard f={m.flow} sources={m.sources ?? []} /> : null}
               <section className="inv-card">
                 <span className="eyebrow">Last 14 days</span>
                 <table className="adm-table mt-2"><thead><tr><th>Day</th><th>Signups</th><th>Trades</th><th>Traders</th></tr></thead>
@@ -270,5 +264,50 @@ export function AdminProgramme({ call, m }: { call: (url: string, init?: Request
       )}
       </div>
     </div>
+  );
+}
+
+/**
+ * The funnel, person by person, last 7 days. Each step shows the share of the step before it, so the
+ * weakest hand-off (where most people drop) stands out in red. That's the one to fix next.
+ */
+function FunnelCard({ f, sources }: { f: NonNullable<Metrics["flow"]>; sources: NonNullable<Metrics["sources"]> }) {
+  const steps: [string, number, string][] = [
+    ["Visited", f.visitors, "devices"],
+    ["Joined", f.joined, `${f.linked} linked · ${f.joined - f.linked} instant guests`],
+    ["Placed a trade", f.traded, ""],
+    ["Started a fade", f.faded, "counts as active"],
+    ["Came back another day", f.returned, ""],
+  ];
+  const rates = steps.map(([, n], i) => (i === 0 ? 1 : steps[i - 1][1] ? n / steps[i - 1][1] : 0));
+  let leak = -1;
+  rates.forEach((r, i) => { if (i > 0 && steps[i - 1][1] >= 3 && (leak < 0 || r < rates[leak])) leak = i; });
+  return (
+    <>
+      <section className="inv-card">
+        <div className="flex items-center justify-between"><span className="eyebrow">Funnel · last 7 days</span><span className="when">% of the step above</span></div>
+        <div className="adm-funnel mt-2">
+          {steps.map(([k, n, sub], i) => (
+            <div key={k} className={`adm-step ${i === leak ? "leak" : ""}`}>
+              <span>{k}{sub && <small className="when block">{sub}</small>}</span>
+              <b className="mono">{n}</b>
+              <em>{i === 0 ? "" : pct(n, steps[i - 1][1])}</em>
+              <i style={{ width: `${Math.min(100, rates[i] * 100)}%` }} />
+            </div>
+          ))}
+        </div>
+        {leak > 0
+          ? <p className="when mt-2"><b className="red">Biggest drop:</b> {steps[leak - 1][0]} → {steps[leak][0]}. Only {pct(steps[leak][1], steps[leak - 1][1])} make it. Fix this step first.</p>
+          : <p className="when mt-2">Not enough people yet to call the biggest drop.</p>}
+      </section>
+      <section className="inv-card">
+        <div className="flex items-center justify-between"><span className="eyebrow">Where they came from · 7 days</span><span className="when">first visit</span></div>
+        {sources.length
+          ? <table className="adm-table mt-2"><thead><tr><th>Source</th><th>Visitors</th><th>Joined</th><th>Faded</th></tr></thead>
+              <tbody>{sources.map((r) => <tr key={r.src}><td>{r.src}</td><td className="mono">{r.visitors}</td><td className="mono">{r.joined}</td><td className="mono">{r.faded}</td></tr>)}</tbody></table>
+          : <p className="when mt-2">Filling up from now on.</p>}
+        <p className="when mt-2">Tag your links to see each one here: add <span className="mono">?utm_source=name</span> (for example <span className="mono">perped.pro/?utm_source=kiloklips</span>). Challenge and invite links are picked up automatically.</p>
+      </section>
+    </>
   );
 }

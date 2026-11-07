@@ -3,7 +3,7 @@ import { db, schema, ensureSchema } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-const Body = z.object({ e: z.enum(["visit", "intro_done", "push_on", "quick_fade_open", "first_battle_card", "welcome_new", "welcome_crypto", "welcome_perps", "first_trade_done", "first_trade_skip", "first_fade_done", "first_fade_skip"]), anon: z.string().max(64).optional() });
+const Body = z.object({ e: z.enum(["visit", "signed_in", "intro_done", "push_on", "quick_fade_open", "first_battle_card", "welcome_new", "welcome_crypto", "welcome_perps", "first_trade_done", "first_trade_skip", "first_fade_done", "first_fade_skip"]), anon: z.string().max(64).optional(), src: z.string().max(40).regex(/^[a-z0-9._-]+$/).optional() });
 
 /** POST /api/track {e, anon} → record one product event. Fire-and-forget from the client. */
 export async function POST(req: Request) {
@@ -11,6 +11,6 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return new Response(null, { status: 204 });
   const auth = await getAuth(req).catch(() => null);
-  await db.insert(schema.events).values({ name: parsed.data.e, anon: parsed.data.anon ?? null, userId: auth?.privyId ?? null }).catch(() => null);
+  await db.insert(schema.events).values({ name: parsed.data.e, anon: parsed.data.anon ?? null, userId: auth?.privyId ?? null, src: parsed.data.src ?? null }).catch(() => null);
   return new Response(null, { status: 204 });
 }

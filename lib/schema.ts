@@ -379,9 +379,11 @@ export const events = pgTable(
     name: text("name").notNull(),
     anon: text("anon"),
     userId: text("user_id"),
+    /** Where this device first came from (x, telegram, invite, challenge, google, direct…). First touch, kept on the device. */
+    src: text("src"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index("events_name_time").on(t.name, t.createdAt)],
+  (t) => [index("events_name_time").on(t.name, t.createdAt), index("events_user").on(t.userId)],
 );
 
 /** A crew: a trader's group on Perped. One crew per member; the owner runs it and its Telegram hookup. */

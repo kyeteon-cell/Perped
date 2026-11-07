@@ -394,4 +394,7 @@ create table if not exists hl_imports (
   refreshed_at timestamptz not null default now(),
   summary jsonb not null default '{}'::jsonb
 );
+-- Funnel v2: where each device came from, and look-ups by user.
+alter table events add column if not exists src text;
+create index if not exists events_user on events (user_id);
 `;

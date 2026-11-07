@@ -2378,3 +2378,6 @@ body.min-h-dvh { min-height: 0; }
 .now-slide .pulse-skel { min-height: 170px; }
 .feed-tuck > * { margin: 10px 14px !important; }
 .feed-tuck:empty { display: none; }
+.adm-step.leak { border-color: var(--red); }
+.adm-step.leak i { background: color-mix(in srgb, var(--red) 16%, transparent); }
+.adm-step.leak em { color: var(--red); font-weight: 800; }
