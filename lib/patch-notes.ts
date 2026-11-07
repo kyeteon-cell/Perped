@@ -10,6 +10,7 @@ export const RELEASES: Release[] = [
     improved: [
       "Small under-the-hood changes so we can see which parts of Perped people enjoy and where they get stuck, and fix those first.",
     ],
+    fixed: ["Admin page fits phone screens: nothing runs off the right edge, and the admin tabs scroll sideways instead."],
   },
   {
     version: "0.10.0", date: "7 Nov 2026", title: "A faster Home",

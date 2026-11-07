@@ -1354,7 +1354,16 @@ svg.g { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0
 .cs-note svg { flex: none; margin-top: 1px; color: var(--gold); }
 
 /* Admin / founder dashboards: nothing may push the page sideways on a phone. */
-.adm-page { overflow-x: clip; max-width: 640px; margin: 0 auto; }
+.adm-page { overflow-x: clip; width: 100%; min-width: 0; max-width: 640px; margin: 0 auto; }
+/* The page used to size itself to its widest content (the tab row), so on a phone everything ran off the right
+   edge. A fixed width:100% stops that; every grid/flex row below may now shrink instead of pushing out. */
+.adm-page > *, .adm-page .grid, .adm-page .inv-card, .adm-tabs { min-width: 0; max-width: 100%; }
+.adm-page .grid { grid-template-columns: minmax(0, 1fr); }
+.adm-page .adm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.adm-page .adm-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.adm-tabs { margin-left: 0; margin-right: 0; }
+.adm-table td { overflow-wrap: anywhere; }
+.adm-checks > div > b { white-space: nowrap; }
 .adm-page .inv-card, .adm-page .adm-kpis > div { min-width: 0; }
 .adm-page .inv-card .btn { width: 100%; }
 .adm-checks > div { grid-template-columns: 10px auto minmax(0, 1fr); }
